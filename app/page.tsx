@@ -1,0 +1,298 @@
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Footer from '@/components/Footer'
+
+const BOROUGHS = ['Manhattan', 'Brooklyn', 'Queens', 'Bronx', 'Staten Island']
+const INTERESTS = ['STEM', 'Arts', 'Languages', 'Career & Technical', 'Other']
+
+export default function HomePage() {
+  const router = useRouter()
+
+  const [borough, setBorough] = useState('')
+  const [commute, setCommute] = useState<'short' | 'flexible'>('short')
+  const [interests, setInterests] = useState<string[]>([])
+  const [shsat, setShsat] = useState<boolean>(false)
+  const [auditions, setAuditions] = useState<boolean>(false)
+  const [academicLevel, setAcademicLevel] = useState<'low' | 'medium' | 'high' | ''>('')
+  const [iep, setIep] = useState<'gened' | 'iep'>('gened')
+  const [size, setSize] = useState<'small' | 'medium' | 'large' | ''>('')
+  const [errors, setErrors] = useState<string[]>([])
+
+  function toggleInterest(interest: string) {
+    setInterests((prev) =>
+      prev.includes(interest) ? prev.filter((i) => i !== interest) : [...prev, interest]
+    )
+  }
+
+  function validate(): boolean {
+    const errs: string[] = []
+    if (!borough) errs.push('Please select a borough.')
+    if (!academicLevel) errs.push('Please select an academic level.')
+    if (!size) errs.push('Please select a school size preference.')
+    setErrors(errs)
+    return errs.length === 0
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!validate()) return
+
+    const params = new URLSearchParams({
+      borough,
+      commute,
+      interests: interests.join(','),
+      shsat: String(shsat),
+      auditions: String(auditions),
+      level: academicLevel,
+      iep: String(iep === 'iep'),
+      size,
+    })
+
+    router.push(`/list?${params.toString()}`)
+  }
+
+  return (
+    <main className="min-h-screen bg-white">
+      <div className="max-w-2xl mx-auto px-4 py-10">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">HS Navigator</h1>
+          <p className="mt-2 text-gray-500">
+            Find NYC public high schools that match your student&apos;s profile.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-7">
+          {/* Borough */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Borough</label>
+            <select
+              value={borough}
+              onChange={(e) => setBorough(e.target.value)}
+              className="block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
+            >
+              <option value="">Select a borough…</option>
+              {BOROUGHS.map((b) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Commute */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Commute preference
+            </label>
+            <div className="space-y-2">
+              {(
+                [
+                  { value: 'short', label: 'Short — under 45 min (same borough)' },
+                  { value: 'flexible', label: 'Flexible — willing to travel to any borough' },
+                ] as const
+              ).map((opt) => (
+                <label key={opt.value} className="flex items-center gap-2.5 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="commute"
+                    value={opt.value}
+                    checked={commute === opt.value}
+                    onChange={() => setCommute(opt.value)}
+                    className="accent-gray-900"
+                  />
+                  <span className="text-sm text-gray-700">{opt.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Interests */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Interests{' '}
+              <span className="text-gray-400 font-normal">(select all that apply)</span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {INTERESTS.map((interest) => (
+                <button
+                  key={interest}
+                  type="button"
+                  onClick={() => toggleInterest(interest)}
+                  className={`px-3 py-1.5 rounded-full border text-sm transition-colors ${
+                    interests.includes(interest)
+                      ? 'bg-gray-900 text-white border-gray-900'
+                      : 'bg-white text-gray-600 border-gray-300 hover:border-gray-500'
+                  }`}
+                >
+                  {interest}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* SHSAT */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Is your student willing to take the SHSAT?
+            </label>
+            <div className="flex gap-5">
+              {(
+                [
+                  { value: true, label: 'Yes' },
+                  { value: false, label: 'No' },
+                ] as const
+              ).map((opt) => (
+                <label key={String(opt.value)} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="shsat"
+                    checked={shsat === opt.value}
+                    onChange={() => setShsat(opt.value)}
+                    className="accent-gray-900"
+                  />
+                  <span className="text-sm text-gray-700">{opt.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Auditions */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Is your student willing to audition or submit a portfolio?
+            </label>
+            <div className="flex gap-5">
+              {(
+                [
+                  { value: true, label: 'Yes' },
+                  { value: false, label: 'No' },
+                ] as const
+              ).map((opt) => (
+                <label key={String(opt.value)} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="auditions"
+                    checked={auditions === opt.value}
+                    onChange={() => setAuditions(opt.value)}
+                    className="accent-gray-900"
+                  />
+                  <span className="text-sm text-gray-700">{opt.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Academic Level */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Academic level
+            </label>
+            <div className="space-y-2">
+              {(
+                [
+                  { value: 'low', label: 'Low', helper: 'screened groups 4–5' },
+                  { value: 'medium', label: 'Medium', helper: 'screened group 3' },
+                  { value: 'high', label: 'High', helper: 'screened groups 1–2' },
+                ] as const
+              ).map((opt) => (
+                <label key={opt.value} className="flex items-start gap-2.5 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="level"
+                    value={opt.value}
+                    checked={academicLevel === opt.value}
+                    onChange={() => setAcademicLevel(opt.value)}
+                    className="mt-0.5 accent-gray-900"
+                  />
+                  <span className="text-sm">
+                    <span className="font-medium text-gray-800">{opt.label}</span>
+                    <span className="text-gray-500"> — {opt.helper}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* IEP */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              IEP or General Education
+            </label>
+            <div className="flex gap-5">
+              {(
+                [
+                  { value: 'gened', label: 'General Education' },
+                  { value: 'iep', label: 'IEP' },
+                ] as const
+              ).map((opt) => (
+                <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="iep"
+                    value={opt.value}
+                    checked={iep === opt.value}
+                    onChange={() => setIep(opt.value)}
+                    className="accent-gray-900"
+                  />
+                  <span className="text-sm text-gray-700">{opt.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* School Size */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              School size preference
+            </label>
+            <div className="space-y-2">
+              {(
+                [
+                  { value: 'small', label: 'Small', helper: 'under 400 students' },
+                  { value: 'medium', label: 'Medium', helper: '400–1,200 students' },
+                  { value: 'large', label: 'Large', helper: 'over 1,200 students' },
+                ] as const
+              ).map((opt) => (
+                <label key={opt.value} className="flex items-start gap-2.5 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="size"
+                    value={opt.value}
+                    checked={size === opt.value}
+                    onChange={() => setSize(opt.value)}
+                    className="mt-0.5 accent-gray-900"
+                  />
+                  <span className="text-sm">
+                    <span className="font-medium text-gray-800">{opt.label}</span>
+                    <span className="text-gray-500"> — {opt.helper}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Validation errors */}
+          {errors.length > 0 && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-3 space-y-1">
+              {errors.map((err, i) => (
+                <p key={i} className="text-sm text-red-700">
+                  {err}
+                </p>
+              ))}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            className="w-full bg-gray-900 text-white py-3 px-4 rounded-md text-sm font-medium hover:bg-gray-700 transition-colors"
+          >
+            Find schools &rarr;
+          </button>
+        </form>
+      </div>
+      <Footer />
+    </main>
+  )
+}
