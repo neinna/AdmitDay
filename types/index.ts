@@ -39,6 +39,15 @@ export interface School {
   last_verified: string
 }
 
+export type SectionType = 'shsat' | 'audition' | 'screened' | 'edopt' | 'lottery'
+
+export interface SectionGroup {
+  type: SectionType
+  label: string
+  schools: School[]
+  startIndex: number // for sequential row numbering across sections
+}
+
 export interface UserInputs {
   borough: string
   commute: 'short' | 'flexible'
