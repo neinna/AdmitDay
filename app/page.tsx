@@ -6,6 +6,7 @@ import Footer from '@/components/Footer'
 
 const BOROUGHS = ['Manhattan', 'Brooklyn', 'Queens', 'Bronx', 'Staten Island']
 const INTERESTS = ['STEM', 'Arts', 'Languages', 'Career & Technical', 'Other']
+const SPORTS = ['Soccer', 'Tennis', 'Softball', 'Basketball', 'Track & Field', 'Volleyball', 'Baseball']
 
 export default function HomePage() {
   const router = useRouter()
@@ -13,6 +14,7 @@ export default function HomePage() {
   const [borough, setBorough] = useState('')
   const [commute, setCommute] = useState<'short' | 'flexible'>('short')
   const [interests, setInterests] = useState<string[]>([])
+  const [sports, setSports] = useState<string[]>([])
   const [shsat, setShsat] = useState<boolean>(false)
   const [auditions, setAuditions] = useState<boolean>(false)
   const [academicLevel, setAcademicLevel] = useState<'low' | 'medium' | 'high' | ''>('')
@@ -20,10 +22,8 @@ export default function HomePage() {
   const [size, setSize] = useState<'small' | 'medium' | 'large' | ''>('')
   const [errors, setErrors] = useState<string[]>([])
 
-  function toggleInterest(interest: string) {
-    setInterests((prev) =>
-      prev.includes(interest) ? prev.filter((i) => i !== interest) : [...prev, interest]
-    )
+  function toggle(list: string[], setList: (v: string[]) => void, value: string) {
+    setList(list.includes(value) ? list.filter((i) => i !== value) : [...list, value])
   }
 
   function validate(): boolean {
@@ -43,6 +43,7 @@ export default function HomePage() {
       borough,
       commute,
       interests: interests.join(','),
+      sports: sports.join(','),
       shsat: String(shsat),
       auditions: String(auditions),
       level: academicLevel,
@@ -57,7 +58,7 @@ export default function HomePage() {
     <main className="min-h-screen bg-white">
       <div className="max-w-2xl mx-auto px-4 py-10">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">HS Navigator</h1>
+          <h1 className="text-3xl font-bold text-gray-900">ListReady</h1>
           <p className="mt-2 text-gray-500">
             Find NYC public high schools that match your student&apos;s profile.
           </p>
@@ -73,6 +74,7 @@ export default function HomePage() {
               className="block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
             >
               <option value="">Select a borough…</option>
+              <option value="All Boroughs">All Boroughs</option>
               {BOROUGHS.map((b) => (
                 <option key={b} value={b}>
                   {b}
@@ -81,32 +83,34 @@ export default function HomePage() {
             </select>
           </div>
 
-          {/* Commute */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Commute preference
-            </label>
-            <div className="space-y-2">
-              {(
-                [
-                  { value: 'short', label: 'Short — under 45 min (same borough)' },
-                  { value: 'flexible', label: 'Flexible — willing to travel to any borough' },
-                ] as const
-              ).map((opt) => (
-                <label key={opt.value} className="flex items-center gap-2.5 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="commute"
-                    value={opt.value}
-                    checked={commute === opt.value}
-                    onChange={() => setCommute(opt.value)}
-                    className="accent-gray-900"
-                  />
-                  <span className="text-sm text-gray-700">{opt.label}</span>
-                </label>
-              ))}
+          {/* Commute — only shown when a specific borough is selected */}
+          {borough && borough !== 'All Boroughs' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                Commute preference
+              </label>
+              <div className="space-y-2">
+                {(
+                  [
+                    { value: 'short', label: 'Short — under 45 min (same borough)' },
+                    { value: 'flexible', label: 'Flexible — willing to travel to any borough' },
+                  ] as const
+                ).map((opt) => (
+                  <label key={opt.value} className="flex items-center gap-2.5 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="commute"
+                      value={opt.value}
+                      checked={commute === opt.value}
+                      onChange={() => setCommute(opt.value)}
+                      className="accent-gray-900"
+                    />
+                    <span className="text-sm text-gray-700">{opt.label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Interests */}
           <div>
@@ -119,7 +123,7 @@ export default function HomePage() {
                 <button
                   key={interest}
                   type="button"
-                  onClick={() => toggleInterest(interest)}
+                  onClick={() => toggle(interests, setInterests, interest)}
                   className={`px-3 py-1.5 rounded-full border text-sm transition-colors ${
                     interests.includes(interest)
                       ? 'bg-gray-900 text-white border-gray-900'
@@ -127,6 +131,30 @@ export default function HomePage() {
                   }`}
                 >
                   {interest}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Sports */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Top sports at the school{' '}
+              <span className="text-gray-400 font-normal">(optional)</span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {SPORTS.map((sport) => (
+                <button
+                  key={sport}
+                  type="button"
+                  onClick={() => toggle(sports, setSports, sport)}
+                  className={`px-3 py-1.5 rounded-full border text-sm transition-colors ${
+                    sports.includes(sport)
+                      ? 'bg-gray-900 text-white border-gray-900'
+                      : 'bg-white text-gray-600 border-gray-300 hover:border-gray-500'
+                  }`}
+                >
+                  {sport}
                 </button>
               ))}
             </div>
