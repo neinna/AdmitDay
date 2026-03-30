@@ -12,7 +12,7 @@ function parseInputs(sp: Record<string, string | string[] | undefined>): UserInp
     typeof sp[key] === 'string' ? (sp[key] as string) : def
 
   return {
-    borough: str('borough', 'Manhattan'),
+    borough: str('borough', ALL_BOROUGHS),
     commute: str('commute', 'short') as 'short' | 'flexible',
     interests: str('interests', '').split(',').filter(Boolean),
     sports: str('sports', '').split(',').filter(Boolean),
@@ -27,6 +27,13 @@ function parseInputs(sp: Record<string, string | string[] | undefined>): UserInp
 // ── Eligibility & filtering ──────────────────────────────────────────────────
 
 const ALL_BOROUGHS = 'All Boroughs'
+
+/** True for any value that means "show all boroughs — skip borough filter". */
+function noBorough(borough: string): boolean {
+  if (!borough) return true
+  const b = borough.trim().toLowerCase()
+  return b === 'all boroughs' || b === 'all' || b === ''
+}
 
 function isEligible(school: School, inputs: UserInputs): boolean {
   if (school.flags.has_open) return true
@@ -46,7 +53,7 @@ function applyFilters(
     if (!isEligible(school, inputs)) return false
     if (!relaxSize && school.size !== inputs.size) return false
     if (
-      inputs.borough !== ALL_BOROUGHS &&
+      !noBorough(inputs.borough) &&
       !relaxBorough &&
       inputs.commute === 'short' &&
       school.borough !== inputs.borough
@@ -57,7 +64,7 @@ function applyFilters(
 }
 
 function sortByHomeBorough(schools: School[], homeBorough: string): School[] {
-  if (homeBorough === ALL_BOROUGHS) return schools
+  if (noBorough(homeBorough)) return schools
   return [...schools].sort((a, b) => {
     const aHome = a.borough === homeBorough
     const bHome = b.borough === homeBorough
