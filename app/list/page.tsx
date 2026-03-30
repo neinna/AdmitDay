@@ -82,14 +82,14 @@ function getResults(
     return {
       results: sortByHomeBorough(results, inputs.borough),
       relaxedNote:
-        'Fewer than 12 schools matched your size preference, so we expanded to include all school sizes.',
+        'Not enough matches at your preferred size — we expanded to show all school sizes.',
     }
 
   results = applyFilters(schools, inputs, true, true)
   const note =
     inputs.commute === 'short' && inputs.borough !== ALL_BOROUGHS
-      ? 'Fewer than 12 schools matched in your borough, so we expanded to all boroughs and school sizes.'
-      : 'Fewer than 12 schools matched your preferences, so we expanded our search.'
+      ? 'Not enough nearby matches — we expanded to all boroughs and sizes to build your list.'
+      : 'Not enough exact matches — we broadened the search slightly to give you a full list.'
   return { results: sortByHomeBorough(results, inputs.borough), relaxedNote: note }
 }
 
@@ -186,16 +186,31 @@ export default async function ListPage({
 
   const boroughLabel = inputs.borough === ALL_BOROUGHS ? 'all boroughs' : inputs.borough
 
+  // Collect all banners to show at the very top
+  const banners: string[] = []
+  if (allSchools.length === 0)
+    banners.push('School data not yet loaded on the server — contact support if this persists.')
+  if (relaxedNote) banners.push(relaxedNote)
+  if (sportsNote) banners.push(sportsNote)
+
   return (
     <main className="min-h-screen bg-white">
+      {/* Top banners */}
+      {banners.length > 0 && (
+        <div style={{ backgroundColor: '#FEF3C7', color: '#92400E', borderBottom: '1px solid #FCD34D' }}>
+          {banners.map((msg, i) => (
+            <p key={i} className="max-w-4xl mx-auto px-4 py-2.5 text-sm">
+              {msg}
+            </p>
+          ))}
+        </div>
+      )}
+
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Page header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-5">
           <div>
-            <Link href="/" className="text-sm text-gray-500 hover:text-gray-700">
-              &larr; Start over
-            </Link>
-            <h1 className="text-xl font-bold text-gray-900 mt-1">Your school matches</h1>
+            <h1 className="text-xl font-bold text-gray-900">Your school matches</h1>
             <p className="text-sm text-gray-500 mt-0.5">
               {results.length} school{results.length !== 1 ? 's' : ''} for {boroughLabel}
             </p>
@@ -207,29 +222,6 @@ export default async function ListPage({
             View requirements checklist &rarr;
           </Link>
         </div>
-
-        {/* No data warning */}
-        {allSchools.length === 0 && (
-          <div className="bg-amber-50 border border-amber-200 rounded-md p-4 mb-5">
-            <p className="text-sm text-amber-800">
-              School data not yet loaded. Copy{' '}
-              <code className="bg-amber-100 px-1 rounded">/root/app/schools.json</code> to{' '}
-              <code className="bg-amber-100 px-1 rounded">data/schools.json</code> and restart.
-            </p>
-          </div>
-        )}
-
-        {/* Notices */}
-        {relaxedNote && (
-          <div className="bg-blue-50 border border-blue-100 rounded-md p-3 mb-3">
-            <p className="text-sm text-blue-800">{relaxedNote}</p>
-          </div>
-        )}
-        {sportsNote && (
-          <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mb-3">
-            <p className="text-sm text-amber-800">{sportsNote}</p>
-          </div>
-        )}
 
         {/* Grouped school list */}
         {results.length === 0 ? (
