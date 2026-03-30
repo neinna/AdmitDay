@@ -5,7 +5,7 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'HS Navigator',
+  title: 'ListReady',
   description: "Find NYC public high schools that match your student's profile.",
 }
 

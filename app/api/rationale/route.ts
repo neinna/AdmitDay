@@ -33,39 +33,34 @@ export async function POST(request: NextRequest) {
     `Size preference: ${userInputs.size}`,
   ].join('\n')
 
-  const stream = client.messages.stream({
+  const message = await client.messages.create({
     model: 'claude-sonnet-4-20250514',
-    max_tokens: 100,
+    max_tokens: 150,
     system:
-      'You are a helpful NYC high school admissions assistant. Generate a 1-2 sentence rationale explaining why this school might be a good fit for this student. Be specific — cite the school\'s admissions type and any relevant features from the overview. Do not use language like "you will get in" or "guaranteed". Do not guarantee admission. End by naming the admissions type. Keep it under 60 words.',
+      'You are a helpful NYC high school admissions assistant. Respond with only a valid JSON object — no markdown, no explanation, no code fences. The JSON must have exactly two fields:\n' +
+      '- "title": a 4-6 word bold summary of why this school fits the student (e.g. "Strong arts, low competition" or "STEM focus, open admissions")\n' +
+      '- "rationale": 1-2 sentences under 60 words explaining why this school might be a good fit. Be specific — cite the admissions type and relevant features. Do not use language like "you will get in" or "guaranteed". End by naming the admissions type.\n' +
+      'Example output: {"title":"Low competition, open admissions","rationale":"This school uses open lottery admissions, so every student has an equal chance. Its strong STEM programs align with the student\'s interests. Admissions type: Open."}',
     messages: [
       {
         role: 'user',
-        content: `${schoolCtx}\n\nStudent profile:\n${studentCtx}\n\nWrite a 1-2 sentence match rationale.`,
+        content: `${schoolCtx}\n\nStudent profile:\n${studentCtx}\n\nReturn the JSON object.`,
       },
     ],
   })
 
-  const encoder = new TextEncoder()
-  const readable = new ReadableStream({
-    async start(controller) {
-      try {
-        for await (const chunk of stream) {
-          if (
-            chunk.type === 'content_block_delta' &&
-            chunk.delta.type === 'text_delta'
-          ) {
-            controller.enqueue(encoder.encode(chunk.delta.text))
-          }
-        }
-        controller.close()
-      } catch (err) {
-        controller.error(err)
-      }
-    },
-  })
+  const raw = message.content[0].type === 'text' ? message.content[0].text : '{}'
 
-  return new Response(readable, {
-    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+  let parsed: { title: string; rationale: string }
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    // If Claude returned something unexpected, surface it as rationale only
+    parsed = { title: '', rationale: raw.slice(0, 200) }
+  }
+
+  return Response.json({
+    title: parsed.title ?? '',
+    rationale: parsed.rationale ?? '',
   })
 }

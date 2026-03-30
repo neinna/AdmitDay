@@ -14,9 +14,8 @@ function parseInputs(sp: Record<string, string | string[] | undefined>): UserInp
   return {
     borough: str('borough', 'Manhattan'),
     commute: str('commute', 'short') as 'short' | 'flexible',
-    interests: str('interests', '')
-      .split(',')
-      .filter(Boolean),
+    interests: str('interests', '').split(',').filter(Boolean),
+    sports: str('sports', '').split(',').filter(Boolean),
     shsat: str('shsat', 'false') === 'true',
     auditions: str('auditions', 'false') === 'true',
     academicLevel: str('level', 'medium') as 'low' | 'medium' | 'high',
@@ -26,16 +25,14 @@ function parseInputs(sp: Record<string, string | string[] | undefined>): UserInp
 }
 
 function isEligible(school: School, inputs: UserInputs): boolean {
-  // Open enrollment — accessible at any academic level
   if (school.flags.has_open) return true
-  // Screened — requires medium or high academic level
   if (school.flags.has_screened && inputs.academicLevel !== 'low') return true
-  // SHSAT — only if student is willing
   if (school.flags.has_shsat && inputs.shsat) return true
-  // Audition — only if student is willing
   if (school.flags.has_audition && inputs.auditions) return true
   return false
 }
+
+const ALL_BOROUGHS = 'All Boroughs'
 
 function applyFilters(
   schools: School[],
@@ -46,7 +43,9 @@ function applyFilters(
   return schools.filter((school) => {
     if (!isEligible(school, inputs)) return false
     if (!relaxSize && school.size !== inputs.size) return false
+    // Skip borough filter when "All Boroughs" is selected or relaxed
     if (
+      inputs.borough !== ALL_BOROUGHS &&
       !relaxBorough &&
       inputs.commute === 'short' &&
       school.borough !== inputs.borough
@@ -57,6 +56,7 @@ function applyFilters(
 }
 
 function sortByHomeBorough(schools: School[], homeBorough: string): School[] {
+  if (homeBorough === ALL_BOROUGHS) return schools
   return [...schools].sort((a, b) => {
     const aHome = a.borough === homeBorough
     const bHome = b.borough === homeBorough
@@ -75,10 +75,7 @@ function getResults(
   // Full constraints
   let results = applyFilters(schools, inputs, false, false)
   if (results.length >= MIN)
-    return {
-      results: sortByHomeBorough(results, inputs.borough),
-      relaxedNote: '',
-    }
+    return { results: sortByHomeBorough(results, inputs.borough), relaxedNote: '' }
 
   // Relax size only
   results = applyFilters(schools, inputs, true, false)
@@ -92,13 +89,16 @@ function getResults(
   // Relax size + borough
   results = applyFilters(schools, inputs, true, true)
   const note =
-    inputs.commute === 'short'
+    inputs.commute === 'short' && inputs.borough !== ALL_BOROUGHS
       ? 'Fewer than 12 schools matched in your borough, so we expanded to all boroughs and school sizes.'
       : 'Fewer than 12 schools matched your preferences, so we expanded our search.'
-  return {
-    results: sortByHomeBorough(results, inputs.borough),
-    relaxedNote: note,
-  }
+  return { results: sortByHomeBorough(results, inputs.borough), relaxedNote: note }
+}
+
+function matchesSports(school: School, sports: string[]): boolean {
+  if (sports.length === 0) return true
+  const ext = (school.doe_data?.extracurriculars ?? '').toLowerCase()
+  return sports.some((sport) => ext.includes(sport.toLowerCase()))
 }
 
 // ── Page ─────────────────────────────────────────────────────────────────────
@@ -119,14 +119,29 @@ export default async function ListPage({
     // schools.json not yet present (dev mode or pre-deployment)
   }
 
-  const { results, relaxedNote } = getResults(allSchools, inputs)
+  const { results: baseResults, relaxedNote } = getResults(allSchools, inputs)
 
-  // Build the requirements page link with the same params
+  // Apply sports filter as a soft post-filter
+  let results = baseResults
+  let sportsNote = ''
+  if (inputs.sports.length > 0) {
+    const sportFiltered = baseResults.filter((s) => matchesSports(s, inputs.sports))
+    if (sportFiltered.length === 0) {
+      sportsNote = 'No schools matched your sport filter — showing all results'
+    } else {
+      results = sportFiltered
+    }
+  }
+
+  // Build requirements link with same params
   const reqParams = new URLSearchParams(
     Object.entries(searchParams)
       .filter(([, v]) => typeof v === 'string')
       .map(([k, v]) => [k, v as string])
   )
+
+  const boroughLabel =
+    inputs.borough === ALL_BOROUGHS ? 'all boroughs' : inputs.borough
 
   return (
     <main className="min-h-screen bg-white">
@@ -139,7 +154,7 @@ export default async function ListPage({
             </Link>
             <h1 className="text-2xl font-bold text-gray-900 mt-1">Your school matches</h1>
             <p className="text-sm text-gray-500 mt-0.5">
-              {results.length} school{results.length !== 1 ? 's' : ''} for {inputs.borough}
+              {results.length} school{results.length !== 1 ? 's' : ''} for {boroughLabel}
             </p>
           </div>
           <Link
@@ -156,16 +171,22 @@ export default async function ListPage({
             <p className="text-sm text-amber-800">
               School data not yet loaded. On the server, copy{' '}
               <code className="bg-amber-100 px-1 rounded">/root/app/schools.json</code> to{' '}
-              <code className="bg-amber-100 px-1 rounded">data/schools.json</code> and restart the
-              app.
+              <code className="bg-amber-100 px-1 rounded">data/schools.json</code> and restart.
             </p>
           </div>
         )}
 
         {/* Relaxation notice */}
         {relaxedNote && (
-          <div className="bg-blue-50 border border-blue-100 rounded-md p-3 mb-6">
+          <div className="bg-blue-50 border border-blue-100 rounded-md p-3 mb-4">
             <p className="text-sm text-blue-800">{relaxedNote}</p>
+          </div>
+        )}
+
+        {/* Sports filter notice */}
+        {sportsNote && (
+          <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mb-4">
+            <p className="text-sm text-amber-800">{sportsNote}</p>
           </div>
         )}
 
