@@ -22,8 +22,6 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; HSNavigator/1.0; research tool)"
 }
 
-# ── STEP 1: Pull school list from NYC-SIFT ──────────────────────────────────
-
 def fetch_nycsift_schools():
     print("Fetching school list from NYC-SIFT...")
     url = "https://nycsift.com/data-all.phtml?type=s"
@@ -46,11 +44,9 @@ def fetch_nycsift_schools():
         dbn_match = re.search(r'id=(\w+)', href)
         dbn = dbn_match.group(1) if dbn_match else ""
 
-        # Parse location text (contains grades and borough)
         location_text = cells[0].get_text(" ", strip=True)
         borough = extract_borough(location_text)
 
-        # Stats columns
         try:
             total_students = cells[1].get_text(strip=True).replace(",", "")
             total_students = int(total_students) if total_students.isdigit() else None
@@ -58,7 +54,7 @@ def fetch_nycsift_schools():
             total_students = None
 
         try:
-            aps_text = cells[2].get_text(strip=True)  # "X,XXX / YY (Z.ZZ aps)"
+            aps_text = cells[2].get_text(strip=True)
             aps_match = re.search(r'([\d.]+)\s*aps', aps_text)
             applicants_per_seat = float(aps_match.group(1)) if aps_match else None
         except:
@@ -95,14 +91,7 @@ def extract_borough(text):
     return "Unknown"
 
 
-# ── STEP 2: Enrich with DOE Open Data (admissions type, program details) ────
-
 def fetch_doe_directory():
-    """
-    NYC Open Data - DOE High School Directory
-    Dataset: https://data.cityofnewyork.us/Education/DOE-High-School-Directory/uq7m-95z8
-    Direct API endpoint - no key required for public datasets.
-    """
     print("Fetching DOE High School Directory from NYC Open Data...")
     url = "https://data.cityofnewyork.us/resource/uq7m-95z8.json"
     params = {"$limit": 1000}
@@ -110,8 +99,6 @@ def fetch_doe_directory():
     r.raise_for_status()
     data = r.json()
     print(f"  Found {len(data)} records from DOE Open Data")
-
-    # Key by DBN for easy lookup
     by_dbn = {}
     for record in data:
         dbn = record.get("dbn", "").strip()
@@ -120,42 +107,11 @@ def fetch_doe_directory():
     return by_dbn
 
 
-# ── STEP 3: Fetch per-school detail from NYC-SIFT ───────────────────────────
-
-def fetch_school_detail(dbn, sift_url):
-    """Fetch individual school page to get admissions type and program details."""
-    try:
-        r = requests.get(sift_url, headers=HEADERS, timeout=15)
-        r.raise_for_status()
-        soup = BeautifulSoup(r.text, "html.parser")
-
-        programs = []
-        admissions_types = set()
-
-        # NYC-SIFT program tables contain admissions method
-        for row in soup.select("table tr"):
-            cells = row.find_all("td")
-            if len(cells) >= 3:
-                program_name = cells[0].get_text(strip=True)
-                admissions_text = cells[1].get_text(strip=True).lower()
-
-                method = classify_admissions(admissions_text)
-                if method:
-                    admissions_types.add(method)
-                    programs.append({
-                        "program": program_name,
-                        "admissions_type": method,
-                    })
-
-        return list(admissions_types), programs
-    except Exception as e:
-        return [], []
-
-
 def classify_admissions(text):
-    if "shsat" in text or "specialized" in text:
+    text = text.lower().strip()
+    if "shsat" in text or "specialized" in text or text == "test":
         return "SHSAT"
-    if "audition" in text or "laguardia" in text:
+    if "audition" in text:
         return "Audition"
     if "screened" in text and "assess" in text:
         return "Screened with Assessment"
@@ -170,7 +126,39 @@ def classify_admissions(text):
     return None
 
 
-# ── STEP 4: Merge and clean ──────────────────────────────────────────────────
+def fetch_school_detail(dbn, sift_url):
+    """
+    NYC-SIFT uses div.NYCSF_twocolumn pairs for program data.
+    Each pair has two child divs: first is the label (e.g. Method:),
+    second is the value (e.g. Ed. Opt.).
+    """
+    try:
+        r = requests.get(sift_url, headers=HEADERS, timeout=15)
+        r.raise_for_status()
+        soup = BeautifulSoup(r.text, "html.parser")
+
+        admissions_types = set()
+        programs = []
+
+        for col_div in soup.find_all("div", class_="NYCSF_twocolumn"):
+            children = [c for c in col_div.children if getattr(c, "name", None) == "div"]
+            if len(children) < 2:
+                continue
+            label = children[0].get_text(strip=True)
+            if label == "Method:":
+                value = children[1].get_text(strip=True)
+                method = classify_admissions(value)
+                if method:
+                    admissions_types.add(method)
+                    programs.append({
+                        "admissions_type": method,
+                        "raw_method": value,
+                    })
+
+        return list(admissions_types), programs
+    except Exception as e:
+        return [], []
+
 
 def build_school_json(sift_schools, doe_by_dbn):
     print("Merging data sources and fetching school details...")
@@ -180,7 +168,6 @@ def build_school_json(sift_schools, doe_by_dbn):
         dbn = school["dbn"]
         doe = doe_by_dbn.get(dbn, {})
 
-        # Get school size bucket
         students = school.get("total_students")
         if students:
             if students < 400: size = "small"
@@ -189,22 +176,18 @@ def build_school_json(sift_schools, doe_by_dbn):
         else:
             size = "medium"
 
-        # Get admissions types from SIFT detail page
         print(f"  [{i+1}/{len(sift_schools)}] {school['name'][:50]}")
         admissions_types, programs = fetch_school_detail(dbn, school["sift_url"])
-        time.sleep(0.3)  # be polite to NYC-SIFT
+        time.sleep(0.3)
 
-        # Derive flags
         has_shsat = "SHSAT" in admissions_types
         has_audition = "Audition" in admissions_types
         has_screened = any(t in admissions_types for t in ["Screened", "Screened with Assessment"])
         has_open = any(t in admissions_types for t in ["Open", "Educational Option", "Zoned"])
 
-        # Borough priority (zoned schools have borough priority)
         borough = school.get("borough", "Unknown")
-        has_borough_priority = borough != "Manhattan"  # zoned schools not in Manhattan
+        has_borough_priority = borough != "Manhattan"
 
-        # Hidden gem flag: good academic score + low applicants per seat
         aps = school.get("applicants_per_seat")
         acad = school.get("academic_score_pct")
         is_hidden_gem = (
@@ -220,7 +203,7 @@ def build_school_json(sift_schools, doe_by_dbn):
             "total_students": school.get("total_students"),
             "applicants_per_seat": aps,
             "academic_score_pct": acad,
-            "survey_score_pct": None,  # add if needed from SIFT
+            "survey_score_pct": None,
             "admissions_types": admissions_types,
             "programs": programs,
             "flags": {
@@ -248,8 +231,6 @@ def build_school_json(sift_schools, doe_by_dbn):
     return final
 
 
-# ── STEP 5: Validate output ──────────────────────────────────────────────────
-
 def validate(schools):
     print("\n── Validation Report ─────────────────────────────")
     print(f"Total schools:          {len(schools)}")
@@ -261,7 +242,6 @@ def validate(schools):
     print(f"Hidden gems:            {sum(1 for s in schools if s['flags']['is_hidden_gem'])}")
     print(f"Missing admissions:     {sum(1 for s in schools if not s['admissions_types'])}")
     print()
-
     by_borough = {}
     for s in schools:
         b = s["borough"]
@@ -271,8 +251,6 @@ def validate(schools):
         print(f"  {b}: {count}")
     print("──────────────────────────────────────────────────")
 
-
-# ── MAIN ─────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     print("HS Navigator - School Data Builder")
