@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Footer from '@/components/Footer'
 
@@ -8,11 +8,26 @@ const BOROUGHS = ['Manhattan', 'Brooklyn', 'Queens', 'Bronx', 'Staten Island']
 const INTERESTS = ['STEM', 'Arts', 'Languages', 'Career & Technical', 'Other']
 const SPORTS = ['Soccer', 'Tennis', 'Softball', 'Basketball', 'Track & Field', 'Volleyball', 'Baseball']
 
+const FORM_KEY = 'hs_nav_form'
+const PARAMS_KEY = 'hs_nav_last_params'
+
+interface SavedForm {
+  borough: string
+  commute: string
+  interests: string[]
+  sports: string[]
+  shsat: boolean
+  auditions: boolean
+  academicLevel: string
+  iep: string
+  size: string
+}
+
 export default function HomePage() {
   const router = useRouter()
 
-  const [borough, setBorough] = useState('')
-  const [commute, setCommute] = useState<'short' | 'flexible'>('short')
+  const [borough, setBorough] = useState('All Boroughs')
+  const [commute, setCommute] = useState<'short' | 'flexible'>('flexible')
   const [interests, setInterests] = useState<string[]>([])
   const [sports, setSports] = useState<string[]>([])
   const [shsat, setShsat] = useState<boolean>(false)
@@ -22,13 +37,34 @@ export default function HomePage() {
   const [size, setSize] = useState<'small' | 'medium' | 'large' | ''>('')
   const [errors, setErrors] = useState<string[]>([])
 
+  // Restore previous selections from localStorage on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(FORM_KEY)
+      if (!raw) return
+      const saved: SavedForm = JSON.parse(raw)
+      if (saved.borough) setBorough(saved.borough)
+      if (saved.commute === 'short' || saved.commute === 'flexible') setCommute(saved.commute)
+      if (Array.isArray(saved.interests)) setInterests(saved.interests)
+      if (Array.isArray(saved.sports)) setSports(saved.sports)
+      if (typeof saved.shsat === 'boolean') setShsat(saved.shsat)
+      if (typeof saved.auditions === 'boolean') setAuditions(saved.auditions)
+      if (['low', 'medium', 'high'].includes(saved.academicLevel))
+        setAcademicLevel(saved.academicLevel as 'low' | 'medium' | 'high')
+      if (saved.iep === 'iep' || saved.iep === 'gened') setIep(saved.iep)
+      if (['small', 'medium', 'large'].includes(saved.size))
+        setSize(saved.size as 'small' | 'medium' | 'large')
+    } catch {
+      // ignore corrupt data
+    }
+  }, [])
+
   function toggle(list: string[], setList: (v: string[]) => void, value: string) {
     setList(list.includes(value) ? list.filter((i) => i !== value) : [...list, value])
   }
 
   function validate(): boolean {
     const errs: string[] = []
-    if (!borough) errs.push('Please select a borough.')
     if (!academicLevel) errs.push('Please select an academic level.')
     if (!size) errs.push('Please select a school size preference.')
     setErrors(errs)
@@ -51,6 +87,17 @@ export default function HomePage() {
       size,
     })
 
+    // Persist form state and last params for nav bar + restore
+    try {
+      localStorage.setItem(
+        FORM_KEY,
+        JSON.stringify({ borough, commute, interests, sports, shsat, auditions, academicLevel, iep, size })
+      )
+      localStorage.setItem(PARAMS_KEY, params.toString())
+    } catch {
+      // ignore
+    }
+
     router.push(`/list?${params.toString()}`)
   }
 
@@ -58,11 +105,25 @@ export default function HomePage() {
     <main className="min-h-screen bg-white">
       <div className="max-w-2xl mx-auto px-4 py-10">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">ListReady</h1>
-          <p className="mt-2 text-gray-500">
-            Find NYC public high schools that match your student&apos;s profile.
+          <h1 className="text-2xl font-bold text-gray-900">Find the right high school</h1>
+          <p className="mt-1.5 text-gray-500 text-sm">
+            Answer a few questions and we&apos;ll match NYC public high schools to your student&apos;s profile.
           </p>
         </div>
+
+        {/* Validation notice */}
+        {errors.length > 0 && (
+          <div
+            className="mb-6 px-4 py-3 rounded-md border"
+            style={{ backgroundColor: '#FEF3C7', borderColor: '#FCD34D', color: '#92400E' }}
+          >
+            {errors.map((err, i) => (
+              <p key={i} className="text-sm">
+                {err}
+              </p>
+            ))}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-7">
           {/* Borough */}
@@ -73,7 +134,6 @@ export default function HomePage() {
               onChange={(e) => setBorough(e.target.value)}
               className="block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
             >
-              <option value="">Select a borough…</option>
               <option value="All Boroughs">All Boroughs</option>
               {BOROUGHS.map((b) => (
                 <option key={b} value={b}>
@@ -83,40 +143,38 @@ export default function HomePage() {
             </select>
           </div>
 
-          {/* Commute — only shown when a specific borough is selected */}
-          {borough && borough !== 'All Boroughs' && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Commute preference
-              </label>
-              <div className="space-y-2">
-                {(
-                  [
-                    { value: 'short', label: 'Short — under 45 min (same borough)' },
-                    { value: 'flexible', label: 'Flexible — willing to travel to any borough' },
-                  ] as const
-                ).map((opt) => (
-                  <label key={opt.value} className="flex items-center gap-2.5 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="commute"
-                      value={opt.value}
-                      checked={commute === opt.value}
-                      onChange={() => setCommute(opt.value)}
-                      className="accent-gray-900"
-                    />
-                    <span className="text-sm text-gray-700">{opt.label}</span>
-                  </label>
-                ))}
-              </div>
+          {/* Commute preference */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">
+              Commute preference
+            </label>
+            <div className="space-y-2">
+              {(
+                [
+                  { value: 'flexible', label: 'Flexible — willing to travel to any borough' },
+                  { value: 'short', label: 'Short — prefer under 45 min (same borough)' },
+                ] as const
+              ).map((opt) => (
+                <label key={opt.value} className="flex items-center gap-2.5 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="commute"
+                    value={opt.value}
+                    checked={commute === opt.value}
+                    onChange={() => setCommute(opt.value)}
+                    className="accent-gray-900"
+                  />
+                  <span className="text-sm text-gray-700">{opt.label}</span>
+                </label>
+              ))}
             </div>
-          )}
+          </div>
 
           {/* Interests */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
               Interests{' '}
-              <span className="text-gray-400 font-normal">(select all that apply)</span>
+              <span className="text-gray-400 font-normal">(optional)</span>
             </label>
             <div className="flex flex-wrap gap-2">
               {INTERESTS.map((interest) => (
@@ -300,17 +358,6 @@ export default function HomePage() {
               ))}
             </div>
           </div>
-
-          {/* Validation errors */}
-          {errors.length > 0 && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-3 space-y-1">
-              {errors.map((err, i) => (
-                <p key={i} className="text-sm text-red-700">
-                  {err}
-                </p>
-              ))}
-            </div>
-          )}
 
           <button
             type="submit"
