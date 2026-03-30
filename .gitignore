@@ -30,3 +30,7 @@ next-env.d.ts
 
 # school data is environment-specific, copied in at deploy time
 data/schools.json
+
+# local files
+*.csv
+install.cmd
