@@ -5,6 +5,8 @@ export interface SchoolFlags {
   has_open: boolean
   has_borough_priority: boolean
   is_hidden_gem: boolean
+  has_consortium: boolean
+  has_ib: boolean
 }
 
 export interface DoeData {

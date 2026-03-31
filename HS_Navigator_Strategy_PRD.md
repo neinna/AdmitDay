@@ -331,23 +331,96 @@ Goal: validate that users will trust the product, share inputs, and pay for work
 
 ## Prioritized Roadmap
 
+### Completed (V1 — March 2026)
+
+- School list generator: 28+ schools across SHSAT, Audition, Screened, Ed Opt, and Lottery sections
+- Filtering by borough, commute, interests, academic level, IEP, size, sports
+- Size as sort preference, not hard filter — fallback relaxes borough for short commute
+- Admissions type badges with tooltips
+- APS (applicants per seat) competition indicator with color coding
+- Consortium and IB school badges
+- Google Maps link per school
+- AI-generated match rationale per school (Claude Sonnet)
+- Requirements checklist screen grouped by admissions type
+- Nav bar: Home, My Schools, Requirements, Reset Filters
+- GitHub Actions auto-deploy: push to main triggers server deploy automatically
+- App live at http://167.71.80.41
+
 ### Now to 4 weeks (V1 workflow core)
 
-- Evidence-linked Q&A + admissions-method explainer library (source-grounded)
-- List builder with 12+ completeness gating and per-program requirements checklist
-- Calendar + notifications aligned to official milestones
+- Add ANTHROPIC_API_KEY to server so AI rationale works in production
+- User research: 10 families across 4 segments, 20 min each (see User Research Plan section)
+- Fix: cap SHSAT results at top 3 by academic score
+- Nav bar persistence: remember input selections in localStorage when navigating back
+- Full end-to-end test before sharing with first families
+- Domain + SSL (certbot) when ready to go public
 
 ### 8-12 weeks (differentiation)
 
+- Safety / Good Fit school category: low APS (under 2.5) + solid academic score, filtered by borough and student interests. Needs user research to validate what "safety" means to parents before building — some of these schools may be new with limited reviews. Do not build until first 10 user conversations complete.
+- Commute estimate: allow user to enter their home address and calculate real commute time to each school via Google Maps API. Currently shows a Maps pin link; real-time estimate is a paid API call so evaluate cost vs. value after user research.
 - Plan quality score: flags concentration risk (too many screened or audition long shots) and recommends balancing
-- Collaboration mode: parent + student + counselor view; exportable artifacts
-- Paid tier activation
+- Collaboration mode: parent + student + counselor view, exportable artifacts
+- Paid tier activation ($49-$149 season pass)
 
 ### Later (once trust is proven)
 
-- Premium human review marketplace as an add-on, not the core product
+- Outcomes data collection: optional survey for families after offers are released — which schools they applied to, which offer they accepted, SHSAT score range, what they wish they knew. This creates proprietary longitudinal data that no competitor has. Evaluate carefully: data collection requires privacy controls, informed consent, and raises Ed Law 2-d considerations. Start with a simple post-offer email survey before building in-app collection.
+- Premium human review marketplace: connect families with vetted admissions consultants and SHSAT tutors. Take referral fee or subscription from providers.
 - Middle school admissions cycle
-- Expansion to other large districts
+- Expansion to other large districts (Boston, Chicago, LA)
+
+---
+
+## User Research Plan
+
+### Goal
+
+Validate that users trust the product, will share inputs, and will pay for workflow help. Target: 10 families before any paid feature is built.
+
+### Segments (10 total)
+
+- 3 Affluent + time-starved optimizers
+- 3 Educated + budget-conscious power researchers
+- 2 Selective-test maximizers (SHSAT focus)
+- 2 New-to-the-city navigators
+
+### Format
+
+20 minutes per family. Structure:
+- 5 min: their situation and biggest fear
+- 10 min: watch them use the app with no guidance — do not explain anything
+- 5 min: would you use this, would you pay, what is missing
+
+### Questions
+
+Before app:
+- What grade is your child in?
+- What is the one thing keeping you up at night about high school admissions?
+- What have you tried so far?
+
+After app:
+- What did you expect when you did [specific action]?
+- Did the list feel useful or overwhelming?
+- Is there anything here you do not understand?
+- If this cost $49 for the whole application season, would you pay? What about $99?
+- What would make you trust this enough to use it for your child's actual application?
+
+### Success Criteria
+
+- Trust: at least 6 of 10 say they would use it for their real application
+- WTP: at least 3 of 10 say yes to $49 unprompted or after one ask
+- Signal: the same gap or complaint mentioned by 3 or more families = next build priority
+
+### Acquisition Channels
+
+- Facebook parent groups (neighborhood groups, grade cohorts, PTA-adjacent)
+- Reddit r/NYCpublicschools
+- Direct personal contacts who fit the profile
+
+### What to Track
+
+After each conversation, write one sentence: what was the moment they leaned in, and what was the moment they pulled back.
 
 ---
 
