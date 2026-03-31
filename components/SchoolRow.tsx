@@ -131,7 +131,7 @@ export default function SchoolRow({ school, userInputs, rowNumber }: Props) {
       {/* ── Collapsed row ── */}
       <div
         onClick={() => setIsExpanded((v) => !v)}
-        className="w-full text-left grid grid-cols-[2rem_1fr_5rem_2.5rem_1fr_6rem_1rem] items-center gap-2 px-3 py-2.5 hover:bg-gray-50 transition-colors group cursor-pointer"
+        className="w-full text-left grid grid-cols-[2rem_1fr_6rem_1rem] sm:grid-cols-[2rem_1fr_5rem_2.5rem_6rem_1rem] md:grid-cols-[2rem_1fr_5rem_2.5rem_1fr_6rem_1rem] items-center gap-2 px-3 py-2.5 hover:bg-gray-50 transition-colors group cursor-pointer"
         role="button"
         aria-expanded={isExpanded}
       >
@@ -160,12 +160,12 @@ export default function SchoolRow({ school, userInputs, rowNumber }: Props) {
           )}
         </span>
 
-        {/* Borough */}
-        <span className="text-xs text-gray-500 truncate">
+        {/* Borough — hidden on mobile */}
+        <span className="hidden sm:block text-xs text-gray-500 truncate">
           {school.borough}
         </span>
 
-        {/* Maps link */}
+        {/* Maps link — hidden on mobile */}
         <a
           href={(() => {
             const addr = school.doe_data?.address
@@ -178,15 +178,15 @@ export default function SchoolRow({ school, userInputs, rowNumber }: Props) {
           target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
-          className="flex items-center justify-center text-gray-400 hover:text-gray-700"
+          className="hidden sm:flex items-center justify-center text-gray-400 hover:text-gray-700"
         >
           <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
           </svg>
         </a>
 
-        {/* Admissions type badges */}
-        <div className="flex gap-1 flex-wrap">
+        {/* Admissions type badges — hidden below md */}
+        <div className="hidden md:flex gap-1 flex-wrap">
           {school.admissions_types.map((type) => (
             <span
               key={type}
