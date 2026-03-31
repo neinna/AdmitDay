@@ -74,9 +74,9 @@ function ColumnHeaders() {
       <span className="text-xs text-gray-400 w-7 text-right shrink-0">#</span>
       <span className="flex-1 text-xs text-gray-400">School</span>
       <span className="hidden sm:block text-xs text-gray-400 w-20 shrink-0">Borough</span>
-      <span className="hidden sm:block text-xs text-gray-400 w-12 shrink-0">Commute</span>
+      <span className="hidden sm:block text-xs text-gray-400 w-12 shrink-0">Maps</span>
       <span className="hidden md:block text-xs text-gray-400 w-44 shrink-0">Admissions</span>
-      <span className="text-xs text-gray-400 w-24 text-right shrink-0">Competition</span>
+      <span className="text-xs text-gray-400 w-24 text-right shrink-0">APS</span>
       <span className="w-4 shrink-0" />
     </div>
   )

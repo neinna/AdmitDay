@@ -26,16 +26,16 @@ const BADGE_TOOLTIPS: Record<string, string> = {
 // ── Competition helpers ──────────────────────────────────────────────────────
 
 function getCompetitionShort(school: School): { text: string; color: string } {
-  if (school.flags.has_shsat) return { text: 'Exam only', color: 'text-blue-600' }
+  if (school.flags.has_shsat) return { text: 'SHSAT', color: 'text-blue-600' }
   if (school.flags.has_audition) return { text: 'Audition', color: 'text-purple-600' }
-  if (school.flags.has_screened) return { text: 'By grades', color: 'text-orange-600' }
+  if (school.flags.has_screened) return { text: 'Grade Tiers', color: 'text-orange-600' }
 
   const aps = school.applicants_per_seat
   if (aps == null) return { text: 'N/A', color: 'text-gray-400' }
 
-  if (aps < 2.0) return { text: `Low (${aps.toFixed(1)})`, color: 'text-green-600' }
-  if (aps <= 5.0) return { text: `Med (${aps.toFixed(1)})`, color: 'text-yellow-600' }
-  return { text: `High (${aps.toFixed(1)})`, color: 'text-red-600' }
+  if (aps < 2.0) return { text: `${aps.toFixed(1)}/seat`, color: 'text-green-600' }
+  if (aps <= 5.0) return { text: `${aps.toFixed(1)}/seat`, color: 'text-yellow-600' }
+  return { text: `${aps.toFixed(1)}/seat`, color: 'text-red-600' }
 }
 
 function getCompetitionFull(school: School): { text: string; color: string } {
@@ -53,16 +53,17 @@ function getCompetitionFull(school: School): { text: string; color: string } {
   if (aps == null) return { text: 'Competition: Data unavailable', color: 'text-gray-400' }
 
   if (aps < 2.0)
-    return {
-      text: `Competition: Low (${aps.toFixed(1)} applicants/seat)`,
-      color: 'text-green-700',
-    }
+    return { text: `${aps.toFixed(1)} applicants per seat`, color: 'text-green-700' }
   if (aps <= 5.0)
-    return {
-      text: `Competition: Medium (${aps.toFixed(1)} applicants/seat)`,
-      color: 'text-yellow-700',
-    }
-  return { text: `Competition: High (${aps.toFixed(1)} applicants/seat)`, color: 'text-red-700' }
+    return { text: `${aps.toFixed(1)} applicants per seat`, color: 'text-yellow-700' }
+  return { text: `${aps.toFixed(1)} applicants per seat`, color: 'text-red-700' }
+}
+
+function formatSchoolName(name: string): string {
+  if (name.endsWith(', The')) {
+    return 'The ' + name.slice(0, -5)
+  }
+  return name
 }
 
 // ── Component ────────────────────────────────────────────────────────────────
@@ -141,7 +142,7 @@ export default function SchoolRow({ school, userInputs, rowNumber }: Props) {
         {/* School name */}
         <span className="flex-1 min-w-0">
           <span className="text-sm font-medium text-gray-900 truncate block pr-1">
-            {school.name}
+            {formatSchoolName(school.name)}
             {school.flags.is_hidden_gem && (
               <span className="ml-1.5 inline-flex items-center px-1.5 py-0 rounded-full text-xs font-medium bg-green-100 text-green-700 align-middle">
                 gem
@@ -155,14 +156,25 @@ export default function SchoolRow({ school, userInputs, rowNumber }: Props) {
           {school.borough}
         </span>
 
-        {/* Local indicator */}
-        <span
-          className={`hidden sm:block text-xs w-12 shrink-0 font-medium ${
-            isLocal ? 'text-green-600' : 'text-gray-300'
-          }`}
+        {/* Maps link */}
+        <a
+          href={(() => {
+            const addr = school.doe_data?.address
+            const zip = school.doe_data?.zip
+            const query = addr
+              ? `${school.name} ${addr} ${zip} NYC`
+              : `${school.name} NYC`
+            return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`
+          })()}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="hidden sm:flex items-center justify-center w-12 shrink-0 text-gray-400 hover:text-gray-700"
         >
-          {isLocal ? 'Local' : '—'}
-        </span>
+          <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
+          </svg>
+        </a>
 
         {/* Admissions type badges */}
         <div className="hidden md:flex gap-1 shrink-0 flex-wrap max-w-[180px]">
