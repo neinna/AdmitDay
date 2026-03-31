@@ -161,7 +161,7 @@ export default function SchoolRow({ school, userInputs, rowNumber }: Props) {
             isLocal ? 'text-green-600' : 'text-gray-300'
           }`}
         >
-          {userInputs.borough !== 'All Boroughs' ? (isLocal ? 'Local' : '—') : school.borough}
+          {isLocal ? 'Local' : '—'}
         </span>
 
         {/* Admissions type badges */}
