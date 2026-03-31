@@ -131,29 +131,27 @@ export default function SchoolRow({ school, userInputs, rowNumber }: Props) {
       {/* ── Collapsed row ── */}
       <div
         onClick={() => setIsExpanded((v) => !v)}
-        className="w-full text-left flex items-center gap-2 px-3 py-2.5 hover:bg-gray-50 transition-colors group cursor-pointer"
+        className="w-full text-left grid grid-cols-[2rem_1fr_5rem_2.5rem_1fr_6rem_1rem] items-center gap-2 px-3 py-2.5 hover:bg-gray-50 transition-colors group cursor-pointer"
         role="button"
         aria-expanded={isExpanded}
       >
         {/* Row number */}
-        <span className="text-xs text-gray-400 font-mono w-7 text-right shrink-0">
+        <span className="text-xs text-gray-400 font-mono text-right">
           #{rowNumber}
         </span>
 
         {/* School name */}
-        <span className="flex-1 min-w-0">
-          <span className="text-sm font-medium text-gray-900 truncate block pr-1">
-            {formatSchoolName(school.name)}
-            {school.flags.is_hidden_gem && (
-              <span className="ml-1.5 inline-flex items-center px-1.5 py-0 rounded-full text-xs font-medium bg-green-100 text-green-700 align-middle">
-                gem
-              </span>
-            )}
-          </span>
+        <span className="text-sm font-medium text-gray-900 pr-1">
+          {formatSchoolName(school.name)}
+          {school.flags.is_hidden_gem && (
+            <span className="ml-1.5 inline-flex items-center px-1.5 py-0 rounded-full text-xs font-medium bg-green-100 text-green-700 align-middle">
+              gem
+            </span>
+          )}
         </span>
 
         {/* Borough */}
-        <span className="hidden sm:block text-xs text-gray-500 w-20 shrink-0 truncate">
+        <span className="text-xs text-gray-500 truncate">
           {school.borough}
         </span>
 
@@ -170,7 +168,7 @@ export default function SchoolRow({ school, userInputs, rowNumber }: Props) {
           target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
-          className="hidden sm:flex items-center justify-center w-12 shrink-0 text-gray-400 hover:text-gray-700"
+          className="flex items-center justify-center text-gray-400 hover:text-gray-700"
         >
           <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">
             <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
@@ -178,7 +176,7 @@ export default function SchoolRow({ school, userInputs, rowNumber }: Props) {
         </a>
 
         {/* Admissions type badges */}
-        <div className="hidden md:flex gap-1 shrink-0 flex-wrap max-w-[180px]">
+        <div className="flex gap-1 flex-wrap">
           {school.admissions_types.map((type) => (
             <span
               key={type}
@@ -193,15 +191,13 @@ export default function SchoolRow({ school, userInputs, rowNumber }: Props) {
         </div>
 
         {/* Competition (short) */}
-        <span
-          className={`text-xs shrink-0 w-24 text-right font-medium ${competitionShort.color}`}
-        >
+        <span className={`text-xs text-right font-medium ${competitionShort.color}`}>
           {competitionShort.text}
         </span>
 
         {/* Chevron */}
         <svg
-          className={`w-4 h-4 text-gray-400 shrink-0 transition-transform duration-150 ${
+          className={`w-4 h-4 text-gray-400 transition-transform duration-150 ${
             isExpanded ? 'rotate-180' : ''
           }`}
           fill="none"
