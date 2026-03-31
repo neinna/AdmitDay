@@ -148,6 +148,16 @@ export default function SchoolRow({ school, userInputs, rowNumber }: Props) {
               gem
             </span>
           )}
+          {school.flags.has_consortium && (
+            <span className="ml-1.5 inline-flex items-center px-1.5 py-0 rounded-full text-xs font-medium bg-blue-50 text-blue-700 align-middle">
+              Consortium
+            </span>
+          )}
+          {school.flags.has_ib && (
+            <span className="ml-1.5 inline-flex items-center px-1.5 py-0 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 align-middle">
+              IB
+            </span>
+          )}
         </span>
 
         {/* Borough */}

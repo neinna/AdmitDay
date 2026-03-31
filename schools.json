@@ -23,7 +23,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -61,7 +63,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -104,7 +108,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -142,7 +148,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -173,7 +181,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -204,7 +214,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -242,7 +254,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -280,7 +294,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": true,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -318,7 +334,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": true
+      "is_hidden_gem": true,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -356,7 +374,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -394,7 +414,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -432,7 +454,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -470,7 +494,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -508,7 +534,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -546,7 +574,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -584,7 +614,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -622,7 +654,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -660,7 +694,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -698,7 +734,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -736,7 +774,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -774,7 +814,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -812,7 +854,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -843,7 +887,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -885,7 +931,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -932,7 +980,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -970,7 +1020,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -1012,7 +1064,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -1050,7 +1104,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -1081,7 +1137,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -1119,7 +1177,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -1161,7 +1221,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -1204,7 +1266,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -1242,7 +1306,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -1292,7 +1358,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -1330,7 +1398,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -1368,7 +1438,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -1406,7 +1478,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -1444,7 +1518,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -1482,7 +1558,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -1520,7 +1598,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -1558,7 +1638,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -1601,7 +1683,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -1639,7 +1723,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -1681,7 +1767,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -1712,7 +1800,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -1754,7 +1844,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -1792,7 +1884,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -1823,7 +1917,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -1861,7 +1957,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -1899,7 +1997,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -1930,7 +2030,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -1968,7 +2070,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -2006,7 +2110,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": true
+      "is_hidden_gem": true,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -2044,7 +2150,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -2082,7 +2190,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -2136,7 +2246,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -2179,7 +2291,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": true,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -2225,7 +2339,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -2263,7 +2379,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -2309,7 +2427,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -2347,7 +2467,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -2397,7 +2519,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": true
+      "is_hidden_gem": true,
+      "has_consortium": true,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -2435,7 +2559,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -2466,7 +2592,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -2504,7 +2632,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -2542,7 +2672,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -2573,7 +2705,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -2611,7 +2745,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -2642,7 +2778,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -2684,7 +2822,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -2715,7 +2855,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -2766,7 +2908,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": true
+      "is_hidden_gem": true,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -2804,7 +2948,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -2847,7 +2993,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -2897,7 +3045,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -2935,7 +3085,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -2973,7 +3125,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -3011,7 +3165,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -3049,7 +3205,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -3087,7 +3245,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -3125,7 +3285,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -3179,7 +3341,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": true
+      "is_hidden_gem": true,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -3217,7 +3381,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -3255,7 +3421,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -3313,7 +3481,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -3355,7 +3525,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -3397,7 +3569,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -3435,7 +3609,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -3473,7 +3649,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -3511,7 +3689,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -3549,7 +3729,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -3587,7 +3769,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -3618,7 +3802,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -3656,7 +3842,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -3694,7 +3882,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -3725,7 +3915,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -3763,7 +3955,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -3801,7 +3995,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -3844,7 +4040,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -3882,7 +4080,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -3920,7 +4120,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -3958,7 +4160,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -3996,7 +4200,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -4048,7 +4254,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -4086,7 +4294,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -4124,7 +4334,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -4166,7 +4378,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -4204,7 +4418,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -4242,7 +4458,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -4280,7 +4498,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": true,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -4311,7 +4531,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -4353,7 +4575,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -4395,7 +4619,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -4433,7 +4659,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -4475,7 +4703,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -4526,7 +4756,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -4557,7 +4789,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": false,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -4595,7 +4829,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -4633,7 +4869,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -4671,7 +4909,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -4702,7 +4942,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -4740,7 +4982,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -4778,7 +5022,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -4820,7 +5066,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -4858,7 +5106,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -4900,7 +5150,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -4938,7 +5190,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -4976,7 +5230,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -5014,7 +5270,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -5057,7 +5315,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -5095,7 +5355,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -5137,7 +5399,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -5175,7 +5439,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -5213,7 +5479,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -5251,7 +5519,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -5289,7 +5559,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -5327,7 +5599,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -5365,7 +5639,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -5403,7 +5679,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -5441,7 +5719,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -5479,7 +5759,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -5531,7 +5813,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -5562,7 +5846,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -5605,7 +5891,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -5643,7 +5931,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -5674,7 +5964,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -5717,7 +6009,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -5755,7 +6049,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -5793,7 +6089,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -5831,7 +6129,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -5869,7 +6169,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -5907,7 +6209,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -5945,7 +6249,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -5983,7 +6289,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -6021,7 +6329,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -6059,7 +6369,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -6097,7 +6409,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -6135,7 +6449,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -6173,7 +6489,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": true,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -6211,7 +6529,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -6242,7 +6562,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -6273,7 +6595,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -6304,7 +6628,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -6342,7 +6668,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -6380,7 +6708,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -6418,7 +6748,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -6456,7 +6788,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -6494,7 +6828,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -6537,7 +6873,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -6575,7 +6913,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -6606,7 +6946,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -6644,7 +6986,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": true
+      "is_hidden_gem": true,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -6682,7 +7026,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": true
+      "is_hidden_gem": true,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -6720,7 +7066,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -6779,7 +7127,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -6817,7 +7167,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -6855,7 +7207,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -6893,7 +7247,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -6931,7 +7287,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -6962,7 +7320,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -7000,7 +7360,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -7031,7 +7393,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -7069,7 +7433,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -7107,7 +7473,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -7145,7 +7513,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -7187,7 +7557,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -7225,7 +7597,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -7263,7 +7637,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -7301,7 +7677,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -7343,7 +7721,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -7381,7 +7761,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -7440,7 +7822,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -7486,7 +7870,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": true
+      "is_hidden_gem": true,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -7524,7 +7910,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -7562,7 +7950,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -7593,7 +7983,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -7635,7 +8027,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -7673,7 +8067,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -7711,7 +8107,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -7749,7 +8147,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -7787,7 +8187,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -7825,7 +8227,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -7863,7 +8267,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -7901,7 +8307,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -7939,7 +8347,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -7981,7 +8391,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -8019,7 +8431,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -8066,7 +8480,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -8112,7 +8528,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -8188,7 +8606,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -8226,7 +8646,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -8257,7 +8679,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -8288,7 +8712,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -8330,7 +8756,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -8368,7 +8796,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -8415,7 +8845,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -8453,7 +8885,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -8491,7 +8925,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -8529,7 +8965,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -8571,7 +9009,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -8609,7 +9049,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -8647,7 +9089,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -8678,7 +9122,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -8709,7 +9155,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -8747,7 +9195,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -8785,7 +9235,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -8823,7 +9275,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -8865,7 +9319,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -8896,7 +9352,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -8934,7 +9392,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -8972,7 +9432,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -9010,7 +9472,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -9064,7 +9528,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -9107,7 +9573,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -9145,7 +9613,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -9204,7 +9674,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": true
+      "is_hidden_gem": true,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -9242,7 +9714,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": true,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -9273,7 +9747,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -9311,7 +9787,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -9349,7 +9827,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -9380,7 +9860,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -9418,7 +9900,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -9460,7 +9944,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -9520,7 +10006,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -9551,7 +10039,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -9597,7 +10087,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -9635,7 +10127,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -9673,7 +10167,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -9719,7 +10215,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -9757,7 +10255,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -9800,7 +10300,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": true,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -9846,7 +10348,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -9893,7 +10397,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -9948,7 +10454,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -9986,7 +10494,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -10024,7 +10534,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -10062,7 +10574,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -10100,7 +10614,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -10150,7 +10666,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -10188,7 +10706,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -10226,7 +10746,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -10257,7 +10779,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -10295,7 +10819,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -10333,7 +10859,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": true,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -10371,7 +10899,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -10409,7 +10939,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -10447,7 +10979,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -10485,7 +11019,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -10527,7 +11063,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -10569,7 +11107,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -10623,7 +11163,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -10661,7 +11203,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -10699,7 +11243,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -10751,7 +11297,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -10794,7 +11342,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -10832,7 +11382,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -10875,7 +11427,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -10913,7 +11467,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -10963,7 +11519,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -11001,7 +11559,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -11032,7 +11592,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -11083,7 +11645,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -11125,7 +11689,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -11167,7 +11733,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -11205,7 +11773,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -11243,7 +11813,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -11290,7 +11862,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -11328,7 +11902,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -11366,7 +11942,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -11404,7 +11982,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -11447,7 +12027,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -11478,7 +12060,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -11516,7 +12100,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -11554,7 +12140,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -11596,7 +12184,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -11634,7 +12224,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -11672,7 +12264,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -11710,7 +12304,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -11752,7 +12348,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -11790,7 +12388,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -11832,7 +12432,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -11870,7 +12472,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -11901,7 +12505,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -11943,7 +12549,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -11981,7 +12589,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -12019,7 +12629,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -12057,7 +12669,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -12095,7 +12709,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -12141,7 +12757,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -12183,7 +12801,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -12233,7 +12853,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -12279,7 +12901,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -12310,7 +12934,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": true,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -12373,7 +12999,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -12411,7 +13039,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -12449,7 +13079,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -12491,7 +13123,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -12537,7 +13171,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -12575,7 +13211,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -12613,7 +13251,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -12651,7 +13291,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -12689,7 +13331,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -12753,7 +13397,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -12791,7 +13437,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -12851,7 +13499,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -12922,7 +13572,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -12960,7 +13612,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": true
+      "is_hidden_gem": true,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -12991,7 +13645,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -13029,7 +13685,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -13071,7 +13729,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -13136,7 +13796,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -13174,7 +13836,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -13229,7 +13893,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -13289,7 +13955,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": true,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -13327,7 +13995,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -13365,7 +14035,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -13419,7 +14091,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -13461,7 +14135,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -13492,7 +14168,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -13543,7 +14221,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -13590,7 +14270,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -13628,7 +14310,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -13666,7 +14350,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -13704,7 +14390,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -13735,7 +14423,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -13773,7 +14463,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -13811,7 +14503,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -13842,7 +14536,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -13880,7 +14576,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -13911,7 +14609,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -13949,7 +14649,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -13980,7 +14682,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -14018,7 +14722,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -14056,7 +14762,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -14094,7 +14802,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -14125,7 +14835,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -14163,7 +14875,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -14215,7 +14929,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -14270,7 +14986,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -14308,7 +15026,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -14339,7 +15059,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -14377,7 +15099,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -14415,7 +15139,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -14453,7 +15179,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -14508,7 +15236,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -14550,7 +15280,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -14581,7 +15313,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -14619,7 +15353,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -14650,7 +15386,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": true
+      "is_hidden_gem": true,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -14688,7 +15426,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -14719,7 +15459,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -14757,7 +15499,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -14795,7 +15539,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -14863,7 +15609,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -14918,7 +15666,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -14956,7 +15706,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": true,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -14987,7 +15739,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -15025,7 +15779,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -15056,7 +15812,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -15094,7 +15852,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -15163,7 +15923,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -15219,7 +15981,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -15276,7 +16040,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -15341,7 +16107,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -15379,7 +16147,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -15426,7 +16196,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -15472,7 +16244,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -15514,7 +16288,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -15552,7 +16328,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -15594,7 +16372,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": true,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -15632,7 +16412,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -15670,7 +16452,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -15712,7 +16496,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -15750,7 +16536,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -15788,7 +16576,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -15830,7 +16620,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -15894,7 +16686,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -15958,7 +16752,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -16004,7 +16800,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -16042,7 +16840,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -16080,7 +16880,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -16118,7 +16920,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -16156,7 +16960,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -16194,7 +17000,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": true
+      "is_hidden_gem": true,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -16232,7 +17040,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -16293,7 +17103,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -16358,7 +17170,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -16421,7 +17235,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -16459,7 +17275,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": true,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -16497,7 +17315,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -16535,7 +17355,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -16573,7 +17395,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -16611,7 +17435,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": true
+      "is_hidden_gem": true,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -16649,7 +17475,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -16700,7 +17528,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -16742,7 +17572,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": true
+      "is_hidden_gem": true,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -16784,7 +17616,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -16830,7 +17664,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -16868,7 +17704,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -16906,7 +17744,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -16944,7 +17784,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -16982,7 +17824,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -17020,7 +17864,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -17067,7 +17913,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -17117,7 +17965,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -17155,7 +18005,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -17193,7 +18045,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -17231,7 +18085,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -17269,7 +18125,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -17307,7 +18165,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -17363,7 +18223,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -17431,7 +18293,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -17469,7 +18333,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -17527,7 +18393,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -17565,7 +18433,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -17603,7 +18473,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -17646,7 +18518,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -17684,7 +18558,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -17722,7 +18598,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -17760,7 +18638,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -17798,7 +18678,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -17840,7 +18722,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": true,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -17878,7 +18762,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -17950,7 +18836,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -18022,7 +18910,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -18099,7 +18989,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -18160,7 +19052,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": true
+      "is_hidden_gem": true,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -18237,7 +19131,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -18280,7 +19176,9 @@
       "has_screened": true,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -18318,7 +19216,9 @@
       "has_screened": false,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -18356,7 +19256,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -18394,7 +19296,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -18432,7 +19336,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -18474,7 +19380,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -18512,7 +19420,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -18550,7 +19460,9 @@
       "has_screened": true,
       "has_open": false,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",
@@ -18593,7 +19505,9 @@
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": true,
-      "is_hidden_gem": false
+      "is_hidden_gem": false,
+      "has_consortium": false,
+      "has_ib": false
     },
     "doe_data": {
       "overview": "",

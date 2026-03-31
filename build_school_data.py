@@ -195,6 +195,24 @@ def build_school_json(sift_schools, doe_by_dbn):
             acad is not None and acad > 60.0
         )
 
+        CONSORTIUM_DBNS = {
+            "01M696", "02M520", "02M542", "03M505", "04M610", "06M348",
+            "07X268", "09X327", "10X325", "13K430", "14K454", "15K448",
+            "17K572", "19K583", "21K540", "22K462", "24Q460", "25Q525",
+            "27Q309", "28Q680", "31R080", "75K571", "79M655", "79X655",
+            "84M725", "84X695",
+        }
+        has_consortium = dbn in CONSORTIUM_DBNS
+
+        overview_text = doe.get("overview1", "")
+        name_text = school["name"]
+        has_ib = (
+            "International Baccalaureate" in name_text or
+            "International Baccalaureate" in overview_text or
+            " IB " in name_text or
+            " IB " in overview_text
+        )
+
         merged = {
             "dbn": dbn,
             "name": school["name"],
@@ -213,6 +231,8 @@ def build_school_json(sift_schools, doe_by_dbn):
                 "has_open": has_open,
                 "has_borough_priority": has_borough_priority,
                 "is_hidden_gem": is_hidden_gem,
+                "has_consortium": has_consortium,
+                "has_ib": has_ib,
             },
             "doe_data": {
                 "overview": doe.get("overview1", ""),
@@ -240,6 +260,8 @@ def validate(schools):
     print(f"Screened schools:       {sum(1 for s in schools if s['flags']['has_screened'])}")
     print(f"Open/EdOpt/Zoned:       {sum(1 for s in schools if s['flags']['has_open'])}")
     print(f"Hidden gems:            {sum(1 for s in schools if s['flags']['is_hidden_gem'])}")
+    print(f"Consortium schools:     {sum(1 for s in schools if s['flags']['has_consortium'])}")
+    print(f"IB schools:             {sum(1 for s in schools if s['flags']['has_ib'])}")
     print(f"Missing admissions:     {sum(1 for s in schools if not s['admissions_types'])}")
     print()
     by_borough = {}
