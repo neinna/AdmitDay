@@ -70,14 +70,14 @@ function SummaryBar({
 
 function ColumnHeaders() {
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 border-b border-gray-200 bg-white">
-      <span className="text-xs text-gray-400 w-7 text-right shrink-0">#</span>
-      <span className="flex-1 text-xs text-gray-400">School</span>
-      <span className="hidden sm:block text-xs text-gray-400 w-20 shrink-0">Borough</span>
-      <span className="hidden sm:block text-xs text-gray-400 w-12 shrink-0">Maps</span>
-      <span className="hidden md:block text-xs text-gray-400 w-44 shrink-0">Admissions</span>
-      <span className="text-xs text-gray-400 w-24 text-right shrink-0">APS</span>
-      <span className="w-4 shrink-0" />
+    <div className="grid grid-cols-[2rem_1fr_5rem_2.5rem_1fr_6rem_1rem] items-center gap-2 px-3 py-1.5 border-b border-gray-200 bg-white">
+      <span className="text-xs text-gray-400 text-right">#</span>
+      <span className="text-xs text-gray-400">School</span>
+      <span className="text-xs text-gray-400">Borough</span>
+      <span className="text-xs text-gray-400 text-center">Maps</span>
+      <span className="text-xs text-gray-400">Admissions</span>
+      <span className="text-xs text-gray-400 text-right">APS</span>
+      <span />
     </div>
   )
 }
