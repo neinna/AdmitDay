@@ -46,12 +46,10 @@ function isEligible(school: School, inputs: UserInputs): boolean {
 function applyFilters(
   schools: School[],
   inputs: UserInputs,
-  relaxSize: boolean,
   relaxBorough: boolean
 ): School[] {
   return schools.filter((school) => {
     if (!isEligible(school, inputs)) return false
-    if (!relaxSize && school.size !== inputs.size) return false
     if (
       !noBorough(inputs.borough) &&
       !relaxBorough &&
@@ -74,30 +72,38 @@ function sortByHomeBorough(schools: School[], homeBorough: string): School[] {
   })
 }
 
+function sortBySize(schools: School[], preferredSize: string): School[] {
+  return [...schools].sort((a, b) => {
+    const aMatch = a.size === preferredSize
+    const bMatch = b.size === preferredSize
+    if (aMatch && !bMatch) return -1
+    if (!aMatch && bMatch) return 1
+    return 0
+  })
+}
+
 function getResults(
   schools: School[],
   inputs: UserInputs
 ): { results: School[]; relaxedNote: string } {
   const MIN = 12
 
-  let results = applyFilters(schools, inputs, false, false)
-  if (results.length >= MIN)
-    return { results: sortByHomeBorough(results, inputs.borough), relaxedNote: '' }
-
-  results = applyFilters(schools, inputs, true, false)
+  let results = applyFilters(schools, inputs, false)
   if (results.length >= MIN)
     return {
-      results: sortByHomeBorough(results, inputs.borough),
-      relaxedNote:
-        'Not enough matches at your preferred size — we expanded to show all school sizes.',
+      results: sortBySize(sortByHomeBorough(results, inputs.borough), inputs.size),
+      relaxedNote: '',
     }
 
-  results = applyFilters(schools, inputs, true, true)
+  results = applyFilters(schools, inputs, true)
   const note =
     inputs.commute === 'short' && inputs.borough !== ALL_BOROUGHS
-      ? 'Not enough nearby matches — we expanded to all boroughs and sizes to build your list.'
+      ? 'Not enough nearby matches — we expanded to all boroughs to build your list.'
       : 'Not enough exact matches — we broadened the search slightly to give you a full list.'
-  return { results: sortByHomeBorough(results, inputs.borough), relaxedNote: note }
+  return {
+    results: sortBySize(sortByHomeBorough(results, inputs.borough), inputs.size),
+    relaxedNote: note,
+  }
 }
 
 function matchesSports(school: School, sports: string[]): boolean {
