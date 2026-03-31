@@ -129,9 +129,10 @@ export default function SchoolRow({ school, userInputs, rowNumber }: Props) {
   return (
     <div className="border-b border-gray-100 last:border-b-0">
       {/* ── Collapsed row ── */}
-      <button
+      <div
         onClick={() => setIsExpanded((v) => !v)}
-        className="w-full text-left flex items-center gap-2 px-3 py-2.5 hover:bg-gray-50 transition-colors group"
+        className="w-full text-left flex items-center gap-2 px-3 py-2.5 hover:bg-gray-50 transition-colors group cursor-pointer"
+        role="button"
         aria-expanded={isExpanded}
       >
         {/* Row number */}
@@ -210,7 +211,7 @@ export default function SchoolRow({ school, userInputs, rowNumber }: Props) {
         >
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
-      </button>
+      </div>
 
       {/* ── Expanded panel ── */}
       {isExpanded && (
