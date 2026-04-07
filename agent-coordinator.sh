@@ -126,6 +126,8 @@ run_agent() {
 Fix GitHub issue #${ISSUE_NUMBER}: ${ISSUE_TITLE}
 ${ISSUE_BODY}
 
+Send progress updates throughout using: /root/notify.sh \"message\"
+
 Work through these phases IN ORDER. Complete each fully before moving on.
 
 ## Phase 1 — DIAGNOSE (no file edits)
@@ -134,15 +136,18 @@ Work through these phases IN ORDER. Complete each fully before moving on.
 3. Read every relevant file
 4. Trace the full data flow end to end (entry point → processing → render)
 5. Identify the exact file, function, and line that needs to change
+6. Run: /root/notify.sh \"#${ISSUE_NUMBER} diagnosis done — found: <one line summary of root cause>\"
 
 ## Phase 2 — PLAN (no file edits)
 State exactly:
 - Which file and function to change
 - The precise change: old value → new value
 - What tests will verify the fix
+Then run: /root/notify.sh \"#${ISSUE_NUMBER} plan: <one line summary of what will change>\"
 
 ## Phase 3 — IMPLEMENT
 Make exactly the changes from your plan. Nothing more. Do not modify schools.json.
+Then run: /root/notify.sh \"#${ISSUE_NUMBER} code changes done\"
 
 ## Phase 4 — TEST
 1. Check /root/app/__tests__/ for existing tests — add to them, do not overwrite
@@ -150,11 +155,13 @@ Make exactly the changes from your plan. Nothing more. Do not modify schools.jso
 3. Run: cd /root/app && npm test
 4. If tests fail: read the error carefully, fix only what is needed, run again
 5. Keep going until all tests pass
+6. Run: /root/notify.sh \"#${ISSUE_NUMBER} tests passing\"
 
 ## Phase 5 — BUILD
 1. Run: cd /root/app && npm run build
 2. If build fails: read the error carefully, fix only what is needed, run build again
 3. Keep going until build passes
+4. Run: /root/notify.sh \"#${ISSUE_NUMBER} build passing\"
 
 ## Phase 6 — SUMMARIZE
 Write ${SUMMARY_FILE} in exactly this format:
@@ -232,6 +239,17 @@ ${AGENT_OUTPUT}
 }
 
 log "Coordinator started"
+
+# Write a notify helper the agent can call to send Telegram updates
+cat > /root/notify.sh << 'NOTIFY'
+#!/bin/bash
+source /root/.env.agents
+MSG=$(echo "$1" | tr '\n' ' ')
+curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+  -d chat_id="${TELEGRAM_CHAT_ID}" \
+  -d "text=${MSG}" > /dev/null
+NOTIFY
+chmod +x /root/notify.sh
 
 # Sync any VPS-only test files into the repo so agents always have a baseline
 cd "$APP_DIR"
