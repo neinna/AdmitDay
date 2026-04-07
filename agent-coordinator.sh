@@ -123,7 +123,7 @@ Run: cd /root/app && git add -A && git commit -m \"fix: issue #${ISSUE_NUMBER} -
     --no-interactive \
     -p "$PROMPT" \
     --allowedTools "Bash,Read,Write,Edit" \
-    2>> "$LOG_FILE" | tee "$OUTPUT_FILE" >> "$LOG_FILE"
+    2>&1 | tee "$OUTPUT_FILE" >> "$LOG_FILE"
 
   # Check for success: summary file exists and contains Result: PASSED
   if [ -f "$SUMMARY_FILE" ] && grep -q "Result: PASSED" "$SUMMARY_FILE"; then
@@ -169,6 +169,7 @@ ${AGENT_OUTPUT}
     github_comment "$ISSUE_NUMBER" "$(printf '%b' "$COMMENT")"
     github_label "$ISSUE_NUMBER" "needs-review"
     github_remove_label "$ISSUE_NUMBER" "in-progress"
+    github_remove_label "$ISSUE_NUMBER" "todo"
     git checkout main
     git branch -D "$BRANCH" 2>/dev/null
     log "Issue #${ISSUE_NUMBER} needs review"
