@@ -9,7 +9,19 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy to server
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Copy coordinator script to VPS
+        uses: appleboy/scp-action@v0.1.4
+        with:
+          host: 167.71.80.41
+          username: root
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "agent-coordinator.sh"
+          target: "/root/"
+
+      - name: Deploy app to server
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: 167.71.80.41
@@ -20,3 +32,4 @@ jobs:
             git pull
             npm run build
             pm2 restart hs-navigator
+            chmod +x /root/agent-coordinator.sh
