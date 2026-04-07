@@ -49,16 +49,22 @@ run_agent() {
   git checkout main && git pull origin main
   git checkout -b "$BRANCH"
 
-  local PROMPT="You are working on the hs-navigator Next.js app at /root/app.
+local PROMPT="You are working on the hs-navigator Next.js app at /root/app.
+
+First, explore the codebase:
+1. Run: find /root/app -type f -name '*.tsx' -o -name '*.ts' | grep -v node_modules | grep -v .next
+2. Read the relevant files to understand the code structure
+3. Find the code that needs to change to fix this issue
+
 Issue #${ISSUE_NUMBER}: ${ISSUE_TITLE}
 ${ISSUE_BODY}
-Instructions:
-1. Implement the feature or fix described above
-2. Write Jest unit tests in __tests__/ for any new logic
-3. Run npm test and fix any failures before finishing
+
+Then:
+1. Fix the issue based on what you found
+2. Write Jest unit tests in __tests__/ for the fix
+3. Run npm test and fix failures
 4. Do not modify schools.json
-5. Do not touch the main branch
-6. Stage and commit all changes with: fix: issue #${ISSUE_NUMBER} - ${ISSUE_TITLE}"
+5. Commit with: fix: issue #${ISSUE_NUMBER} - ${ISSUE_TITLE}"
 
   local ATTEMPTS=0
   local SUCCESS=false
