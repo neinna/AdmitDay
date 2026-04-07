@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { SectionGroup, SectionType, UserInputs } from '@/types'
 import SchoolRow from './SchoolRow'
+import { PAGE_SIZE, getVisibleGroups } from '@/lib/school-list-utils'
 
 // ── Section visual config ────────────────────────────────────────────────────
 
@@ -92,6 +93,7 @@ interface Props {
 
 export default function SchoolList({ groups, userInputs, totalCount }: Props) {
   const [collapsed, setCollapsed] = useState<Set<SectionType>>(new Set())
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   function toggleSection(type: SectionType) {
     setCollapsed((prev) => {
@@ -105,6 +107,12 @@ export default function SchoolList({ groups, userInputs, totalCount }: Props) {
     })
   }
 
+  const visibleGroups = getVisibleGroups(groups, visibleCount)
+
+  // Build a lookup for original section totals (for the count badge)
+  const originalCount: Record<string, number> = {}
+  for (const g of groups) originalCount[g.type] = g.schools.length
+
   return (
     <div>
       <SummaryBar groups={groups} totalCount={totalCount} />
@@ -112,7 +120,7 @@ export default function SchoolList({ groups, userInputs, totalCount }: Props) {
       <div className="border border-gray-200 rounded-md overflow-hidden">
         <ColumnHeaders />
 
-        {groups.map((group) => {
+        {visibleGroups.map((group) => {
           const style = SECTION_STYLE[group.type]
           const isCollapsed = collapsed.has(group.type)
 
@@ -128,7 +136,7 @@ export default function SchoolList({ groups, userInputs, totalCount }: Props) {
                   <span
                     className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${style.countBg} ${style.headerText}`}
                   >
-                    {group.schools.length}
+                    {originalCount[group.type]}
                   </span>
                 </div>
                 <svg
@@ -161,6 +169,18 @@ export default function SchoolList({ groups, userInputs, totalCount }: Props) {
           )
         })}
       </div>
+
+      {/* Load 15 more button */}
+      {visibleCount < totalCount && (
+        <div className="mt-4 text-center">
+          <button
+            onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            Load 15 more
+          </button>
+        </div>
+      )}
     </div>
   )
 }
