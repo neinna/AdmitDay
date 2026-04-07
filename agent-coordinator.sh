@@ -6,6 +6,7 @@ ANTHROPIC_API_KEY=$(grep ANTHROPIC_API_KEY /root/app/.env.local | cut -d '=' -f2
 
 APP_DIR="/root/app"
 LOG_FILE="/root/agent-coordinator.log"
+OFFSET_FILE="/tmp/tg_offset"
 
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
@@ -39,6 +40,54 @@ github_close() {
     -H "Accept: application/vnd.github.v3+json" \
     "https://api.github.com/repos/${GITHUB_REPO}/issues/$1" \
     -d '{"state":"closed"}' > /dev/null
+}
+
+github_create_issue() {
+  local TITLE="$1"
+  local TITLE_JSON
+  TITLE_JSON=$(printf '%s' "$TITLE" | python3 -c "import json,sys; print(json.dumps(sys.stdin.read()))")
+  local RESPONSE
+  RESPONSE=$(curl -s -X POST \
+    -H "Authorization: token ${GITHUB_TOKEN}" \
+    -H "Accept: application/vnd.github.v3+json" \
+    "https://api.github.com/repos/${GITHUB_REPO}/issues" \
+    -d "{\"title\":${TITLE_JSON},\"labels\":[\"todo\"]}")
+  echo "$RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('number',''))" 2>/dev/null
+}
+
+handle_telegram_commands() {
+  local OFFSET=0
+  if [ -f "$OFFSET_FILE" ]; then
+    OFFSET=$(cat "$OFFSET_FILE")
+  fi
+
+  local UPDATES
+  UPDATES=$(curl -s "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getUpdates?offset=${OFFSET}&timeout=0")
+
+  while IFS='|||' read -r UPDATE_ID TEXT; do
+    if [ -z "$UPDATE_ID" ]; then continue; fi
+    echo $((UPDATE_ID + 1)) > "$OFFSET_FILE"
+
+    if [[ "$TEXT" == /issue\ * ]]; then
+      local TITLE="${TEXT#/issue }"
+      local ISSUE_NUMBER
+      ISSUE_NUMBER=$(github_create_issue "$TITLE")
+      if [ -n "$ISSUE_NUMBER" ]; then
+        telegram "Created issue #${ISSUE_NUMBER}: ${TITLE}"
+        log "Created issue #${ISSUE_NUMBER} via Telegram: ${TITLE}"
+      else
+        telegram "Failed to create issue for: ${TITLE}"
+        log "Failed to create issue via Telegram: ${TITLE}"
+      fi
+    fi
+  done < <(echo "$UPDATES" | python3 -c "
+import json, sys
+data = json.load(sys.stdin)
+for u in data.get('result', []):
+    uid = u.get('update_id', 0)
+    text = u.get('message', {}).get('text', '').replace('|||', ' ')
+    print(f'{uid}|||{text}')
+")
 }
 
 github_comment() {
@@ -196,6 +245,8 @@ fi
 telegram "Coordinator started, watching for todo issues"
 
 while true; do
+  handle_telegram_commands
+
   ISSUES_JSON=$(curl -s \
     -H "Authorization: token ${GITHUB_TOKEN}" \
     -H "Accept: application/vnd.github.v3+json" \
