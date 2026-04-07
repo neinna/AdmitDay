@@ -33,3 +33,4 @@ jobs:
             npm run build
             pm2 restart hs-navigator
             chmod +x /root/agent-coordinator.sh
+            pm2 restart agent-coordinator
