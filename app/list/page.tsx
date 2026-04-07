@@ -112,6 +112,64 @@ function matchesSports(school: School, sports: string[]): boolean {
   return sports.some((sport) => ext.includes(sport.toLowerCase()))
 }
 
+// ── SHSAT selection ──────────────────────────────────────────────────────────
+
+const BOROUGH_ORDER: Record<string, string[]> = {
+  Manhattan:       ['Brooklyn', 'Queens', 'Bronx', 'Staten Island'],
+  Brooklyn:        ['Manhattan', 'Queens', 'Bronx', 'Staten Island'],
+  Queens:          ['Brooklyn', 'Manhattan', 'Bronx', 'Staten Island'],
+  Bronx:           ['Manhattan', 'Brooklyn', 'Queens', 'Staten Island'],
+  'Staten Island': ['Brooklyn', 'Manhattan', 'Queens', 'Bronx'],
+}
+
+function scoreSHSATSchool(school: School, inputs: UserInputs): number {
+  let score = 0
+  const text = [school.doe_data?.overview ?? '', school.doe_data?.extracurriculars ?? '']
+    .join(' ').toLowerCase()
+  for (const interest of inputs.interests) {
+    if (text.includes(interest.toLowerCase())) score += 2
+  }
+  for (const sport of inputs.sports) {
+    if ((school.doe_data?.extracurriculars ?? '').toLowerCase().includes(sport.toLowerCase())) score += 2
+  }
+  score += (school.academic_score_pct ?? 0) / 100
+  return score
+}
+
+function selectSHSATSchools(allSchools: School[], inputs: UserInputs): School[] {
+  const shsatSchools = allSchools.filter((s) => s.flags.has_shsat)
+  const TARGET = 5
+
+  if (noBorough(inputs.borough)) {
+    return [...shsatSchools]
+      .sort((a, b) => scoreSHSATSchool(b, inputs) - scoreSHSATSchool(a, inputs))
+  }
+
+  const homeBorough = inputs.borough
+  const fromHome = shsatSchools
+    .filter((s) => s.borough === homeBorough)
+    .sort((a, b) => scoreSHSATSchool(b, inputs) - scoreSHSATSchool(a, inputs))
+
+  if (fromHome.length >= TARGET) return fromHome.slice(0, TARGET)
+
+  const selected = [...fromHome]
+  const selectedDbns = new Set(selected.map((s) => s.dbn))
+
+  for (const borough of (BOROUGH_ORDER[homeBorough] ?? [])) {
+    if (selected.length >= TARGET) break
+    const fromBorough = shsatSchools
+      .filter((s) => s.borough === borough && !selectedDbns.has(s.dbn))
+      .sort((a, b) => scoreSHSATSchool(b, inputs) - scoreSHSATSchool(a, inputs))
+    for (const school of fromBorough) {
+      if (selected.length >= TARGET) break
+      selected.push(school)
+      selectedDbns.add(school.dbn)
+    }
+  }
+
+  return selected
+}
+
 // ── Grouping ─────────────────────────────────────────────────────────────────
 
 const SECTION_LABELS: Record<SectionType, string> = {
@@ -189,7 +247,19 @@ export default async function ListPage({
     }
   }
 
-  const groups = groupSchools(results)
+  // SHSAT: all schools when no borough filter, up to 5 when borough is selected
+  let shsatSelected: School[] = []
+  if (inputs.shsat) {
+    shsatSelected = selectSHSATSchools(allSchools, inputs)
+  }
+  const shsatDbns = new Set(shsatSelected.map((s) => s.dbn))
+
+  // General results: exclude SHSAT schools (they're handled separately above)
+  const nonShsatResults = results.filter((s) => !s.flags.has_shsat && !shsatDbns.has(s.dbn))
+
+  // Combine: SHSAT first, then everything else
+  const finalResults = [...shsatSelected, ...nonShsatResults]
+  const groups = groupSchools(finalResults)
 
   const reqParams = new URLSearchParams(
     Object.entries(searchParams)
@@ -225,7 +295,7 @@ export default async function ListPage({
           <div>
             <h1 className="text-xl font-bold text-gray-900">Your school matches</h1>
             <p className="text-sm text-gray-500 mt-0.5">
-              {results.length} school{results.length !== 1 ? 's' : ''} for {boroughLabel}
+              {finalResults.length} school{finalResults.length !== 1 ? 's' : ''} for {boroughLabel}
             </p>
           </div>
           <Link
@@ -237,7 +307,7 @@ export default async function ListPage({
         </div>
 
         {/* Grouped school list */}
-        {results.length === 0 ? (
+        {finalResults.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-gray-400">No schools found matching your criteria.</p>
             <Link href="/" className="mt-4 inline-block text-sm text-gray-900 underline">
@@ -245,7 +315,7 @@ export default async function ListPage({
             </Link>
           </div>
         ) : (
-          <SchoolList groups={groups} userInputs={inputs} totalCount={results.length} />
+          <SchoolList groups={groups} userInputs={inputs} totalCount={finalResults.length} />
         )}
 
         {/* DOE disclaimer */}
