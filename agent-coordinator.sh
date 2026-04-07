@@ -61,10 +61,15 @@ run_agent() {
 
   log "Starting issue #${ISSUE_NUMBER}: ${ISSUE_TITLE}"
   telegram "Starting issue #${ISSUE_NUMBER}: ${ISSUE_TITLE}"
+
+  # Remove todo immediately so a crash mid-run never causes an infinite loop
+  github_remove_label "$ISSUE_NUMBER" "todo"
   github_label "$ISSUE_NUMBER" "in-progress"
 
   cd "$APP_DIR" || exit 1
   git checkout main && git pull origin main
+  # Delete branch if it already exists from a previous failed attempt
+  git branch -D "$BRANCH" 2>/dev/null
   git checkout -b "$BRANCH"
   rm -f "$SUMMARY_FILE" "$OUTPUT_FILE"
 
@@ -120,7 +125,6 @@ Run: cd /root/app && git add -A && git commit -m \"fix: issue #${ISSUE_NUMBER} -
 
   ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" claude \
     --print \
-    --no-interactive \
     -p "$PROMPT" \
     --allowedTools "Bash,Read,Write,Edit" \
     2>&1 | tee "$OUTPUT_FILE" >> "$LOG_FILE"
@@ -173,7 +177,8 @@ ${AGENT_OUTPUT}
     git checkout main
     git branch -D "$BRANCH" 2>/dev/null
     log "Issue #${ISSUE_NUMBER} needs review"
-    telegram "Stuck on issue #${ISSUE_NUMBER} - check GitHub: ${ISSUE_TITLE}"
+    local TAIL=$(tail -20 "$OUTPUT_FILE" 2>/dev/null | tr '\n' ' ' | cut -c1-500)
+    telegram "Stuck on #${ISSUE_NUMBER}: ${ISSUE_TITLE} | Last output: ${TAIL}"
   fi
 }
 
