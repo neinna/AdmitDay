@@ -57,6 +57,7 @@ run_agent() {
   local SAFE_TITLE=$(echo "$ISSUE_TITLE" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | tr -dc 'a-z0-9-' | cut -c1-30)
   local BRANCH="task-${ISSUE_NUMBER}-${SAFE_TITLE}"
   local SUMMARY_FILE="/tmp/summary-issue-${ISSUE_NUMBER}.md"
+  local OUTPUT_FILE="/tmp/output-issue-${ISSUE_NUMBER}.log"
 
   log "Starting issue #${ISSUE_NUMBER}: ${ISSUE_TITLE}"
   telegram "Starting issue #${ISSUE_NUMBER}: ${ISSUE_TITLE}"
@@ -65,7 +66,7 @@ run_agent() {
   cd "$APP_DIR" || exit 1
   git checkout main && git pull origin main
   git checkout -b "$BRANCH"
-  rm -f "$SUMMARY_FILE"
+  rm -f "$SUMMARY_FILE" "$OUTPUT_FILE"
 
   local PROMPT="You are a senior full-stack engineer working on the hs-navigator Next.js app at /root/app.
 Fix GitHub issue #${ISSUE_NUMBER}: ${ISSUE_TITLE}
@@ -122,7 +123,7 @@ Run: cd /root/app && git add -A && git commit -m \"fix: issue #${ISSUE_NUMBER} -
     --no-interactive \
     -p "$PROMPT" \
     --allowedTools "Bash,Read,Write,Edit" \
-    2>> "$LOG_FILE"
+    2>> "$LOG_FILE" | tee "$OUTPUT_FILE" >> "$LOG_FILE"
 
   # Check for success: summary file exists and contains Result: PASSED
   if [ -f "$SUMMARY_FILE" ] && grep -q "Result: PASSED" "$SUMMARY_FILE"; then
@@ -142,13 +143,29 @@ Run: cd /root/app && git add -A && git commit -m \"fix: issue #${ISSUE_NUMBER} -
     log "Issue #${ISSUE_NUMBER} done and deployed"
     telegram "Done: issue #${ISSUE_NUMBER} - ${ISSUE_TITLE}"
   else
-    # Post whatever partial summary exists so there's context on the issue
+    # Post partial summary + last 100 lines of agent output for context
     local PARTIAL=""
     if [ -f "$SUMMARY_FILE" ]; then
       PARTIAL=$(cat "$SUMMARY_FILE")
-      rm -f "$SUMMARY_FILE"
     fi
-    local COMMENT="Agent could not fully resolve this issue.\n\n${PARTIAL}\n\nCheck the log at /root/agent-coordinator.log for details."
+    local AGENT_OUTPUT=""
+    if [ -f "$OUTPUT_FILE" ]; then
+      AGENT_OUTPUT=$(tail -100 "$OUTPUT_FILE")
+    fi
+    rm -f "$SUMMARY_FILE" "$OUTPUT_FILE"
+    local COMMENT="Agent could not fully resolve this issue.
+
+${PARTIAL}
+
+---
+
+<details><summary>Agent output (last 100 lines)</summary>
+
+\`\`\`
+${AGENT_OUTPUT}
+\`\`\`
+
+</details>"
     github_comment "$ISSUE_NUMBER" "$(printf '%b' "$COMMENT")"
     github_label "$ISSUE_NUMBER" "needs-review"
     github_remove_label "$ISSUE_NUMBER" "in-progress"
