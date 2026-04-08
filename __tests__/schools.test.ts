@@ -280,6 +280,34 @@ describe('Issue #13: Last verified date on deadline items', () => {
   })
 })
 
+// ── Issue #14: Test step in GitHub Actions deploy pipeline ──────────────────
+
+describe('Issue #14: GitHub Actions deploy pipeline has test step', () => {
+  const workflowSource = fs.readFileSync(path.join(__dirname, '../.github/workflows/deploy.yml'), 'utf-8')
+
+  it('has a test job defined', () => {
+    expect(workflowSource).toContain('test:')
+  })
+
+  it('runs npm test in the test job', () => {
+    expect(workflowSource).toContain('npm test')
+  })
+
+  it('deploy job has needs: test', () => {
+    expect(workflowSource).toContain('needs: test')
+  })
+
+  it('installs dependencies before running tests', () => {
+    expect(workflowSource).toContain('npm ci')
+  })
+
+  it('deploy job comes after test job in the file', () => {
+    const testIdx = workflowSource.indexOf('test:')
+    const deployIdx = workflowSource.indexOf('deploy:')
+    expect(deployIdx).toBeGreaterThan(testIdx)
+  })
+})
+
 // ── Issue #9: Jest wired up ──────────────────────────────────────────────────
 
 describe('Issue #9: Jest setup in package.json', () => {
