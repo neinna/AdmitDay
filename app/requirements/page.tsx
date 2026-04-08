@@ -10,6 +10,7 @@ const STORAGE_KEY = 'hs_nav_requirements'
 interface ChecklistItem {
   id: string
   text: string
+  verifiedDate?: string
 }
 
 interface Section {
@@ -26,7 +27,7 @@ function buildSections(shsat: boolean, auditions: boolean, level: string): Secti
       id: 'shsat',
       title: 'SHSAT — Specialized High Schools',
       items: [
-        { id: 'shsat_1', text: 'Register for the SHSAT by October 31' },
+        { id: 'shsat_1', text: 'Register for the SHSAT by October 31', verifiedDate: '2026-04-08' },
         {
           id: 'shsat_2',
           text: 'The exam is digital — practice on the same type of devices used at your school',
@@ -55,6 +56,7 @@ function buildSections(shsat: boolean, auditions: boolean, level: string): Secti
         {
           id: 'aud_2',
           text: 'Upload audition materials during the application window: October 7 – December 3',
+          verifiedDate: '2026-04-08',
         },
         {
           id: 'aud_3',
@@ -98,8 +100,8 @@ function buildSections(shsat: boolean, auditions: boolean, level: string): Secti
     id: 'all',
     title: 'All Applicants',
     items: [
-      { id: 'all_1', text: 'Application window opens October 7 and closes December 3' },
-      { id: 'all_2', text: 'High school offers are released March 5' },
+      { id: 'all_1', text: 'Application window opens October 7 and closes December 3', verifiedDate: '2026-04-08' },
+      { id: 'all_2', text: 'High school offers are released March 5', verifiedDate: '2026-04-08' },
       {
         id: 'all_3',
         text: 'Submit your application through MySchools at myschools.nyc',
@@ -221,12 +223,27 @@ function RequirementsContent() {
                         </svg>
                       )}
                     </button>
-                    <span
-                      className={`text-sm leading-relaxed ${
-                        checked[item.id] ? 'text-gray-400 line-through' : 'text-gray-700'
-                      }`}
-                    >
-                      {item.text}
+                    <span className="flex flex-col gap-0.5">
+                      <span
+                        className={`text-sm leading-relaxed ${
+                          checked[item.id] ? 'text-gray-400 line-through' : 'text-gray-700'
+                        }`}
+                      >
+                        {item.text}
+                      </span>
+                      {item.verifiedDate && (
+                        <span className="text-xs text-gray-400">
+                          Last verified: {item.verifiedDate} —{' '}
+                          <a
+                            href="https://www.myschools.nyc"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline hover:text-gray-600"
+                          >
+                            myschools.nyc
+                          </a>
+                        </span>
+                      )}
                     </span>
                   </li>
                 ))}
