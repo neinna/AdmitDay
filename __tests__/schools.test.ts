@@ -547,3 +547,17 @@ describe('Issue #16: Home page locked save banner', () => {
     expect(bannerIdx).toBeGreaterThan(submitIdx)
   })
 })
+
+// ── Issue #17: Built by Long Tail Studio footer ──────────────────────────────
+
+describe('Issue #17: Built by Long Tail Studio footer', () => {
+  const footerSource = fs.readFileSync(path.join(__dirname, '../components/Footer.tsx'), 'utf-8')
+
+  it('contains Built by Long Tail Studio text', () => {
+    expect(footerSource).toContain('Built by Long Tail Studio')
+  })
+
+  it('uses subtle low-contrast styling', () => {
+    expect(footerSource).toContain('text-gray-300')
+  })
+})
