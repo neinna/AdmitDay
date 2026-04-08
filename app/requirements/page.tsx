@@ -175,7 +175,7 @@ function RequirementsContent() {
           <p className="text-sm text-amber-800 leading-relaxed">
             HS Navigator is not affiliated with NYC DOE. All deadlines should be verified at{' '}
             <a
-              href="https://myschools.nyc"
+              href="https://www.myschools.nyc"
               target="_blank"
               rel="noopener noreferrer"
               className="underline font-medium"

@@ -173,6 +173,24 @@ describe('getVisibleGroups', () => {
   })
 })
 
+// ── Issue #7: Remove Note box from list page ────────────────────────────────
+
+describe('Issue #7: Note box removed from list page', () => {
+  const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
+
+  it('does NOT contain the Note box div with bg-gray-50 styling', () => {
+    expect(listSource).not.toContain('bg-gray-50 border border-gray-200 rounded-md')
+  })
+
+  it('does NOT contain the Note box text about DOE tiebreaker', () => {
+    expect(listSource).not.toContain('No tool can guarantee an offer')
+  })
+
+  it('still includes the Footer component', () => {
+    expect(listSource).toContain('<Footer />')
+  })
+})
+
 // ── Issue #8: Unified Footer disclaimer + no Note box on list page ───────────
 
 describe('Issue #8: Footer unified disclaimer', () => {
