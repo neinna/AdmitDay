@@ -318,13 +318,6 @@ export default async function ListPage({
           <SchoolList groups={groups} userInputs={inputs} totalCount={finalResults.length} />
         )}
 
-        {/* DOE disclaimer */}
-        <div className="mt-8 p-4 bg-gray-50 border border-gray-200 rounded-md">
-          <p className="text-xs text-gray-500 leading-relaxed">
-            <strong>Note:</strong> Even the DOE&apos;s offer-chances prediction tool uses randomness
-            as a tiebreaker. No tool can guarantee an offer.
-          </p>
-        </div>
       </div>
       <Footer />
     </main>
