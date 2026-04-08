@@ -31,7 +31,7 @@ describe('Footer disclaimer text', () => {
   })
 
   it('contains the AI caveat', () => {
-    expect(footerSource).toContain('AI can make mistakes, and school data can change.')
+    expect(footerSource).toContain('AI can make mistakes and school data can change.')
   })
 
   it('contains the confirm deadlines text', () => {
@@ -170,5 +170,43 @@ describe('getVisibleGroups', () => {
     const groups = [makeGroup('lottery', 20, 0), makeGroup('screened', 10, 20)]
     const visible = getVisibleGroups(groups, 25)
     expect(visible[1].startIndex).toBe(20)
+  })
+})
+
+// ── Issue #8: Unified Footer disclaimer + no Note box on list page ───────────
+
+describe('Issue #8: Footer unified disclaimer', () => {
+  const footerSource = fs.readFileSync(path.join(__dirname, '../components/Footer.tsx'), 'utf-8')
+
+  it('contains the DOE tiebreaker sentence', () => {
+    expect(footerSource).toContain("DOE&apos;s own prediction tool uses randomness as a tiebreaker")
+  })
+
+  it('contains the no-guarantee clause', () => {
+    expect(footerSource).toContain('no tool can guarantee an offer')
+  })
+
+  it('uses the shortened before-submitting text', () => {
+    expect(footerSource).toContain('Before submitting, confirm deadlines and requirements at')
+  })
+
+  it('does NOT contain the old verbose phrasing', () => {
+    expect(footerSource).not.toContain('Before submitting your application,')
+  })
+
+  it('does NOT contain the old "Also," phrasing', () => {
+    expect(footerSource).not.toContain('Also, AI can make mistakes')
+  })
+})
+
+describe('Issue #8: Note box removed from list page', () => {
+  const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
+
+  it('does NOT contain the Note box div', () => {
+    expect(listSource).not.toContain('bg-gray-50 border border-gray-200 rounded-md')
+  })
+
+  it('does NOT contain the Note box text', () => {
+    expect(listSource).not.toContain("DOE&apos;s offer-chances prediction tool uses randomness")
   })
 })
