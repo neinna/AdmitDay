@@ -251,6 +251,28 @@ function RequirementsContent() {
             </div>
           ))}
         </div>
+        {/* Locked: Deadline tracking section */}
+        <div className="mt-8 rounded-md border border-gray-200 overflow-hidden">
+          <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 border-b border-gray-200">
+            <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <span className="text-sm font-semibold text-gray-500 uppercase tracking-wide">Deadline Tracking</span>
+            <span className="ml-auto text-xs font-medium text-gray-400">Season Pass — <span className="italic">coming soon</span></span>
+          </div>
+          <div className="px-4 py-5 bg-white opacity-50 pointer-events-none select-none space-y-3" aria-hidden="true">
+            {['SHSAT registration', 'Audition upload window', 'Application close', 'Offer release date'].map((label) => (
+              <div key={label} className="flex items-center gap-3">
+                <span className="w-5 h-5 rounded border-2 border-gray-200 flex-shrink-0" />
+                <span className="flex-1">
+                  <span className="block text-sm text-gray-400">{label}</span>
+                  <span className="block h-2 mt-1 bg-gray-100 rounded w-32" />
+                </span>
+                <span className="h-3 bg-gray-100 rounded w-20" />
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
       <Footer />
     </main>
