@@ -34,3 +34,6 @@ data/schools.json
 # local files
 *.csv
 install.cmd
+
+# Sentry Config File
+.env.sentry-build-plugin
