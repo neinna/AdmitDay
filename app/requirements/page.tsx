@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import { usePostHog } from 'posthog-js/react'
 import Link from 'next/link'
 import Footer from '@/components/Footer'
 
@@ -122,6 +123,7 @@ function buildSections(shsat: boolean, auditions: boolean, level: string): Secti
 
 function RequirementsContent() {
   const searchParams = useSearchParams()
+  const posthog = usePostHog()
   const [checked, setChecked] = useState<Record<string, boolean>>({})
   const [hydrated, setHydrated] = useState(false)
 
@@ -143,6 +145,10 @@ function RequirementsContent() {
     }
     setHydrated(true)
   }, [])
+
+  useEffect(() => {
+    posthog?.capture('requirements_viewed', { shsat, auditions, level })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggle(id: string) {
     setChecked((prev) => {

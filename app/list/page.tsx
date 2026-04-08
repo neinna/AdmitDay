@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import Link from 'next/link'
 import SchoolList from '@/components/SchoolList'
+import ViewRequirementsLink from '@/components/ViewRequirementsLink'
 import Footer from '@/components/Footer'
 import { School, UserInputs, SectionType, SectionGroup } from '@/types'
 
@@ -310,12 +311,7 @@ export default async function ListPage({
               <span>Save list</span>
               <span className="text-xs text-gray-400 font-normal">— Season Pass <span className="italic">coming soon</span></span>
             </span>
-            <Link
-              href={`/requirements?${reqParams.toString()}`}
-              className="text-sm font-medium text-gray-900 underline hover:no-underline whitespace-nowrap"
-            >
-              View requirements checklist &rarr;
-            </Link>
+            <ViewRequirementsLink href={`/requirements?${reqParams.toString()}`} />
           </div>
         </div>
 

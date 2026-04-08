@@ -548,6 +548,89 @@ describe('Issue #16: Home page locked save banner', () => {
   })
 })
 
+// ── Issue #10: PostHog event tracking ───────────────────────────────────────
+
+describe('Issue #10: form_submitted event on home page', () => {
+  const homeSource = fs.readFileSync(path.join(__dirname, '../app/page.tsx'), 'utf-8')
+
+  it('imports usePostHog from posthog-js/react', () => {
+    expect(homeSource).toContain("from 'posthog-js/react'")
+  })
+
+  it('calls posthog.capture with form_submitted', () => {
+    expect(homeSource).toContain("capture('form_submitted'")
+  })
+
+  it('captures academic_level in form_submitted', () => {
+    expect(homeSource).toContain('academic_level')
+  })
+})
+
+describe('Issue #10: list_viewed event in SchoolList', () => {
+  const schoolListSource = fs.readFileSync(path.join(__dirname, '../components/SchoolList.tsx'), 'utf-8')
+
+  it('imports usePostHog from posthog-js/react', () => {
+    expect(schoolListSource).toContain("from 'posthog-js/react'")
+  })
+
+  it('calls posthog.capture with list_viewed', () => {
+    expect(schoolListSource).toContain("capture('list_viewed'")
+  })
+
+  it('captures total_count in list_viewed', () => {
+    expect(schoolListSource).toContain('total_count')
+  })
+})
+
+describe('Issue #10: requirements_viewed event on requirements page', () => {
+  const reqSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+
+  it('imports usePostHog from posthog-js/react', () => {
+    expect(reqSource).toContain("from 'posthog-js/react'")
+  })
+
+  it('calls posthog.capture with requirements_viewed', () => {
+    expect(reqSource).toContain("capture('requirements_viewed'")
+  })
+})
+
+describe('Issue #10: source_link_clicked event in SchoolRow', () => {
+  const schoolRowSource = fs.readFileSync(path.join(__dirname, '../components/SchoolRow.tsx'), 'utf-8')
+
+  it('imports usePostHog from posthog-js/react', () => {
+    expect(schoolRowSource).toContain("from 'posthog-js/react'")
+  })
+
+  it('calls posthog.capture with source_link_clicked', () => {
+    expect(schoolRowSource).toContain("capture('source_link_clicked'")
+  })
+
+  it('captures school_dbn in source_link_clicked', () => {
+    expect(schoolRowSource).toContain('school_dbn')
+  })
+})
+
+describe('Issue #10: view_requirements_clicked via ViewRequirementsLink component', () => {
+  const linkSource = fs.readFileSync(path.join(__dirname, '../components/ViewRequirementsLink.tsx'), 'utf-8')
+
+  it('is a client component', () => {
+    expect(linkSource).toContain("'use client'")
+  })
+
+  it('imports usePostHog from posthog-js/react', () => {
+    expect(linkSource).toContain("from 'posthog-js/react'")
+  })
+
+  it('calls posthog.capture with view_requirements_clicked', () => {
+    expect(linkSource).toContain("capture('view_requirements_clicked'")
+  })
+
+  it('list page uses ViewRequirementsLink component', () => {
+    const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
+    expect(listSource).toContain('ViewRequirementsLink')
+  })
+})
+
 // ── Issue #17: Built by Long Tail Studio footer ──────────────────────────────
 
 describe('Issue #17: Built by Long Tail Studio footer', () => {
