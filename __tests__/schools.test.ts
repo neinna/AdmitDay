@@ -265,8 +265,8 @@ describe('Issue #13: Last verified date on deadline items', () => {
     expect(aud2Block).toContain('verifiedDate:')
   })
 
-  it('renders "Last verified:" text in the JSX', () => {
-    expect(reqSource).toContain('Last verified:')
+  it('renders "last verified:" text in the JSX (top-level line)', () => {
+    expect(reqSource).toContain('last verified:')
   })
 
   it('renders a myschools.nyc link in the verified note', () => {
@@ -329,22 +329,22 @@ describe('Issue #12: SchoolList locked expand placeholder', () => {
   })
 })
 
-describe('Issue #12: List page locked download button', () => {
+describe('Issue #12: List page locked save button', () => {
   const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
 
-  it('contains a Download list label', () => {
-    expect(listSource).toContain('Download list')
+  it('contains a Save list label', () => {
+    expect(listSource).toContain('Save list')
   })
 
-  it('contains a lock icon SVG for the download button', () => {
-    expect(listSource).toContain('Download school list — Season Pass coming soon')
+  it('contains a lock icon SVG for the save button', () => {
+    expect(listSource).toContain('Save list — Season Pass coming soon')
   })
 
-  it('download button is not a real link or button (cursor-not-allowed)', () => {
+  it('save button is not a real link or button (cursor-not-allowed)', () => {
     expect(listSource).toContain('cursor-not-allowed')
   })
 
-  it('download area shows Season Pass label', () => {
+  it('save area shows Season Pass label', () => {
     expect(listSource).toContain('Season Pass')
   })
 })
@@ -441,5 +441,81 @@ describe('Issue #12: Requirements page locked deadline tracking section', () => 
 
   it('deadline tracking section is aria-hidden (locked UI)', () => {
     expect(reqSource).toContain('aria-hidden="true"')
+  })
+})
+
+// ── Issue #16: Season Pass banners + last verified fix ───────────────────────
+
+describe('Issue #16: List page save banner rename', () => {
+  const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
+
+  it('uses "Save list" label (not "Download list")', () => {
+    expect(listSource).toContain('Save list')
+    expect(listSource).not.toContain('Download list')
+  })
+
+  it('aria-label reflects new Save list text', () => {
+    expect(listSource).toContain('Save list — Season Pass coming soon')
+    expect(listSource).not.toContain('Download school list — Season Pass coming soon')
+  })
+})
+
+describe('Issue #16: Requirements page locked save banner', () => {
+  const reqSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+
+  it('has a locked save banner with "Save checklist" label', () => {
+    expect(reqSource).toContain('Save checklist')
+  })
+
+  it('save banner shows Season Pass coming soon', () => {
+    expect(reqSource).toContain('Save checklist — Season Pass coming soon')
+  })
+
+  it('has a lock icon SVG on the save banner', () => {
+    expect(reqSource).toContain('M12 15v2m-6 4h12')
+  })
+})
+
+describe('Issue #16: Requirements page deadlines last verified', () => {
+  const reqSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+
+  it('has a single top-level "Deadlines last verified" line', () => {
+    expect(reqSource).toContain('Deadlines last verified: April 8, 2026')
+  })
+
+  it('does NOT render per-item Last verified lines', () => {
+    // The old per-item pattern interpolated item.verifiedDate in JSX
+    expect(reqSource).not.toContain('{item.verifiedDate}')
+    expect(reqSource).not.toContain('Last verified: {item')
+  })
+
+  it('top-level verified line links to myschools.nyc', () => {
+    const verifiedBlock = reqSource.slice(
+      reqSource.indexOf('Deadlines last verified'),
+      reqSource.indexOf('Deadlines last verified') + 300,
+    )
+    expect(verifiedBlock).toContain('myschools.nyc')
+  })
+})
+
+describe('Issue #16: Home page locked save banner', () => {
+  const homeSource = fs.readFileSync(path.join(__dirname, '../app/page.tsx'), 'utf-8')
+
+  it('has a locked save banner after the form', () => {
+    expect(homeSource).toContain('Save your HS guardrails')
+  })
+
+  it('save banner shows Season Pass coming soon', () => {
+    expect(homeSource).toContain('Save your HS guardrails — Season Pass coming soon')
+  })
+
+  it('save banner is cursor-not-allowed (locked)', () => {
+    expect(homeSource).toContain('cursor-not-allowed')
+  })
+
+  it('save banner appears after the submit button', () => {
+    const submitIdx = homeSource.indexOf('Find schools')
+    const bannerIdx = homeSource.indexOf('Save your HS guardrails')
+    expect(bannerIdx).toBeGreaterThan(submitIdx)
   })
 })
