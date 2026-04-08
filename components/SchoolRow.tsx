@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { usePostHog } from 'posthog-js/react'
 import { School, UserInputs } from '@/types'
 
 // ── Badge config (same as SchoolCard) ───────────────────────────────────────
@@ -80,6 +81,7 @@ interface Props {
 }
 
 export default function SchoolRow({ school, userInputs, rowNumber }: Props) {
+  const posthog = usePostHog()
   const [isExpanded, setIsExpanded] = useState(false)
   const [rationaleData, setRationaleData] = useState<RationaleData | null>(null)
   const [loadingRationale, setLoadingRationale] = useState(false)
@@ -296,7 +298,10 @@ export default function SchoolRow({ school, userInputs, rowNumber }: Props) {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-600 underline hover:text-gray-900"
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  posthog?.capture('source_link_clicked', { school_dbn: school.dbn, school_name: school.name })
+                }}
               >
                 View on NYC-SIFT →
               </a>
