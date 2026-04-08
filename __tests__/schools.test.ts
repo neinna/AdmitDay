@@ -229,6 +229,57 @@ describe('Issue #8: Note box removed from list page', () => {
   })
 })
 
+// ── Issue #13: Last verified date on deadline items ─────────────────────────
+
+describe('Issue #13: Last verified date on deadline items', () => {
+  const reqSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+
+  it('ChecklistItem interface has verifiedDate field', () => {
+    expect(reqSource).toContain('verifiedDate?: string')
+  })
+
+  it('exactly 4 deadline items have verifiedDate set', () => {
+    // shsat_1, aud_2, all_1, all_2 each get a verifiedDate
+    const matches = reqSource.match(/verifiedDate: '/g) ?? []
+    expect(matches.length).toBe(4)
+  })
+
+  it('SHSAT registration item (shsat_1) has verifiedDate on same line', () => {
+    expect(reqSource).toContain("id: 'shsat_1', text: 'Register for the SHSAT by October 31', verifiedDate:")
+  })
+
+  it('application window item (all_1) has verifiedDate on same line', () => {
+    expect(reqSource).toContain("id: 'all_1', text: 'Application window opens October 7 and closes December 3', verifiedDate:")
+  })
+
+  it('offers release item (all_2) has verifiedDate on same line', () => {
+    expect(reqSource).toContain("id: 'all_2', text: 'High school offers are released March 5', verifiedDate:")
+  })
+
+  it('audition upload item (aud_2) has verifiedDate field', () => {
+    // aud_2 is multi-line; verify verifiedDate appears in its block
+    const aud2Block = reqSource.slice(
+      reqSource.indexOf("id: 'aud_2'"),
+      reqSource.indexOf("id: 'aud_3'"),
+    )
+    expect(aud2Block).toContain('verifiedDate:')
+  })
+
+  it('renders "Last verified:" text in the JSX', () => {
+    expect(reqSource).toContain('Last verified:')
+  })
+
+  it('renders a myschools.nyc link in the verified note', () => {
+    expect(reqSource).toContain('https://www.myschools.nyc')
+  })
+
+  it('verified note link opens in a new tab', () => {
+    // At least one occurrence for the verified note (there is also the disclaimer link)
+    const matches = reqSource.match(/target="_blank"/g) ?? []
+    expect(matches.length).toBeGreaterThanOrEqual(2)
+  })
+})
+
 // ── Issue #9: Jest wired up ──────────────────────────────────────────────────
 
 describe('Issue #9: Jest setup in package.json', () => {
