@@ -371,6 +371,54 @@ describe('Issue #11: Ranking cap copy in requirements checklist', () => {
   })
 })
 
+// ── Issue #15: PostHog analytics ────────────────────────────────────────────
+
+describe('Issue #15: PosthogProvider component', () => {
+  const providerSource = fs.readFileSync(path.join(__dirname, '../components/PosthogProvider.tsx'), 'utf-8')
+
+  it('is a client component', () => {
+    expect(providerSource).toContain("'use client'")
+  })
+
+  it('imports posthog-js', () => {
+    expect(providerSource).toContain("from 'posthog-js'")
+  })
+
+  it('imports PostHogProvider from posthog-js/react', () => {
+    expect(providerSource).toContain("from 'posthog-js/react'")
+  })
+
+  it('calls posthog.init with NEXT_PUBLIC_POSTHOG_KEY', () => {
+    expect(providerSource).toContain('NEXT_PUBLIC_POSTHOG_KEY')
+    expect(providerSource).toContain('posthog.init')
+  })
+
+  it('exports a default PHProvider component', () => {
+    expect(providerSource).toContain('export default function PHProvider')
+  })
+})
+
+describe('Issue #15: layout.tsx wraps with PHProvider', () => {
+  const layoutSource = fs.readFileSync(path.join(__dirname, '../app/layout.tsx'), 'utf-8')
+
+  it('imports PHProvider', () => {
+    expect(layoutSource).toContain("import PHProvider from '@/components/PosthogProvider'")
+  })
+
+  it('wraps children with PHProvider', () => {
+    expect(layoutSource).toContain('<PHProvider>')
+    expect(layoutSource).toContain('</PHProvider>')
+  })
+
+  it('NavBar is inside PHProvider', () => {
+    const phStart = layoutSource.indexOf('<PHProvider>')
+    const phEnd = layoutSource.indexOf('</PHProvider>')
+    const navbar = layoutSource.indexOf('<NavBar />')
+    expect(navbar).toBeGreaterThan(phStart)
+    expect(navbar).toBeLessThan(phEnd)
+  })
+})
+
 describe('Issue #12: Requirements page locked deadline tracking section', () => {
   const reqSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
 
