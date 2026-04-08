@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { usePostHog } from 'posthog-js/react'
 import Footer from '@/components/Footer'
 
 const BOROUGHS = ['Manhattan', 'Brooklyn', 'Queens', 'Bronx', 'Staten Island']
@@ -25,6 +26,7 @@ interface SavedForm {
 
 export default function HomePage() {
   const router = useRouter()
+  const posthog = usePostHog()
 
   const [borough, setBorough] = useState('All Boroughs')
   const [commute, setCommute] = useState<'short' | 'flexible'>('flexible')
@@ -74,6 +76,18 @@ export default function HomePage() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!validate()) return
+
+    posthog?.capture('form_submitted', {
+      borough,
+      commute,
+      interests,
+      sports,
+      shsat,
+      auditions,
+      academic_level: academicLevel,
+      iep,
+      size,
+    })
 
     const params = new URLSearchParams({
       borough,
