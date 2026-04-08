@@ -42,8 +42,28 @@ describe('Footer disclaimer text', () => {
     expect(footerSource).not.toContain('Data from NYC-SIFT and NYC DOE Open Data')
   })
 
-  it('still links to myschools.nyc', () => {
-    expect(footerSource).toContain('https://myschools.nyc')
+  it('links to https://www.myschools.nyc (with www)', () => {
+    expect(footerSource).toContain('https://www.myschools.nyc')
+  })
+
+  it('myschools.nyc link opens in a new tab', () => {
+    expect(footerSource).toContain('target="_blank"')
+    expect(footerSource).toContain('rel="noopener noreferrer"')
+  })
+})
+
+// ── Issue #5: myschools.nyc clickable link ───────────────────────────────────
+
+describe('myschools.nyc link in requirements page', () => {
+  const reqSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+
+  it('links to https://www.myschools.nyc (with www)', () => {
+    expect(reqSource).toContain('https://www.myschools.nyc')
+  })
+
+  it('myschools.nyc link opens in a new tab', () => {
+    expect(reqSource).toContain('target="_blank"')
+    expect(reqSource).toContain('rel="noopener noreferrer"')
   })
 })
 
@@ -72,6 +92,25 @@ describe('parseIssueCommand', () => {
     expect(parseIssueCommand('/issue Add Load 15 more button to school list')).toBe(
       'Add Load 15 more button to school list'
     )
+  })
+})
+
+// ── Issue #6: agent-coordinator.sh build before pm2 restart ─────────────────
+
+describe('agent-coordinator.sh deploy sequence', () => {
+  const coordinatorSource = fs.readFileSync(path.join(__dirname, '../agent-coordinator.sh'), 'utf-8')
+
+  it('runs npm run build before pm2 restart', () => {
+    expect(coordinatorSource).toContain('npm run build >> "$LOG_FILE" 2>&1 && pm2 restart hs-navigator')
+  })
+
+  it('does NOT call bare pm2 restart without a preceding build', () => {
+    // The only pm2 restart line should be preceded by npm run build
+    const lines = coordinatorSource.split('\n')
+    const pm2Lines = lines.filter(l => l.includes('pm2 restart hs-navigator'))
+    pm2Lines.forEach(line => {
+      expect(line).toContain('npm run build')
+    })
   })
 })
 
