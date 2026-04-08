@@ -108,7 +108,7 @@ function buildSections(shsat: boolean, auditions: boolean, level: string): Secti
       },
       {
         id: 'all_4',
-        text: 'You can rank up to 12 schools in order of preference — list your true first choice first',
+        text: 'You can rank more than 12 schools — list every program you would genuinely attend, in your true order of preference. The DOE recommends at least 12 strong options.',
       },
       {
         id: 'all_5',
