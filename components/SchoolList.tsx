@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { usePostHog } from 'posthog-js/react'
 import { SectionGroup, SectionType, UserInputs } from '@/types'
 import SchoolRow from './SchoolRow'
 import { PAGE_SIZE, getVisibleGroups } from '@/lib/school-list-utils'
@@ -92,8 +93,19 @@ interface Props {
 }
 
 export default function SchoolList({ groups, userInputs, totalCount }: Props) {
+  const posthog = usePostHog()
   const [collapsed, setCollapsed] = useState<Set<SectionType>>(new Set())
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+
+  useEffect(() => {
+    posthog?.capture('list_viewed', {
+      total_count: totalCount,
+      borough: userInputs.borough,
+      academic_level: userInputs.academicLevel,
+      shsat: userInputs.shsat,
+      auditions: userInputs.auditions,
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   function toggleSection(type: SectionType) {
     setCollapsed((prev) => {
