@@ -228,3 +228,25 @@ describe('Issue #8: Note box removed from list page', () => {
     expect(listSource).not.toContain("DOE&apos;s offer-chances prediction tool uses randomness")
   })
 })
+
+// ── Issue #9: Jest wired up ──────────────────────────────────────────────────
+
+describe('Issue #9: Jest setup in package.json', () => {
+  const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf-8'))
+
+  it('has "test": "jest" in scripts', () => {
+    expect(pkg.scripts?.test).toBe('jest')
+  })
+
+  it('has jest in devDependencies', () => {
+    expect(pkg.devDependencies).toHaveProperty('jest')
+  })
+
+  it('has @types/jest in devDependencies', () => {
+    expect(pkg.devDependencies).toHaveProperty('@types/jest')
+  })
+
+  it('has ts-jest in devDependencies', () => {
+    expect(pkg.devDependencies).toHaveProperty('ts-jest')
+  })
+})
