@@ -349,6 +349,28 @@ describe('Issue #12: List page locked download button', () => {
   })
 })
 
+// ── Issue #11: Fix incorrect "rank up to 12 schools" copy ───────────────────
+
+describe('Issue #11: Ranking cap copy in requirements checklist', () => {
+  const reqSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+
+  it('does NOT contain the old "rank up to 12" copy', () => {
+    expect(reqSource).not.toContain('rank up to 12 schools')
+  })
+
+  it('contains the new copy about ranking more than 12 schools', () => {
+    expect(reqSource).toContain('You can rank more than 12 schools')
+  })
+
+  it('mentions DOE recommends at least 12 strong options', () => {
+    expect(reqSource).toContain('The DOE recommends at least 12 strong options.')
+  })
+
+  it('tells users to list every program they would genuinely attend', () => {
+    expect(reqSource).toContain('list every program you would genuinely attend')
+  })
+})
+
 describe('Issue #12: Requirements page locked deadline tracking section', () => {
   const reqSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
 
