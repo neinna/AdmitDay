@@ -194,7 +194,7 @@ Run: cd /root/app && git add -A && git commit -m \"fix: issue #${ISSUE_NUMBER} -
     git checkout main
     git merge "$BRANCH" --no-ff -m "fix: issue #${ISSUE_NUMBER} - ${ISSUE_TITLE}"
     git push origin main
-    pm2 restart hs-navigator >> "$LOG_FILE" 2>&1
+    cd /root/app && npm run build >> "$LOG_FILE" 2>&1 && pm2 restart hs-navigator >> "$LOG_FILE" 2>&1
 
     github_comment "$ISSUE_NUMBER" "$SUMMARY"
     github_label "$ISSUE_NUMBER" "done"
