@@ -170,15 +170,33 @@ export default function SchoolList({ groups, userInputs, totalCount }: Props) {
         })}
       </div>
 
-      {/* Load 15 more button */}
+      {/* Load 15 more / locked paid tier */}
       {visibleCount < totalCount && (
-        <div className="mt-4 text-center">
-          <button
-            onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
-          >
-            Load 15 more
-          </button>
+        <div className="mt-4">
+          {/* Locked rows preview */}
+          <div className="border border-gray-200 rounded-md overflow-hidden opacity-50 pointer-events-none select-none" aria-hidden="true">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="grid grid-cols-[2rem_1fr_6rem_1rem] sm:grid-cols-[2rem_1fr_5rem_2.5rem_6rem_1rem] items-center gap-2 px-3 py-3 border-b border-gray-100 bg-gray-50">
+                <span className="text-xs text-gray-300 text-right">{visibleCount + i + 1}</span>
+                <span className="h-3 bg-gray-200 rounded w-3/4" />
+                <span className="hidden sm:block h-3 bg-gray-200 rounded w-full" />
+                <span className="hidden sm:block h-3 bg-gray-200 rounded w-full" />
+                <span className="h-3 bg-gray-200 rounded w-8 ml-auto" />
+                <span />
+              </div>
+            ))}
+          </div>
+          {/* Lock badge */}
+          <div className="mt-3 flex items-center justify-center gap-2 py-3 px-4 bg-gray-50 border border-gray-200 rounded-md">
+            <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+            <span className="text-sm text-gray-500">
+              {totalCount - visibleCount} more school{totalCount - visibleCount !== 1 ? 's' : ''} —{' '}
+              <span className="font-medium text-gray-600">Season Pass</span>
+              <span className="ml-1.5 text-xs text-gray-400 font-normal">coming soon</span>
+            </span>
+          </div>
         </div>
       )}
     </div>

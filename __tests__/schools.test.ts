@@ -301,3 +301,75 @@ describe('Issue #9: Jest setup in package.json', () => {
     expect(pkg.devDependencies).toHaveProperty('ts-jest')
   })
 })
+
+// ── Issue #12: Locked paid tier placeholders ─────────────────────────────────
+
+describe('Issue #12: SchoolList locked expand placeholder', () => {
+  const schoolListSource = fs.readFileSync(path.join(__dirname, '../components/SchoolList.tsx'), 'utf-8')
+
+  it('shows a lock icon SVG when more schools exist beyond visible count', () => {
+    expect(schoolListSource).toContain('M12 15v2m-6 4h12')
+  })
+
+  it('shows "Season Pass" label in the expand area', () => {
+    expect(schoolListSource).toContain('Season Pass')
+  })
+
+  it('shows "coming soon" label in the expand area', () => {
+    expect(schoolListSource).toContain('coming soon')
+  })
+
+  it('does NOT have a working "Load 15 more" button', () => {
+    expect(schoolListSource).not.toContain('>Load 15 more<')
+    expect(schoolListSource).not.toContain('Load 15 more\n')
+  })
+
+  it('shows remaining school count in the lock placeholder', () => {
+    expect(schoolListSource).toContain('totalCount - visibleCount')
+  })
+})
+
+describe('Issue #12: List page locked download button', () => {
+  const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
+
+  it('contains a Download list label', () => {
+    expect(listSource).toContain('Download list')
+  })
+
+  it('contains a lock icon SVG for the download button', () => {
+    expect(listSource).toContain('Download school list — Season Pass coming soon')
+  })
+
+  it('download button is not a real link or button (cursor-not-allowed)', () => {
+    expect(listSource).toContain('cursor-not-allowed')
+  })
+
+  it('download area shows Season Pass label', () => {
+    expect(listSource).toContain('Season Pass')
+  })
+})
+
+describe('Issue #12: Requirements page locked deadline tracking section', () => {
+  const reqSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+
+  it('contains a Deadline Tracking heading', () => {
+    expect(reqSource).toContain('Deadline Tracking')
+  })
+
+  it('shows Season Pass label on the deadline tracking section', () => {
+    const deadlineBlock = reqSource.slice(
+      reqSource.indexOf('Deadline Tracking'),
+      reqSource.indexOf('Deadline Tracking') + 500,
+    )
+    expect(deadlineBlock).toContain('Season Pass')
+    expect(deadlineBlock).toContain('coming soon')
+  })
+
+  it('has a lock icon SVG on the deadline tracking section', () => {
+    expect(reqSource).toContain('M12 15v2m-6 4h12')
+  })
+
+  it('deadline tracking section is aria-hidden (locked UI)', () => {
+    expect(reqSource).toContain('aria-hidden="true"')
+  })
+})
