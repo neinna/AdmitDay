@@ -161,9 +161,22 @@ function RequirementsContent() {
       <div className="max-w-2xl mx-auto px-4 py-10">
         {/* Header */}
         <div className="mb-6">
-          <Link href={listHref} className="text-sm text-gray-500 hover:text-gray-700">
-            &larr; Back to your list
-          </Link>
+          <div className="flex items-start justify-between gap-3">
+            <Link href={listHref} className="text-sm text-gray-500 hover:text-gray-700">
+              &larr; Back to your list
+            </Link>
+            {/* Locked save button */}
+            <span
+              aria-label="Save checklist — Season Pass coming soon"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-400 border border-gray-200 bg-gray-50 rounded-md cursor-not-allowed select-none flex-shrink-0"
+            >
+              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              <span>Save checklist</span>
+              <span className="text-xs text-gray-400 font-normal">— Season Pass <span className="italic">coming soon</span></span>
+            </span>
+          </div>
           <h1 className="text-2xl font-bold text-gray-900 mt-1">Your requirements checklist</h1>
           {hydrated && (
             <p className="text-sm text-gray-500 mt-0.5">
@@ -173,7 +186,7 @@ function RequirementsContent() {
         </div>
 
         {/* Disclaimer */}
-        <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mb-8">
+        <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mb-3">
           <p className="text-sm text-amber-800 leading-relaxed">
             HS Navigator is not affiliated with NYC DOE. All deadlines should be verified at{' '}
             <a
@@ -187,6 +200,19 @@ function RequirementsContent() {
             .
           </p>
         </div>
+
+        {/* Deadlines last verified */}
+        <p className="text-xs text-gray-400 mb-8">
+          Deadlines last verified: April 8, 2026 —{' '}
+          <a
+            href="https://www.myschools.nyc"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-gray-600"
+          >
+            myschools.nyc
+          </a>
+        </p>
 
         {/* Checklist sections */}
         <div className="space-y-8">
@@ -223,27 +249,12 @@ function RequirementsContent() {
                         </svg>
                       )}
                     </button>
-                    <span className="flex flex-col gap-0.5">
-                      <span
-                        className={`text-sm leading-relaxed ${
-                          checked[item.id] ? 'text-gray-400 line-through' : 'text-gray-700'
-                        }`}
-                      >
-                        {item.text}
-                      </span>
-                      {item.verifiedDate && (
-                        <span className="text-xs text-gray-400">
-                          Last verified: {item.verifiedDate} —{' '}
-                          <a
-                            href="https://www.myschools.nyc"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="underline hover:text-gray-600"
-                          >
-                            myschools.nyc
-                          </a>
-                        </span>
-                      )}
+                    <span
+                      className={`text-sm leading-relaxed ${
+                        checked[item.id] ? 'text-gray-400 line-through' : 'text-gray-700'
+                      }`}
+                    >
+                      {item.text}
                     </span>
                   </li>
                 ))}
