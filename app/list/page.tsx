@@ -298,12 +298,25 @@ export default async function ListPage({
               {finalResults.length} school{finalResults.length !== 1 ? 's' : ''} for {boroughLabel}
             </p>
           </div>
-          <Link
-            href={`/requirements?${reqParams.toString()}`}
-            className="text-sm font-medium text-gray-900 underline hover:no-underline whitespace-nowrap"
-          >
-            View requirements checklist &rarr;
-          </Link>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+            {/* Locked download button */}
+            <span
+              aria-label="Download school list — Season Pass coming soon"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-400 border border-gray-200 bg-gray-50 rounded-md cursor-not-allowed select-none"
+            >
+              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              <span>Download list</span>
+              <span className="text-xs text-gray-400 font-normal">— Season Pass <span className="italic">coming soon</span></span>
+            </span>
+            <Link
+              href={`/requirements?${reqParams.toString()}`}
+              className="text-sm font-medium text-gray-900 underline hover:no-underline whitespace-nowrap"
+            >
+              View requirements checklist &rarr;
+            </Link>
+          </div>
         </div>
 
         {/* Grouped school list */}
