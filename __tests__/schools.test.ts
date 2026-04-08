@@ -1,3 +1,5 @@
+import * as fs from 'fs'
+import * as path from 'path'
 import schoolsData from '../schools.json'
 import { parseIssueCommand } from '../lib/telegram-utils'
 import { getVisibleGroups } from '../lib/school-list-utils'
@@ -16,6 +18,32 @@ describe('schools.json', () => {
     schoolsData.forEach((school: any) => {
       expect(school).toHaveProperty('name')
     })
+  })
+})
+
+// ── Issue #4: Footer disclaimer text ────────────────────────────────────────
+
+describe('Footer disclaimer text', () => {
+  const footerSource = fs.readFileSync(path.join(__dirname, '../components/Footer.tsx'), 'utf-8')
+
+  it('contains the new disclaimer text', () => {
+    expect(footerSource).toContain('Every effort was made to keep this data current.')
+  })
+
+  it('contains the AI caveat', () => {
+    expect(footerSource).toContain('AI can make mistakes, and school data can change.')
+  })
+
+  it('contains the confirm deadlines text', () => {
+    expect(footerSource).toContain('confirm deadlines and requirements at')
+  })
+
+  it('does NOT contain the old NYC-SIFT disclaimer', () => {
+    expect(footerSource).not.toContain('Data from NYC-SIFT and NYC DOE Open Data')
+  })
+
+  it('still links to myschools.nyc', () => {
+    expect(footerSource).toContain('https://myschools.nyc')
   })
 })
 
