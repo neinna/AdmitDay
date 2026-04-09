@@ -745,3 +745,77 @@ describe('Issue #18: sentry.server.config.ts beforeSend null-digest filter', () 
     expect(serverConfigSource).toContain('return event')
   })
 })
+
+// ── Issue #22: Thumbs up/down feedback row ───────────────────────────────────
+
+describe('Issue #22: FeedbackRow component', () => {
+  const feedbackSource = fs.readFileSync(path.join(__dirname, '../components/FeedbackRow.tsx'), 'utf-8')
+
+  it('is a client component', () => {
+    expect(feedbackSource).toContain("'use client'")
+  })
+
+  it('imports usePostHog from posthog-js/react', () => {
+    expect(feedbackSource).toContain("from 'posthog-js/react'")
+  })
+
+  it('uses localStorage key feedback_school_list', () => {
+    expect(feedbackSource).toContain('feedback_school_list')
+  })
+
+  it('uses localStorage key feedback_requirements', () => {
+    expect(feedbackSource).toContain('feedback_requirements')
+  })
+
+  it('captures screen_feedback posthog event', () => {
+    expect(feedbackSource).toContain("capture('screen_feedback'")
+  })
+
+  it('captures screen property in posthog event', () => {
+    expect(feedbackSource).toContain('screen,')
+  })
+
+  it('captures rating property in posthog event', () => {
+    expect(feedbackSource).toContain('rating: value')
+  })
+
+  it('shows thumbs up emoji button', () => {
+    expect(feedbackSource).toContain('👍')
+  })
+
+  it('shows thumbs down emoji button', () => {
+    expect(feedbackSource).toContain('👎')
+  })
+
+  it('shows Thanks for the feedback! text', () => {
+    expect(feedbackSource).toContain('Thanks for the feedback!')
+  })
+
+  it('accepts school_list and requirements as screen prop type', () => {
+    expect(feedbackSource).toContain("'school_list' | 'requirements'")
+  })
+})
+
+describe('Issue #22: FeedbackRow added to SchoolList', () => {
+  const schoolListSource = fs.readFileSync(path.join(__dirname, '../components/SchoolList.tsx'), 'utf-8')
+
+  it('imports FeedbackRow', () => {
+    expect(schoolListSource).toContain("import FeedbackRow from './FeedbackRow'")
+  })
+
+  it('renders FeedbackRow with school_list screen', () => {
+    expect(schoolListSource).toContain('<FeedbackRow screen="school_list"')
+  })
+})
+
+describe('Issue #22: FeedbackRow added to requirements page', () => {
+  const reqSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+
+  it('imports FeedbackRow', () => {
+    expect(reqSource).toContain("import FeedbackRow from '@/components/FeedbackRow'")
+  })
+
+  it('renders FeedbackRow with requirements screen', () => {
+    expect(reqSource).toContain('<FeedbackRow screen="requirements"')
+  })
+})
