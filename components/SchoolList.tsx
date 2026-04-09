@@ -55,16 +55,21 @@ function SummaryBar({
   })
 
   return (
-    <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 px-3 py-2.5 mb-2 bg-gray-50 border border-gray-200 rounded-md text-sm text-gray-700">
-      <span className="font-medium text-gray-900">Your list:</span>
-      {parts.map((part, i) => (
-        <span key={i} className="text-gray-600">
-          {part}
-          {i < parts.length - 1 && <span className="text-gray-400 ml-1.5">&middot;</span>}
-        </span>
-      ))}
-      <span className="text-gray-400">&mdash;</span>
-      <span className="font-medium text-gray-900">{totalCount} schools total</span>
+    <div className="flex items-center px-3 py-2.5 mb-2 bg-gray-50 border border-gray-200 rounded-md text-sm text-gray-700">
+      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 flex-1 min-w-0">
+        <span className="font-medium text-gray-900">Your list:</span>
+        {parts.map((part, i) => (
+          <span key={i} className="text-gray-600">
+            {part}
+            {i < parts.length - 1 && <span className="text-gray-400 ml-1.5">&middot;</span>}
+          </span>
+        ))}
+        <span className="text-gray-400">&mdash;</span>
+        <span className="font-medium text-gray-900">{totalCount} schools total</span>
+      </div>
+      <div className="ml-2 flex-shrink-0">
+        <FeedbackRow screen="school_list" />
+      </div>
     </div>
   )
 }
@@ -213,7 +218,6 @@ export default function SchoolList({ groups, userInputs, totalCount }: Props) {
         </div>
       )}
 
-      <FeedbackRow screen="school_list" />
     </div>
   )
 }
