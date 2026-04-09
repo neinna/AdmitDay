@@ -631,6 +631,33 @@ describe('Issue #10: view_requirements_clicked via ViewRequirementsLink componen
   })
 })
 
+// ── Issue #19: Sentry source maps configuration ─────────────────────────────
+
+describe('Issue #19: Sentry source maps in next.config.js', () => {
+  const nextConfigSource = fs.readFileSync(path.join(__dirname, '../next.config.js'), 'utf-8')
+
+  it('has authToken referencing SENTRY_AUTH_TOKEN env var', () => {
+    expect(nextConfigSource).toContain('authToken: process.env.SENTRY_AUTH_TOKEN')
+  })
+
+  it('has sourcemaps configuration block', () => {
+    expect(nextConfigSource).toContain('sourcemaps:')
+  })
+
+  it('sets deleteSourcemapsAfterUpload to true', () => {
+    expect(nextConfigSource).toContain('deleteSourcemapsAfterUpload: true')
+  })
+
+  it('retains widenClientFileUpload: true for broader source map coverage', () => {
+    expect(nextConfigSource).toContain('widenClientFileUpload: true')
+  })
+
+  it('has org and project set for Sentry upload targeting', () => {
+    expect(nextConfigSource).toContain('org: "long-tail-studio"')
+    expect(nextConfigSource).toContain('project: "listready"')
+  })
+})
+
 // ── Issue #17: Built by Long Tail Studio footer ──────────────────────────────
 
 describe('Issue #17: Built by Long Tail Studio footer', () => {
