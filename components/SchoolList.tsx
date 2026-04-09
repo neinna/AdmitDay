@@ -5,6 +5,7 @@ import { usePostHog } from 'posthog-js/react'
 import { SectionGroup, SectionType, UserInputs } from '@/types'
 import SchoolRow from './SchoolRow'
 import { PAGE_SIZE, getVisibleGroups } from '@/lib/school-list-utils'
+import FeedbackRow from './FeedbackRow'
 
 // ── Section visual config ────────────────────────────────────────────────────
 
@@ -211,6 +212,8 @@ export default function SchoolList({ groups, userInputs, totalCount }: Props) {
           </div>
         </div>
       )}
+
+      <FeedbackRow screen="school_list" />
     </div>
   )
 }
