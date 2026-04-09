@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { usePostHog } from 'posthog-js/react'
 import Link from 'next/link'
 import Footer from '@/components/Footer'
+import FeedbackRow from '@/components/FeedbackRow'
 
 const STORAGE_KEY = 'hs_nav_requirements'
 
@@ -290,6 +291,7 @@ function RequirementsContent() {
             ))}
           </div>
         </div>
+        <FeedbackRow screen="requirements" />
       </div>
       <Footer />
     </main>
