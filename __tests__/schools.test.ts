@@ -671,3 +671,44 @@ describe('Issue #17: Built by Long Tail Studio footer', () => {
     expect(footerSource).toContain('text-gray-300')
   })
 })
+
+// ── Issue #18: Guard onRequestError against null errors ─────────────────────
+
+describe('Issue #18: instrumentation.ts onRequestError null guard', () => {
+  const instrSource = fs.readFileSync(path.join(__dirname, '../instrumentation.ts'), 'utf-8')
+
+  it('exports onRequestError as a named function (not a direct alias)', () => {
+    // Must be a wrapper function, not `= Sentry.captureRequestError`
+    expect(instrSource).toContain('export const onRequestError')
+    expect(instrSource).not.toMatch(/export const onRequestError\s*=\s*Sentry\.captureRequestError\s*;/)
+  })
+
+  it('guards against null errors before calling captureRequestError', () => {
+    expect(instrSource).toContain('if (err == null) return')
+  })
+
+  it('still calls Sentry.captureRequestError for non-null errors', () => {
+    expect(instrSource).toContain('Sentry.captureRequestError(err')
+  })
+})
+
+describe('Issue #18: sentry.server.config.ts beforeSend null-digest filter', () => {
+  const serverConfigSource = fs.readFileSync(path.join(__dirname, '../sentry.server.config.ts'), 'utf-8')
+
+  it('has a beforeSend hook defined', () => {
+    expect(serverConfigSource).toContain('beforeSend')
+  })
+
+  it('filters TypeError with the null-digest message', () => {
+    expect(serverConfigSource).toContain("Cannot read properties of null (reading 'digest')")
+  })
+
+  it('returns null (drops the event) for the null-digest TypeError', () => {
+    // The filter should return null to drop matching events
+    expect(serverConfigSource).toContain('return null')
+  })
+
+  it('returns the event unchanged for other errors', () => {
+    expect(serverConfigSource).toContain('return event')
+  })
+})
