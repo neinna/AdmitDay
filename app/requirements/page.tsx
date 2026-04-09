@@ -186,9 +186,12 @@ function RequirementsContent() {
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mt-1">Your requirements checklist</h1>
           {hydrated && (
-            <p className="text-sm text-gray-500 mt-0.5">
-              {doneCount} of {allItems.length} completed
-            </p>
+            <div className="flex items-center justify-between mt-0.5">
+              <p className="text-sm text-gray-500">
+                {doneCount} of {allItems.length} completed
+              </p>
+              <FeedbackRow screen="requirements" />
+            </div>
           )}
         </div>
 
@@ -291,7 +294,6 @@ function RequirementsContent() {
             ))}
           </div>
         </div>
-        <FeedbackRow screen="requirements" />
       </div>
       <Footer />
     </main>
