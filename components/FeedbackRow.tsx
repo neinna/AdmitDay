@@ -16,6 +16,7 @@ export default function FeedbackRow({ screen }: Props) {
   const posthog = usePostHog()
   const [rating, setRating] = useState<'up' | 'down' | null>(null)
   const [hydrated, setHydrated] = useState(false)
+  const [animating, setAnimating] = useState<'up' | 'down' | null>(null)
 
   useEffect(() => {
     try {
@@ -30,54 +31,58 @@ export default function FeedbackRow({ screen }: Props) {
   }, [screen])
 
   function handleRate(value: 'up' | 'down') {
-    if (rating !== null) return
-    setRating(value)
+    const newRating = rating === value ? null : value
+    setRating(newRating)
+    setAnimating(value)
+    setTimeout(() => setAnimating(null), 150)
     try {
-      localStorage.setItem(STORAGE_KEYS[screen], value)
+      if (newRating === null) {
+        localStorage.removeItem(STORAGE_KEYS[screen])
+      } else {
+        localStorage.setItem(STORAGE_KEYS[screen], newRating)
+      }
     } catch {
       // ignore
     }
-    posthog?.capture('screen_feedback', { screen, rating: value })
+    if (newRating !== null) {
+      posthog?.capture('screen_feedback', { screen, rating: value })
+    }
   }
 
   if (!hydrated) return null
 
   return (
-    <div className="mt-8 flex items-center gap-3 justify-center text-sm text-gray-500">
-      <span>Was this helpful?</span>
+    <div className="flex items-center gap-1">
       <button
         onClick={() => handleRate('up')}
-        disabled={rating !== null}
         aria-label="Thumbs up"
         aria-pressed={rating === 'up'}
-        className={`text-xl transition-opacity ${
-          rating === null
-            ? 'hover:opacity-80 cursor-pointer'
-            : rating === 'up'
-            ? 'opacity-100 cursor-default'
-            : 'opacity-30 cursor-default'
+        style={animating === 'up' ? { animation: 'feedback-pop 150ms ease-out' } : undefined}
+        className={`flex items-center justify-center w-7 h-7 rounded-full text-base cursor-pointer transition-opacity ${
+          rating === 'up'
+            ? 'bg-green-100'
+            : rating === 'down'
+            ? 'opacity-40'
+            : 'hover:bg-gray-100'
         }`}
       >
         👍
       </button>
       <button
         onClick={() => handleRate('down')}
-        disabled={rating !== null}
         aria-label="Thumbs down"
         aria-pressed={rating === 'down'}
-        className={`text-xl transition-opacity ${
-          rating === null
-            ? 'hover:opacity-80 cursor-pointer'
-            : rating === 'down'
-            ? 'opacity-100 cursor-default'
-            : 'opacity-30 cursor-default'
+        style={animating === 'down' ? { animation: 'feedback-pop 150ms ease-out' } : undefined}
+        className={`flex items-center justify-center w-7 h-7 rounded-full text-base cursor-pointer transition-opacity ${
+          rating === 'down'
+            ? 'bg-red-100'
+            : rating === 'up'
+            ? 'opacity-40'
+            : 'hover:bg-gray-100'
         }`}
       >
         👎
       </button>
-      {rating !== null && (
-        <span className="text-gray-500 text-sm">Thanks for the feedback!</span>
-      )}
     </div>
   )
 }

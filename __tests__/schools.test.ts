@@ -787,8 +787,8 @@ describe('Issue #22: FeedbackRow component', () => {
     expect(feedbackSource).toContain('👎')
   })
 
-  it('shows Thanks for the feedback! text', () => {
-    expect(feedbackSource).toContain('Thanks for the feedback!')
+  it('does NOT show Thanks for the feedback! text (visual state is the only confirmation)', () => {
+    expect(feedbackSource).not.toContain('Thanks for the feedback!')
   })
 
   it('accepts school_list and requirements as screen prop type', () => {
@@ -817,5 +817,86 @@ describe('Issue #22: FeedbackRow added to requirements page', () => {
 
   it('renders FeedbackRow with requirements screen', () => {
     expect(reqSource).toContain('<FeedbackRow screen="requirements"')
+  })
+})
+
+// ── Issue #23: Move feedback thumbs to summary bar ───────────────────────────
+
+describe('Issue #23: FeedbackRow redesign — toggle and no text', () => {
+  const feedbackSource = fs.readFileSync(path.join(__dirname, '../components/FeedbackRow.tsx'), 'utf-8')
+
+  it('supports deselect by toggling the same rating (null when same clicked)', () => {
+    expect(feedbackSource).toContain('rating === value ? null : value')
+  })
+
+  it('calls localStorage.removeItem when deselecting', () => {
+    expect(feedbackSource).toContain('localStorage.removeItem')
+  })
+
+  it('applies green background class for thumbs up selected', () => {
+    expect(feedbackSource).toContain('bg-green-100')
+  })
+
+  it('applies red background class for thumbs down selected', () => {
+    expect(feedbackSource).toContain('bg-red-100')
+  })
+
+  it('applies opacity-40 to unselected button', () => {
+    expect(feedbackSource).toContain('opacity-40')
+  })
+
+  it('applies feedback-pop animation on click', () => {
+    expect(feedbackSource).toContain('feedback-pop')
+  })
+
+  it('does NOT contain "Was this helpful?" text', () => {
+    expect(feedbackSource).not.toContain('Was this helpful?')
+  })
+
+  it('uses animating state for pop animation', () => {
+    expect(feedbackSource).toContain('animating')
+  })
+})
+
+describe('Issue #23: FeedbackRow placed in SummaryBar (SchoolList)', () => {
+  const schoolListSource = fs.readFileSync(path.join(__dirname, '../components/SchoolList.tsx'), 'utf-8')
+
+  it('FeedbackRow is inside SummaryBar function', () => {
+    const summaryBarBlock = schoolListSource.slice(
+      schoolListSource.indexOf('function SummaryBar'),
+      schoolListSource.indexOf('// ── Column header row'),
+    )
+    expect(summaryBarBlock).toContain('<FeedbackRow screen="school_list"')
+  })
+
+  it('FeedbackRow is NOT rendered standalone at the bottom of SchoolList', () => {
+    // The standalone usage after the locked-rows section should be gone
+    const afterLockedRows = schoolListSource.slice(
+      schoolListSource.indexOf('Lock badge'),
+    )
+    expect(afterLockedRows).not.toContain('<FeedbackRow')
+  })
+
+  it('globals.css contains feedback-pop keyframe', () => {
+    const cssSource = fs.readFileSync(path.join(__dirname, '../app/globals.css'), 'utf-8')
+    expect(cssSource).toContain('@keyframes feedback-pop')
+    expect(cssSource).toContain('scale(1.1)')
+  })
+})
+
+describe('Issue #23: FeedbackRow placed in requirements header row', () => {
+  const reqSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+
+  it('FeedbackRow is in the progress summary row (same block as doneCount)', () => {
+    const doneCountIdx = reqSource.indexOf('doneCount} of')
+    const feedbackIdx = reqSource.indexOf('<FeedbackRow screen="requirements"')
+    // FeedbackRow should appear close to the doneCount line (within 300 chars)
+    expect(Math.abs(feedbackIdx - doneCountIdx)).toBeLessThan(300)
+  })
+
+  it('FeedbackRow is NOT at the bottom after the locked deadline tracking section', () => {
+    const deadlineBlock = reqSource.indexOf('Deadline Tracking')
+    const feedbackIdx = reqSource.indexOf('<FeedbackRow screen="requirements"')
+    expect(feedbackIdx).toBeLessThan(deadlineBlock)
   })
 })
