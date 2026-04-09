@@ -631,6 +631,39 @@ describe('Issue #10: view_requirements_clicked via ViewRequirementsLink componen
   })
 })
 
+// ── Issue #21: Fix next.config.js Sentry config crashing Server Actions ────
+
+describe('Issue #21: next.config.js no webpack block in withSentryConfig', () => {
+  const nextConfigSource = fs.readFileSync(path.join(__dirname, '../next.config.js'), 'utf-8')
+
+  it('does NOT contain the automaticVercelMonitors option (Vercel-only, crashes DigitalOcean)', () => {
+    expect(nextConfigSource).not.toContain('automaticVercelMonitors')
+  })
+
+  it('does NOT contain a webpack block inside withSentryConfig options', () => {
+    // The webpack block was the root cause of "Cannot read properties of undefined (reading 'workers')"
+    expect(nextConfigSource).not.toContain('webpack: {')
+  })
+
+  it('does NOT contain treeshake/removeDebugLogging inside withSentryConfig', () => {
+    expect(nextConfigSource).not.toContain('removeDebugLogging')
+  })
+})
+
+describe('Issue #21: sentry.server.config.ts reduced tracesSampleRate and sendDefaultPii', () => {
+  const serverConfigSource = fs.readFileSync(path.join(__dirname, '../sentry.server.config.ts'), 'utf-8')
+
+  it('has tracesSampleRate set to 0.1 (not 1)', () => {
+    expect(serverConfigSource).toContain('tracesSampleRate: 0.1')
+    expect(serverConfigSource).not.toContain('tracesSampleRate: 1,')
+  })
+
+  it('has sendDefaultPii set to false', () => {
+    expect(serverConfigSource).toContain('sendDefaultPii: false')
+    expect(serverConfigSource).not.toContain('sendDefaultPii: true')
+  })
+})
+
 // ── Issue #19: Sentry source maps configuration ─────────────────────────────
 
 describe('Issue #19: Sentry source maps in next.config.js', () => {
