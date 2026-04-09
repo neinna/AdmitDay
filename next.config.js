@@ -15,6 +15,10 @@ module.exports = withSentryConfig(module.exports, {
   org: "long-tail-studio",
   project: "listready",
 
+  // Authentication token for uploading source maps
+  // https://docs.sentry.io/platforms/javascript/guides/nextjs/sourcemaps/
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+
   // Only print logs for uploading source maps in CI
   silent: !process.env.CI,
 
@@ -23,6 +27,13 @@ module.exports = withSentryConfig(module.exports, {
 
   // Upload a larger set of source maps for prettier stack traces (increases build time)
   widenClientFileUpload: true,
+
+  // Source map upload configuration
+  // Deletes source maps from the build output after uploading to Sentry,
+  // so they are not publicly served (keeping stack traces readable only in Sentry).
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
 
   // Route browser requests to Sentry through a Next.js rewrite to circumvent ad-blockers.
   // This can increase your server load as well as your hosting bill.
