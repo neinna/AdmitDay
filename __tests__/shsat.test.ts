@@ -260,6 +260,55 @@ describe('SHSAT API routes exist', () => {
   })
 })
 
+// ── SHSAT table of contents page content ─────────────────────────────────────
+
+describe('SHSAT table of contents page content', () => {
+  const pagePath = path.join(__dirname, '../app/shsat/page.tsx')
+  let src: string
+
+  beforeAll(() => {
+    src = fs.readFileSync(pagePath, 'utf-8')
+  })
+
+  it('has correct header text', () => {
+    expect(src).toContain('Chang Learning — SHSAT Prep')
+  })
+
+  it('defines Alice with 🌸 emoji', () => {
+    expect(src).toContain('alice')
+    expect(src).toContain('Alice')
+    expect(src).toContain('🌸')
+  })
+
+  it('defines Jake with ⚡ emoji', () => {
+    expect(src).toContain('jake')
+    expect(src).toContain('Jake')
+    expect(src).toContain('⚡')
+  })
+
+  it('links to results history pages', () => {
+    // page uses template literals like `/shsat/${kid.id}/results`
+    expect(src).toContain('/results')
+    expect(src).toMatch(/shsat.*results|results.*shsat/)
+  })
+
+  it('shows Math Mini Test #1 metadata', () => {
+    expect(src).toContain('Math Mini Test #1')
+    expect(src).toContain('15')
+    expect(src).toContain('30')
+  })
+
+  it('links to test-1 start for each kid via template literal', () => {
+    // page uses template literals like `/shsat/${kid.id}/${test.id}`
+    expect(src).toContain('test-1')
+    expect(src).toMatch(/shsat.*kid.*test|kid.*testId/)
+  })
+
+  it('uses dark background class', () => {
+    expect(src).toMatch(/bg-gray-9[0-9][0-9]/)
+  })
+})
+
 // ── PIN validation ────────────────────────────────────────────────────────────
 
 describe('PIN validation', () => {
