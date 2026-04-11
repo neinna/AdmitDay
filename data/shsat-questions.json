@@ -103,7 +103,7 @@
     "difficulty": "medium",
     "type": "mc",
     "question": "The mean of five numbers is 12. Four of the numbers are 8, 10, 14, and 16. What is the fifth number?",
-    "options": ["A. 10", "B. 11", "C. 12", "D. 12"],
+    "options": ["A. 10", "B. 11", "C. 12", "D. 14"],
     "answer": "C",
     "explanation": "Sum of all five = 12 × 5 = 60. Sum of four known = 8 + 10 + 14 + 16 = 48. Fifth = 60 − 48 = 12."
   },
