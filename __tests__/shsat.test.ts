@@ -271,7 +271,7 @@ describe('SHSAT table of contents page content', () => {
   })
 
   it('has correct header text', () => {
-    expect(src).toContain('Chang Learning — SHSAT Prep')
+    expect(src).toContain('SHSAT Micro Tests')
   })
 
   it('defines Alice with 🌸 emoji', () => {
@@ -293,7 +293,7 @@ describe('SHSAT table of contents page content', () => {
   })
 
   it('shows Math Mini Test #1 metadata', () => {
-    expect(src).toContain('Math Mini Test #1')
+    expect(src).toContain('Weekly Micro Test #1')
     expect(src).toContain('15')
     expect(src).toContain('30')
   })
