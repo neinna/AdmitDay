@@ -8,7 +8,7 @@ const KIDS = [
 const TESTS = [
   {
     id: 'test-1',
-    name: 'Math Mini Test #1',
+    name: 'Weekly Micro Test #1',
     chapters: 'Ch 8–10',
     questions: 15,
     minutes: 30,
@@ -19,7 +19,7 @@ export default function SHSATPage() {
   return (
     <main className="min-h-screen bg-gray-950 text-gray-100">
       <div className="max-w-2xl mx-auto px-4 py-10">
-        <h1 className="text-2xl font-bold text-white mb-8">Chang Learning — SHSAT Prep</h1>
+        <h1 className="text-2xl font-bold text-white mb-8">SHSAT Micro Tests</h1>
 
         {/* Kid cards */}
         <div className="grid grid-cols-2 gap-4 mb-10">
