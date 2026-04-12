@@ -309,6 +309,182 @@ describe('SHSAT table of contents page content', () => {
   })
 })
 
+// ── Parent results page and API ───────────────────────────────────────────────
+
+describe('Parent results page exists', () => {
+  it('/app/shsat/parentsresults/page.tsx exists', () => {
+    const full = path.join(__dirname, '../app/shsat/parentsresults/page.tsx')
+    expect(fs.existsSync(full)).toBe(true)
+  })
+
+  it('/app/api/shsat/results/parent/route.ts exists', () => {
+    const full = path.join(__dirname, '../app/api/shsat/results/parent/route.ts')
+    expect(fs.existsSync(full)).toBe(true)
+  })
+})
+
+describe('Parent results page content', () => {
+  const pagePath = path.join(__dirname, '../app/shsat/parentsresults/page.tsx')
+  let src: string
+
+  beforeAll(() => {
+    src = fs.readFileSync(pagePath, 'utf-8')
+  })
+
+  it('has "All Results" header', () => {
+    expect(src).toContain('All Results')
+  })
+
+  it('shows Alice with 🌸 emoji', () => {
+    expect(src).toContain('Alice')
+    expect(src).toContain('🌸')
+  })
+
+  it('shows Jake with ⚡ emoji', () => {
+    expect(src).toContain('Jake')
+    expect(src).toContain('⚡')
+  })
+
+  it('fetches from /api/shsat/results/parent without PIN header', () => {
+    expect(src).toContain('/api/shsat/results/parent')
+    expect(src).not.toContain('x-shsat-pin')
+  })
+
+  it('has Date, Kid, Test, Raw, Scaled, Time, Topics column headers', () => {
+    expect(src).toContain('Date')
+    expect(src).toContain('Kid')
+    expect(src).toContain('Test')
+    expect(src).toContain('Raw')
+    expect(src).toContain('Scaled')
+    expect(src).toContain('Time')
+    expect(src).toContain('Topics')
+  })
+
+  it('uses thumbIcon to emit 🟢🟡🔴', () => {
+    expect(src).toContain('🟢')
+    expect(src).toContain('🟡')
+    expect(src).toContain('🔴')
+  })
+
+  it('uses dark background class', () => {
+    expect(src).toMatch(/bg-gray-9[0-9][0-9]/)
+  })
+
+  it('has expandable row logic', () => {
+    expect(src).toContain('expanded')
+    expect(src).toContain('setExpanded')
+  })
+})
+
+describe('Parent results API route content', () => {
+  const routePath = path.join(__dirname, '../app/api/shsat/results/parent/route.ts')
+  let src: string
+
+  beforeAll(() => {
+    src = fs.readFileSync(routePath, 'utf-8')
+  })
+
+  it('queries both alice and jake', () => {
+    expect(src).toContain('alice')
+    expect(src).toContain('jake')
+  })
+
+  it('returns answers_json', () => {
+    expect(src).toContain('answers_json')
+  })
+
+  it('does not require PIN/bcrypt', () => {
+    expect(src).not.toContain('bcrypt')
+    expect(src).not.toContain('x-shsat-pin')
+    expect(src).not.toContain('pin_hash')
+  })
+
+  it('orders results by timestamp DESC', () => {
+    expect(src).toContain('timestamp DESC')
+  })
+})
+
+describe('Parent results: topic stats + DB integration', () => {
+  let tmpDb: Database.Database
+  let tmpPath: string
+
+  beforeAll(() => {
+    tmpPath = path.join(os.tmpdir(), `shsat-parent-test-${Date.now()}.db`)
+    tmpDb = new Database(tmpPath)
+    tmpDb.exec(`
+      CREATE TABLE IF NOT EXISTS shsat_results (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        kid           TEXT NOT NULL,
+        test_id       TEXT NOT NULL,
+        timestamp     DATETIME DEFAULT CURRENT_TIMESTAMP,
+        raw_score     INTEGER NOT NULL,
+        total_q       INTEGER NOT NULL,
+        scaled_score  INTEGER NOT NULL,
+        time_used_s   INTEGER NOT NULL,
+        answers_json  TEXT NOT NULL
+      );
+    `)
+    const answers = JSON.stringify([
+      { q_id: 'q1', topic: 'Percents', is_correct: true },
+      { q_id: 'q2', topic: 'Percents', is_correct: false },
+      { q_id: 'q3', topic: 'Probability', is_correct: true },
+    ])
+    tmpDb.prepare(`
+      INSERT INTO shsat_results (kid, test_id, raw_score, total_q, scaled_score, time_used_s, answers_json)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run('alice', 'test-1', 2, 3, 600, 900, answers)
+    tmpDb.prepare(`
+      INSERT INTO shsat_results (kid, test_id, raw_score, total_q, scaled_score, time_used_s, answers_json)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run('jake', 'test-1', 3, 3, 800, 1200, answers)
+  })
+
+  afterAll(() => {
+    tmpDb.close()
+    fs.unlinkSync(tmpPath)
+  })
+
+  it('can query results for both kids from DB', () => {
+    const KIDS = ['alice', 'jake']
+    const rows = tmpDb
+      .prepare(
+        `SELECT id, kid, test_id, raw_score FROM shsat_results WHERE kid IN (${KIDS.map(() => '?').join(',')}) ORDER BY timestamp DESC`
+      )
+      .all(...KIDS) as any[]
+    expect(rows.length).toBe(2)
+    const kids = rows.map((r) => r.kid)
+    expect(kids).toContain('alice')
+    expect(kids).toContain('jake')
+  })
+
+  it('answers_json parses correctly with topic stats', () => {
+    const row = tmpDb.prepare('SELECT answers_json FROM shsat_results WHERE kid = ?').get('alice') as any
+    const answers = JSON.parse(row.answers_json)
+    expect(answers.length).toBe(3)
+
+    function computeTopicStats(ans: any[]) {
+      const map: Record<string, { correct: number; total: number }> = {}
+      for (const a of ans) {
+        if (!map[a.topic]) map[a.topic] = { correct: 0, total: 0 }
+        map[a.topic].total++
+        if (a.is_correct) map[a.topic].correct++
+      }
+      return Object.entries(map).map(([topic, stats]) => ({
+        topic,
+        correct: stats.correct,
+        total: stats.total,
+        pct: stats.total > 0 ? stats.correct / stats.total : 0,
+      }))
+    }
+
+    const stats = computeTopicStats(answers)
+    const percents = stats.find((s) => s.topic === 'Percents')!
+    expect(percents.correct).toBe(1)
+    expect(percents.total).toBe(2)
+    expect(percents.pct).toBe(0.5)
+  })
+})
+
 // ── PIN validation ────────────────────────────────────────────────────────────
 
 describe('PIN validation', () => {
