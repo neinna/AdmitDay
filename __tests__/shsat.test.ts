@@ -402,6 +402,10 @@ describe('Parent results API route content', () => {
   it('orders results by timestamp DESC', () => {
     expect(src).toContain('timestamp DESC')
   })
+
+  it('exports dynamic = force-dynamic to prevent static caching', () => {
+    expect(src).toContain("export const dynamic = 'force-dynamic'")
+  })
 })
 
 describe('Parent results: topic stats + DB integration', () => {
