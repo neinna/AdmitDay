@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getDb } from '@/lib/shsat-db'
 
+export const dynamic = 'force-dynamic'
+
 const KIDS = ['alice', 'jake']
 
 export async function GET() {
