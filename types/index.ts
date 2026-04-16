@@ -52,7 +52,6 @@ export interface SectionGroup {
 
 export interface UserInputs {
   borough: string
-  commute: 'short' | 'flexible'
   interests: string[]
   sports: string[]
   shsat: boolean
