@@ -561,8 +561,8 @@ describe('Issue #10: form_submitted event on home page', () => {
     expect(homeSource).toContain("capture('form_submitted'")
   })
 
-  it('captures academic_level in form_submitted', () => {
-    expect(homeSource).toContain('academic_level')
+  it('captures academic_ratings in form_submitted', () => {
+    expect(homeSource).toContain('academic_ratings')
   })
 })
 
@@ -1078,5 +1078,120 @@ describe('Issue #36: Homepage title and tagline copy', () => {
 
   it('does NOT contain the old tagline', () => {
     expect(homeSource).not.toContain('Answer a few questions')
+  })
+})
+
+// ── Issue #37: Replace academic level with Academic Rating multi-select ───────
+
+describe('Issue #37: types/index.ts academicRatings array', () => {
+  const typesSource = fs.readFileSync(path.join(__dirname, '../types/index.ts'), 'utf-8')
+
+  it('UserInputs has academicRatings array (not academicLevel)', () => {
+    expect(typesSource).toContain('academicRatings:')
+    expect(typesSource).not.toContain('academicLevel:')
+  })
+
+  it('academicRatings type includes exceptional, strong, above_average', () => {
+    expect(typesSource).toContain('exceptional')
+    expect(typesSource).toContain('strong')
+    expect(typesSource).toContain('above_average')
+  })
+})
+
+describe('Issue #37: Home page Academic Rating checkboxes', () => {
+  const homeSource = fs.readFileSync(path.join(__dirname, '../app/page.tsx'), 'utf-8')
+
+  it('uses academicRatings state (not academicLevel)', () => {
+    expect(homeSource).toContain('const [academicRatings, setAcademicRatings]')
+    expect(homeSource).not.toContain('academicLevel')
+  })
+
+  it('SavedForm has academicRatings: string[]', () => {
+    expect(homeSource).toContain('academicRatings: string[]')
+  })
+
+  it('restores academicRatings from localStorage as array', () => {
+    expect(homeSource).toContain('Array.isArray(saved.academicRatings)')
+  })
+
+  it('has toggleAcademicRating function', () => {
+    expect(homeSource).toContain('function toggleAcademicRating(value: string)')
+  })
+
+  it('renders checkboxes for Exceptional, Strong, Above Average', () => {
+    expect(homeSource).toContain("'exceptional'")
+    expect(homeSource).toContain('Exceptional')
+    expect(homeSource).toContain("'strong'")
+    expect(homeSource).toContain('Strong')
+    expect(homeSource).toContain("'above_average'")
+    expect(homeSource).toContain('Above Average')
+  })
+
+  it('validates academicRatings.length === 0', () => {
+    expect(homeSource).toContain('academicRatings.length === 0')
+    expect(homeSource).toContain('Please select an academic rating.')
+  })
+
+  it('passes academicRatings as comma-separated param', () => {
+    expect(homeSource).toContain("params.set('academicRatings', academicRatings.join(','))")
+  })
+
+  it('saves academicRatings to localStorage', () => {
+    const setItemIdx = homeSource.indexOf('localStorage.setItem')
+    const setItemBlock = homeSource.slice(setItemIdx, setItemIdx + 200)
+    expect(setItemBlock).toContain('academicRatings')
+  })
+
+  it('labels the section "Academic Rating" (not "Academic level")', () => {
+    expect(homeSource).toContain('Academic Rating')
+    expect(homeSource).not.toContain('Academic level')
+  })
+})
+
+describe('Issue #37: List page academicRatings parsing and filtering', () => {
+  const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
+
+  it('parseInputs reads academicRatings param (not level)', () => {
+    expect(listSource).toContain("str('academicRatings', '')")
+    expect(listSource).not.toContain("str('level',")
+  })
+
+  it('has matchesAcademicRating helper function', () => {
+    expect(listSource).toContain('function matchesAcademicRating(')
+  })
+
+  it('matchesAcademicRating includes null-score logic for above_average', () => {
+    expect(listSource).toContain("ratings.includes('above_average')")
+  })
+
+  it('isEligible calls matchesAcademicRating', () => {
+    expect(listSource).toContain('matchesAcademicRating(school, inputs.academicRatings)')
+  })
+
+  it('showScreened logic based on exceptional or strong', () => {
+    expect(listSource).toContain("inputs.academicRatings.includes('exceptional')")
+    expect(listSource).toContain("inputs.academicRatings.includes('strong')")
+  })
+
+  it('does NOT contain the old academicLevel field', () => {
+    expect(listSource).not.toContain('academicLevel')
+  })
+})
+
+describe('Issue #37: SchoolRow No score badge', () => {
+  const schoolRowSource = fs.readFileSync(path.join(__dirname, '../components/SchoolRow.tsx'), 'utf-8')
+
+  it('renders No score badge when academic_score_pct is null', () => {
+    expect(schoolRowSource).toContain('school.academic_score_pct === null')
+    expect(schoolRowSource).toContain('No score')
+  })
+
+  it('No score badge uses gray styling', () => {
+    const nullBlock = schoolRowSource.slice(
+      schoolRowSource.indexOf('academic_score_pct === null'),
+      schoolRowSource.indexOf('academic_score_pct === null') + 200,
+    )
+    expect(nullBlock).toContain('bg-gray-100')
+    expect(nullBlock).toContain('text-gray-400')
   })
 })
