@@ -144,6 +144,11 @@ export default function SchoolRow({ school, userInputs, rowNumber }: Props) {
         {/* School name */}
         <span className="text-sm font-medium text-gray-900 pr-1">
           {formatSchoolName(school.name)}
+          {school.academic_score_pct === null && (
+            <span className="ml-1.5 inline-flex items-center px-1.5 py-0 rounded-full text-xs font-medium bg-gray-100 text-gray-400 align-middle">
+              No score
+            </span>
+          )}
           {school.flags.is_hidden_gem && (
             <span className="ml-1.5 inline-flex items-center px-1.5 py-0 rounded-full text-xs font-medium bg-green-100 text-green-700 align-middle">
               gem

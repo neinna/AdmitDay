@@ -18,7 +18,7 @@ interface SavedForm {
   sports: string[]
   shsat: boolean
   auditions: boolean
-  academicLevel: string
+  academicRatings: string[]
   iep: string
   size: string
 }
@@ -32,7 +32,7 @@ export default function HomePage() {
   const [sports, setSports] = useState<string[]>([])
   const [shsat, setShsat] = useState<boolean>(false)
   const [auditions, setAuditions] = useState<boolean>(false)
-  const [academicLevel, setAcademicLevel] = useState<'low' | 'medium' | 'high' | ''>('')
+  const [academicRatings, setAcademicRatings] = useState<string[]>([])
   const [iep, setIep] = useState<'gened' | 'iep'>('gened')
   const [size, setSize] = useState<'small' | 'medium' | 'large' | ''>('')
   const [errors, setErrors] = useState<string[]>([])
@@ -48,8 +48,7 @@ export default function HomePage() {
       if (Array.isArray(saved.sports)) setSports(saved.sports)
       if (typeof saved.shsat === 'boolean') setShsat(saved.shsat)
       if (typeof saved.auditions === 'boolean') setAuditions(saved.auditions)
-      if (['low', 'medium', 'high'].includes(saved.academicLevel))
-        setAcademicLevel(saved.academicLevel as 'low' | 'medium' | 'high')
+      if (Array.isArray(saved.academicRatings)) setAcademicRatings(saved.academicRatings)
       if (saved.iep === 'iep' || saved.iep === 'gened') setIep(saved.iep)
       if (['small', 'medium', 'large'].includes(saved.size))
         setSize(saved.size as 'small' | 'medium' | 'large')
@@ -68,10 +67,16 @@ export default function HomePage() {
     )
   }
 
+  function toggleAcademicRating(value: string) {
+    setAcademicRatings(prev =>
+      prev.includes(value) ? prev.filter(r => r !== value) : [...prev, value]
+    )
+  }
+
   function validate(): boolean {
     const errs: string[] = []
     if (boroughs.length === 0) errs.push('Please select at least one borough.')
-    if (!academicLevel) errs.push('Please select an academic level.')
+    if (academicRatings.length === 0) errs.push('Please select an academic rating.')
     if (!size) errs.push('Please select a school size preference.')
     setErrors(errs)
     return errs.length === 0
@@ -87,7 +92,7 @@ export default function HomePage() {
       sports,
       shsat,
       auditions,
-      academic_level: academicLevel,
+      academic_ratings: academicRatings,
       iep,
       size,
     })
@@ -97,17 +102,17 @@ export default function HomePage() {
       sports: sports.join(','),
       shsat: String(shsat),
       auditions: String(auditions),
-      level: academicLevel,
       iep: String(iep === 'iep'),
       size,
     })
     params.set('borough', boroughs.join(','))
+    params.set('academicRatings', academicRatings.join(','))
 
     // Persist form state and last params for nav bar + restore
     try {
       localStorage.setItem(
         FORM_KEY,
-        JSON.stringify({ boroughs, interests, sports, shsat, auditions, academicLevel, iep, size })
+        JSON.stringify({ boroughs, interests, sports, shsat, auditions, academicRatings, iep, size })
       )
       localStorage.setItem(PARAMS_KEY, params.toString())
     } catch {
@@ -268,32 +273,22 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Academic Level */}
+          {/* Academic Rating */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Academic level
-            </label>
-            <div className="space-y-2">
-              {(
-                [
-                  { value: 'low', label: 'Low', helper: 'screened groups 4–5' },
-                  { value: 'medium', label: 'Medium', helper: 'screened group 3' },
-                  { value: 'high', label: 'High', helper: 'screened groups 1–2' },
-                ] as const
-              ).map((opt) => (
-                <label key={opt.value} className="flex items-start gap-2.5 cursor-pointer">
+            <label className="text-sm font-medium text-gray-700">Academic Rating</label>
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-1">
+              {[
+                { value: 'exceptional', label: 'Exceptional' },
+                { value: 'strong', label: 'Strong' },
+                { value: 'above_average', label: 'Above Average' },
+              ].map(({ value, label }) => (
+                <label key={value} className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
                   <input
-                    type="radio"
-                    name="level"
-                    value={opt.value}
-                    checked={academicLevel === opt.value}
-                    onChange={() => setAcademicLevel(opt.value)}
-                    className="mt-0.5 accent-gray-900"
+                    type="checkbox"
+                    checked={academicRatings.includes(value)}
+                    onChange={() => toggleAcademicRating(value)}
                   />
-                  <span className="text-sm">
-                    <span className="font-medium text-gray-800">{opt.label}</span>
-                    <span className="text-gray-500"> — {opt.helper}</span>
-                  </span>
+                  {label}
                 </label>
               ))}
             </div>

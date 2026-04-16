@@ -15,13 +15,16 @@ function parseInputs(sp: Record<string, string | string[] | undefined>): UserInp
   const boroughParam = str('borough', '')
   const boroughs = boroughParam ? boroughParam.split(',').filter(Boolean) : []
 
+  const ratingsParam = str('academicRatings', '')
+  const academicRatings = ratingsParam ? ratingsParam.split(',').filter(Boolean) : []
+
   return {
     boroughs,
     interests: str('interests', '').split(',').filter(Boolean),
     sports: str('sports', '').split(',').filter(Boolean),
     shsat: str('shsat', 'false') === 'true',
     auditions: str('auditions', 'false') === 'true',
-    academicLevel: str('level', 'medium') as 'low' | 'medium' | 'high',
+    academicRatings: academicRatings as ('exceptional' | 'strong' | 'above_average')[],
     iep: str('iep', 'false') === 'true',
     size: str('size', 'medium') as 'small' | 'medium' | 'large',
   }
@@ -34,9 +37,24 @@ function noBorough(boroughs: string[]): boolean {
   return boroughs.length === 0
 }
 
+function matchesAcademicRating(school: School, ratings: string[]): boolean {
+  const score = school.academic_score_pct
+  if (score === null) {
+    return ratings.includes('above_average')
+  }
+  if (ratings.includes('exceptional') && score >= 90) return true
+  if (ratings.includes('strong') && score >= 70 && score < 90) return true
+  if (ratings.includes('above_average') && score >= 50 && score < 70) return true
+  return false
+}
+
 function isEligible(school: School, inputs: UserInputs): boolean {
+  if (!matchesAcademicRating(school, inputs.academicRatings)) return false
+
+  const showScreened = inputs.academicRatings.includes('exceptional') || inputs.academicRatings.includes('strong')
+
   if (school.flags.has_open) return true
-  if (school.flags.has_screened && inputs.academicLevel !== 'low') return true
+  if (school.flags.has_screened && showScreened) return true
   if (school.flags.has_shsat && inputs.shsat) return true
   if (school.flags.has_audition && inputs.auditions) return true
   return false

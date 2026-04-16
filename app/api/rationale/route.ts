@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
   const studentCtx = [
     `Home borough: ${userInputs.boroughs?.join(', ') || 'not specified'}`,
     `Interests: ${userInputs.interests?.length ? userInputs.interests.join(', ') : 'not specified'}`,
-    `Academic level: ${userInputs.academicLevel}`,
+    `Academic ratings: ${userInputs.academicRatings?.join(', ') || 'not specified'}`,
     `Willing to take SHSAT: ${userInputs.shsat ? 'Yes' : 'No'}`,
     `Willing to audition: ${userInputs.auditions ? 'Yes' : 'No'}`,
     `IEP: ${userInputs.iep ? 'Yes' : 'No'}`,
