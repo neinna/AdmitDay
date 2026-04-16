@@ -14,7 +14,6 @@ const PARAMS_KEY = 'hs_nav_last_params'
 
 interface SavedForm {
   borough: string
-  commute: string
   interests: string[]
   sports: string[]
   shsat: boolean
@@ -29,7 +28,6 @@ export default function HomePage() {
   const posthog = usePostHog()
 
   const [borough, setBorough] = useState('All Boroughs')
-  const [commute, setCommute] = useState<'short' | 'flexible'>('flexible')
   const [interests, setInterests] = useState<string[]>([])
   const [sports, setSports] = useState<string[]>([])
   const [shsat, setShsat] = useState<boolean>(false)
@@ -46,7 +44,6 @@ export default function HomePage() {
       if (!raw) return
       const saved: SavedForm = JSON.parse(raw)
       if (saved.borough) setBorough(saved.borough)
-      if (saved.commute === 'short' || saved.commute === 'flexible') setCommute(saved.commute)
       if (Array.isArray(saved.interests)) setInterests(saved.interests)
       if (Array.isArray(saved.sports)) setSports(saved.sports)
       if (typeof saved.shsat === 'boolean') setShsat(saved.shsat)
@@ -79,7 +76,6 @@ export default function HomePage() {
 
     posthog?.capture('form_submitted', {
       borough,
-      commute,
       interests,
       sports,
       shsat,
@@ -91,7 +87,6 @@ export default function HomePage() {
 
     const params = new URLSearchParams({
       borough,
-      commute,
       interests: interests.join(','),
       sports: sports.join(','),
       shsat: String(shsat),
@@ -105,7 +100,7 @@ export default function HomePage() {
     try {
       localStorage.setItem(
         FORM_KEY,
-        JSON.stringify({ borough, commute, interests, sports, shsat, auditions, academicLevel, iep, size })
+        JSON.stringify({ borough, interests, sports, shsat, auditions, academicLevel, iep, size })
       )
       localStorage.setItem(PARAMS_KEY, params.toString())
     } catch {
@@ -155,33 +150,6 @@ export default function HomePage() {
                 </option>
               ))}
             </select>
-          </div>
-
-          {/* Commute preference */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Commute preference
-            </label>
-            <div className="space-y-2">
-              {(
-                [
-                  { value: 'flexible', label: 'Flexible — willing to travel to any borough' },
-                  { value: 'short', label: 'Short — prefer under 45 min (same borough)' },
-                ] as const
-              ).map((opt) => (
-                <label key={opt.value} className="flex items-center gap-2.5 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="commute"
-                    value={opt.value}
-                    checked={commute === opt.value}
-                    onChange={() => setCommute(opt.value)}
-                    className="accent-gray-900"
-                  />
-                  <span className="text-sm text-gray-700">{opt.label}</span>
-                </label>
-              ))}
-            </div>
           </div>
 
           {/* Interests */}
