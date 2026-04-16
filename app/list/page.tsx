@@ -14,7 +14,6 @@ function parseInputs(sp: Record<string, string | string[] | undefined>): UserInp
 
   return {
     borough: str('borough', ALL_BOROUGHS),
-    commute: str('commute', 'short') as 'short' | 'flexible',
     interests: str('interests', '').split(',').filter(Boolean),
     sports: str('sports', '').split(',').filter(Boolean),
     shsat: str('shsat', 'false') === 'true',
@@ -51,12 +50,7 @@ function applyFilters(
 ): School[] {
   return schools.filter((school) => {
     if (!isEligible(school, inputs)) return false
-    if (
-      !noBorough(inputs.borough) &&
-      !relaxBorough &&
-      inputs.commute === 'short' &&
-      school.borough !== inputs.borough
-    )
+    if (!noBorough(inputs.borough) && !relaxBorough && school.borough !== inputs.borough)
       return false
     return true
   })
@@ -97,10 +91,7 @@ function getResults(
     }
 
   results = applyFilters(schools, inputs, true)
-  const note =
-    inputs.commute === 'short' && inputs.borough !== ALL_BOROUGHS
-      ? 'Not enough nearby matches — we expanded to all boroughs to build your list.'
-      : 'Not enough exact matches — we broadened the search slightly to give you a full list.'
+  const note = 'Not enough exact matches — we broadened the search slightly to give you a full list.'
   return {
     results: sortBySize(sortByHomeBorough(results, inputs.borough), inputs.size),
     relaxedNote: note,

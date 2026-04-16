@@ -900,3 +900,60 @@ describe('Issue #23: FeedbackRow placed in requirements header row', () => {
     expect(feedbackIdx).toBeLessThan(deadlineBlock)
   })
 })
+
+// ── Issue #34: Remove commute filter entirely ────────────────────────────────
+
+describe('Issue #34: commute removed from types/index.ts', () => {
+  const typesSource = fs.readFileSync(path.join(__dirname, '../types/index.ts'), 'utf-8')
+
+  it('does NOT contain commute field in UserInputs', () => {
+    expect(typesSource).not.toContain('commute')
+  })
+})
+
+describe('Issue #34: commute removed from home page', () => {
+  const homeSource = fs.readFileSync(path.join(__dirname, '../app/page.tsx'), 'utf-8')
+
+  it('does NOT contain commute state declaration', () => {
+    expect(homeSource).not.toContain('setCommute')
+  })
+
+  it('does NOT contain commute in SavedForm interface', () => {
+    expect(homeSource).not.toContain("commute: string")
+  })
+
+  it('does NOT contain commute in URLSearchParams', () => {
+    expect(homeSource).not.toContain("commute,")
+  })
+
+  it('does NOT render the commute UI field', () => {
+    expect(homeSource).not.toContain('Commute preference')
+  })
+
+  it('does NOT contain commute in localStorage.setItem call', () => {
+    // The JSON.stringify object passed to localStorage should not include commute
+    const setItemIdx = homeSource.indexOf('localStorage.setItem')
+    const setItemBlock = homeSource.slice(setItemIdx, setItemIdx + 200)
+    expect(setItemBlock).not.toContain('commute')
+  })
+})
+
+describe('Issue #34: commute removed from list page', () => {
+  const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
+
+  it('does NOT contain commute in parseInputs', () => {
+    expect(listSource).not.toContain("commute:")
+  })
+
+  it('does NOT reference inputs.commute in applyFilters', () => {
+    expect(listSource).not.toContain('inputs.commute')
+  })
+
+  it('borough filter no longer depends on commute — simpler condition exists', () => {
+    expect(listSource).toContain('!noBorough(inputs.borough) && !relaxBorough && school.borough !== inputs.borough')
+  })
+
+  it('relaxedNote does NOT mention short commute', () => {
+    expect(listSource).not.toContain('Not enough nearby matches')
+  })
+})
