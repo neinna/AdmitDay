@@ -124,8 +124,7 @@ export default function SchoolRow({ school, userInputs, rowNumber }: Props) {
 
   const competitionShort = getCompetitionShort(school)
   const competitionFull = getCompetitionFull(school)
-  const isLocal =
-    userInputs.borough !== 'All Boroughs' && school.borough === userInputs.borough
+  const isLocal = userInputs.boroughs.length > 0 && userInputs.boroughs.includes(school.borough)
   const showIepNote = userInputs.iep && school.flags.has_open
 
   return (

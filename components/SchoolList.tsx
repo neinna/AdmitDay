@@ -106,7 +106,7 @@ export default function SchoolList({ groups, userInputs, totalCount }: Props) {
   useEffect(() => {
     posthog?.capture('list_viewed', {
       total_count: totalCount,
-      borough: userInputs.borough,
+      boroughs: userInputs.boroughs,
       academic_level: userInputs.academicLevel,
       shsat: userInputs.shsat,
       auditions: userInputs.auditions,
