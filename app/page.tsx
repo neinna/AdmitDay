@@ -13,7 +13,7 @@ const FORM_KEY = 'hs_nav_form'
 const PARAMS_KEY = 'hs_nav_last_params'
 
 interface SavedForm {
-  borough: string
+  boroughs: string[]
   interests: string[]
   sports: string[]
   shsat: boolean
@@ -27,7 +27,7 @@ export default function HomePage() {
   const router = useRouter()
   const posthog = usePostHog()
 
-  const [borough, setBorough] = useState('All Boroughs')
+  const [boroughs, setBoroughs] = useState<string[]>([])
   const [interests, setInterests] = useState<string[]>([])
   const [sports, setSports] = useState<string[]>([])
   const [shsat, setShsat] = useState<boolean>(false)
@@ -43,7 +43,7 @@ export default function HomePage() {
       const raw = localStorage.getItem(FORM_KEY)
       if (!raw) return
       const saved: SavedForm = JSON.parse(raw)
-      if (saved.borough) setBorough(saved.borough)
+      if (Array.isArray(saved.boroughs)) setBoroughs(saved.boroughs)
       if (Array.isArray(saved.interests)) setInterests(saved.interests)
       if (Array.isArray(saved.sports)) setSports(saved.sports)
       if (typeof saved.shsat === 'boolean') setShsat(saved.shsat)
@@ -62,8 +62,15 @@ export default function HomePage() {
     setList(list.includes(value) ? list.filter((i) => i !== value) : [...list, value])
   }
 
+  function toggleBorough(value: string) {
+    setBoroughs(prev =>
+      prev.includes(value) ? prev.filter(b => b !== value) : [...prev, value]
+    )
+  }
+
   function validate(): boolean {
     const errs: string[] = []
+    if (boroughs.length === 0) errs.push('Please select at least one borough.')
     if (!academicLevel) errs.push('Please select an academic level.')
     if (!size) errs.push('Please select a school size preference.')
     setErrors(errs)
@@ -75,7 +82,7 @@ export default function HomePage() {
     if (!validate()) return
 
     posthog?.capture('form_submitted', {
-      borough,
+      boroughs,
       interests,
       sports,
       shsat,
@@ -86,7 +93,6 @@ export default function HomePage() {
     })
 
     const params = new URLSearchParams({
-      borough,
       interests: interests.join(','),
       sports: sports.join(','),
       shsat: String(shsat),
@@ -95,12 +101,13 @@ export default function HomePage() {
       iep: String(iep === 'iep'),
       size,
     })
+    params.set('borough', boroughs.join(','))
 
     // Persist form state and last params for nav bar + restore
     try {
       localStorage.setItem(
         FORM_KEY,
-        JSON.stringify({ borough, interests, sports, shsat, auditions, academicLevel, iep, size })
+        JSON.stringify({ boroughs, interests, sports, shsat, auditions, academicLevel, iep, size })
       )
       localStorage.setItem(PARAMS_KEY, params.toString())
     } catch {
@@ -114,9 +121,9 @@ export default function HomePage() {
     <main className="min-h-screen bg-white">
       <div className="max-w-2xl mx-auto px-4 py-10">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Find the right high school</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Find the Right High School</h1>
           <p className="mt-1.5 text-gray-500 text-sm">
-            Answer a few questions and we&apos;ll match NYC public high schools to your student&apos;s profile.
+            Set your criteria. Get a matched list of NYC public high schools.
           </p>
         </div>
 
@@ -137,19 +144,28 @@ export default function HomePage() {
         <form onSubmit={handleSubmit} className="space-y-7">
           {/* Borough */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1.5">Borough</label>
-            <select
-              value={borough}
-              onChange={(e) => setBorough(e.target.value)}
-              className="block w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent"
-            >
-              <option value="All Boroughs">All Boroughs</option>
-              {BOROUGHS.map((b) => (
-                <option key={b} value={b}>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-sm font-medium text-gray-700">Borough</label>
+              <button
+                type="button"
+                onClick={() => setBoroughs([...BOROUGHS])}
+                className="text-xs text-blue-600 hover:underline"
+              >
+                Select all
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-x-4 gap-y-1">
+              {BOROUGHS.map(b => (
+                <label key={b} className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={boroughs.includes(b)}
+                    onChange={() => toggleBorough(b)}
+                  />
                   {b}
-                </option>
+                </label>
               ))}
-            </select>
+            </div>
           </div>
 
           {/* Interests */}

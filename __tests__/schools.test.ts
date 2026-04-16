@@ -949,11 +949,134 @@ describe('Issue #34: commute removed from list page', () => {
     expect(listSource).not.toContain('inputs.commute')
   })
 
-  it('borough filter no longer depends on commute — simpler condition exists', () => {
-    expect(listSource).toContain('!noBorough(inputs.borough) && !relaxBorough && school.borough !== inputs.borough')
+  it('borough filter uses boroughs array — simpler condition exists', () => {
+    expect(listSource).toContain('!noBorough(inputs.boroughs) && !relaxBorough && !inputs.boroughs.includes(school.borough)')
   })
 
   it('relaxedNote does NOT mention short commute', () => {
     expect(listSource).not.toContain('Not enough nearby matches')
+  })
+})
+
+// ── Issue #35: Replace borough dropdown with multi-select checkboxes ─────────
+
+describe('Issue #35: types/index.ts boroughs array', () => {
+  const typesSource = fs.readFileSync(path.join(__dirname, '../types/index.ts'), 'utf-8')
+
+  it('UserInputs has boroughs: string[] (not borough: string in UserInputs)', () => {
+    expect(typesSource).toContain('boroughs: string[]')
+    // UserInputs should not have a singular borough field (School still has borough: string which is fine)
+    const userInputsBlock = typesSource.slice(typesSource.indexOf('export interface UserInputs'))
+    expect(userInputsBlock).not.toContain('borough: string')
+  })
+})
+
+describe('Issue #35: Home page borough checkboxes', () => {
+  const homeSource = fs.readFileSync(path.join(__dirname, '../app/page.tsx'), 'utf-8')
+
+  it('uses boroughs state (not borough)', () => {
+    expect(homeSource).toContain('const [boroughs, setBoroughs]')
+    expect(homeSource).not.toContain("useState('All Boroughs')")
+  })
+
+  it('SavedForm has boroughs: string[] (not borough: string)', () => {
+    expect(homeSource).toContain('boroughs: string[]')
+    expect(homeSource).not.toContain('borough: string')
+  })
+
+  it('restores boroughs from localStorage as array', () => {
+    expect(homeSource).toContain('Array.isArray(saved.boroughs)')
+  })
+
+  it('has toggleBorough function', () => {
+    expect(homeSource).toContain('function toggleBorough(value: string)')
+  })
+
+  it('has Select all button', () => {
+    expect(homeSource).toContain('Select all')
+  })
+
+  it('renders checkboxes for each borough', () => {
+    expect(homeSource).toContain('type="checkbox"')
+    expect(homeSource).toContain('toggleBorough(b)')
+  })
+
+  it('does NOT contain the old borough dropdown select element', () => {
+    expect(homeSource).not.toContain("value=\"All Boroughs\"")
+  })
+
+  it('validates that at least one borough is selected', () => {
+    expect(homeSource).toContain("boroughs.length === 0")
+    expect(homeSource).toContain('Please select at least one borough.')
+  })
+
+  it('passes boroughs as comma-separated borough param', () => {
+    expect(homeSource).toContain("params.set('borough', boroughs.join(','))")
+  })
+
+  it('saves boroughs to localStorage', () => {
+    const setItemIdx = homeSource.indexOf('localStorage.setItem')
+    const setItemBlock = homeSource.slice(setItemIdx, setItemIdx + 200)
+    expect(setItemBlock).toContain('boroughs')
+    expect(setItemBlock).not.toContain("borough,")
+  })
+})
+
+describe('Issue #35: List page borough array filtering', () => {
+  const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
+
+  it('parseInputs splits borough param into boroughs array', () => {
+    expect(listSource).toContain("boroughParam.split(',').filter(Boolean)")
+  })
+
+  it('noBorough checks array length', () => {
+    expect(listSource).toContain('boroughs.length === 0')
+  })
+
+  it('applyFilters uses boroughs.includes()', () => {
+    expect(listSource).toContain('inputs.boroughs.includes(school.borough)')
+  })
+
+  it('does NOT contain relaxedNote variable', () => {
+    expect(listSource).not.toContain('relaxedNote')
+  })
+
+  it('boroughLabel uses boroughs array join', () => {
+    expect(listSource).toContain("inputs.boroughs.join(', ')")
+  })
+})
+
+describe('Issue #35: SchoolRow isLocal uses boroughs array', () => {
+  const schoolRowSource = fs.readFileSync(path.join(__dirname, '../components/SchoolRow.tsx'), 'utf-8')
+
+  it('isLocal checks boroughs array length and includes', () => {
+    expect(schoolRowSource).toContain('userInputs.boroughs.length > 0')
+    expect(schoolRowSource).toContain('userInputs.boroughs.includes(school.borough)')
+  })
+
+  it('does NOT use the old All Boroughs string check', () => {
+    expect(schoolRowSource).not.toContain("'All Boroughs'")
+  })
+})
+
+// ── Issue #36: Update homepage title and tagline ─────────────────────────────
+
+describe('Issue #36: Homepage title and tagline copy', () => {
+  const homeSource = fs.readFileSync(path.join(__dirname, '../app/page.tsx'), 'utf-8')
+
+  it('title uses title-case "Find the Right High School"', () => {
+    expect(homeSource).toContain('Find the Right High School')
+  })
+
+  it('does NOT contain the old lowercase title', () => {
+    expect(homeSource).not.toContain('Find the right high school')
+  })
+
+  it('tagline reads "Set your criteria. Get a matched list of NYC public high schools."', () => {
+    expect(homeSource).toContain('Set your criteria. Get a matched list of NYC public high schools.')
+  })
+
+  it('does NOT contain the old tagline', () => {
+    expect(homeSource).not.toContain('Answer a few questions')
   })
 })

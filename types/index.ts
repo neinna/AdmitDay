@@ -51,7 +51,7 @@ export interface SectionGroup {
 }
 
 export interface UserInputs {
-  borough: string
+  boroughs: string[]
   interests: string[]
   sports: string[]
   shsat: boolean

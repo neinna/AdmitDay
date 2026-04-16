@@ -12,8 +12,11 @@ function parseInputs(sp: Record<string, string | string[] | undefined>): UserInp
   const str = (key: string, def: string) =>
     typeof sp[key] === 'string' ? (sp[key] as string) : def
 
+  const boroughParam = str('borough', '')
+  const boroughs = boroughParam ? boroughParam.split(',').filter(Boolean) : []
+
   return {
-    borough: str('borough', ALL_BOROUGHS),
+    boroughs,
     interests: str('interests', '').split(',').filter(Boolean),
     sports: str('sports', '').split(',').filter(Boolean),
     shsat: str('shsat', 'false') === 'true',
@@ -26,13 +29,9 @@ function parseInputs(sp: Record<string, string | string[] | undefined>): UserInp
 
 // ── Eligibility & filtering ──────────────────────────────────────────────────
 
-const ALL_BOROUGHS = 'All Boroughs'
-
-/** True for any value that means "show all boroughs — skip borough filter". */
-function noBorough(borough: string): boolean {
-  if (!borough) return true
-  const b = borough.trim().toLowerCase()
-  return b === 'all boroughs' || b === 'all' || b === ''
+/** True when no boroughs are selected — skip borough filter. */
+function noBorough(boroughs: string[]): boolean {
+  return boroughs.length === 0
 }
 
 function isEligible(school: School, inputs: UserInputs): boolean {
@@ -50,14 +49,15 @@ function applyFilters(
 ): School[] {
   return schools.filter((school) => {
     if (!isEligible(school, inputs)) return false
-    if (!noBorough(inputs.borough) && !relaxBorough && school.borough !== inputs.borough)
+    if (!noBorough(inputs.boroughs) && !relaxBorough && !inputs.boroughs.includes(school.borough))
       return false
     return true
   })
 }
 
-function sortByHomeBorough(schools: School[], homeBorough: string): School[] {
-  if (noBorough(homeBorough)) return schools
+function sortByHomeBorough(schools: School[], boroughs: string[]): School[] {
+  if (boroughs.length !== 1) return schools
+  const homeBorough = boroughs[0]
   return [...schools].sort((a, b) => {
     const aHome = a.borough === homeBorough
     const bHome = b.borough === homeBorough
@@ -80,21 +80,10 @@ function sortBySize(schools: School[], preferredSize: string): School[] {
 function getResults(
   schools: School[],
   inputs: UserInputs
-): { results: School[]; relaxedNote: string } {
-  const MIN = 12
-
-  let results = applyFilters(schools, inputs, false)
-  if (results.length >= MIN)
-    return {
-      results: sortBySize(sortByHomeBorough(results, inputs.borough), inputs.size),
-      relaxedNote: '',
-    }
-
-  results = applyFilters(schools, inputs, true)
-  const note = 'Not enough exact matches — we broadened the search slightly to give you a full list.'
+): { results: School[] } {
+  const results = applyFilters(schools, inputs, false)
   return {
-    results: sortBySize(sortByHomeBorough(results, inputs.borough), inputs.size),
-    relaxedNote: note,
+    results: sortBySize(sortByHomeBorough(results, inputs.boroughs), inputs.size),
   }
 }
 
@@ -132,12 +121,20 @@ function selectSHSATSchools(allSchools: School[], inputs: UserInputs): School[] 
   const shsatSchools = allSchools.filter((s) => s.flags.has_shsat)
   const TARGET = 5
 
-  if (noBorough(inputs.borough)) {
+  if (noBorough(inputs.boroughs)) {
     return [...shsatSchools]
       .sort((a, b) => scoreSHSATSchool(b, inputs) - scoreSHSATSchool(a, inputs))
   }
 
-  const homeBorough = inputs.borough
+  // Multiple boroughs: show all SHSAT schools from selected boroughs
+  if (inputs.boroughs.length > 1) {
+    return shsatSchools
+      .filter((s) => inputs.boroughs.includes(s.borough))
+      .sort((a, b) => scoreSHSATSchool(b, inputs) - scoreSHSATSchool(a, inputs))
+  }
+
+  // Single borough: prioritize home, fill from nearby
+  const homeBorough = inputs.boroughs[0]
   const fromHome = shsatSchools
     .filter((s) => s.borough === homeBorough)
     .sort((a, b) => scoreSHSATSchool(b, inputs) - scoreSHSATSchool(a, inputs))
@@ -225,7 +222,7 @@ export default async function ListPage({
     // schools.json not yet present
   }
 
-  const { results: baseResults, relaxedNote } = getResults(allSchools, inputs)
+  const { results: baseResults } = getResults(allSchools, inputs)
 
   // Sports: soft post-filter
   let results = baseResults
@@ -259,13 +256,12 @@ export default async function ListPage({
       .map(([k, v]) => [k, v as string])
   )
 
-  const boroughLabel = inputs.borough === ALL_BOROUGHS ? 'all boroughs' : inputs.borough
+  const boroughLabel = inputs.boroughs.length === 0 ? 'all boroughs' : inputs.boroughs.join(', ')
 
   // Collect all banners to show at the very top
   const banners: string[] = []
   if (allSchools.length === 0)
     banners.push('School data not yet loaded on the server — contact support if this persists.')
-  if (relaxedNote) banners.push(relaxedNote)
   if (sportsNote) banners.push(sportsNote)
 
   return (
