@@ -107,7 +107,7 @@ export default function SchoolList({ groups, userInputs, totalCount }: Props) {
     posthog?.capture('list_viewed', {
       total_count: totalCount,
       boroughs: userInputs.boroughs,
-      academic_level: userInputs.academicLevel,
+      academic_ratings: userInputs.academicRatings,
       shsat: userInputs.shsat,
       auditions: userInputs.auditions,
     })
