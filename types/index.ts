@@ -56,7 +56,7 @@ export interface UserInputs {
   sports: string[]
   shsat: boolean
   auditions: boolean
-  academicLevel: 'low' | 'medium' | 'high'
+  academicRatings: ('exceptional' | 'strong' | 'above_average')[]
   iep: boolean
   size: 'small' | 'medium' | 'large'
 }
