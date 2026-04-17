@@ -1195,3 +1195,197 @@ describe('Issue #37: SchoolRow No score badge', () => {
     expect(nullBlock).toContain('text-gray-400')
   })
 })
+
+// ── Issue #38: Fix academicRatings param mismatch / eligibility / borough ────
+
+// Inline helpers mirroring the fixed logic in app/list/page.tsx for behavioral testing.
+function matchesAcademicRating38(score: number | null, ratings: string[]): boolean {
+  if (score === null) return ratings.includes('above_average')
+  if (ratings.includes('exceptional') && score >= 90) return true
+  if (ratings.includes('strong') && score >= 70 && score < 90) return true
+  if (ratings.includes('above_average') && score >= 50 && score < 70) return true
+  return false
+}
+
+function makeSchool38(overrides: {
+  has_open?: boolean; has_screened?: boolean; has_shsat?: boolean; has_audition?: boolean;
+  academic_score_pct?: number | null; borough?: string;
+}): any {
+  return {
+    dbn: 'TEST',
+    name: 'Test School',
+    borough: overrides.borough ?? 'Manhattan',
+    size: 'medium',
+    total_students: null,
+    applicants_per_seat: null,
+    academic_score_pct: overrides.academic_score_pct ?? null,
+    survey_score_pct: null,
+    admissions_types: [],
+    programs: [],
+    flags: {
+      has_open: overrides.has_open ?? false,
+      has_screened: overrides.has_screened ?? false,
+      has_shsat: overrides.has_shsat ?? false,
+      has_audition: overrides.has_audition ?? false,
+      has_borough_priority: false,
+      is_hidden_gem: false,
+      has_consortium: false,
+      has_ib: false,
+    },
+    doe_data: { overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '' },
+    sift_url: '',
+    last_verified: '',
+  }
+}
+
+function isEligible38(school: any, inputs: { academicRatings: string[]; shsat: boolean; auditions: boolean }): boolean {
+  const showScreened = inputs.academicRatings.includes('exceptional') || inputs.academicRatings.includes('strong')
+  if (school.flags.has_open) return true
+  if (school.flags.has_screened && showScreened) return true
+  if (school.flags.has_shsat && inputs.shsat) return true
+  if (school.flags.has_audition && inputs.auditions) return true
+  return matchesAcademicRating38(school.academic_score_pct, inputs.academicRatings)
+}
+
+function noBorough38(boroughs: string[]): boolean {
+  return boroughs.length === 0 || boroughs.length >= 5
+}
+
+function applyFilters38(schools: any[], inputs: { academicRatings: string[]; shsat: boolean; auditions: boolean; boroughs: string[] }): any[] {
+  return schools.filter((school) => {
+    if (!isEligible38(school, inputs)) return false
+    if (!noBorough38(inputs.boroughs) && !inputs.boroughs.includes(school.borough)) return false
+    return true
+  })
+}
+
+describe('Issue #38: isEligible — open schools always eligible', () => {
+  it('exceptional: open school with low score (55) is included', () => {
+    const school = makeSchool38({ has_open: true, academic_score_pct: 55 })
+    expect(isEligible38(school, { academicRatings: ['exceptional'], shsat: false, auditions: false })).toBe(true)
+  })
+
+  it('exceptional: open school with null score is included', () => {
+    const school = makeSchool38({ has_open: true, academic_score_pct: null })
+    expect(isEligible38(school, { academicRatings: ['exceptional'], shsat: false, auditions: false })).toBe(true)
+  })
+
+  it('exceptional: screened school is included (showScreened=true)', () => {
+    const school = makeSchool38({ has_screened: true, academic_score_pct: 80 })
+    expect(isEligible38(school, { academicRatings: ['exceptional'], shsat: false, auditions: false })).toBe(true)
+  })
+
+  it('exceptional: shsat school included when shsat=true', () => {
+    const school = makeSchool38({ has_shsat: true, academic_score_pct: 95 })
+    expect(isEligible38(school, { academicRatings: ['exceptional'], shsat: true, auditions: false })).toBe(true)
+  })
+
+  it('exceptional: audition school included when auditions=true', () => {
+    const school = makeSchool38({ has_audition: true, academic_score_pct: 70 })
+    expect(isEligible38(school, { academicRatings: ['exceptional'], shsat: false, auditions: true })).toBe(true)
+  })
+})
+
+describe('Issue #38: isEligible — above_average shows open but not screened', () => {
+  it('above_average: open school is included', () => {
+    const school = makeSchool38({ has_open: true, academic_score_pct: 60 })
+    expect(isEligible38(school, { academicRatings: ['above_average'], shsat: false, auditions: false })).toBe(true)
+  })
+
+  it('above_average: screened school is NOT included (showScreened=false)', () => {
+    const school = makeSchool38({ has_screened: true, academic_score_pct: 95 })
+    expect(isEligible38(school, { academicRatings: ['above_average'], shsat: false, auditions: false })).toBe(false)
+  })
+
+  it('above_average: shsat school NOT included when shsat=false', () => {
+    const school = makeSchool38({ has_shsat: true, academic_score_pct: 95 })
+    expect(isEligible38(school, { academicRatings: ['above_average'], shsat: false, auditions: false })).toBe(false)
+  })
+})
+
+describe('Issue #38: auditions=true includes audition schools', () => {
+  it('auditions=true returns audition school', () => {
+    const school = makeSchool38({ has_audition: true })
+    expect(isEligible38(school, { academicRatings: ['exceptional'], shsat: false, auditions: true })).toBe(true)
+  })
+
+  it('auditions=false excludes audition-only school', () => {
+    const school = makeSchool38({ has_audition: true })
+    expect(isEligible38(school, { academicRatings: ['exceptional'], shsat: false, auditions: false })).toBe(false)
+  })
+})
+
+describe('Issue #38: noBorough — all 5 boroughs behaves same as no filter', () => {
+  it('empty boroughs → noBorough=true', () => {
+    expect(noBorough38([])).toBe(true)
+  })
+
+  it('all 5 boroughs selected → noBorough=true', () => {
+    expect(noBorough38(['Manhattan', 'Brooklyn', 'Queens', 'Bronx', 'Staten Island'])).toBe(true)
+  })
+
+  it('single borough → noBorough=false', () => {
+    expect(noBorough38(['Manhattan'])).toBe(false)
+  })
+
+  it('3 boroughs → noBorough=false', () => {
+    expect(noBorough38(['Manhattan', 'Brooklyn', 'Queens'])).toBe(false)
+  })
+
+  it('all 5 boroughs: schools from all boroughs are returned', () => {
+    const allBoroughs = ['Manhattan', 'Brooklyn', 'Queens', 'Bronx', 'Staten Island']
+    const schools = allBoroughs.map(b => makeSchool38({ has_open: true, borough: b }))
+    const results = applyFilters38(schools, { academicRatings: ['exceptional'], shsat: false, auditions: false, boroughs: allBoroughs })
+    expect(results.length).toBe(5)
+  })
+})
+
+describe('Issue #38: single borough filter', () => {
+  it('only returns schools from the selected borough', () => {
+    const schools = [
+      makeSchool38({ has_open: true, borough: 'Manhattan' }),
+      makeSchool38({ has_open: true, borough: 'Brooklyn' }),
+      makeSchool38({ has_open: true, borough: 'Queens' }),
+    ]
+    const results = applyFilters38(schools, { academicRatings: ['exceptional'], shsat: false, auditions: false, boroughs: ['Manhattan'] })
+    expect(results.length).toBe(1)
+    expect(results[0].borough).toBe('Manhattan')
+  })
+})
+
+describe('Issue #38: source — isEligible puts has_open before matchesAcademicRating gate', () => {
+  const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
+  const isEligibleBlock = listSource.slice(
+    listSource.indexOf('function isEligible('),
+    listSource.indexOf('function applyFilters('),
+  )
+
+  it('has_open check appears before matchesAcademicRating in isEligible', () => {
+    const openIdx = isEligibleBlock.indexOf('has_open')
+    const matchIdx = isEligibleBlock.indexOf('matchesAcademicRating')
+    expect(openIdx).toBeGreaterThan(-1)
+    expect(matchIdx).toBeGreaterThan(-1)
+    expect(openIdx).toBeLessThan(matchIdx)
+  })
+
+  it('matchesAcademicRating is NOT used as a top-level gate (no early return)', () => {
+    // The old buggy pattern was: if (!matchesAcademicRating(...)) return false
+    expect(isEligibleBlock).not.toContain('if (!matchesAcademicRating')
+  })
+})
+
+describe('Issue #38: source — noBorough handles all 5 boroughs', () => {
+  const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
+  const noBoroughBlock = listSource.slice(
+    listSource.indexOf('function noBorough('),
+    listSource.indexOf('function matchesAcademicRating('),
+  )
+
+  it('noBorough returns true for length >= 5', () => {
+    expect(noBoroughBlock).toContain('boroughs.length >= 5')
+  })
+
+  it('noBorough still returns true for empty array', () => {
+    expect(noBoroughBlock).toContain('boroughs.length === 0')
+  })
+})

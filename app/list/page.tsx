@@ -32,9 +32,9 @@ function parseInputs(sp: Record<string, string | string[] | undefined>): UserInp
 
 // ── Eligibility & filtering ──────────────────────────────────────────────────
 
-/** True when no boroughs are selected — skip borough filter. */
+/** True when no boroughs are selected or all 5 are selected — skip borough filter. */
 function noBorough(boroughs: string[]): boolean {
-  return boroughs.length === 0
+  return boroughs.length === 0 || boroughs.length >= 5
 }
 
 function matchesAcademicRating(school: School, ratings: string[]): boolean {
@@ -49,15 +49,13 @@ function matchesAcademicRating(school: School, ratings: string[]): boolean {
 }
 
 function isEligible(school: School, inputs: UserInputs): boolean {
-  if (!matchesAcademicRating(school, inputs.academicRatings)) return false
-
   const showScreened = inputs.academicRatings.includes('exceptional') || inputs.academicRatings.includes('strong')
 
   if (school.flags.has_open) return true
   if (school.flags.has_screened && showScreened) return true
   if (school.flags.has_shsat && inputs.shsat) return true
   if (school.flags.has_audition && inputs.auditions) return true
-  return false
+  return matchesAcademicRating(school, inputs.academicRatings)
 }
 
 function applyFilters(
