@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { School, UserInputs } from '@/types'
 import RequirementsContent from './RequirementsContent'
+import { capSchoolsByCategory, FREE_TIER_CAP, PAID_TIER_CAP } from '@/lib/school-list-utils'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -168,7 +169,10 @@ export default async function RequirementsPage({
   const nonShsat = applyFilters(allSchools, inputs).filter((s) => !shsatDbns.has(s.dbn))
   const matchedSchools = [...shsatSchools, ...nonShsat]
 
-  const sections = buildReqSections(matchedSchools)
+  // Cap at FREE_TIER_CAP with per-category limits (same as list page)
+  const cappedSchools = capSchoolsByCategory(matchedSchools)
+  const sections = buildReqSections(cappedSchools)
+  const lockedCount = PAID_TIER_CAP - FREE_TIER_CAP
 
   const reqParams = new URLSearchParams(
     Object.entries(searchParams)
@@ -177,5 +181,5 @@ export default async function RequirementsPage({
   )
   const listHref = `/list?${reqParams.toString()}`
 
-  return <RequirementsContent sections={sections} listHref={listHref} />
+  return <RequirementsContent sections={sections} listHref={listHref} lockedCount={lockedCount} />
 }

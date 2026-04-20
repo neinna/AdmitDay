@@ -5,6 +5,7 @@ import SchoolList from '@/components/SchoolList'
 import ViewRequirementsLink from '@/components/ViewRequirementsLink'
 import Footer from '@/components/Footer'
 import { School, UserInputs, SectionType, SectionGroup } from '@/types'
+import { capSchoolsByCategory } from '@/lib/school-list-utils'
 
 // ── Input parsing ────────────────────────────────────────────────────────────
 
@@ -264,7 +265,9 @@ export default async function ListPage({
 
   // Combine: SHSAT first, then everything else
   const finalResults = [...shsatSelected, ...nonShsatResults]
-  const groups = groupSchools(finalResults)
+  // Cap at FREE_TIER_CAP (15) with per-category limits
+  const cappedResults = capSchoolsByCategory(finalResults)
+  const groups = groupSchools(cappedResults)
 
   const reqParams = new URLSearchParams(
     Object.entries(searchParams)
@@ -299,7 +302,7 @@ export default async function ListPage({
           <div>
             <h1 className="text-xl font-bold text-gray-900">Your school matches</h1>
             <p className="text-sm text-gray-500 mt-0.5">
-              {finalResults.length} school{finalResults.length !== 1 ? 's' : ''} for {boroughLabel}
+              {cappedResults.length} school{cappedResults.length !== 1 ? 's' : ''} for {boroughLabel}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
@@ -319,7 +322,7 @@ export default async function ListPage({
         </div>
 
         {/* Grouped school list */}
-        {finalResults.length === 0 ? (
+        {cappedResults.length === 0 ? (
           <div className="text-center py-16">
             <p className="text-gray-400">No schools found matching your criteria.</p>
             <Link href="/" className="mt-4 inline-block text-sm text-gray-900 underline">
@@ -327,7 +330,7 @@ export default async function ListPage({
             </Link>
           </div>
         ) : (
-          <SchoolList groups={groups} userInputs={inputs} totalCount={finalResults.length} />
+          <SchoolList groups={groups} userInputs={inputs} totalCount={cappedResults.length} />
         )}
 
       </div>
