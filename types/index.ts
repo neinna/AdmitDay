@@ -17,6 +17,23 @@ export interface DoeData {
   phone: string
   address: string
   zip: string
+  academic_opportunities?: string
+  prgdesc?: string
+  requirements?: Record<string, string>
+  audition_information?: string[]
+  interests?: string[]
+  graduation_rate?: number | null
+  attendance_rate?: number | null
+  college_career_rate?: number | null
+  subway?: string
+  bus?: string
+  psal_sports_boys?: string
+  psal_sports_girls?: string
+  psal_sports_coed?: string
+  advancedplacement_courses?: string
+  diplomaendorsements?: string
+  neighborhood?: string
+  addtl_info?: string
 }
 
 export interface SchoolProgram {

@@ -219,7 +219,7 @@ def build_school_json(sift_schools, doe_by_dbn):
         }
         has_consortium = dbn in CONSORTIUM_DBNS
 
-        overview_text = doe.get("overview1", "")
+        overview_text = doe.get("overview_paragraph", "")
         name_text = school["name"]
         has_ib = (
             "International Baccalaureate" in name_text or
@@ -227,6 +227,45 @@ def build_school_json(sift_schools, doe_by_dbn):
             " IB " in name_text or
             " IB " in overview_text
         )
+
+        academic_opps = " ".join(filter(None, [
+            doe.get("academicopportunities1", ""),
+            doe.get("academicopportunities2", ""),
+            doe.get("academicopportunities3", ""),
+            doe.get("academicopportunities4", ""),
+            doe.get("academicopportunities5", ""),
+        ]))
+
+        prgdesc = " ".join(filter(None, [
+            doe.get("prgdesc1", ""),
+            doe.get("prgdesc2", ""),
+            doe.get("prgdesc3", ""),
+        ]))
+
+        requirements = {
+            f"requirement{i}_{j}": doe.get(f"requirement{i}_{j}", "")
+            for i in range(1, 5)
+            for j in range(1, 4)
+            if doe.get(f"requirement{i}_{j}", "")
+        }
+
+        audition_information = [v for v in [
+            doe.get("auditioninformation1", ""),
+            doe.get("auditioninformation2", ""),
+            doe.get("auditioninformation3", ""),
+        ] if v]
+
+        interests = list(dict.fromkeys(v for v in [
+            doe.get("interest1", ""),
+            doe.get("interest2", ""),
+            doe.get("interest3", ""),
+        ] if v))
+
+        def safe_float(val):
+            try:
+                return float(val) if val else None
+            except (ValueError, TypeError):
+                return None
 
         merged = {
             "dbn": dbn,
@@ -250,13 +289,30 @@ def build_school_json(sift_schools, doe_by_dbn):
                 "has_ib": has_ib,
             },
             "doe_data": {
-                "overview": doe.get("overview1", ""),
+                "overview": doe.get("overview_paragraph", ""),
                 "language": doe.get("language_classes", ""),
                 "extracurriculars": doe.get("extracurricular_activities", ""),
                 "website": doe.get("website", ""),
                 "phone": doe.get("phone_number", ""),
                 "address": doe.get("primary_address_line_1", ""),
                 "zip": doe.get("zip", ""),
+                "academic_opportunities": academic_opps,
+                "prgdesc": prgdesc,
+                "requirements": requirements,
+                "audition_information": audition_information,
+                "interests": interests,
+                "graduation_rate": safe_float(doe.get("graduation_rate")),
+                "attendance_rate": safe_float(doe.get("attendance_rate")),
+                "college_career_rate": safe_float(doe.get("college_career_rate")),
+                "subway": doe.get("subway", ""),
+                "bus": doe.get("bus", ""),
+                "psal_sports_boys": doe.get("psal_sports_boys", ""),
+                "psal_sports_girls": doe.get("psal_sports_girls", ""),
+                "psal_sports_coed": doe.get("psal_sports_coed", ""),
+                "advancedplacement_courses": doe.get("advancedplacement_courses", ""),
+                "diplomaendorsements": doe.get("diplomaendorsements", ""),
+                "neighborhood": doe.get("neighborhood", ""),
+                "addtl_info": doe.get("addtl_info1", ""),
             },
             "sift_url": school["sift_url"],
             "last_verified": "2025-2026",
