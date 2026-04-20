@@ -23,10 +23,19 @@ export async function POST(request: NextRequest) {
     .filter(Boolean)
     .join('\n')
 
+  const academicLevelMap: Record<string, string> = {
+    exceptional: 'Student is a strong academic performer',
+    strong: 'Student has solid grades',
+    above_average: 'Student has average to above-average grades',
+  }
+  const academicDesc = userInputs.academicRatings?.length
+    ? userInputs.academicRatings.map((r: string) => academicLevelMap[r] ?? r).join('; ')
+    : 'not specified'
+
   const studentCtx = [
     `Home borough: ${userInputs.boroughs?.join(', ') || 'not specified'}`,
     `Interests: ${userInputs.interests?.length ? userInputs.interests.join(', ') : 'not specified'}`,
-    `Academic ratings: ${userInputs.academicRatings?.join(', ') || 'not specified'}`,
+    `Academic level: ${academicDesc}`,
     `Willing to take SHSAT: ${userInputs.shsat ? 'Yes' : 'No'}`,
     `Willing to audition: ${userInputs.auditions ? 'Yes' : 'No'}`,
     `IEP: ${userInputs.iep ? 'Yes' : 'No'}`,
@@ -37,10 +46,18 @@ export async function POST(request: NextRequest) {
     model: 'claude-sonnet-4-20250514',
     max_tokens: 150,
     system:
-      'You are a helpful NYC high school admissions assistant. Respond with only a valid JSON object — no markdown, no explanation, no code fences. The JSON must have exactly two fields:\n' +
-      '- "title": a 4-6 word bold summary of why this school fits the student (e.g. "Strong arts, low competition" or "STEM focus, open admissions")\n' +
-      '- "rationale": 1-2 sentences under 60 words explaining why this school might be a good fit. Be specific — cite the admissions type and relevant features. Do not use language like "you will get in" or "guaranteed". End by naming the admissions type.\n' +
-      'Example output: {"title":"Low competition, open admissions","rationale":"This school uses open lottery admissions, so every student has an equal chance. Its strong STEM programs align with the student\'s interests. Admissions type: Open."}',
+      'You are a NYC high school admissions advisor writing a brief match summary for a parent reviewing their child\'s school list.\n\n' +
+      'Rules:\n' +
+      '- Do not restate the admissions type, academic score, or applicants per seat — those are already shown on the card\n' +
+      '- Do not say anything implying guaranteed admission\n' +
+      '- Focus on why this school fits this specific student: their interests, size preference, and academic level\n' +
+      '- If the school has a distinctive program, culture, or strength mentioned in the overview, lead with that\n' +
+      '- Be specific and human, not generic\n' +
+      '- 2 sentences max, under 50 words total\n\n' +
+      'Respond with only a valid JSON object with exactly two fields:\n' +
+      '- "title": 4-6 words summarizing the fit (e.g. "Strong STEM, matches your interests" or "Small school, arts focus")\n' +
+      '- "rationale": 1-2 sentences on why this school fits this student specifically\n\n' +
+      'No markdown, no code fences, no explanation outside the JSON.',
     messages: [
       {
         role: 'user',
