@@ -222,8 +222,8 @@ const SECTION_ORDER: SectionKey[] = [
   'audition',
   'screened',
   'screened_assessment',
-  'edopt',
   'lottery',
+  'edopt',
 ]
 
 function getSchoolSectionKeys(school: School): SectionKey[] {
