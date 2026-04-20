@@ -1400,8 +1400,8 @@ describe('Issue #39: RequirementsContent.tsx is a client component', () => {
   })
 
   it('contains SHSAT requirements copy', () => {
-    expect(reqContentSource).toContain('Take and pass the SHSAT exam')
-    expect(reqContentSource).toContain('Register for the SHSAT by October 31')
+    expect(reqContentSource).toContain('SHSAT score is the sole admissions criterion for these schools.')
+    expect(reqContentSource).toContain('Register for the SHSAT by October 31, 2026')
   })
 
   it('contains Audition requirements copy', () => {
