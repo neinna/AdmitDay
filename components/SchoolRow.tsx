@@ -6,7 +6,7 @@ import { School, UserInputs } from '@/types'
 
 // ── Badge config (same as SchoolCard) ───────────────────────────────────────
 
-const BADGE_LABEL: Record<string, string> = { Open: 'Lottery' }
+const BADGE_LABEL: Record<string, string> = { Open: 'Lottery', 'Educational Option': 'Ed Opt' }
 
 const BADGE_CLASSES: Record<string, string> = {
   SHSAT: 'bg-blue-100 text-blue-800',
@@ -27,7 +27,7 @@ const BADGE_TOOLTIPS: Record<string, string> = {
 // ── Competition helpers ──────────────────────────────────────────────────────
 
 function getCompetitionShort(school: School): { text: string; color: string } {
-  if (school.flags.has_shsat) return { text: 'SHSAT', color: 'text-blue-600' }
+  if (school.flags.has_shsat) return { text: 'SHSAT only', color: 'text-blue-600' }
   if (school.flags.has_audition) return { text: 'Audition', color: 'text-purple-600' }
   if (school.flags.has_screened) return { text: 'Grade Tiers', color: 'text-orange-600' }
 
@@ -269,10 +269,12 @@ export default function SchoolRow({ school, userInputs, rowNumber }: Props) {
               ))}
             </div>
 
-            {/* Full competition text */}
-            <p className={`text-xs font-medium mb-2 ${competitionFull.color}`}>
-              {competitionFull.text}
-            </p>
+            {/* Full competition text — not shown for SHSAT (redundant with admissions badge) */}
+            {!school.flags.has_shsat && (
+              <p className={`text-xs font-medium mb-2 ${competitionFull.color}`}>
+                {competitionFull.text}
+              </p>
+            )}
 
             {/* IEP note */}
             {showIepNote && (
@@ -281,9 +283,8 @@ export default function SchoolRow({ school, userInputs, rowNumber }: Props) {
               </p>
             )}
 
-            {/* Borough + size detail */}
+            {/* Size detail */}
             <p className="text-xs text-gray-500 mb-2">
-              {school.borough} ·{' '}
               {school.size === 'small'
                 ? 'Small school (<400 students)'
                 : school.size === 'large'
