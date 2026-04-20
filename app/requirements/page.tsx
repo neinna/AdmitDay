@@ -9,6 +9,9 @@ import { capSchoolsByCategory, FREE_TIER_CAP, PAID_TIER_CAP } from '@/lib/school
 export interface SchoolInSection {
   name: string
   sectionNotes: string[]
+  prgdesc?: string
+  auditionInformation?: string[]
+  requirements?: Record<string, string>
 }
 
 export interface ShsatCutoffInfo {
@@ -258,7 +261,19 @@ function buildReqSections(matchedSchools: School[]): ReqSection[] {
         (k) =>
           `This school also has a ${SECTION_TITLES[k]} program — see the ${SECTION_TITLES[k]} section.`,
       )
-      buckets[key].push({ name: formatSchoolName(school.name), sectionNotes: notes })
+      const doeData = school.doe_data
+      const audInfo = doeData?.audition_information
+      const reqs = doeData?.requirements
+      buckets[key].push({
+        name: formatSchoolName(school.name),
+        sectionNotes: notes,
+        prgdesc: doeData?.prgdesc || undefined,
+        auditionInformation: key === 'audition' && audInfo?.length ? audInfo : undefined,
+        requirements:
+          (key === 'screened' || key === 'screened_assessment') && reqs && Object.keys(reqs).length
+            ? reqs
+            : undefined,
+      })
     }
   }
 
