@@ -130,3 +130,60 @@ describe('RequirementsContent source structure', () => {
     expect(src).toContain('{hydrated && (')
   })
 })
+
+// ── Issue #47: SHSAT copy + section order ────────────────────────────────────
+
+describe('SHSAT section copy (issue #47)', () => {
+  it('has the new SHSAT description text', () => {
+    expect(src).toContain('SHSAT score is the sole admissions criterion for these schools.')
+  })
+
+  it('has the register-by-October-31-2026 checklist item', () => {
+    expect(src).toContain('Register for the SHSAT by October 31, 2026.')
+  })
+
+  it('has the adaptive exam item mentioning SRT', () => {
+    expect(src).toContain('Student Readiness Tool (SRT)')
+  })
+
+  it('has the practice-tests item', () => {
+    expect(src).toContain('Take 2-3 practice tests before October')
+  })
+
+  it('SHSAT section has exactly 3 checklist items', () => {
+    const shsatItems = src.match(/shsat:\s*\[[\s\S]*?\],/)?.[0] ?? ''
+    const idMatches = shsatItems.match(/\{ id: 'shsat_\d+'/g) ?? []
+    expect(idMatches.length).toBe(3)
+  })
+
+  it('does not contain old SHSAT item text', () => {
+    expect(src).not.toContain('Take and pass the SHSAT exam.')
+    expect(src).not.toContain('Practice on the same type of device your school uses.')
+    expect(src).not.toContain('Offers are released in March alongside')
+  })
+})
+
+describe('Section render order (issue #47)', () => {
+  it('SECTION_DESCRIPTIONS is defined', () => {
+    expect(src).toContain('SECTION_DESCRIPTIONS')
+  })
+
+  it('description renders before schools in section loop', () => {
+    const sectionLoopStart = src.indexOf('sections.map((section)')
+    const descriptionIdx = src.indexOf('SECTION_DESCRIPTIONS[section.key]', sectionLoopStart)
+    const schoolsIdx = src.indexOf('Your matched schools in this category', sectionLoopStart)
+    const checklistIdx = src.indexOf('renderItems(items)', sectionLoopStart)
+    expect(descriptionIdx).toBeGreaterThan(sectionLoopStart)
+    expect(schoolsIdx).toBeGreaterThan(descriptionIdx)
+    expect(checklistIdx).toBeGreaterThan(schoolsIdx)
+  })
+
+  it('has descriptions for all six admissions types', () => {
+    expect(src).toContain("shsat: 'SHSAT score is the sole admissions criterion")
+    expect(src).toContain("audition: 'Requirements vary by school and by discipline")
+    expect(src).toContain("screened: 'Screened programs review your grades")
+    expect(src).toContain("screened_assessment: 'These programs require you to complete")
+    expect(src).toContain("edopt: 'Ed Opt programs are designed to reflect")
+    expect(src).toContain("lottery: 'Admission is by lottery.")
+  })
+})

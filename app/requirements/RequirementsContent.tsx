@@ -19,40 +19,42 @@ const SECTION_STYLE: Record<string, { bg: string; text: string }> = {
 }
 const ALL_APPLICANTS_STYLE = { bg: 'bg-gray-700', text: 'text-white' }
 
+const SECTION_DESCRIPTIONS: Record<string, string> = {
+  shsat: 'SHSAT score is the sole admissions criterion for these schools.',
+  audition: 'Requirements vary by school and by discipline (visual art, music, dance, theater, film, etc.).',
+  screened: 'Screened programs review your grades, attendance record, and any submitted essays or assessments.',
+  screened_assessment: 'These programs require you to complete a school-specific assessment in addition to your grades and attendance record.',
+  edopt: 'Ed Opt programs are designed to reflect a mix of academic levels.',
+  lottery: 'Admission is by lottery.',
+}
+
 const SECTION_REQUIREMENTS: Record<string, { id: string; text: string }[]> = {
   shsat: [
-    { id: 'shsat_1', text: 'Take and pass the SHSAT exam. This is the sole admissions criterion for specialized high schools.' },
-    { id: 'shsat_2', text: 'Register for the SHSAT by October 31.' },
-    { id: 'shsat_3', text: 'The exam is administered digitally.' },
-    { id: 'shsat_4', text: 'Practice on the same type of device your school uses.' },
-    { id: 'shsat_5', text: 'Offers are released in March alongside all other NYC high school offers.' },
+    { id: 'shsat_1', text: 'Register for the SHSAT by October 31, 2026. The exam is digital and adaptive. This is the first year the SHSAT is adaptive.' },
+    { id: 'shsat_2', text: 'Start prep in August using official DOE practice materials. The DOE provides a free Student Readiness Tool (SRT) that replicates the exact exam interface.' },
+    { id: 'shsat_3', text: 'Take 2-3 practice tests before October, then review weak areas in the final weeks.' },
   ],
   audition: [
     { id: 'aud_1', text: 'Prepare your audition or portfolio materials before the application window opens.' },
     { id: 'aud_2', text: 'Upload or submit materials during the application window: October 7 to December 3.' },
-    { id: 'aud_3', text: 'Requirements vary by school and by discipline (visual art, music, dance, theater, film, etc.).' },
     { id: 'aud_4', text: "Check each school's program page on MySchools for exactly what to prepare." },
   ],
   screened: [
-    { id: 'scr_1', text: 'Screened programs review your grades, attendance record, and any submitted essays or assessments.' },
     { id: 'scr_2', text: 'Maintain strong grades and attendance through the fall semester.' },
     { id: 'scr_3', text: 'New for fall 2026: a two-track system admits top academic performers from each individual middle school, as well as top performers citywide.' },
     { id: 'scr_4', text: "Check each school's program page on MySchools for specific essay prompts or additional requirements." },
   ],
   screened_assessment: [
-    { id: 'scrass_1', text: 'These programs require you to complete a school-specific assessment in addition to your grades and attendance record.' },
     { id: 'scrass_2', text: 'Assessment format varies by school. It may be a written essay, an interview, a subject-matter test, or a combination.' },
     { id: 'scrass_3', text: "Check each school's program page on MySchools for the specific assessment format and any preparation materials they provide." },
   ],
   edopt: [
     { id: 'edopt_1', text: 'No additional materials required beyond your standard application.' },
-    { id: 'edopt_2', text: 'Ed Opt programs are designed to reflect a mix of academic levels.' },
     { id: 'edopt_3', text: 'All students are eligible to apply.' },
     { id: 'edopt_4', text: 'Rank the school on your MySchools application.' },
   ],
   lottery: [
     { id: 'lot_1', text: 'No additional materials required.' },
-    { id: 'lot_2', text: 'Admission is by lottery.' },
     { id: 'lot_3', text: 'All applicants who rank the school have an equal chance.' },
     { id: 'lot_4', text: 'Rank the school on your MySchools application.' },
   ],
@@ -238,10 +240,13 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
                 <h2 className={`text-sm font-semibold uppercase tracking-wide px-3 py-2 mb-3 rounded-md ${sStyle.bg} ${sStyle.text}`}>
                   {section.title}
                 </h2>
-                {renderItems(items)}
+                {/* Description */}
+                {SECTION_DESCRIPTIONS[section.key] && (
+                  <p className="text-sm text-gray-600 mb-4">{SECTION_DESCRIPTIONS[section.key]}</p>
+                )}
                 {/* Schools in this section */}
                 {section.schools.length > 0 && (
-                  <div className="mt-4">
+                  <div className="mb-4">
                     <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
                       Your matched schools in this category
                     </p>
@@ -259,6 +264,7 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
                     </ul>
                   </div>
                 )}
+                {renderItems(items)}
                 {/* SHSAT cutoff scores */}
                 {section.shsatCutoffInfo && renderShsatCutoffs(section.shsatCutoffInfo)}
               </div>
