@@ -2158,3 +2158,35 @@ describe('Issue #50: types/index.ts DoeData includes new fields', () => {
     expect(doeDataBlock).toContain('addtl_info')
   })
 })
+
+// ── Issue #42: SchoolRow label cleanup ───────────────────────────────────────
+
+describe('Issue #42: SchoolRow expanded view and label changes', () => {
+  const schoolRowSource = fs.readFileSync(path.join(__dirname, '../components/SchoolRow.tsx'), 'utf-8')
+
+  it('BADGE_LABEL maps Educational Option to Ed Opt', () => {
+    expect(schoolRowSource).toContain("'Educational Option': 'Ed Opt'")
+  })
+
+  it('getCompetitionShort returns SHSAT only for SHSAT schools', () => {
+    expect(schoolRowSource).toContain("'SHSAT only'")
+    expect(schoolRowSource).not.toMatch(/text:\s*'SHSAT'[^O]/)
+  })
+
+  it('full competition text is conditionally hidden for SHSAT schools', () => {
+    expect(schoolRowSource).toContain('!school.flags.has_shsat')
+  })
+
+  it('expanded view does not render borough unconditionally before size', () => {
+    expect(schoolRowSource).not.toContain('{school.borough} ·')
+  })
+
+  it('expanded view still shows size description', () => {
+    expect(schoolRowSource).toContain('Small school (<400 students)')
+    expect(schoolRowSource).toContain('Large school (1,200+ students)')
+  })
+
+  it('expanded view still shows applicants per seat', () => {
+    expect(schoolRowSource).toContain('applicants/seat')
+  })
+})
