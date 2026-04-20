@@ -22,6 +22,21 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; HSNavigator/1.0; research tool)"
 }
 
+# Minimum SHSAT score that received a specialized high school offer.
+# Source: NYC DOE "Specialized High School Offers" press release, 2024 admissions cycle.
+# Update this dict each year after the DOE publishes new offer data (typically March).
+SHSAT_CUTOFFS: dict[str, int] = {
+    "02M475": 560,  # Stuyvesant High School
+    "05M692": 514,  # High School for Math, Science and Engineering at City College
+    "10X445": 521,  # Bronx High School of Science
+    "10X696": 512,  # High School of American Studies at Lehman College
+    "13K430": 478,  # Brooklyn Technical High School
+    "14K449": 439,  # Brooklyn Latin School
+    "28Q687": 489,  # Queens High School for the Sciences at York College
+    "31R605": 528,  # Staten Island Technical High School
+}
+SHSAT_CUTOFFS_YEAR = "2024"
+
 def fetch_nycsift_schools():
     print("Fetching school list from NYC-SIFT...")
     url = "https://nycsift.com/data-all.phtml?type=s"
@@ -245,6 +260,8 @@ def build_school_json(sift_schools, doe_by_dbn):
             },
             "sift_url": school["sift_url"],
             "last_verified": "2025-2026",
+            "shsat_cutoff_score": SHSAT_CUTOFFS.get(dbn) if has_shsat else None,
+            "shsat_cutoff_year": SHSAT_CUTOFFS_YEAR if has_shsat and SHSAT_CUTOFFS.get(dbn) else None,
         }
         final.append(merged)
 
