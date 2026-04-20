@@ -9,6 +9,8 @@ import type { ReqSection, ShsatCutoffInfo } from './page'
 
 const STORAGE_KEY = 'hs_nav_requirements'
 
+const PER_SCHOOL_KEYS = new Set(['audition', 'screened', 'screened_assessment'])
+
 const SECTION_STYLE: Record<string, { bg: string; text: string }> = {
   shsat: { bg: 'bg-blue-600', text: 'text-white' },
   audition: { bg: 'bg-purple-600', text: 'text-white' },
@@ -85,9 +87,12 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
   const [checked, setChecked] = useState<Record<string, boolean>>({})
   const [hydrated, setHydrated] = useState(false)
 
-  // Build all items across all sections + all applicants for progress count
+  // Build all items across all sections + all applicants for progress count.
+  // Per-school sections (audition, screened) show requirements as info text, not checkboxes.
   const allItems = [
-    ...sections.flatMap((s) => SECTION_REQUIREMENTS[s.key] ?? []),
+    ...sections
+      .filter((s) => !PER_SCHOOL_KEYS.has(s.key))
+      .flatMap((s) => SECTION_REQUIREMENTS[s.key] ?? []),
     ...ALL_APPLICANTS_ITEMS,
   ]
   // Only use localStorage-backed checked state after hydration to prevent hydration mismatch.
@@ -151,6 +156,34 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
         </p>
       </div>
     )
+  }
+
+  function firstSentence(text: string): string {
+    const idx = text.indexOf('. ')
+    if (idx !== -1) return text.slice(0, idx + 1)
+    return text.length > 150 ? text.slice(0, 147) + '…' : text
+  }
+
+  function renderScreenedRequirements(requirements: Record<string, string>) {
+    const programs: Record<string, string[]> = {}
+    for (const [key, value] of Object.entries(requirements)) {
+      const match = key.match(/^requirement\d+_(\d+)$/)
+      if (match && value) {
+        const prog = match[1]
+        if (!programs[prog]) programs[prog] = []
+        programs[prog].push(value)
+      }
+    }
+    const entries = Object.entries(programs).sort((a, b) => Number(a[0]) - Number(b[0]))
+    const multi = entries.length > 1
+    return entries.map(([, reqs], i) => (
+      <div key={i} className="bg-gray-50 rounded p-2 mt-1">
+        {multi && <div className="font-medium text-gray-700 mb-0.5">Program {i + 1}</div>}
+        <ul className="space-y-0.5">
+          {reqs.map((req, j) => <li key={j}>{req}</li>)}
+        </ul>
+      </div>
+    ))
   }
 
   function renderItems(items: { id: string; text: string }[]) {
@@ -250,21 +283,50 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
                     <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
                       Your matched schools in this category
                     </p>
-                    <ul className="space-y-1">
+                    <ul className="space-y-4">
                       {section.schools.map((school) => (
                         <li key={school.name} className="text-sm text-gray-700">
-                          {school.name}
+                          <span className="font-semibold text-gray-900">
+                            {school.name}
+                          </span>
                           {school.sectionNotes.length > 0 && (
                             <span className="ml-2 text-xs text-gray-400">
                               {school.sectionNotes.join(' ')}
                             </span>
+                          )}
+                          {school.prgdesc && (
+                            <p className="text-xs text-gray-500 mt-0.5 italic">{firstSentence(school.prgdesc)}</p>
+                          )}
+                          {school.auditionInformation && school.auditionInformation.length > 0 && (
+                            <div className="mt-2 space-y-2">
+                              {school.auditionInformation.slice(0, 3).map((info, i) => (
+                                <div key={i} className="text-xs text-gray-600 bg-gray-50 rounded p-2">
+                                  {school.auditionInformation!.length > 1 && (
+                                    <div className="font-medium text-gray-700 mb-0.5">Program {i + 1}</div>
+                                  )}
+                                  <div>{info}</div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {school.requirements && Object.keys(school.requirements).length > 0 && (
+                            <div className="mt-1 text-xs text-gray-600">
+                              {renderScreenedRequirements(school.requirements)}
+                            </div>
+                          )}
+                          {PER_SCHOOL_KEYS.has(section.key) && !school.auditionInformation?.length && !school.requirements && (
+                            <ul className="mt-1.5 space-y-1">
+                              {(SECTION_REQUIREMENTS[section.key] ?? []).map((item) => (
+                                <li key={item.id} className="text-xs text-gray-500">• {item.text}</li>
+                              ))}
+                            </ul>
                           )}
                         </li>
                       ))}
                     </ul>
                   </div>
                 )}
-                {renderItems(items)}
+                {!PER_SCHOOL_KEYS.has(section.key) && renderItems(items)}
                 {/* SHSAT cutoff scores */}
                 {section.shsatCutoffInfo && renderShsatCutoffs(section.shsatCutoffInfo)}
               </div>
