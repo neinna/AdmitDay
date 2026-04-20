@@ -1997,3 +1997,164 @@ describe('Issue #45: Section headers styled with colored backgrounds', () => {
     expect(reqContentSource).not.toContain('pb-2 border-b border-gray-200')
   })
 })
+
+// ── Issue #50: Scraper pulls all relevant DOE fields ─────────────────────────
+
+describe('Issue #50: build_school_data.py uses overview_paragraph (not overview1)', () => {
+  const buildSource = fs.readFileSync(path.join(__dirname, '../build_school_data.py'), 'utf-8')
+
+  it('does NOT reference overview1 field', () => {
+    expect(buildSource).not.toContain('"overview1"')
+  })
+
+  it('uses overview_paragraph for the overview field', () => {
+    expect(buildSource).toContain('"overview_paragraph"')
+  })
+
+  it('uses overview_paragraph in the IB detection logic', () => {
+    const ibBlock = buildSource.slice(
+      buildSource.indexOf('has_ib'),
+      buildSource.indexOf('has_ib') + 300,
+    )
+    expect(ibBlock).not.toContain('"overview1"')
+  })
+})
+
+describe('Issue #50: build_school_data.py pulls new DOE fields', () => {
+  const buildSource = fs.readFileSync(path.join(__dirname, '../build_school_data.py'), 'utf-8')
+
+  it('pulls academicopportunities1 through academicopportunities5', () => {
+    expect(buildSource).toContain('"academicopportunities1"')
+    expect(buildSource).toContain('"academicopportunities5"')
+  })
+
+  it('concatenates academic_opportunities from multiple fields', () => {
+    expect(buildSource).toContain('academic_opportunities')
+    expect(buildSource).toContain('"academicopportunities1"')
+  })
+
+  it('pulls prgdesc1, prgdesc2, prgdesc3 and concatenates into prgdesc', () => {
+    expect(buildSource).toContain('"prgdesc1"')
+    expect(buildSource).toContain('"prgdesc2"')
+    expect(buildSource).toContain('"prgdesc3"')
+    expect(buildSource).toContain('prgdesc')
+  })
+
+  it('pulls requirement fields (requirement1_1 through requirement4_3)', () => {
+    expect(buildSource).toContain('requirement')
+    expect(buildSource).toContain('for i in range(1, 5)')
+    expect(buildSource).toContain('for j in range(1, 4)')
+  })
+
+  it('pulls auditioninformation1, auditioninformation2, auditioninformation3', () => {
+    expect(buildSource).toContain('"auditioninformation1"')
+    expect(buildSource).toContain('"auditioninformation2"')
+    expect(buildSource).toContain('"auditioninformation3"')
+    expect(buildSource).toContain('audition_information')
+  })
+
+  it('deduplicates interest1, interest2, interest3 into interests list', () => {
+    expect(buildSource).toContain('"interest1"')
+    expect(buildSource).toContain('"interest2"')
+    expect(buildSource).toContain('"interest3"')
+    expect(buildSource).toContain('dict.fromkeys')
+  })
+
+  it('stores graduation_rate, attendance_rate, college_career_rate as floats', () => {
+    expect(buildSource).toContain('"graduation_rate"')
+    expect(buildSource).toContain('"attendance_rate"')
+    expect(buildSource).toContain('"college_career_rate"')
+    expect(buildSource).toContain('safe_float')
+  })
+
+  it('pulls subway and bus transit fields', () => {
+    expect(buildSource).toContain('"subway"')
+    expect(buildSource).toContain('"bus"')
+  })
+
+  it('pulls psal_sports_boys, psal_sports_girls, psal_sports_coed', () => {
+    expect(buildSource).toContain('"psal_sports_boys"')
+    expect(buildSource).toContain('"psal_sports_girls"')
+    expect(buildSource).toContain('"psal_sports_coed"')
+  })
+
+  it('pulls advancedplacement_courses', () => {
+    expect(buildSource).toContain('"advancedplacement_courses"')
+  })
+
+  it('pulls diplomaendorsements', () => {
+    expect(buildSource).toContain('"diplomaendorsements"')
+  })
+
+  it('pulls neighborhood', () => {
+    expect(buildSource).toContain('"neighborhood"')
+  })
+
+  it('pulls addtl_info1 and stores as addtl_info', () => {
+    expect(buildSource).toContain('"addtl_info1"')
+    expect(buildSource).toContain('addtl_info')
+  })
+})
+
+describe('Issue #50: types/index.ts DoeData includes new fields', () => {
+  const typesSource = fs.readFileSync(path.join(__dirname, '../types/index.ts'), 'utf-8')
+  const doeDataBlock = typesSource.slice(
+    typesSource.indexOf('export interface DoeData'),
+    typesSource.indexOf('export interface SchoolProgram'),
+  )
+
+  it('DoeData still has required core fields', () => {
+    expect(doeDataBlock).toContain('overview: string')
+    expect(doeDataBlock).toContain('language: string')
+    expect(doeDataBlock).toContain('extracurriculars: string')
+    expect(doeDataBlock).toContain('website: string')
+    expect(doeDataBlock).toContain('phone: string')
+    expect(doeDataBlock).toContain('address: string')
+    expect(doeDataBlock).toContain('zip: string')
+  })
+
+  it('DoeData has academic_opportunities optional field', () => {
+    expect(doeDataBlock).toContain('academic_opportunities')
+  })
+
+  it('DoeData has prgdesc optional field', () => {
+    expect(doeDataBlock).toContain('prgdesc')
+  })
+
+  it('DoeData has requirements optional field', () => {
+    expect(doeDataBlock).toContain('requirements')
+  })
+
+  it('DoeData has audition_information optional field as string array', () => {
+    expect(doeDataBlock).toContain('audition_information')
+    expect(doeDataBlock).toContain('string[]')
+  })
+
+  it('DoeData has interests optional field as string array', () => {
+    expect(doeDataBlock).toContain('interests')
+  })
+
+  it('DoeData has graduation_rate, attendance_rate, college_career_rate optional fields', () => {
+    expect(doeDataBlock).toContain('graduation_rate')
+    expect(doeDataBlock).toContain('attendance_rate')
+    expect(doeDataBlock).toContain('college_career_rate')
+  })
+
+  it('DoeData has subway and bus optional fields', () => {
+    expect(doeDataBlock).toContain('subway')
+    expect(doeDataBlock).toContain('bus')
+  })
+
+  it('DoeData has psal_sports fields', () => {
+    expect(doeDataBlock).toContain('psal_sports_boys')
+    expect(doeDataBlock).toContain('psal_sports_girls')
+    expect(doeDataBlock).toContain('psal_sports_coed')
+  })
+
+  it('DoeData has advancedplacement_courses, diplomaendorsements, neighborhood, addtl_info fields', () => {
+    expect(doeDataBlock).toContain('advancedplacement_courses')
+    expect(doeDataBlock).toContain('diplomaendorsements')
+    expect(doeDataBlock).toContain('neighborhood')
+    expect(doeDataBlock).toContain('addtl_info')
+  })
+})
