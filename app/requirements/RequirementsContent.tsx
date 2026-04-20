@@ -5,7 +5,7 @@ import { usePostHog } from 'posthog-js/react'
 import Link from 'next/link'
 import Footer from '@/components/Footer'
 import FeedbackRow from '@/components/FeedbackRow'
-import type { ReqSection } from './page'
+import type { ReqSection, ShsatCutoffInfo } from './page'
 
 const STORAGE_KEY = 'hs_nav_requirements'
 
@@ -104,6 +104,38 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
       }
       return next
     })
+  }
+
+  function renderShsatCutoffs(info: ShsatCutoffInfo) {
+    return (
+      <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-md">
+        <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-2">
+          Recent cutoff scores ({info.year} cycle — NYC DOE)
+        </p>
+        <ul className="space-y-1 mb-2">
+          {info.schoolCutoffs.map(({ name, score }) => (
+            <li key={name} className="flex justify-between text-sm text-blue-900">
+              <span>{name}</span>
+              <span className="font-medium ml-4">{score}</span>
+            </li>
+          ))}
+        </ul>
+        <p className="text-xs text-blue-700">
+          Based on your matched schools, the lowest recent cutoff score was{' '}
+          <span className="font-semibold">{info.lowestScore}</span>. Cutoffs change each year —
+          verify at{' '}
+          <a
+            href="https://www.schools.nyc.gov/enrollment/high-school/specialized-high-schools"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline"
+          >
+            schools.nyc.gov
+          </a>
+          .
+        </p>
+      </div>
+    )
   }
 
   function renderItems(items: { id: string; text: string }[]) {
@@ -244,6 +276,8 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
                     </ul>
                   </div>
                 )}
+                {/* SHSAT cutoff scores */}
+                {section.shsatCutoffInfo && renderShsatCutoffs(section.shsatCutoffInfo)}
               </div>
             )
           })}
