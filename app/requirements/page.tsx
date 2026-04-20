@@ -17,6 +17,15 @@ export interface ReqSection {
   schools: SchoolInSection[]
 }
 
+// ── Name formatting (same as SchoolRow.tsx) ───────────────────────────────────
+
+function formatSchoolName(name: string): string {
+  if (name.endsWith(', The')) {
+    return 'The ' + name.slice(0, -5)
+  }
+  return name
+}
+
 // ── Input parsing (mirrors list/page.tsx) ─────────────────────────────────────
 
 function parseInputs(sp: Record<string, string | string[] | undefined>): UserInputs {
@@ -72,6 +81,100 @@ function applyFilters(schools: School[], inputs: UserInputs): School[] {
     if (!noBorough(inputs.boroughs) && !inputs.boroughs.includes(school.borough)) return false
     return true
   })
+}
+
+// ── Sorting (mirrors list/page.tsx) ───────────────────────────────────────────
+
+function sortByHomeBorough(schools: School[], boroughs: string[]): School[] {
+  if (boroughs.length !== 1) return schools
+  const homeBorough = boroughs[0]
+  return [...schools].sort((a, b) => {
+    const aHome = a.borough === homeBorough
+    const bHome = b.borough === homeBorough
+    if (aHome && !bHome) return -1
+    if (!aHome && bHome) return 1
+    return 0
+  })
+}
+
+function sortBySize(schools: School[], preferredSize: string): School[] {
+  return [...schools].sort((a, b) => {
+    const aMatch = a.size === preferredSize
+    const bMatch = b.size === preferredSize
+    if (aMatch && !bMatch) return -1
+    if (!aMatch && bMatch) return 1
+    return 0
+  })
+}
+
+function matchesSports(school: School, sports: string[]): boolean {
+  if (sports.length === 0) return true
+  const ext = (school.doe_data?.extracurriculars ?? '').toLowerCase()
+  return sports.some((sport) => ext.includes(sport.toLowerCase()))
+}
+
+// ── SHSAT selection (mirrors list/page.tsx) ───────────────────────────────────
+
+const BOROUGH_ORDER: Record<string, string[]> = {
+  Manhattan:       ['Brooklyn', 'Queens', 'Bronx', 'Staten Island'],
+  Brooklyn:        ['Manhattan', 'Queens', 'Bronx', 'Staten Island'],
+  Queens:          ['Brooklyn', 'Manhattan', 'Bronx', 'Staten Island'],
+  Bronx:           ['Manhattan', 'Brooklyn', 'Queens', 'Staten Island'],
+  'Staten Island': ['Brooklyn', 'Manhattan', 'Queens', 'Bronx'],
+}
+
+function scoreSHSATSchool(school: School, inputs: UserInputs): number {
+  let score = 0
+  const text = [school.doe_data?.overview ?? '', school.doe_data?.extracurriculars ?? '']
+    .join(' ').toLowerCase()
+  for (const interest of inputs.interests) {
+    if (text.includes(interest.toLowerCase())) score += 2
+  }
+  for (const sport of inputs.sports) {
+    if ((school.doe_data?.extracurriculars ?? '').toLowerCase().includes(sport.toLowerCase())) score += 2
+  }
+  score += (school.academic_score_pct ?? 0) / 100
+  return score
+}
+
+function selectSHSATSchools(allSchools: School[], inputs: UserInputs): School[] {
+  const shsatSchools = allSchools.filter((s) => s.flags.has_shsat)
+  const TARGET = 5
+
+  if (noBorough(inputs.boroughs)) {
+    return [...shsatSchools]
+      .sort((a, b) => scoreSHSATSchool(b, inputs) - scoreSHSATSchool(a, inputs))
+  }
+
+  if (inputs.boroughs.length > 1) {
+    return shsatSchools
+      .filter((s) => inputs.boroughs.includes(s.borough))
+      .sort((a, b) => scoreSHSATSchool(b, inputs) - scoreSHSATSchool(a, inputs))
+  }
+
+  const homeBorough = inputs.boroughs[0]
+  const fromHome = shsatSchools
+    .filter((s) => s.borough === homeBorough)
+    .sort((a, b) => scoreSHSATSchool(b, inputs) - scoreSHSATSchool(a, inputs))
+
+  if (fromHome.length >= TARGET) return fromHome.slice(0, TARGET)
+
+  const selected = [...fromHome]
+  const selectedDbns = new Set(selected.map((s) => s.dbn))
+
+  for (const borough of (BOROUGH_ORDER[homeBorough] ?? [])) {
+    if (selected.length >= TARGET) break
+    const fromBorough = shsatSchools
+      .filter((s) => s.borough === borough && !selectedDbns.has(s.dbn))
+      .sort((a, b) => scoreSHSATSchool(b, inputs) - scoreSHSATSchool(a, inputs))
+    for (const school of fromBorough) {
+      if (selected.length >= TARGET) break
+      selected.push(school)
+      selectedDbns.add(school.dbn)
+    }
+  }
+
+  return selected
 }
 
 // ── Section grouping ──────────────────────────────────────────────────────────
@@ -134,14 +237,14 @@ function buildReqSections(matchedSchools: School[]): ReqSection[] {
         (k) =>
           `This school also has a ${SECTION_TITLES[k]} program — see the ${SECTION_TITLES[k]} section.`,
       )
-      buckets[key].push({ name: school.name, sectionNotes: notes })
+      buckets[key].push({ name: formatSchoolName(school.name), sectionNotes: notes })
     }
   }
 
   return SECTION_ORDER.filter((key) => buckets[key].length > 0).map((key) => ({
     key,
     title: SECTION_TITLES[key],
-    schools: buckets[key].sort((a, b) => a.name.localeCompare(b.name)),
+    schools: buckets[key],
   }))
 }
 
@@ -163,11 +266,27 @@ export default async function RequirementsPage({
     // schools.json not yet present
   }
 
-  // Get matched schools using same logic as list page
-  const shsatSchools = inputs.shsat ? allSchools.filter((s) => s.flags.has_shsat) : []
-  const shsatDbns = new Set(shsatSchools.map((s) => s.dbn))
-  const nonShsat = applyFilters(allSchools, inputs).filter((s) => !shsatDbns.has(s.dbn))
-  const matchedSchools = [...shsatSchools, ...nonShsat]
+  // SHSAT: use same selectSHSATSchools logic as list page
+  let shsatSelected: School[] = []
+  if (inputs.shsat) {
+    shsatSelected = selectSHSATSchools(allSchools, inputs)
+  }
+  const shsatDbns = new Set(shsatSelected.map((s) => s.dbn))
+
+  // Non-SHSAT: apply filters + sort same as list page
+  const baseResults = applyFilters(allSchools, inputs).filter(
+    (s) => !s.flags.has_shsat && !shsatDbns.has(s.dbn),
+  )
+  const sortedResults = sortBySize(sortByHomeBorough(baseResults, inputs.boroughs), inputs.size)
+
+  // Sports: soft post-filter (same as list page)
+  let nonShsatResults = sortedResults
+  if (inputs.sports.length > 0) {
+    const sportFiltered = sortedResults.filter((s) => matchesSports(s, inputs.sports))
+    if (sportFiltered.length > 0) nonShsatResults = sportFiltered
+  }
+
+  const matchedSchools = [...shsatSelected, ...nonShsatResults]
 
   // Cap at FREE_TIER_CAP with per-category limits (same as list page)
   const cappedSchools = capSchoolsByCategory(matchedSchools)

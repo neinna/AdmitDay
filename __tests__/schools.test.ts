@@ -1670,3 +1670,89 @@ describe('Issue #40: requirements page uses capped results and lock banner', () 
     expect(contentSource).toContain('LockBanner')
   })
 })
+
+// ── Issue #41: School names and order on requirements page match My Schools list ───
+
+describe('Issue #41: formatSchoolName in requirements page', () => {
+  const pageSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+
+  it('defines formatSchoolName function', () => {
+    expect(pageSource).toContain('function formatSchoolName(')
+  })
+
+  it('moves ", The" suffix to the front', () => {
+    expect(pageSource).toContain("name.endsWith(', The')")
+    expect(pageSource).toContain("'The ' + name.slice(0, -5)")
+  })
+
+  it('applies formatSchoolName when building section schools', () => {
+    expect(pageSource).toContain('formatSchoolName(school.name)')
+  })
+
+  it('does NOT sort schools alphabetically within sections (order matches list page)', () => {
+    // The old buggy sort was: buckets[key].sort((a, b) => a.name.localeCompare(b.name))
+    expect(pageSource).not.toContain('localeCompare')
+  })
+})
+
+describe('Issue #41: requirements page ordering matches list page', () => {
+  const pageSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+
+  it('uses selectSHSATSchools (same as list page) for SHSAT school selection', () => {
+    expect(pageSource).toContain('function selectSHSATSchools(')
+    expect(pageSource).toContain('selectSHSATSchools(allSchools, inputs)')
+  })
+
+  it('uses sortByHomeBorough (same as list page)', () => {
+    expect(pageSource).toContain('function sortByHomeBorough(')
+    expect(pageSource).toContain('sortByHomeBorough(baseResults, inputs.boroughs)')
+  })
+
+  it('uses sortBySize (same as list page)', () => {
+    expect(pageSource).toContain('function sortBySize(')
+    expect(pageSource).toContain('sortBySize(')
+  })
+
+  it('applies sports soft-filter same as list page', () => {
+    expect(pageSource).toContain('function matchesSports(')
+    expect(pageSource).toContain('inputs.sports.length > 0')
+  })
+
+  it('contains BOROUGH_ORDER for SHSAT borough prioritization', () => {
+    expect(pageSource).toContain('BOROUGH_ORDER')
+    expect(pageSource).toContain("'Staten Island'")
+  })
+})
+
+describe('Issue #41: formatSchoolName unit behaviour', () => {
+  function formatSchoolName(name: string): string {
+    if (name.endsWith(', The')) {
+      return 'The ' + name.slice(0, -5)
+    }
+    return name
+  }
+
+  it('moves ", The" suffix to the front', () => {
+    expect(formatSchoolName('Bronx High School of Science, The')).toBe('The Bronx High School of Science')
+  })
+
+  it('leaves names without ", The" unchanged', () => {
+    expect(formatSchoolName('Brooklyn Technical High School')).toBe('Brooklyn Technical High School')
+  })
+
+  it('handles names that already start with The', () => {
+    expect(formatSchoolName('The High School for Math, Science and Engineering at CCNY')).toBe(
+      'The High School for Math, Science and Engineering at CCNY',
+    )
+  })
+
+  it('is consistent with the SchoolRow.tsx implementation', () => {
+    const schoolRowSource = fs.readFileSync(path.join(__dirname, '../components/SchoolRow.tsx'), 'utf-8')
+    const reqPageSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+    // Both files should contain the same logic pattern
+    expect(schoolRowSource).toContain("name.endsWith(', The')")
+    expect(reqPageSource).toContain("name.endsWith(', The')")
+    expect(schoolRowSource).toContain("'The ' + name.slice(0, -5)")
+    expect(reqPageSource).toContain("'The ' + name.slice(0, -5)")
+  })
+})
