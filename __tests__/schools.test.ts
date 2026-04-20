@@ -55,15 +55,15 @@ describe('Footer disclaimer text', () => {
 // ── Issue #5: myschools.nyc clickable link ───────────────────────────────────
 
 describe('myschools.nyc link in requirements page', () => {
-  const reqSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
 
   it('links to https://www.myschools.nyc (with www)', () => {
-    expect(reqSource).toContain('https://www.myschools.nyc')
+    expect(reqContentSource).toContain('https://www.myschools.nyc')
   })
 
   it('myschools.nyc link opens in a new tab', () => {
-    expect(reqSource).toContain('target="_blank"')
-    expect(reqSource).toContain('rel="noopener noreferrer"')
+    expect(reqContentSource).toContain('target="_blank"')
+    expect(reqContentSource).toContain('rel="noopener noreferrer"')
   })
 })
 
@@ -231,52 +231,24 @@ describe('Issue #8: Note box removed from list page', () => {
 
 // ── Issue #13: Last verified date on deadline items ─────────────────────────
 
-describe('Issue #13: Last verified date on deadline items', () => {
-  const reqSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
-
-  it('ChecklistItem interface has verifiedDate field', () => {
-    expect(reqSource).toContain('verifiedDate?: string')
-  })
-
-  it('exactly 4 deadline items have verifiedDate set', () => {
-    // shsat_1, aud_2, all_1, all_2 each get a verifiedDate
-    const matches = reqSource.match(/verifiedDate: '/g) ?? []
-    expect(matches.length).toBe(4)
-  })
-
-  it('SHSAT registration item (shsat_1) has verifiedDate on same line', () => {
-    expect(reqSource).toContain("id: 'shsat_1', text: 'Register for the SHSAT by October 31', verifiedDate:")
-  })
-
-  it('application window item (all_1) has verifiedDate on same line', () => {
-    expect(reqSource).toContain("id: 'all_1', text: 'Application window opens October 7 and closes December 3', verifiedDate:")
-  })
-
-  it('offers release item (all_2) has verifiedDate on same line', () => {
-    expect(reqSource).toContain("id: 'all_2', text: 'High school offers are released March 5', verifiedDate:")
-  })
-
-  it('audition upload item (aud_2) has verifiedDate field', () => {
-    // aud_2 is multi-line; verify verifiedDate appears in its block
-    const aud2Block = reqSource.slice(
-      reqSource.indexOf("id: 'aud_2'"),
-      reqSource.indexOf("id: 'aud_3'"),
-    )
-    expect(aud2Block).toContain('verifiedDate:')
-  })
+describe('Issue #13/#39: Last verified date in requirements', () => {
+  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
 
   it('renders "last verified:" text in the JSX (top-level line)', () => {
-    expect(reqSource).toContain('last verified:')
+    expect(reqContentSource).toContain('last verified:')
   })
 
   it('renders a myschools.nyc link in the verified note', () => {
-    expect(reqSource).toContain('https://www.myschools.nyc')
+    expect(reqContentSource).toContain('https://www.myschools.nyc')
   })
 
   it('verified note link opens in a new tab', () => {
-    // At least one occurrence for the verified note (there is also the disclaimer link)
-    const matches = reqSource.match(/target="_blank"/g) ?? []
+    const matches = reqContentSource.match(/target="_blank"/g) ?? []
     expect(matches.length).toBeGreaterThanOrEqual(2)
+  })
+
+  it('does NOT use per-item verifiedDate pattern (replaced with top-level line)', () => {
+    expect(reqContentSource).not.toContain('{item.verifiedDate}')
   })
 })
 
@@ -339,12 +311,12 @@ describe('Issue #12: SchoolList locked expand placeholder', () => {
     expect(schoolListSource).toContain('M12 15v2m-6 4h12')
   })
 
-  it('shows "Season Pass" label in the expand area', () => {
-    expect(schoolListSource).toContain('Season Pass')
+  it('shows "Full Access" label in the expand area', () => {
+    expect(schoolListSource).toContain('Full Access')
   })
 
-  it('shows "coming soon" label in the expand area', () => {
-    expect(schoolListSource).toContain('coming soon')
+  it('does NOT show "coming soon" label in the expand area', () => {
+    expect(schoolListSource).not.toContain('coming soon')
   })
 
   it('does NOT have a working "Load 15 more" button', () => {
@@ -364,38 +336,39 @@ describe('Issue #12: List page locked save button', () => {
     expect(listSource).toContain('Save list')
   })
 
-  it('contains a lock icon SVG for the save button', () => {
-    expect(listSource).toContain('Save list — Season Pass coming soon')
+  it('aria-label reflects Full Access save list text', () => {
+    expect(listSource).toContain('Save list — Full Access')
+    expect(listSource).not.toContain('Download school list — Season Pass coming soon')
   })
 
   it('save button is not a real link or button (cursor-not-allowed)', () => {
     expect(listSource).toContain('cursor-not-allowed')
   })
 
-  it('save area shows Season Pass label', () => {
-    expect(listSource).toContain('Season Pass')
+  it('save area shows Full Access label', () => {
+    expect(listSource).toContain('Full Access')
   })
 })
 
 // ── Issue #11: Fix incorrect "rank up to 12 schools" copy ───────────────────
 
 describe('Issue #11: Ranking cap copy in requirements checklist', () => {
-  const reqSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
 
   it('does NOT contain the old "rank up to 12" copy', () => {
-    expect(reqSource).not.toContain('rank up to 12 schools')
+    expect(reqContentSource).not.toContain('rank up to 12 schools')
   })
 
   it('contains the new copy about ranking more than 12 schools', () => {
-    expect(reqSource).toContain('You can rank more than 12 schools')
+    expect(reqContentSource).toContain('You can rank more than 12 schools')
   })
 
   it('mentions DOE recommends at least 12 strong options', () => {
-    expect(reqSource).toContain('The DOE recommends at least 12 strong options.')
+    expect(reqContentSource).toContain('The DOE recommends at least 12 strong options.')
   })
 
   it('tells users to list every program they would genuinely attend', () => {
-    expect(reqSource).toContain('list every program you would genuinely attend')
+    expect(reqContentSource).toContain('list every program you would genuinely attend')
   })
 })
 
@@ -447,28 +420,23 @@ describe('Issue #15: layout.tsx wraps with PHProvider', () => {
   })
 })
 
-describe('Issue #12: Requirements page locked deadline tracking section', () => {
-  const reqSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+describe('Issue #12/#39: Requirements page — locked deadline tracking section removed', () => {
+  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
 
-  it('contains a Deadline Tracking heading', () => {
-    expect(reqSource).toContain('Deadline Tracking')
+  it('does NOT contain a Deadline Tracking heading (section removed in #39)', () => {
+    expect(reqContentSource).not.toContain('Deadline Tracking')
   })
 
-  it('shows Season Pass label on the deadline tracking section', () => {
-    const deadlineBlock = reqSource.slice(
-      reqSource.indexOf('Deadline Tracking'),
-      reqSource.indexOf('Deadline Tracking') + 500,
-    )
-    expect(deadlineBlock).toContain('Season Pass')
-    expect(deadlineBlock).toContain('coming soon')
+  it('does NOT contain Season Pass label (replaced with Full Access everywhere)', () => {
+    expect(reqContentSource).not.toContain('Season Pass')
   })
 
-  it('has a lock icon SVG on the deadline tracking section', () => {
-    expect(reqSource).toContain('M12 15v2m-6 4h12')
+  it('does NOT contain "coming soon" language (removed in #39)', () => {
+    expect(reqContentSource).not.toContain('coming soon')
   })
 
-  it('deadline tracking section is aria-hidden (locked UI)', () => {
-    expect(reqSource).toContain('aria-hidden="true"')
+  it('does NOT contain aria-hidden locked UI section', () => {
+    expect(reqContentSource).not.toContain('aria-hidden="true"')
   })
 })
 
@@ -482,45 +450,41 @@ describe('Issue #16: List page save banner rename', () => {
     expect(listSource).not.toContain('Download list')
   })
 
-  it('aria-label reflects new Save list text', () => {
-    expect(listSource).toContain('Save list — Season Pass coming soon')
+  it('aria-label reflects Full Access save list text', () => {
+    expect(listSource).toContain('Save list — Full Access')
     expect(listSource).not.toContain('Download school list — Season Pass coming soon')
   })
 })
 
-describe('Issue #16: Requirements page locked save banner', () => {
-  const reqSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+describe('Issue #16/#39: Requirements page locked save banner removed', () => {
+  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
 
-  it('has a locked save banner with "Save checklist" label', () => {
-    expect(reqSource).toContain('Save checklist')
+  it('does NOT contain "Save checklist — Season Pass coming soon" (locked UI removed in #39)', () => {
+    expect(reqContentSource).not.toContain('Save checklist — Season Pass coming soon')
   })
 
-  it('save banner shows Season Pass coming soon', () => {
-    expect(reqSource).toContain('Save checklist — Season Pass coming soon')
-  })
-
-  it('has a lock icon SVG on the save banner', () => {
-    expect(reqSource).toContain('M12 15v2m-6 4h12')
+  it('does NOT contain "coming soon" language (removed in #39)', () => {
+    expect(reqContentSource).not.toContain('coming soon')
   })
 })
 
 describe('Issue #16: Requirements page deadlines last verified', () => {
-  const reqSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
 
   it('has a single top-level "Deadlines last verified" line', () => {
-    expect(reqSource).toContain('Deadlines last verified: April 8, 2026')
+    expect(reqContentSource).toContain('Deadlines last verified: April 8, 2026')
   })
 
   it('does NOT render per-item Last verified lines', () => {
     // The old per-item pattern interpolated item.verifiedDate in JSX
-    expect(reqSource).not.toContain('{item.verifiedDate}')
-    expect(reqSource).not.toContain('Last verified: {item')
+    expect(reqContentSource).not.toContain('{item.verifiedDate}')
+    expect(reqContentSource).not.toContain('Last verified: {item')
   })
 
   it('top-level verified line links to myschools.nyc', () => {
-    const verifiedBlock = reqSource.slice(
-      reqSource.indexOf('Deadlines last verified'),
-      reqSource.indexOf('Deadlines last verified') + 300,
+    const verifiedBlock = reqContentSource.slice(
+      reqContentSource.indexOf('Deadlines last verified'),
+      reqContentSource.indexOf('Deadlines last verified') + 300,
     )
     expect(verifiedBlock).toContain('myschools.nyc')
   })
@@ -533,8 +497,8 @@ describe('Issue #16: Home page locked save banner', () => {
     expect(homeSource).toContain('Save your HS guardrails')
   })
 
-  it('save banner shows Season Pass coming soon', () => {
-    expect(homeSource).toContain('Save your HS guardrails — Season Pass coming soon')
+  it('save banner shows Full Access label', () => {
+    expect(homeSource).toContain('Save your HS guardrails — Full Access')
   })
 
   it('save banner is cursor-not-allowed (locked)', () => {
@@ -583,14 +547,14 @@ describe('Issue #10: list_viewed event in SchoolList', () => {
 })
 
 describe('Issue #10: requirements_viewed event on requirements page', () => {
-  const reqSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
 
   it('imports usePostHog from posthog-js/react', () => {
-    expect(reqSource).toContain("from 'posthog-js/react'")
+    expect(reqContentSource).toContain("from 'posthog-js/react'")
   })
 
   it('calls posthog.capture with requirements_viewed', () => {
-    expect(reqSource).toContain("capture('requirements_viewed'")
+    expect(reqContentSource).toContain("capture('requirements_viewed'")
   })
 })
 
@@ -809,14 +773,14 @@ describe('Issue #22: FeedbackRow added to SchoolList', () => {
 })
 
 describe('Issue #22: FeedbackRow added to requirements page', () => {
-  const reqSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
 
   it('imports FeedbackRow', () => {
-    expect(reqSource).toContain("import FeedbackRow from '@/components/FeedbackRow'")
+    expect(reqContentSource).toContain("import FeedbackRow from '@/components/FeedbackRow'")
   })
 
   it('renders FeedbackRow with requirements screen', () => {
-    expect(reqSource).toContain('<FeedbackRow screen="requirements"')
+    expect(reqContentSource).toContain('<FeedbackRow screen="requirements"')
   })
 })
 
@@ -885,19 +849,21 @@ describe('Issue #23: FeedbackRow placed in SummaryBar (SchoolList)', () => {
 })
 
 describe('Issue #23: FeedbackRow placed in requirements header row', () => {
-  const reqSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
 
   it('FeedbackRow is in the progress summary row (same block as doneCount)', () => {
-    const doneCountIdx = reqSource.indexOf('doneCount} of')
-    const feedbackIdx = reqSource.indexOf('<FeedbackRow screen="requirements"')
+    const doneCountIdx = reqContentSource.indexOf('doneCount} of')
+    const feedbackIdx = reqContentSource.indexOf('<FeedbackRow screen="requirements"')
     // FeedbackRow should appear close to the doneCount line (within 300 chars)
     expect(Math.abs(feedbackIdx - doneCountIdx)).toBeLessThan(300)
   })
 
-  it('FeedbackRow is NOT at the bottom after the locked deadline tracking section', () => {
-    const deadlineBlock = reqSource.indexOf('Deadline Tracking')
-    const feedbackIdx = reqSource.indexOf('<FeedbackRow screen="requirements"')
-    expect(feedbackIdx).toBeLessThan(deadlineBlock)
+  it('FeedbackRow appears before any school listing sections (no Deadline Tracking section)', () => {
+    const feedbackIdx = reqContentSource.indexOf('<FeedbackRow screen="requirements"')
+    const schoolSectionIdx = reqContentSource.indexOf('Your matched schools in this category')
+    // FeedbackRow should be before the per-school listing
+    expect(feedbackIdx).toBeGreaterThan(-1)
+    expect(feedbackIdx).toBeLessThan(schoolSectionIdx)
   })
 })
 
@@ -1387,5 +1353,148 @@ describe('Issue #38: source — noBorough handles all 5 boroughs', () => {
 
   it('noBorough still returns true for empty array', () => {
     expect(noBoroughBlock).toContain('boroughs.length === 0')
+  })
+})
+
+// ── Issue #39: Per-school requirements page + Full Access copy ────────────────
+
+describe('Issue #39: requirements page.tsx is a server component', () => {
+  const pageSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+
+  it('does NOT have "use client" directive (server component)', () => {
+    expect(pageSource).not.toContain("'use client'")
+  })
+
+  it('imports fs for server-side file reading', () => {
+    expect(pageSource).toContain("import fs from 'fs'")
+  })
+
+  it('exports ReqSection type for client component', () => {
+    expect(pageSource).toContain('export interface ReqSection')
+  })
+
+  it('imports RequirementsContent client component', () => {
+    expect(pageSource).toContain("import RequirementsContent from './RequirementsContent'")
+  })
+
+  it('contains buildReqSections function', () => {
+    expect(pageSource).toContain('function buildReqSections(')
+  })
+
+  it('groups schools by admissions_type sections', () => {
+    expect(pageSource).toContain("'Screened with Assessment'")
+    expect(pageSource).toContain("'Educational Option'")
+  })
+
+  it('returns RequirementsContent component', () => {
+    expect(pageSource).toContain('<RequirementsContent')
+  })
+})
+
+describe('Issue #39: RequirementsContent.tsx is a client component', () => {
+  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
+
+  it('has "use client" directive', () => {
+    expect(reqContentSource).toContain("'use client'")
+  })
+
+  it('contains SHSAT requirements copy', () => {
+    expect(reqContentSource).toContain('Take and pass the SHSAT exam')
+    expect(reqContentSource).toContain('Register for the SHSAT by October 31')
+  })
+
+  it('contains Audition requirements copy', () => {
+    expect(reqContentSource).toContain('Prepare your audition or portfolio materials')
+    expect(reqContentSource).toContain('October 7 to December 3')
+  })
+
+  it('contains Screened requirements copy', () => {
+    expect(reqContentSource).toContain('Screened programs review your grades, attendance record')
+    expect(reqContentSource).toContain('two-track system')
+  })
+
+  it('contains Screened with Assessment requirements copy', () => {
+    expect(reqContentSource).toContain('school-specific assessment in addition to your grades')
+  })
+
+  it('contains Educational Option requirements copy', () => {
+    expect(reqContentSource).toContain('Ed Opt programs are designed to reflect a mix of academic levels')
+  })
+
+  it('contains Lottery/Open Enrollment requirements copy', () => {
+    expect(reqContentSource).toContain('Admission is by lottery')
+    expect(reqContentSource).toContain('All applicants who rank the school have an equal chance')
+  })
+
+  it('contains All Applicants section always shown last', () => {
+    expect(reqContentSource).toContain('All Applicants')
+    expect(reqContentSource).toContain('Application window opens October 7 and closes December 3')
+    expect(reqContentSource).toContain('High school offers are released March 5')
+  })
+
+  it('shows matched school names under each section', () => {
+    expect(reqContentSource).toContain('Your matched schools in this category')
+  })
+
+  it('handles cross-listed schools with section notes', () => {
+    expect(reqContentSource).toContain('sectionNotes')
+  })
+
+  it('contains new disclaimer text from issue spec', () => {
+    expect(reqContentSource).toContain('Every effort was made to keep this data current')
+    expect(reqContentSource).toContain('No tool can guarantee an offer')
+    expect(reqContentSource).toContain('Before submitting, confirm deadlines and requirements at')
+  })
+
+  it('does NOT contain Season Pass label', () => {
+    expect(reqContentSource).not.toContain('Season Pass')
+  })
+
+  it('does NOT contain "coming soon" language', () => {
+    expect(reqContentSource).not.toContain('coming soon')
+  })
+
+  it('does NOT have Deadline Tracking locked section', () => {
+    expect(reqContentSource).not.toContain('Deadline Tracking')
+  })
+})
+
+describe('Issue #39: Season Pass → Full Access across all files', () => {
+  it('list page uses "Full Access" not "Season Pass"', () => {
+    const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
+    expect(listSource).toContain('Full Access')
+    expect(listSource).not.toContain('Season Pass')
+  })
+
+  it('home page uses "Full Access" not "Season Pass"', () => {
+    const homeSource = fs.readFileSync(path.join(__dirname, '../app/page.tsx'), 'utf-8')
+    expect(homeSource).toContain('Full Access')
+    expect(homeSource).not.toContain('Season Pass')
+  })
+
+  it('SchoolList uses "Full Access" not "Season Pass"', () => {
+    const schoolListSource = fs.readFileSync(path.join(__dirname, '../components/SchoolList.tsx'), 'utf-8')
+    expect(schoolListSource).toContain('Full Access')
+    expect(schoolListSource).not.toContain('Season Pass')
+  })
+
+  it('requirements page.tsx does not contain Season Pass', () => {
+    const pageSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+    expect(pageSource).not.toContain('Season Pass')
+  })
+
+  it('RequirementsContent.tsx does not contain Season Pass', () => {
+    const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
+    expect(reqContentSource).not.toContain('Season Pass')
+  })
+
+  it('list page does not have "coming soon" language', () => {
+    const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
+    expect(listSource).not.toContain('coming soon')
+  })
+
+  it('home page does not have "coming soon" language', () => {
+    const homeSource = fs.readFileSync(path.join(__dirname, '../app/page.tsx'), 'utf-8')
+    expect(homeSource).not.toContain('coming soon')
   })
 })
