@@ -2449,3 +2449,46 @@ describe('Issue #51: fallback for schools with empty DOE data', () => {
     expect(src).not.toContain('school.auditionInformation || school.requirements ? \'font-semibold text-gray-900\'')
   })
 })
+
+// ── Issue #49: Rationale prompt improvements ─────────────────────────────────
+
+describe('Issue #49: rationale route system prompt and academicLevel mapping', () => {
+  const routeSrc = fs.readFileSync(path.join(__dirname, '../app/api/rationale/route.ts'), 'utf-8')
+
+  it('system prompt does not tell Claude to cite the admissions type', () => {
+    expect(routeSrc).not.toContain('cite the admissions type')
+  })
+
+  it('system prompt does not tell Claude to end by naming the admissions type', () => {
+    expect(routeSrc).not.toContain('End by naming the admissions type')
+  })
+
+  it('system prompt instructs Claude not to restate admissions type or academic score', () => {
+    expect(routeSrc).toContain('Do not restate the admissions type, academic score, or applicants per seat')
+  })
+
+  it('system prompt caps output at 50 words', () => {
+    expect(routeSrc).toContain('under 50 words total')
+  })
+
+  it('system prompt focuses on fit reasoning, not generic data', () => {
+    expect(routeSrc).toContain('Focus on why this school fits this specific student')
+  })
+
+  it('maps "exceptional" academicRating to human-readable sentence', () => {
+    expect(routeSrc).toContain("exceptional: 'Student is a strong academic performer'")
+  })
+
+  it('maps "strong" academicRating to human-readable sentence', () => {
+    expect(routeSrc).toContain("strong: 'Student has solid grades'")
+  })
+
+  it('maps "above_average" academicRating to human-readable sentence', () => {
+    expect(routeSrc).toContain("above_average: 'Student has average to above-average grades'")
+  })
+
+  it('student context uses "Academic level" label, not raw "Academic ratings"', () => {
+    expect(routeSrc).toContain('`Academic level: ${academicDesc}`')
+    expect(routeSrc).not.toContain('Academic ratings:')
+  })
+})
