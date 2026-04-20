@@ -11,11 +11,32 @@ export interface SchoolInSection {
   sectionNotes: string[]
 }
 
+export interface ShsatCutoffInfo {
+  schoolCutoffs: Array<{ name: string; score: number }>
+  lowestScore: number
+  year: string
+}
+
 export interface ReqSection {
   key: string
   title: string
   schools: SchoolInSection[]
+  shsatCutoffInfo?: ShsatCutoffInfo
 }
+
+// Minimum SHSAT score that received a specialized HS offer, by DBN.
+// Source: NYC DOE "Specialized High School Offers" press release, 2024 admissions cycle.
+const SHSAT_CUTOFFS: Record<string, number> = {
+  '02M475': 560, // Stuyvesant High School
+  '05M692': 514, // High School for Math, Science and Engineering at City College
+  '10X445': 521, // Bronx High School of Science
+  '10X696': 512, // High School of American Studies at Lehman College
+  '13K430': 478, // Brooklyn Technical High School
+  '14K449': 439, // Brooklyn Latin School
+  '28Q687': 489, // Queens High School for the Sciences at York College
+  '31R605': 528, // Staten Island Technical High School
+}
+const SHSAT_CUTOFFS_YEAR = '2024'
 
 // ── Name formatting (same as SchoolRow.tsx) ───────────────────────────────────
 
@@ -292,6 +313,25 @@ export default async function RequirementsPage({
   const cappedSchools = capSchoolsByCategory(matchedSchools)
   const sections = buildReqSections(cappedSchools)
   const lockedCount = PAID_TIER_CAP - FREE_TIER_CAP
+
+  // Compute SHSAT cutoff info for the matched schools in the SHSAT section
+  if (inputs.shsat) {
+    const shsatSection = sections.find((s) => s.key === 'shsat')
+    if (shsatSection) {
+      const cappedShsatSchools = cappedSchools.filter((s) => s.flags.has_shsat)
+      const schoolCutoffs = cappedShsatSchools
+        .filter((s) => SHSAT_CUTOFFS[s.dbn] !== undefined)
+        .map((s) => ({ name: formatSchoolName(s.name), score: SHSAT_CUTOFFS[s.dbn] }))
+        .sort((a, b) => b.score - a.score)
+      if (schoolCutoffs.length > 0) {
+        shsatSection.shsatCutoffInfo = {
+          schoolCutoffs,
+          lowestScore: Math.min(...schoolCutoffs.map((c) => c.score)),
+          year: SHSAT_CUTOFFS_YEAR,
+        }
+      }
+    }
+  }
 
   const reqParams = new URLSearchParams(
     Object.entries(searchParams)

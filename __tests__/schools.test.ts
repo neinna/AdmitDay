@@ -1756,3 +1756,152 @@ describe('Issue #41: formatSchoolName unit behaviour', () => {
     expect(reqPageSource).toContain("'The ' + name.slice(0, -5)")
   })
 })
+
+// ── Issue #44: SHSAT cutoff scores ───────────────────────────────────────────
+
+describe('Issue #44: SHSAT cutoff data in build_school_data.py', () => {
+  const buildSource = fs.readFileSync(path.join(__dirname, '../build_school_data.py'), 'utf-8')
+
+  it('defines SHSAT_CUTOFFS dict', () => {
+    expect(buildSource).toContain('SHSAT_CUTOFFS')
+  })
+
+  it('contains all 8 specialized high school DBNs', () => {
+    expect(buildSource).toContain('02M475') // Stuyvesant
+    expect(buildSource).toContain('05M692') // HMSE at City College
+    expect(buildSource).toContain('10X445') // Bronx Science
+    expect(buildSource).toContain('10X696') // American Studies at Lehman
+    expect(buildSource).toContain('13K430') // Brooklyn Tech
+    expect(buildSource).toContain('14K449') // Brooklyn Latin
+    expect(buildSource).toContain('28Q687') // Queens Sciences at York
+    expect(buildSource).toContain('31R605') // Staten Island Technical
+  })
+
+  it('references SHSAT_CUTOFFS_YEAR', () => {
+    expect(buildSource).toContain('SHSAT_CUTOFFS_YEAR')
+  })
+
+  it('embeds shsat_cutoff_score in school output', () => {
+    expect(buildSource).toContain('shsat_cutoff_score')
+  })
+
+  it('embeds shsat_cutoff_year in school output', () => {
+    expect(buildSource).toContain('shsat_cutoff_year')
+  })
+})
+
+describe('Issue #44: SHSAT cutoff data in requirements page.tsx', () => {
+  const pageSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+
+  it('defines SHSAT_CUTOFFS constant', () => {
+    expect(pageSource).toContain('SHSAT_CUTOFFS')
+  })
+
+  it('defines ShsatCutoffInfo interface (exported)', () => {
+    expect(pageSource).toContain('export interface ShsatCutoffInfo')
+  })
+
+  it('ReqSection has optional shsatCutoffInfo field', () => {
+    expect(pageSource).toContain('shsatCutoffInfo?: ShsatCutoffInfo')
+  })
+
+  it('contains all 8 specialized HS DBNs in the cutoff table', () => {
+    expect(pageSource).toContain("'02M475'") // Stuyvesant
+    expect(pageSource).toContain("'13K430'") // Brooklyn Tech
+    expect(pageSource).toContain("'10X445'") // Bronx Science
+    expect(pageSource).toContain("'31R605'") // Staten Island Technical
+  })
+
+  it('defines SHSAT_CUTOFFS_YEAR', () => {
+    expect(pageSource).toContain('SHSAT_CUTOFFS_YEAR')
+  })
+
+  it('computes lowestScore from matched schools', () => {
+    expect(pageSource).toContain('lowestScore')
+    expect(pageSource).toContain('Math.min(')
+  })
+
+  it('attaches shsatCutoffInfo to the SHSAT section', () => {
+    expect(pageSource).toContain('shsatCutoffInfo')
+    expect(pageSource).toContain("s.key === 'shsat'")
+  })
+
+  it('only attaches cutoff info when inputs.shsat is true', () => {
+    expect(pageSource).toContain('if (inputs.shsat)')
+  })
+})
+
+describe('Issue #44: SHSAT cutoff display in RequirementsContent.tsx', () => {
+  const contentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
+
+  it('imports ShsatCutoffInfo type', () => {
+    expect(contentSource).toContain('ShsatCutoffInfo')
+  })
+
+  it('defines renderShsatCutoffs function', () => {
+    expect(contentSource).toContain('function renderShsatCutoffs(')
+  })
+
+  it('displays "Recent cutoff scores" heading with year and DOE source', () => {
+    expect(contentSource).toContain('Recent cutoff scores')
+    expect(contentSource).toContain('NYC DOE')
+  })
+
+  it('shows the lowest cutoff score summary sentence', () => {
+    expect(contentSource).toContain('lowest recent cutoff score was')
+    expect(contentSource).toContain('lowestScore')
+  })
+
+  it('notes that cutoffs change each year', () => {
+    expect(contentSource).toContain('Cutoffs change each year')
+  })
+
+  it('renders cutoff info only for the SHSAT section (guarded by shsatCutoffInfo)', () => {
+    expect(contentSource).toContain('section.shsatCutoffInfo')
+    expect(contentSource).toContain('renderShsatCutoffs(section.shsatCutoffInfo)')
+  })
+
+  it('links to the DOE specialized high schools page for verification', () => {
+    expect(contentSource).toContain('schools.nyc.gov')
+  })
+})
+
+describe('Issue #44: SHSAT_CUTOFFS data validity', () => {
+  // Inline the cutoffs for unit tests (mirrors the constant in page.tsx)
+  const SHSAT_CUTOFFS: Record<string, number> = {
+    '02M475': 560,
+    '05M692': 514,
+    '10X445': 521,
+    '10X696': 512,
+    '13K430': 478,
+    '14K449': 439,
+    '28Q687': 489,
+    '31R605': 528,
+  }
+
+  it('has exactly 8 entries (one per specialized HS)', () => {
+    expect(Object.keys(SHSAT_CUTOFFS).length).toBe(8)
+  })
+
+  it('Stuyvesant has the highest cutoff', () => {
+    const max = Math.max(...Object.values(SHSAT_CUTOFFS))
+    expect(SHSAT_CUTOFFS['02M475']).toBe(max)
+  })
+
+  it('Brooklyn Latin has the lowest cutoff', () => {
+    const min = Math.min(...Object.values(SHSAT_CUTOFFS))
+    expect(SHSAT_CUTOFFS['14K449']).toBe(min)
+  })
+
+  it('all scores are positive integers in a realistic SHSAT range (300–700)', () => {
+    Object.values(SHSAT_CUTOFFS).forEach((score) => {
+      expect(score).toBeGreaterThan(300)
+      expect(score).toBeLessThan(700)
+    })
+  })
+
+  it('lowestScore is Math.min of the given set', () => {
+    const scores = Object.values(SHSAT_CUTOFFS)
+    expect(Math.min(...scores)).toBe(439)
+  })
+})
