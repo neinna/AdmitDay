@@ -88,7 +88,10 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
     ...sections.flatMap((s) => SECTION_REQUIREMENTS[s.key] ?? []),
     ...ALL_APPLICANTS_ITEMS,
   ]
-  const doneCount = allItems.filter((item) => checked[item.id]).length
+  // Only use localStorage-backed checked state after hydration to prevent hydration mismatch.
+  // Server and initial client render must produce identical HTML (both see empty checked state).
+  const displayChecked = hydrated ? checked : {}
+  const doneCount = allItems.filter((item) => displayChecked[item.id]).length
 
   useEffect(() => {
     try {
@@ -155,14 +158,14 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
           <li key={item.id} className="flex items-start gap-3">
             <button
               onClick={() => toggle(item.id)}
-              aria-label={checked[item.id] ? `Uncheck: ${item.text}` : `Check: ${item.text}`}
+              aria-label={displayChecked[item.id] ? `Uncheck: ${item.text}` : `Check: ${item.text}`}
               className={`mt-0.5 flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                checked[item.id]
+                displayChecked[item.id]
                   ? 'bg-gray-900 border-gray-900'
                   : 'border-gray-300 hover:border-gray-500'
               }`}
             >
-              {checked[item.id] && (
+              {displayChecked[item.id] && (
                 <svg
                   className="w-3 h-3 text-white"
                   fill="none"
@@ -176,7 +179,7 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
             </button>
             <span
               className={`text-sm leading-relaxed ${
-                checked[item.id] ? 'text-gray-400 line-through' : 'text-gray-700'
+                displayChecked[item.id] ? 'text-gray-400 line-through' : 'text-gray-700'
               }`}
             >
               {item.text}
