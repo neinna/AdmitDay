@@ -1551,20 +1551,20 @@ describe('Issue #40: capSchoolsByCategory', () => {
     expect(result.filter((s) => s.flags.has_shsat).length).toBe(3)
   })
 
-  it('caps Audition at 5 even when more are present', () => {
+  it('caps Audition at 3 even when more are present', () => {
     const schools = Array.from({ length: 10 }, (_, i) =>
       makeSchool({ dbn: `a${i}`, flags: { has_shsat: false, has_audition: true, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
     )
     const result = capSchoolsByCategory(schools)
-    expect(result.filter((s) => s.flags.has_audition).length).toBe(5)
+    expect(result.filter((s) => s.flags.has_audition).length).toBe(3)
   })
 
-  it('caps Screened at 3 even when more are present', () => {
-    const schools = Array.from({ length: 6 }, (_, i) =>
+  it('caps Screened at 5 even when more are present', () => {
+    const schools = Array.from({ length: 8 }, (_, i) =>
       makeSchool({ dbn: `sc${i}`, flags: { has_shsat: false, has_audition: false, has_screened: true, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
     )
     const result = capSchoolsByCategory(schools)
-    expect(result.filter((s) => s.flags.has_screened).length).toBe(3)
+    expect(result.filter((s) => s.flags.has_screened).length).toBe(5)
   })
 
   it('fills remainder with EdOpt/Lottery when some categories are absent (no SHSAT, no auditions → 12 edopt slots)', () => {
@@ -1581,14 +1581,14 @@ describe('Issue #40: capSchoolsByCategory', () => {
     expect(result.filter((s) => !s.flags.has_screened).length).toBe(12)
   })
 
-  it('with all categories full: 3 SHSAT + 5 Audition + 3 Screened + 4 EdOpt = 15', () => {
+  it('with all categories full: 3 SHSAT + 3 Audition + 5 Screened + 4 EdOpt/Lottery = 15', () => {
     const shsat = Array.from({ length: 5 }, (_, i) =>
       makeSchool({ dbn: `sh${i}`, flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
     )
     const audition = Array.from({ length: 8 }, (_, i) =>
       makeSchool({ dbn: `au${i}`, flags: { has_shsat: false, has_audition: true, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
     )
-    const screened = Array.from({ length: 6 }, (_, i) =>
+    const screened = Array.from({ length: 8 }, (_, i) =>
       makeSchool({ dbn: `sc${i}`, flags: { has_shsat: false, has_audition: false, has_screened: true, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
     )
     const edopt = Array.from({ length: 20 }, (_, i) =>
@@ -1597,8 +1597,8 @@ describe('Issue #40: capSchoolsByCategory', () => {
     const result = capSchoolsByCategory([...shsat, ...audition, ...screened, ...edopt])
     expect(result.length).toBe(15)
     expect(result.filter((s) => s.flags.has_shsat).length).toBe(3)
-    expect(result.filter((s) => s.flags.has_audition).length).toBe(5)
-    expect(result.filter((s) => s.flags.has_screened).length).toBe(3)
+    expect(result.filter((s) => s.flags.has_audition).length).toBe(3)
+    expect(result.filter((s) => s.flags.has_screened).length).toBe(5)
     expect(result.filter((s) => !s.flags.has_shsat && !s.flags.has_audition && !s.flags.has_screened).length).toBe(4)
   })
 
@@ -2188,5 +2188,78 @@ describe('Issue #42: SchoolRow expanded view and label changes', () => {
 
   it('expanded view still shows applicants per seat', () => {
     expect(schoolRowSource).toContain('applicants/seat')
+  })
+})
+
+describe('Issue #43: section order — Ed Opt after Lottery', () => {
+  it('list page section order array has lottery before edopt', () => {
+    const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
+    // Match the order array specifically (single line)
+    const match = listSource.match(/const order: SectionType\[\] = \[([^\]]+)\]/)
+    expect(match).not.toBeNull()
+    const orderStr = match![1]
+    const lotteryIdx = orderStr.indexOf("'lottery'")
+    const edoptIdx = orderStr.indexOf("'edopt'")
+    expect(lotteryIdx).toBeGreaterThan(-1)
+    expect(edoptIdx).toBeGreaterThan(-1)
+    expect(lotteryIdx).toBeLessThan(edoptIdx)
+  })
+
+  it('requirements page SECTION_ORDER has lottery before edopt', () => {
+    const reqSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+    // Match the multi-line SECTION_ORDER array
+    const match = reqSource.match(/SECTION_ORDER: SectionKey\[\] = \[([\s\S]*?)\]/)
+    expect(match).not.toBeNull()
+    const block = match![1]
+    const lotteryIdx = block.indexOf("'lottery'")
+    const edoptIdx = block.indexOf("'edopt'")
+    expect(lotteryIdx).toBeGreaterThan(-1)
+    expect(edoptIdx).toBeGreaterThan(-1)
+    expect(lotteryIdx).toBeLessThan(edoptIdx)
+  })
+})
+
+describe('Issue #43: updated category caps (free tier)', () => {
+  it('CATEGORY_CAPS comment references paid Full Access', () => {
+    const utilsSource = fs.readFileSync(path.join(__dirname, '../lib/school-list-utils.ts'), 'utf-8')
+    expect(utilsSource).toContain('Full Access')
+  })
+
+  it('audition cap is now 3', () => {
+    const schools = Array.from({ length: 8 }, (_, i) =>
+      makeSchool({ dbn: `aud${i}`, flags: { has_shsat: false, has_audition: true, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    )
+    const result = capSchoolsByCategory(schools)
+    expect(result.filter((s) => s.flags.has_audition).length).toBe(3)
+  })
+
+  it('screened cap is now 5', () => {
+    const schools = Array.from({ length: 10 }, (_, i) =>
+      makeSchool({ dbn: `scr${i}`, flags: { has_shsat: false, has_audition: false, has_screened: true, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    )
+    const result = capSchoolsByCategory(schools)
+    expect(result.filter((s) => s.flags.has_screened).length).toBe(5)
+  })
+
+  it('lottery/edopt fills 4 slots when shsat=3, audition=3, screened=5 (total 15)', () => {
+    const shsat = Array.from({ length: 5 }, (_, i) =>
+      makeSchool({ dbn: `sh${i}`, flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    )
+    const audition = Array.from({ length: 5 }, (_, i) =>
+      makeSchool({ dbn: `au${i}`, flags: { has_shsat: false, has_audition: true, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    )
+    const screened = Array.from({ length: 8 }, (_, i) =>
+      makeSchool({ dbn: `sc${i}`, flags: { has_shsat: false, has_audition: false, has_screened: true, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    )
+    const lottery = Array.from({ length: 10 }, (_, i) =>
+      makeSchool({ dbn: `lt${i}`, flags: { has_shsat: false, has_audition: false, has_screened: false, has_open: true, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    )
+    const result = capSchoolsByCategory([...shsat, ...audition, ...screened, ...lottery])
+    expect(result.length).toBe(15)
+    expect(result.filter((s) => s.flags.has_shsat).length).toBe(3)
+    expect(result.filter((s) => s.flags.has_audition).length).toBe(3)
+    expect(result.filter((s) => s.flags.has_screened).length).toBe(5)
+    // remainder = 15 - 3 - 3 - 5 = 4
+    expect(result.filter((s) => !s.flags.has_shsat && !s.flags.has_audition && !s.flags.has_screened).length).toBe(4)
   })
 })

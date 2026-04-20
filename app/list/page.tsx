@@ -202,7 +202,7 @@ function groupSchools(schools: School[]): SectionGroup[] {
     buckets[getPrimarySection(school)].push(school)
   }
 
-  const order: SectionType[] = ['shsat', 'audition', 'screened', 'edopt', 'lottery']
+  const order: SectionType[] = ['shsat', 'audition', 'screened', 'lottery', 'edopt']
   let runningIndex = 0
   const result: SectionGroup[] = []
 
