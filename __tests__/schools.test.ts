@@ -2,8 +2,8 @@ import * as fs from 'fs'
 import * as path from 'path'
 import schoolsData from '../schools.json'
 import { parseIssueCommand } from '../lib/telegram-utils'
-import { getVisibleGroups } from '../lib/school-list-utils'
-import { SectionGroup } from '../types'
+import { getVisibleGroups, capSchoolsByCategory, FREE_TIER_CAP, PAID_TIER_CAP } from '../lib/school-list-utils'
+import { SectionGroup, School } from '../types'
 
 describe('schools.json', () => {
   it('loads and is an array', () => {
@@ -324,8 +324,9 @@ describe('Issue #12: SchoolList locked expand placeholder', () => {
     expect(schoolListSource).not.toContain('Load 15 more\n')
   })
 
-  it('shows remaining school count in the lock placeholder', () => {
-    expect(schoolListSource).toContain('totalCount - visibleCount')
+  it('shows remaining school count in the lock placeholder using PAID_TIER_CAP - FREE_TIER_CAP', () => {
+    // Issue #40: lock banner now always shows a fixed count (PAID_TIER_CAP - FREE_TIER_CAP = 15)
+    expect(schoolListSource).toContain('PAID_TIER_CAP - FREE_TIER_CAP')
   })
 })
 
@@ -1496,5 +1497,176 @@ describe('Issue #39: Season Pass → Full Access across all files', () => {
   it('home page does not have "coming soon" language', () => {
     const homeSource = fs.readFileSync(path.join(__dirname, '../app/page.tsx'), 'utf-8')
     expect(homeSource).not.toContain('coming soon')
+  })
+})
+
+// ── Issue #40: Cap school list at 15, balance categories, sync requirements page ───
+
+function makeSchool(overrides: Partial<School> & { dbn: string }): School {
+  return {
+    dbn: overrides.dbn,
+    name: overrides.name ?? `School ${overrides.dbn}`,
+    borough: overrides.borough ?? 'Manhattan',
+    size: overrides.size ?? 'medium',
+    total_students: null,
+    applicants_per_seat: null,
+    academic_score_pct: overrides.academic_score_pct ?? null,
+    survey_score_pct: null,
+    admissions_types: overrides.admissions_types ?? ['Open'],
+    programs: [],
+    flags: {
+      has_shsat: overrides.flags?.has_shsat ?? false,
+      has_audition: overrides.flags?.has_audition ?? false,
+      has_screened: overrides.flags?.has_screened ?? false,
+      has_open: overrides.flags?.has_open ?? true,
+      has_borough_priority: false,
+      is_hidden_gem: false,
+      has_consortium: false,
+      has_ib: false,
+    },
+    doe_data: { overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '' },
+    sift_url: '',
+    last_verified: '',
+  }
+}
+
+describe('Issue #40: capSchoolsByCategory', () => {
+  it('exports FREE_TIER_CAP = 15 and PAID_TIER_CAP = 30', () => {
+    expect(FREE_TIER_CAP).toBe(15)
+    expect(PAID_TIER_CAP).toBe(30)
+  })
+
+  it('caps total results at 15', () => {
+    const schools = Array.from({ length: 30 }, (_, i) =>
+      makeSchool({ dbn: `x${i}`, flags: { has_shsat: false, has_audition: false, has_screened: false, has_open: true, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    )
+    expect(capSchoolsByCategory(schools).length).toBe(FREE_TIER_CAP)
+  })
+
+  it('caps SHSAT at 3 even when more are present', () => {
+    const schools = Array.from({ length: 8 }, (_, i) =>
+      makeSchool({ dbn: `s${i}`, flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    )
+    const result = capSchoolsByCategory(schools)
+    expect(result.filter((s) => s.flags.has_shsat).length).toBe(3)
+  })
+
+  it('caps Audition at 5 even when more are present', () => {
+    const schools = Array.from({ length: 10 }, (_, i) =>
+      makeSchool({ dbn: `a${i}`, flags: { has_shsat: false, has_audition: true, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    )
+    const result = capSchoolsByCategory(schools)
+    expect(result.filter((s) => s.flags.has_audition).length).toBe(5)
+  })
+
+  it('caps Screened at 3 even when more are present', () => {
+    const schools = Array.from({ length: 6 }, (_, i) =>
+      makeSchool({ dbn: `sc${i}`, flags: { has_shsat: false, has_audition: false, has_screened: true, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    )
+    const result = capSchoolsByCategory(schools)
+    expect(result.filter((s) => s.flags.has_screened).length).toBe(3)
+  })
+
+  it('fills remainder with EdOpt/Lottery when some categories are absent (no SHSAT, no auditions → 12 edopt slots)', () => {
+    // 0 SHSAT + 0 audition + 3 screened + 12 EdOpt = 15
+    const screened = Array.from({ length: 3 }, (_, i) =>
+      makeSchool({ dbn: `sc${i}`, flags: { has_shsat: false, has_audition: false, has_screened: true, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    )
+    const edopt = Array.from({ length: 20 }, (_, i) =>
+      makeSchool({ dbn: `e${i}`, flags: { has_shsat: false, has_audition: false, has_screened: false, has_open: true, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    )
+    const result = capSchoolsByCategory([...screened, ...edopt])
+    expect(result.length).toBe(15)
+    expect(result.filter((s) => s.flags.has_screened).length).toBe(3)
+    expect(result.filter((s) => !s.flags.has_screened).length).toBe(12)
+  })
+
+  it('with all categories full: 3 SHSAT + 5 Audition + 3 Screened + 4 EdOpt = 15', () => {
+    const shsat = Array.from({ length: 5 }, (_, i) =>
+      makeSchool({ dbn: `sh${i}`, flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    )
+    const audition = Array.from({ length: 8 }, (_, i) =>
+      makeSchool({ dbn: `au${i}`, flags: { has_shsat: false, has_audition: true, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    )
+    const screened = Array.from({ length: 6 }, (_, i) =>
+      makeSchool({ dbn: `sc${i}`, flags: { has_shsat: false, has_audition: false, has_screened: true, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    )
+    const edopt = Array.from({ length: 20 }, (_, i) =>
+      makeSchool({ dbn: `ed${i}`, flags: { has_shsat: false, has_audition: false, has_screened: false, has_open: true, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    )
+    const result = capSchoolsByCategory([...shsat, ...audition, ...screened, ...edopt])
+    expect(result.length).toBe(15)
+    expect(result.filter((s) => s.flags.has_shsat).length).toBe(3)
+    expect(result.filter((s) => s.flags.has_audition).length).toBe(5)
+    expect(result.filter((s) => s.flags.has_screened).length).toBe(3)
+    expect(result.filter((s) => !s.flags.has_shsat && !s.flags.has_audition && !s.flags.has_screened).length).toBe(4)
+  })
+
+  it('sorts within each category by academic_score_pct descending, null last', () => {
+    const schools = [
+      makeSchool({ dbn: 'sh1', academic_score_pct: 60, flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } }),
+      makeSchool({ dbn: 'sh2', academic_score_pct: 95, flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } }),
+      makeSchool({ dbn: 'sh3', academic_score_pct: null, flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } }),
+      makeSchool({ dbn: 'sh4', academic_score_pct: 80, flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } }),
+    ]
+    const result = capSchoolsByCategory(schools)
+    const shsatResult = result.filter((s) => s.flags.has_shsat)
+    // top 3 by score: sh2 (95), sh4 (80), sh1 (60)
+    expect(shsatResult[0].dbn).toBe('sh2')
+    expect(shsatResult[1].dbn).toBe('sh4')
+    expect(shsatResult[2].dbn).toBe('sh1')
+  })
+
+  it('returns fewer than 15 when total matching schools are fewer than 15', () => {
+    const schools = [
+      makeSchool({ dbn: 'a1', flags: { has_shsat: false, has_audition: false, has_screened: false, has_open: true, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } }),
+      makeSchool({ dbn: 'a2', flags: { has_shsat: false, has_audition: false, has_screened: false, has_open: true, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } }),
+    ]
+    expect(capSchoolsByCategory(schools).length).toBe(2)
+  })
+})
+
+describe('Issue #40: SchoolList lock banner', () => {
+  it('SchoolList always shows lock banner (no conditional on totalCount)', () => {
+    const schoolListSource = fs.readFileSync(path.join(__dirname, '../components/SchoolList.tsx'), 'utf-8')
+    // Must NOT use the old "visibleCount < totalCount" guard
+    expect(schoolListSource).not.toContain('visibleCount < totalCount')
+    // Must reference PAID_TIER_CAP and FREE_TIER_CAP for the count
+    expect(schoolListSource).toContain('PAID_TIER_CAP - FREE_TIER_CAP')
+  })
+
+  it('lock banner shows "15 more schools" (PAID_TIER_CAP 30 minus FREE_TIER_CAP 15)', () => {
+    expect(PAID_TIER_CAP - FREE_TIER_CAP).toBe(15)
+  })
+})
+
+describe('Issue #40: list page uses capped results', () => {
+  it('list page imports capSchoolsByCategory', () => {
+    const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
+    expect(listSource).toContain('capSchoolsByCategory')
+  })
+
+  it('list page uses cappedResults for header count', () => {
+    const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
+    expect(listSource).toContain('cappedResults.length')
+  })
+})
+
+describe('Issue #40: requirements page uses capped results and lock banner', () => {
+  it('requirements page imports capSchoolsByCategory', () => {
+    const pageSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+    expect(pageSource).toContain('capSchoolsByCategory')
+  })
+
+  it('requirements page caps schools before building sections', () => {
+    const pageSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+    expect(pageSource).toContain('cappedSchools')
+  })
+
+  it('RequirementsContent renders lock banners', () => {
+    const contentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
+    expect(contentSource).toContain('lockedCount')
+    expect(contentSource).toContain('Full Access')
+    expect(contentSource).toContain('LockBanner')
   })
 })
