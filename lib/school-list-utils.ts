@@ -4,7 +4,8 @@ export const PAGE_SIZE = 15
 export const FREE_TIER_CAP = 15
 export const PAID_TIER_CAP = 30
 
-const CATEGORY_CAPS = { shsat: 3, audition: 5, screened: 3 }
+// Free-tier caps — intended to expand for paid Full Access.
+const CATEGORY_CAPS = { shsat: 3, audition: 3, screened: 5 }
 
 function sortByAcademicScore(schools: School[]): School[] {
   return [...schools].sort((a, b) => {
