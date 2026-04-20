@@ -9,6 +9,16 @@ import type { ReqSection, ShsatCutoffInfo } from './page'
 
 const STORAGE_KEY = 'hs_nav_requirements'
 
+const SECTION_STYLE: Record<string, { bg: string; text: string }> = {
+  shsat: { bg: 'bg-blue-600', text: 'text-white' },
+  audition: { bg: 'bg-purple-600', text: 'text-white' },
+  screened: { bg: 'bg-orange-500', text: 'text-white' },
+  screened_assessment: { bg: 'bg-orange-400', text: 'text-white' },
+  edopt: { bg: 'bg-amber-400', text: 'text-gray-900' },
+  lottery: { bg: 'bg-gray-500', text: 'text-white' },
+}
+const ALL_APPLICANTS_STYLE = { bg: 'bg-gray-700', text: 'text-white' }
+
 const SECTION_REQUIREMENTS: Record<string, { id: string; text: string }[]> = {
   shsat: [
     { id: 'shsat_1', text: 'Take and pass the SHSAT exam. This is the sole admissions criterion for specialized high schools.' },
@@ -215,44 +225,14 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
           )}
         </div>
 
-        {/* Disclaimer */}
-        <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mb-3">
-          <p className="text-sm text-amber-800 leading-relaxed">
-            Every effort was made to keep this data current. AI can make mistakes and school data
-            can change. Even the DOE&apos;s own prediction tool uses randomness as a tiebreaker.{' '}
-            No tool can guarantee an offer. Before submitting, confirm deadlines and requirements at{' '}
-            <a
-              href="https://www.myschools.nyc"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline font-medium"
-            >
-              myschools.nyc
-            </a>
-            .
-          </p>
-        </div>
-
-        {/* Deadlines last verified */}
-        <p className="text-xs text-gray-400 mb-8">
-          Deadlines last verified: April 8, 2026 —{' '}
-          <a
-            href="https://www.myschools.nyc"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:text-gray-600"
-          >
-            myschools.nyc
-          </a>
-        </p>
-
         {/* Per-section requirements */}
         <div className="space-y-8">
           {sections.map((section) => {
             const items = SECTION_REQUIREMENTS[section.key] ?? []
+            const sStyle = SECTION_STYLE[section.key] ?? { bg: 'bg-gray-600', text: 'text-white' }
             return (
               <div key={section.key}>
-                <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3 pb-2 border-b border-gray-200">
+                <h2 className={`text-sm font-semibold uppercase tracking-wide px-3 py-2 mb-3 rounded-md ${sStyle.bg} ${sStyle.text}`}>
                   {section.title}
                 </h2>
                 {renderItems(items)}
@@ -284,14 +264,45 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
 
           {/* All Applicants — always shown last */}
           <div>
-            <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide mb-3 pb-2 border-b border-gray-200">
+            <h2 className={`text-sm font-semibold uppercase tracking-wide px-3 py-2 mb-3 rounded-md ${ALL_APPLICANTS_STYLE.bg} ${ALL_APPLICANTS_STYLE.text}`}>
               All Applicants
             </h2>
             {renderItems(ALL_APPLICANTS_ITEMS)}
           </div>
         </div>
+        {/* Disclaimer */}
+        <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mt-8 mb-3">
+          <p className="text-sm text-amber-800 leading-relaxed">
+            Every effort was made to keep this data current. AI can make mistakes and school data
+            can change. Even the DOE&apos;s own prediction tool uses randomness as a tiebreaker.{' '}
+            No tool can guarantee an offer. Before submitting, confirm deadlines and requirements at{' '}
+            <a
+              href="https://www.myschools.nyc"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline font-medium"
+            >
+              myschools.nyc
+            </a>
+            .
+          </p>
+        </div>
+
+        {/* Deadlines last verified */}
+        <p className="text-xs text-gray-400 mb-6">
+          Deadlines last verified: April 8, 2026 —{' '}
+          <a
+            href="https://www.myschools.nyc"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-gray-600"
+          >
+            myschools.nyc
+          </a>
+        </p>
+
         {/* Lock banner — bottom */}
-        <div className="mt-8">
+        <div className="mt-2">
           <LockBanner />
         </div>
       </div>

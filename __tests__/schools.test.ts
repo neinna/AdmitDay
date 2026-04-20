@@ -1905,3 +1905,95 @@ describe('Issue #44: SHSAT_CUTOFFS data validity', () => {
     expect(Math.min(...scores)).toBe(439)
   })
 })
+
+// ── Issue #45: Move disclaimer to bottom; style section headers ──────────────
+
+describe('Issue #45: Disclaimer and verified line moved to bottom', () => {
+  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
+
+  it('disclaimer appears AFTER All Applicants section in source order', () => {
+    const allApplicantsIdx = reqContentSource.indexOf('All Applicants — always shown last')
+    const disclaimerIdx = reqContentSource.indexOf('Every effort was made to keep this data current')
+    expect(allApplicantsIdx).toBeGreaterThan(-1)
+    expect(disclaimerIdx).toBeGreaterThan(-1)
+    expect(disclaimerIdx).toBeGreaterThan(allApplicantsIdx)
+  })
+
+  it('"Deadlines last verified" line appears AFTER All Applicants section in source order', () => {
+    const allApplicantsIdx = reqContentSource.indexOf('All Applicants — always shown last')
+    const verifiedIdx = reqContentSource.indexOf('Deadlines last verified')
+    expect(allApplicantsIdx).toBeGreaterThan(-1)
+    expect(verifiedIdx).toBeGreaterThan(-1)
+    expect(verifiedIdx).toBeGreaterThan(allApplicantsIdx)
+  })
+
+  it('disclaimer appears AFTER the per-section requirements loop in source order', () => {
+    const sectionsLoopIdx = reqContentSource.indexOf('Per-section requirements')
+    const disclaimerIdx = reqContentSource.indexOf('Every effort was made to keep this data current')
+    expect(sectionsLoopIdx).toBeGreaterThan(-1)
+    expect(disclaimerIdx).toBeGreaterThan(sectionsLoopIdx)
+  })
+
+  it('disclaimer appears BEFORE the bottom Lock banner', () => {
+    const disclaimerIdx = reqContentSource.indexOf('Every effort was made to keep this data current')
+    const lockBannerBottomIdx = reqContentSource.indexOf('Lock banner — bottom')
+    expect(disclaimerIdx).toBeGreaterThan(-1)
+    expect(lockBannerBottomIdx).toBeGreaterThan(-1)
+    expect(disclaimerIdx).toBeLessThan(lockBannerBottomIdx)
+  })
+})
+
+describe('Issue #45: Section headers styled with colored backgrounds', () => {
+  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
+
+  it('defines SECTION_STYLE constant', () => {
+    expect(reqContentSource).toContain('SECTION_STYLE')
+  })
+
+  it('SHSAT section uses blue-600 background', () => {
+    expect(reqContentSource).toContain("shsat: { bg: 'bg-blue-600'")
+  })
+
+  it('audition section uses purple-600 background', () => {
+    expect(reqContentSource).toContain("audition: { bg: 'bg-purple-600'")
+  })
+
+  it('screened section uses orange-500 background', () => {
+    expect(reqContentSource).toContain("screened: { bg: 'bg-orange-500'")
+  })
+
+  it('screened_assessment section uses orange-400 background', () => {
+    expect(reqContentSource).toContain("screened_assessment: { bg: 'bg-orange-400'")
+  })
+
+  it('edopt section uses amber-400 background', () => {
+    expect(reqContentSource).toContain("edopt: { bg: 'bg-amber-400'")
+  })
+
+  it('lottery section uses gray-500 background', () => {
+    expect(reqContentSource).toContain("lottery: { bg: 'bg-gray-500'")
+  })
+
+  it('All Applicants section uses a dark background style', () => {
+    expect(reqContentSource).toContain('ALL_APPLICANTS_STYLE')
+    expect(reqContentSource).toContain("bg: 'bg-gray-700'")
+  })
+
+  it('section h2 uses sStyle.bg and sStyle.text for dynamic styling', () => {
+    expect(reqContentSource).toContain('sStyle.bg')
+    expect(reqContentSource).toContain('sStyle.text')
+  })
+
+  it('All Applicants h2 uses ALL_APPLICANTS_STYLE', () => {
+    const allApplicantsH2Block = reqContentSource.slice(
+      reqContentSource.indexOf('All Applicants — always shown last'),
+      reqContentSource.indexOf('All Applicants — always shown last') + 200,
+    )
+    expect(allApplicantsH2Block).toContain('ALL_APPLICANTS_STYLE')
+  })
+
+  it('section h2 does NOT use the old plain text-gray-900 header styling', () => {
+    // The old header was: text-gray-900 uppercase tracking-wide mb-3 pb-2 border-b border-gray-200
+    expect(reqContentSource).not.toContain('pb-2 border-b border-gray-200')
+  })
+})
