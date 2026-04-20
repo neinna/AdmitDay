@@ -2263,3 +2263,189 @@ describe('Issue #43: updated category caps (free tier)', () => {
     expect(result.filter((s) => !s.flags.has_shsat && !s.flags.has_audition && !s.flags.has_screened).length).toBe(4)
   })
 })
+
+// ── Issue #51: Per-school requirements from enriched DOE data ────────────────
+
+describe('Issue #51: SchoolInSection DOE fields in page.tsx', () => {
+  const pageSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+
+  it('SchoolInSection has prgdesc field', () => {
+    expect(pageSource).toContain('prgdesc?: string')
+  })
+
+  it('SchoolInSection has auditionInformation field', () => {
+    expect(pageSource).toContain('auditionInformation?: string[]')
+  })
+
+  it('SchoolInSection has requirements field', () => {
+    expect(pageSource).toContain('requirements?: Record<string, string>')
+  })
+
+  it('buildReqSections passes auditionInformation only for audition key', () => {
+    expect(pageSource).toContain("key === 'audition' && audInfo?.length ? audInfo : undefined")
+  })
+
+  it('buildReqSections passes requirements only for screened/screened_assessment keys', () => {
+    expect(pageSource).toContain("key === 'screened' || key === 'screened_assessment'")
+  })
+
+  it('passes doe_data.prgdesc to SchoolInSection', () => {
+    expect(pageSource).toContain('prgdesc: doeData?.prgdesc || undefined')
+  })
+})
+
+describe('Issue #51: Per-school requirements rendering in RequirementsContent.tsx', () => {
+  const src = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
+
+  it('defines PER_SCHOOL_KEYS constant', () => {
+    expect(src).toContain("const PER_SCHOOL_KEYS = new Set(['audition', 'screened', 'screened_assessment'])")
+  })
+
+  it('allItems filters out per-school sections', () => {
+    expect(src).toContain('PER_SCHOOL_KEYS.has(s.key)')
+  })
+
+  it('defines firstSentence helper', () => {
+    expect(src).toContain('function firstSentence(text: string): string')
+  })
+
+  it('defines renderScreenedRequirements helper', () => {
+    expect(src).toContain('function renderScreenedRequirements(requirements: Record<string, string>)')
+  })
+
+  it('groups requirements by program number via regex', () => {
+    expect(src).toContain("key.match(/^requirement\\d+_(\\d+)$/)")
+  })
+
+  it('renders school.prgdesc as italic description', () => {
+    expect(src).toContain('firstSentence(school.prgdesc)')
+  })
+
+  it('renders school.auditionInformation for audition programs', () => {
+    expect(src).toContain('school.auditionInformation.slice(0, 3).map((info, i) =>')
+  })
+
+  it('labels multiple audition programs as Program N', () => {
+    expect(src).toContain('Program {i + 1}')
+  })
+
+  it('renders school.requirements for screened programs', () => {
+    expect(src).toContain('renderScreenedRequirements(school.requirements)')
+  })
+
+  it('renderItems is conditional on section key', () => {
+    expect(src).toContain('!PER_SCHOOL_KEYS.has(section.key) && renderItems(items)')
+  })
+
+  it('section render order preserved: description → schools → renderItems', () => {
+    const sectionLoopStart = src.indexOf('sections.map((section)')
+    const descriptionIdx = src.indexOf('SECTION_DESCRIPTIONS[section.key]', sectionLoopStart)
+    const schoolsIdx = src.indexOf('Your matched schools in this category', sectionLoopStart)
+    const checklistIdx = src.indexOf('renderItems(items)', sectionLoopStart)
+    expect(descriptionIdx).toBeGreaterThan(sectionLoopStart)
+    expect(schoolsIdx).toBeGreaterThan(descriptionIdx)
+    expect(checklistIdx).toBeGreaterThan(schoolsIdx)
+  })
+})
+
+describe('Issue #51: firstSentence helper logic', () => {
+  function firstSentence(text: string): string {
+    const idx = text.indexOf('. ')
+    if (idx !== -1) return text.slice(0, idx + 1)
+    return text.length > 150 ? text.slice(0, 147) + '…' : text
+  }
+
+  it('returns text up to first ". "', () => {
+    expect(firstSentence('Studio art program. Includes dance. Theater option.')).toBe('Studio art program.')
+  })
+
+  it('returns full text when no ". " found and text is short', () => {
+    expect(firstSentence('A short description')).toBe('A short description')
+  })
+
+  it('truncates long text with no period at 147 chars', () => {
+    const long = 'A'.repeat(200)
+    const result = firstSentence(long)
+    expect(result.length).toBe(148) // 147 + '…' (1 char, U+2026)
+    expect(result.endsWith('…')).toBe(true)
+  })
+
+  it('handles text that ends with a period but no space after', () => {
+    expect(firstSentence('A program.')).toBe('A program.')
+  })
+})
+
+describe('Issue #51: renderScreenedRequirements grouping logic', () => {
+  function groupRequirementsByProgram(requirements: Record<string, string>): Record<string, string[]> {
+    const programs: Record<string, string[]> = {}
+    for (const [key, value] of Object.entries(requirements)) {
+      const match = key.match(/^requirement\d+_(\d+)$/)
+      if (match && value) {
+        const prog = match[1]
+        if (!programs[prog]) programs[prog] = []
+        programs[prog].push(value)
+      }
+    }
+    return programs
+  }
+
+  it('groups requirements by program number', () => {
+    const reqs = {
+      requirement1_1: 'Attendance',
+      requirement2_1: 'Punctuality',
+      requirement1_2: 'Course Grades: A',
+    }
+    const grouped = groupRequirementsByProgram(reqs)
+    expect(grouped['1']).toEqual(['Attendance', 'Punctuality'])
+    expect(grouped['2']).toEqual(['Course Grades: A'])
+  })
+
+  it('ignores keys that do not match pattern', () => {
+    const reqs = { badkey: 'value', requirement1_1: 'Attendance' }
+    const grouped = groupRequirementsByProgram(reqs)
+    expect(Object.keys(grouped)).toEqual(['1'])
+  })
+
+  it('ignores empty values', () => {
+    const reqs = { requirement1_1: '', requirement2_1: 'Punctuality' }
+    const grouped = groupRequirementsByProgram(reqs)
+    expect(grouped['1']).toEqual(['Punctuality'])
+  })
+
+  it('handles single-program school (all requirements same program)', () => {
+    const reqs = {
+      requirement1_1: 'Attendance',
+      requirement2_1: 'Punctuality',
+      requirement3_1: 'Course Grades: English (60-100)',
+      requirement4_1: 'Standardized Test Scores: ELA (1.9-4.5)',
+    }
+    const grouped = groupRequirementsByProgram(reqs)
+    expect(Object.keys(grouped)).toEqual(['1'])
+    expect(grouped['1'].length).toBe(4)
+  })
+})
+
+// ── Issue #51: fallback and bold school name ─────────────────────────────────
+
+describe('Issue #51: fallback for schools with empty DOE data', () => {
+  const src = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
+
+  it('renders fallback copy when school has no audition or requirements data', () => {
+    expect(src).toContain('!school.auditionInformation?.length && !school.requirements')
+  })
+
+  it('fallback uses SECTION_REQUIREMENTS for the current section key', () => {
+    expect(src).toContain('SECTION_REQUIREMENTS[section.key]')
+  })
+
+  it('fallback renders items as plain text bullets, not checkboxes', () => {
+    const fallbackIdx = src.indexOf('!school.auditionInformation?.length && !school.requirements')
+    const bulletIdx = src.indexOf('• {item.text}', fallbackIdx)
+    expect(bulletIdx).toBeGreaterThan(fallbackIdx)
+  })
+
+  it('school name is always bold (not conditional on having data)', () => {
+    expect(src).toContain('"font-semibold text-gray-900"')
+    expect(src).not.toContain('school.auditionInformation || school.requirements ? \'font-semibold text-gray-900\'')
+  })
+})
