@@ -211,8 +211,7 @@ export default function SchoolList({ groups, userInputs, totalCount }: Props) {
             </svg>
             <span className="text-sm text-gray-500">
               {totalCount - visibleCount} more school{totalCount - visibleCount !== 1 ? 's' : ''} —{' '}
-              <span className="font-medium text-gray-600">Season Pass</span>
-              <span className="ml-1.5 text-xs text-gray-400 font-normal">coming soon</span>
+              <span className="font-medium text-gray-600">Full Access</span>
             </span>
           </div>
         </div>
