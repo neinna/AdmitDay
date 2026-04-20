@@ -65,9 +65,10 @@ const ALL_APPLICANTS_ITEMS = [
 interface Props {
   sections: ReqSection[]
   listHref: string
+  lockedCount: number
 }
 
-export default function RequirementsContent({ sections, listHref }: Props) {
+export default function RequirementsContent({ sections, listHref, lockedCount }: Props) {
   const posthog = usePostHog()
   const [checked, setChecked] = useState<Record<string, boolean>>({})
   const [hydrated, setHydrated] = useState(false)
@@ -144,9 +145,28 @@ export default function RequirementsContent({ sections, listHref }: Props) {
     )
   }
 
+  function LockBanner() {
+    return (
+      <div className="flex items-center justify-center gap-2 py-3 px-4 bg-gray-50 border border-gray-200 rounded-md">
+        <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+        <span className="text-sm text-gray-500">
+          {lockedCount} more school{lockedCount !== 1 ? 's' : ''} —{' '}
+          <span className="font-medium text-gray-600">Full Access</span>
+        </span>
+      </div>
+    )
+  }
+
   return (
     <main className="min-h-screen bg-white">
       <div className="max-w-2xl mx-auto px-4 py-10">
+        {/* Lock banner — top */}
+        <div className="mb-4">
+          <LockBanner />
+        </div>
+
         {/* Header */}
         <div className="mb-6">
           <Link href={listHref} className="text-sm text-gray-500 hover:text-gray-700">
@@ -235,6 +255,10 @@ export default function RequirementsContent({ sections, listHref }: Props) {
             </h2>
             {renderItems(ALL_APPLICANTS_ITEMS)}
           </div>
+        </div>
+        {/* Lock banner — bottom */}
+        <div className="mt-8">
+          <LockBanner />
         </div>
       </div>
       <Footer />
