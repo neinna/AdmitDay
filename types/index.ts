@@ -75,5 +75,5 @@ export interface UserInputs {
   auditions: boolean
   academicRatings: ('exceptional' | 'strong' | 'above_average')[]
   iep: boolean
-  size: 'small' | 'medium' | 'large'
+  size: 'small' | 'medium' | 'large' | ''
 }
