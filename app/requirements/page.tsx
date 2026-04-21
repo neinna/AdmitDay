@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { School, UserInputs } from '@/types'
+import { School, UserInputs, SectionType } from '@/types'
 import RequirementsContent from './RequirementsContent'
 import {
   capSchoolsByCategory,
@@ -10,6 +10,7 @@ import {
   selectSHSATSchools,
   sortByHomeBorough,
   sortBySize,
+  groupSchools,
 } from '@/lib/school-list-utils'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -92,84 +93,32 @@ function matchesSports(school: School, sports: string[]): boolean {
 
 // ── Section grouping ──────────────────────────────────────────────────────────
 
-type SectionKey =
-  | 'shsat'
-  | 'audition'
-  | 'screened'
-  | 'screened_assessment'
-  | 'edopt'
-  | 'lottery'
-
-const SECTION_TITLES: Record<SectionKey, string> = {
+const SECTION_TITLES: Record<SectionType, string> = {
   shsat: 'SHSAT Schools',
   audition: 'Audition Schools',
   screened: 'Screened Schools',
-  screened_assessment: 'Screened with Assessment Schools',
   edopt: 'Educational Option Schools',
   lottery: 'Open Enrollment / Lottery Schools',
 }
 
-const SECTION_ORDER: SectionKey[] = [
-  'shsat',
-  'audition',
-  'screened',
-  'screened_assessment',
-  'lottery',
-  'edopt',
-]
-
-function getSchoolSectionKeys(school: School): SectionKey[] {
-  const keys: SectionKey[] = []
-  if (school.admissions_types.includes('SHSAT') || school.flags.has_shsat) keys.push('shsat')
-  if (school.admissions_types.includes('Audition') || school.flags.has_audition)
-    keys.push('audition')
-  if (school.admissions_types.includes('Screened')) keys.push('screened')
-  if (school.admissions_types.includes('Screened with Assessment')) keys.push('screened_assessment')
-  if (school.admissions_types.includes('Educational Option')) keys.push('edopt')
-  if (school.admissions_types.includes('Open') || school.admissions_types.includes('Zoned'))
-    keys.push('lottery')
-  if (keys.length === 0) keys.push('lottery')
-  return keys
-}
-
-function buildReqSections(matchedSchools: School[]): ReqSection[] {
-  const buckets: Record<SectionKey, SchoolInSection[]> = {
-    shsat: [],
-    audition: [],
-    screened: [],
-    screened_assessment: [],
-    edopt: [],
-    lottery: [],
-  }
-
-  for (const school of matchedSchools) {
-    const schoolKeys = getSchoolSectionKeys(school)
-    for (const key of schoolKeys) {
-      const otherKeys = schoolKeys.filter((k) => k !== key)
-      const notes = otherKeys.map(
-        (k) =>
-          `This school also has a ${SECTION_TITLES[k]} program — see the ${SECTION_TITLES[k]} section.`,
-      )
+function buildReqSections(schools: School[]): ReqSection[] {
+  const groups = groupSchools(schools)
+  return groups.map((group) => ({
+    key: group.type,
+    title: SECTION_TITLES[group.type],
+    schools: group.schools.map((school) => {
       const doeData = school.doe_data
       const audInfo = doeData?.audition_information
       const reqs = doeData?.requirements
-      buckets[key].push({
+      return {
         name: formatSchoolName(school.name),
-        sectionNotes: notes,
+        sectionNotes: [],
         prgdesc: doeData?.prgdesc || undefined,
-        auditionInformation: key === 'audition' && audInfo?.length ? audInfo : undefined,
+        auditionInformation: group.type === 'audition' && audInfo?.length ? audInfo : undefined,
         requirements:
-          (key === 'screened' || key === 'screened_assessment') && reqs && Object.keys(reqs).length
-            ? reqs
-            : undefined,
-      })
-    }
-  }
-
-  return SECTION_ORDER.filter((key) => buckets[key].length > 0).map((key) => ({
-    key,
-    title: SECTION_TITLES[key],
-    schools: buckets[key],
+          group.type === 'screened' && reqs && Object.keys(reqs).length ? reqs : undefined,
+      }
+    }),
   }))
 }
 
