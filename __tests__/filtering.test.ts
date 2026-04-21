@@ -409,3 +409,82 @@ describe('groupSchools', () => {
     expect(groupSchools([])).toEqual([])
   })
 })
+
+// ── Issue #62: groupSchools is single source of truth for both pages ──────────
+
+describe('issue #62: groupSchools produces identical grouping for list and requirements pages', () => {
+  it('Ed Opt school (no flags) goes to lottery — same as list page, not a separate edopt section', () => {
+    const edopt = makeSchool({
+      dbn: 'EO01',
+      admissions_types: ['Educational Option'],
+      flags: { has_shsat: false, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false },
+    })
+    const groups = groupSchools([edopt])
+    const lotteryGroup = groups.find((g) => g.type === 'lottery')
+    const edoptGroup = groups.find((g) => g.type === 'edopt')
+    expect(lotteryGroup?.schools.map((s) => s.dbn)).toContain('EO01')
+    expect(edoptGroup).toBeUndefined()
+  })
+
+  it('screened-with-assessment school (has_screened flag) goes to screened — not a separate screened_assessment section', () => {
+    const scrAssessment = makeSchool({
+      dbn: 'SA01',
+      admissions_types: ['Screened with Assessment'],
+      flags: { has_shsat: false, has_audition: false, has_screened: true, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false },
+    })
+    const groups = groupSchools([scrAssessment])
+    const screenedGroup = groups.find((g) => g.type === 'screened')
+    const types = groups.map((g) => g.type)
+    expect(screenedGroup?.schools.map((s) => s.dbn)).toContain('SA01')
+    expect(types).not.toContain('screened_assessment')
+  })
+
+  it('section order matches list page: shsat, audition, screened, lottery', () => {
+    const shsat = makeSchool({ dbn: 'SH01', flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    const audition = makeSchool({ dbn: 'AU01', flags: { has_audition: true, has_screened: false, has_shsat: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    const screened = makeSchool({ dbn: 'SC01', flags: { has_screened: true, has_audition: false, has_shsat: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    const lottery = makeSchool({ dbn: 'LO01', flags: { has_open: true, has_audition: false, has_screened: false, has_shsat: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    const groups = groupSchools([shsat, audition, screened, lottery])
+    const types = groups.map((g) => g.type)
+    expect(types.indexOf('shsat')).toBeLessThan(types.indexOf('audition'))
+    expect(types.indexOf('audition')).toBeLessThan(types.indexOf('screened'))
+    expect(types.indexOf('screened')).toBeLessThan(types.indexOf('lottery'))
+  })
+
+  it('each school appears in exactly one section (no duplicates across sections)', () => {
+    const mixedSchool = makeSchool({
+      dbn: 'MX01',
+      admissions_types: ['Screened', 'Screened with Assessment'],
+      flags: { has_shsat: false, has_audition: false, has_screened: true, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false },
+    })
+    const groups = groupSchools([mixedSchool])
+    const allDbns = groups.flatMap((g) => g.schools.map((s) => s.dbn))
+    expect(allDbns.filter((d) => d === 'MX01').length).toBe(1)
+  })
+})
+
+// ── Issue #62: requirements/page.tsx source uses groupSchools ─────────────────
+
+describe('issue #62: requirements/page.tsx structural check', () => {
+  const reqPageSrc = require('fs').readFileSync(
+    require('path').join(__dirname, '../app/requirements/page.tsx'),
+    'utf-8'
+  )
+
+  it('imports groupSchools from school-list-utils', () => {
+    expect(reqPageSrc).toContain('groupSchools')
+    expect(reqPageSrc).toContain("from '@/lib/school-list-utils'")
+  })
+
+  it('does not contain getSchoolSectionKeys (removed diverged logic)', () => {
+    expect(reqPageSrc).not.toContain('getSchoolSectionKeys')
+  })
+
+  it('does not contain SECTION_ORDER (removed diverged logic)', () => {
+    expect(reqPageSrc).not.toContain('SECTION_ORDER')
+  })
+
+  it('does not define a local SectionKey type with screened_assessment', () => {
+    expect(reqPageSrc).not.toContain("'screened_assessment'")
+  })
+})

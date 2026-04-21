@@ -1383,9 +1383,9 @@ describe('Issue #39: requirements page.tsx is a server component', () => {
     expect(pageSource).toContain('function buildReqSections(')
   })
 
-  it('groups schools by admissions_type sections', () => {
-    expect(pageSource).toContain("'Screened with Assessment'")
-    expect(pageSource).toContain("'Educational Option'")
+  it('groups schools using groupSchools from school-list-utils (single source of truth)', () => {
+    expect(pageSource).toContain('groupSchools')
+    expect(pageSource).toContain("from '@/lib/school-list-utils'")
   })
 
   it('returns RequirementsContent component', () => {
@@ -2199,14 +2199,16 @@ describe('Issue #43: section order — Ed Opt after Lottery', () => {
     expect(lotteryIdx).toBeLessThan(edoptIdx)
   })
 
-  it('requirements page SECTION_ORDER has lottery before edopt', () => {
+  it('requirements page uses groupSchools which has lottery before edopt (single source of truth)', () => {
     const reqSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
-    // Match the multi-line SECTION_ORDER array
-    const match = reqSource.match(/SECTION_ORDER: SectionKey\[\] = \[([\s\S]*?)\]/)
+    expect(reqSource).toContain('groupSchools')
+    // Order is now defined in groupSchools() in school-list-utils.ts, not duplicated in requirements/page.tsx
+    const libSource = fs.readFileSync(path.join(__dirname, '../lib/school-list-utils.ts'), 'utf-8')
+    const match = libSource.match(/const order: SectionType\[\] = \[([^\]]+)\]/)
     expect(match).not.toBeNull()
-    const block = match![1]
-    const lotteryIdx = block.indexOf("'lottery'")
-    const edoptIdx = block.indexOf("'edopt'")
+    const orderStr = match![1]
+    const lotteryIdx = orderStr.indexOf("'lottery'")
+    const edoptIdx = orderStr.indexOf("'edopt'")
     expect(lotteryIdx).toBeGreaterThan(-1)
     expect(edoptIdx).toBeGreaterThan(-1)
     expect(lotteryIdx).toBeLessThan(edoptIdx)
@@ -2275,12 +2277,12 @@ describe('Issue #51: SchoolInSection DOE fields in page.tsx', () => {
     expect(pageSource).toContain('requirements?: Record<string, string>')
   })
 
-  it('buildReqSections passes auditionInformation only for audition key', () => {
-    expect(pageSource).toContain("key === 'audition' && audInfo?.length ? audInfo : undefined")
+  it('buildReqSections passes auditionInformation only for audition group type', () => {
+    expect(pageSource).toContain("group.type === 'audition' && audInfo?.length ? audInfo : undefined")
   })
 
-  it('buildReqSections passes requirements only for screened/screened_assessment keys', () => {
-    expect(pageSource).toContain("key === 'screened' || key === 'screened_assessment'")
+  it('buildReqSections passes requirements only for screened section (via groupSchools)', () => {
+    expect(pageSource).toContain("group.type === 'screened' && reqs")
   })
 
   it('passes doe_data.prgdesc to SchoolInSection', () => {
