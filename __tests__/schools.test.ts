@@ -1406,21 +1406,21 @@ describe('Issue #39: RequirementsContent.tsx is a client component', () => {
     expect(reqContentSource).toContain('October 7 to December 3')
   })
 
-  it('contains Screened requirements copy', () => {
-    expect(reqContentSource).toContain('Screened programs review your grades, attendance record')
+  it('contains Screened requirements copy (issue #64: summary card)', () => {
+    expect(reqContentSource).toContain('7th grade course grade average')
     expect(reqContentSource).toContain('two-track system')
   })
 
   it('contains Screened with Assessment requirements copy', () => {
-    expect(reqContentSource).toContain('school-specific assessment in addition to your grades')
+    expect(reqContentSource).toContain('Assessment format varies by school')
   })
 
-  it('contains Educational Option requirements copy', () => {
-    expect(reqContentSource).toContain('Ed Opt programs are designed to reflect a mix of academic levels')
+  it('contains Educational Option requirements copy (issue #64: summary card)', () => {
+    expect(reqContentSource).toContain('reading level bands')
   })
 
-  it('contains Lottery/Open Enrollment requirements copy', () => {
-    expect(reqContentSource).toContain('Admission is by lottery')
+  it('contains Lottery/Open Enrollment requirements copy (issue #64: summary card)', () => {
+    expect(reqContentSource).toContain('These schools select students by lottery')
     expect(reqContentSource).toContain('All applicants who rank the school have an equal chance')
   })
 
@@ -1851,8 +1851,8 @@ describe('Issue #44: SHSAT cutoff display in RequirementsContent.tsx', () => {
     expect(contentSource).toContain('cutoffMap.get(school.name)')
   })
 
-  it('suppresses italic prgdesc for SHSAT schools when cutoffMap is present', () => {
-    expect(contentSource).toContain('!cutoffMap && school.prgdesc')
+  it('does not render prgdesc (removed in issue #64 — show names only)', () => {
+    expect(contentSource).not.toContain('school.prgdesc')
   })
 })
 
@@ -2297,20 +2297,21 @@ describe('Issue #51: Per-school requirements rendering in RequirementsContent.ts
     expect(src).toContain('PER_SCHOOL_KEYS.has(s.key)')
   })
 
-  it('defines firstSentence helper', () => {
-    expect(src).toContain('function firstSentence(text: string): string')
+  it('does not define firstSentence helper (removed in issue #64)', () => {
+    expect(src).not.toContain('function firstSentence(text: string): string')
   })
 
-  it('defines renderScreenedRequirements helper', () => {
-    expect(src).toContain('function renderScreenedRequirements(requirements: Record<string, string>)')
+  it('does not define renderScreenedRequirements helper (removed in issue #64)', () => {
+    expect(src).not.toContain('function renderScreenedRequirements(requirements: Record<string, string>)')
   })
 
-  it('groups requirements by program number via regex', () => {
-    expect(src).toContain("key.match(/^requirement\\d+_(\\d+)$/)")
+  it('uses getExtrasCallout instead of renderScreenedRequirements (issue #64)', () => {
+    expect(src).toContain('getExtrasCallout(school.requirements)')
   })
 
-  it('renders school.prgdesc as italic description', () => {
-    expect(src).toContain('firstSentence(school.prgdesc)')
+  it('does not render school.prgdesc (removed in issue #64)', () => {
+    expect(src).not.toContain('firstSentence(school.prgdesc)')
+    expect(src).not.toContain('school.prgdesc')
   })
 
   it('renders school.auditionInformation for audition programs', () => {
@@ -2321,8 +2322,8 @@ describe('Issue #51: Per-school requirements rendering in RequirementsContent.ts
     expect(src).toContain('Program {i + 1}')
   })
 
-  it('renders school.requirements for screened programs', () => {
-    expect(src).toContain('renderScreenedRequirements(school.requirements)')
+  it('renders extras callout for screened programs via getExtrasCallout (issue #64)', () => {
+    expect(src).toContain('getExtrasCallout(school.requirements)')
   })
 
   it('renderItems is conditional on section key', () => {
@@ -2422,18 +2423,13 @@ describe('Issue #51: renderScreenedRequirements grouping logic', () => {
 describe('Issue #51: fallback for schools with empty DOE data', () => {
   const src = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
 
-  it('renders fallback copy when school has no audition or requirements data', () => {
-    expect(src).toContain('!school.auditionInformation?.length && !school.requirements')
+  it('does not render per-school fallback bullets (removed in issue #64 — summary card replaces)', () => {
+    expect(src).not.toContain('!school.auditionInformation?.length && !school.requirements')
+    expect(src).not.toContain('• {item.text}')
   })
 
-  it('fallback uses SECTION_REQUIREMENTS for the current section key', () => {
+  it('still uses SECTION_REQUIREMENTS for the section checklist (shsat/lottery/edopt)', () => {
     expect(src).toContain('SECTION_REQUIREMENTS[section.key]')
-  })
-
-  it('fallback renders items as plain text bullets, not checkboxes', () => {
-    const fallbackIdx = src.indexOf('!school.auditionInformation?.length && !school.requirements')
-    const bulletIdx = src.indexOf('• {item.text}', fallbackIdx)
-    expect(bulletIdx).toBeGreaterThan(fallbackIdx)
   })
 
   it('school name is always bold (not conditional on having data)', () => {
@@ -2700,9 +2696,8 @@ describe('Issue #55: SHSAT section simplified — no separate cutoff box', () =>
     expect(reqContentSource).toContain('cutoffMap.get(school.name)')
   })
 
-  it('does not show prgdesc italic text for SHSAT schools (cutoffMap guard)', () => {
-    // Guard is negated: !cutoffMap means prgdesc only shows for non-SHSAT sections
-    expect(reqContentSource).toContain('!cutoffMap && school.prgdesc')
+  it('does not render prgdesc for any school (removed in issue #64)', () => {
+    expect(reqContentSource).not.toContain('school.prgdesc')
   })
 
   it('builds cutoffMap from section.shsatCutoffInfo.schoolCutoffs', () => {
