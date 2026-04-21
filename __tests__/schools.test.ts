@@ -1831,35 +1831,22 @@ describe('Issue #44: SHSAT cutoff data in requirements page.tsx', () => {
 describe('Issue #44: SHSAT cutoff display in RequirementsContent.tsx', () => {
   const contentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
 
-  it('imports ShsatCutoffInfo type', () => {
-    expect(contentSource).toContain('ShsatCutoffInfo')
+  it('does not define a separate renderShsatCutoffs function (inline display used instead)', () => {
+    expect(contentSource).not.toContain('function renderShsatCutoffs(')
   })
 
-  it('defines renderShsatCutoffs function', () => {
-    expect(contentSource).toContain('function renderShsatCutoffs(')
-  })
-
-  it('displays "Recent cutoff scores" heading with year and DOE source', () => {
-    expect(contentSource).toContain('Recent cutoff scores')
-    expect(contentSource).toContain('NYC DOE')
-  })
-
-  it('shows the lowest cutoff score summary sentence', () => {
-    expect(contentSource).toContain('lowest recent cutoff score was')
-    expect(contentSource).toContain('lowestScore')
-  })
-
-  it('notes that cutoffs change each year', () => {
-    expect(contentSource).toContain('Cutoffs change each year')
-  })
-
-  it('renders cutoff info only for the SHSAT section (guarded by shsatCutoffInfo)', () => {
+  it('uses shsatCutoffInfo to build a cutoff score map for inline display', () => {
     expect(contentSource).toContain('section.shsatCutoffInfo')
-    expect(contentSource).toContain('renderShsatCutoffs(section.shsatCutoffInfo)')
+    expect(contentSource).toContain('cutoffMap')
   })
 
-  it('links to the DOE specialized high schools page for verification', () => {
-    expect(contentSource).toContain('schools.nyc.gov')
+  it('shows cutoff score inline next to school name', () => {
+    expect(contentSource).toContain('cutoffMap?.has(school.name)')
+    expect(contentSource).toContain('cutoffMap.get(school.name)')
+  })
+
+  it('suppresses italic prgdesc for SHSAT schools when cutoffMap is present', () => {
+    expect(contentSource).toContain('!cutoffMap && school.prgdesc')
   })
 })
 
@@ -2560,5 +2547,67 @@ describe('Issue #54: Rationale route passes language and extracurricular data', 
 
   it('does NOT contain the old "focus on why this school fits this specific student" directive', () => {
     expect(routeSrc).not.toContain('Focus on why this school fits this specific student')
+  })
+})
+
+// ── Issue #55: Match section header styling; simplify SHSAT section ───────────
+
+describe('Issue #55: Section header styling matches list page', () => {
+  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
+
+  it('section h2 does NOT use uppercase class', () => {
+    // Match only the h2 opening tags (not sub-labels in the section loop)
+    const h2Matches = [...reqContentSource.matchAll(/<h2\b[^>]*>/g)]
+    for (const match of h2Matches) {
+      expect(match[0]).not.toContain('uppercase')
+    }
+  })
+
+  it('All Applicants h2 does NOT use uppercase class', () => {
+    const allApplicantsBlock = reqContentSource.slice(
+      reqContentSource.indexOf('All Applicants — always shown last'),
+      reqContentSource.indexOf('All Applicants — always shown last') + 300,
+    )
+    expect(allApplicantsBlock).not.toContain('uppercase tracking-wide')
+  })
+
+  it('section h2 includes a count badge using section.schools.length', () => {
+    expect(reqContentSource).toContain('section.schools.length')
+    expect(reqContentSource).toContain('rounded-full')
+  })
+
+  it('SECTION_STYLE includes countBg for each admissions type', () => {
+    expect(reqContentSource).toContain("shsat: { bg: 'bg-blue-600'")
+    expect(reqContentSource).toContain("countBg: 'bg-blue-500'")
+    expect(reqContentSource).toContain("countBg: 'bg-purple-500'")
+    expect(reqContentSource).toContain("countBg: 'bg-orange-400'")
+    expect(reqContentSource).toContain("countBg: 'bg-gray-400'")
+  })
+
+  it('section h2 uses sStyle.countBg for badge background', () => {
+    expect(reqContentSource).toContain('sStyle.countBg')
+  })
+})
+
+describe('Issue #55: SHSAT section simplified — no separate cutoff box', () => {
+  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
+
+  it('does not render a separate blue cutoff score box', () => {
+    expect(reqContentSource).not.toContain('bg-blue-50 border border-blue-100')
+    expect(reqContentSource).not.toContain('Recent cutoff scores')
+  })
+
+  it('uses cutoffMap to show score inline with school name', () => {
+    expect(reqContentSource).toContain('cutoffMap')
+    expect(reqContentSource).toContain('cutoffMap.get(school.name)')
+  })
+
+  it('does not show prgdesc italic text for SHSAT schools (cutoffMap guard)', () => {
+    // Guard is negated: !cutoffMap means prgdesc only shows for non-SHSAT sections
+    expect(reqContentSource).toContain('!cutoffMap && school.prgdesc')
+  })
+
+  it('builds cutoffMap from section.shsatCutoffInfo.schoolCutoffs', () => {
+    expect(reqContentSource).toContain('section.shsatCutoffInfo.schoolCutoffs')
   })
 })

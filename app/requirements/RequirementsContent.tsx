@@ -5,19 +5,19 @@ import { usePostHog } from 'posthog-js/react'
 import Link from 'next/link'
 import Footer from '@/components/Footer'
 import FeedbackRow from '@/components/FeedbackRow'
-import type { ReqSection, ShsatCutoffInfo } from './page'
+import type { ReqSection } from './page'
 
 const STORAGE_KEY = 'hs_nav_requirements'
 
 const PER_SCHOOL_KEYS = new Set(['audition', 'screened', 'screened_assessment'])
 
-const SECTION_STYLE: Record<string, { bg: string; text: string }> = {
-  shsat: { bg: 'bg-blue-600', text: 'text-white' },
-  audition: { bg: 'bg-purple-600', text: 'text-white' },
-  screened: { bg: 'bg-orange-500', text: 'text-white' },
-  screened_assessment: { bg: 'bg-orange-400', text: 'text-white' },
-  edopt: { bg: 'bg-amber-400', text: 'text-gray-900' },
-  lottery: { bg: 'bg-gray-500', text: 'text-white' },
+const SECTION_STYLE: Record<string, { bg: string; text: string; countBg: string }> = {
+  shsat: { bg: 'bg-blue-600', text: 'text-white', countBg: 'bg-blue-500' },
+  audition: { bg: 'bg-purple-600', text: 'text-white', countBg: 'bg-purple-500' },
+  screened: { bg: 'bg-orange-500', text: 'text-white', countBg: 'bg-orange-400' },
+  screened_assessment: { bg: 'bg-orange-400', text: 'text-white', countBg: 'bg-orange-300' },
+  edopt: { bg: 'bg-amber-400', text: 'text-gray-900', countBg: 'bg-amber-300' },
+  lottery: { bg: 'bg-gray-500', text: 'text-white', countBg: 'bg-gray-400' },
 }
 const ALL_APPLICANTS_STYLE = { bg: 'bg-gray-700', text: 'text-white' }
 
@@ -124,38 +124,6 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
       }
       return next
     })
-  }
-
-  function renderShsatCutoffs(info: ShsatCutoffInfo) {
-    return (
-      <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-md">
-        <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-2">
-          Recent cutoff scores ({info.year} cycle — NYC DOE)
-        </p>
-        <ul className="space-y-1 mb-2">
-          {info.schoolCutoffs.map(({ name, score }) => (
-            <li key={name} className="flex justify-between text-sm text-blue-900">
-              <span>{name}</span>
-              <span className="font-medium ml-4">{score}</span>
-            </li>
-          ))}
-        </ul>
-        <p className="text-xs text-blue-700">
-          Based on your matched schools, the lowest recent cutoff score was{' '}
-          <span className="font-semibold">{info.lowestScore}</span>. Cutoffs change each year —
-          verify at{' '}
-          <a
-            href="https://www.schools.nyc.gov/enrollment/high-school/specialized-high-schools"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline"
-          >
-            schools.nyc.gov
-          </a>
-          .
-        </p>
-      </div>
-    )
   }
 
   function firstSentence(text: string): string {
@@ -267,11 +235,17 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
         <div className="space-y-8">
           {sections.map((section) => {
             const items = SECTION_REQUIREMENTS[section.key] ?? []
-            const sStyle = SECTION_STYLE[section.key] ?? { bg: 'bg-gray-600', text: 'text-white' }
+            const sStyle = SECTION_STYLE[section.key] ?? { bg: 'bg-gray-600', text: 'text-white', countBg: 'bg-gray-500' }
+            const cutoffMap = section.key === 'shsat' && section.shsatCutoffInfo
+              ? new Map(section.shsatCutoffInfo.schoolCutoffs.map(({ name, score }) => [name, score]))
+              : null
             return (
               <div key={section.key}>
-                <h2 className={`text-sm font-semibold uppercase tracking-wide px-3 py-2 mb-3 rounded-md ${sStyle.bg} ${sStyle.text}`}>
-                  {section.title}
+                <h2 className={`text-sm font-semibold px-3 py-2 mb-3 rounded-md flex items-center gap-2 ${sStyle.bg} ${sStyle.text}`}>
+                  <span>{section.title}</span>
+                  <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${sStyle.countBg} ${sStyle.text}`}>
+                    {section.schools.length}
+                  </span>
                 </h2>
                 {/* Description */}
                 {SECTION_DESCRIPTIONS[section.key] && (
@@ -287,14 +261,14 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
                       {section.schools.map((school) => (
                         <li key={school.name} className="text-sm text-gray-700">
                           <span className="font-semibold text-gray-900">
-                            {school.name}
+                            {school.name}{cutoffMap?.has(school.name) ? ` — ${cutoffMap.get(school.name)}` : ''}
                           </span>
                           {school.sectionNotes.length > 0 && (
                             <span className="ml-2 text-xs text-gray-400">
                               {school.sectionNotes.join(' ')}
                             </span>
                           )}
-                          {school.prgdesc && (
+                          {!cutoffMap && school.prgdesc && (
                             <p className="text-xs text-gray-500 mt-0.5 italic">{firstSentence(school.prgdesc)}</p>
                           )}
                           {school.auditionInformation && school.auditionInformation.length > 0 && (
@@ -327,15 +301,13 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
                   </div>
                 )}
                 {!PER_SCHOOL_KEYS.has(section.key) && renderItems(items)}
-                {/* SHSAT cutoff scores */}
-                {section.shsatCutoffInfo && renderShsatCutoffs(section.shsatCutoffInfo)}
               </div>
             )
           })}
 
           {/* All Applicants — always shown last */}
           <div>
-            <h2 className={`text-sm font-semibold uppercase tracking-wide px-3 py-2 mb-3 rounded-md ${ALL_APPLICANTS_STYLE.bg} ${ALL_APPLICANTS_STYLE.text}`}>
+            <h2 className={`text-sm font-semibold px-3 py-2 mb-3 rounded-md ${ALL_APPLICANTS_STYLE.bg} ${ALL_APPLICANTS_STYLE.text}`}>
               All Applicants
             </h2>
             {renderItems(ALL_APPLICANTS_ITEMS)}
