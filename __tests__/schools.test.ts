@@ -2611,3 +2611,77 @@ describe('Issue #55: SHSAT section simplified — no separate cutoff box', () =>
     expect(reqContentSource).toContain('section.shsatCutoffInfo.schoolCutoffs')
   })
 })
+
+// ── Issue #56: Audition-only schools hidden when auditions=NO ────────────────
+
+function matchesAcademicRating56(score: number | null, ratings: string[]): boolean {
+  if (score === null) return ratings.includes('above_average')
+  if (ratings.includes('exceptional') && score >= 90) return true
+  if (ratings.includes('strong') && score >= 70 && score < 90) return true
+  if (ratings.includes('above_average') && score >= 50 && score < 70) return true
+  return false
+}
+
+function isEligible56(school: any, inputs: { academicRatings: string[]; shsat: boolean; auditions: boolean }): boolean {
+  const showScreened = inputs.academicRatings.includes('exceptional') || inputs.academicRatings.includes('strong')
+  if (school.flags.has_audition && !inputs.auditions && !school.flags.has_screened && !school.flags.has_shsat) {
+    return false
+  }
+  if (school.flags.has_open) return true
+  if (school.flags.has_screened && showScreened) return true
+  if (school.flags.has_shsat && inputs.shsat) return true
+  if (school.flags.has_audition && inputs.auditions) return true
+  return matchesAcademicRating56(school.academic_score_pct, inputs.academicRatings)
+}
+
+describe('Issue #56: audition-only schools excluded when auditions=NO', () => {
+  it('audition+open school (Fashion Industries pattern) is excluded when auditions=false', () => {
+    const school = makeSchool38({ has_audition: true, has_open: true, academic_score_pct: 62 })
+    expect(isEligible56(school, { academicRatings: ['exceptional'], shsat: false, auditions: false })).toBe(false)
+  })
+
+  it('audition+open school is included when auditions=true', () => {
+    const school = makeSchool38({ has_audition: true, has_open: true, academic_score_pct: 62 })
+    expect(isEligible56(school, { academicRatings: ['exceptional'], shsat: false, auditions: true })).toBe(true)
+  })
+
+  it('audition+screened school still appears via screened when auditions=false', () => {
+    const school = makeSchool38({ has_audition: true, has_screened: true, academic_score_pct: 85 })
+    expect(isEligible56(school, { academicRatings: ['exceptional'], shsat: false, auditions: false })).toBe(true)
+  })
+
+  it('audition+shsat school still appears via shsat when auditions=false and shsat=true', () => {
+    const school = makeSchool38({ has_audition: true, has_shsat: true, academic_score_pct: 95 })
+    expect(isEligible56(school, { academicRatings: ['exceptional'], shsat: true, auditions: false })).toBe(true)
+  })
+
+  it('pure audition school (no open) is still excluded when auditions=false', () => {
+    const school = makeSchool38({ has_audition: true, academic_score_pct: 80 })
+    expect(isEligible56(school, { academicRatings: ['exceptional'], shsat: false, auditions: false })).toBe(false)
+  })
+
+  it('pure open school (no audition) is not affected — still included', () => {
+    const school = makeSchool38({ has_open: true, academic_score_pct: 55 })
+    expect(isEligible56(school, { academicRatings: ['exceptional'], shsat: false, auditions: false })).toBe(true)
+  })
+})
+
+describe('Issue #56: source — isEligible has audition-only guard before has_open', () => {
+  const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
+  const isEligibleBlock = listSource.slice(
+    listSource.indexOf('function isEligible('),
+    listSource.indexOf('function applyFilters('),
+  )
+
+  it('has early-exit guard for audition+open schools when auditions=false', () => {
+    expect(isEligibleBlock).toContain('has_audition && !inputs.auditions && !school.flags.has_screened && !school.flags.has_shsat')
+  })
+
+  it('audition guard appears before has_open check', () => {
+    const guardIdx = isEligibleBlock.indexOf('has_audition && !inputs.auditions')
+    const openIdx = isEligibleBlock.indexOf('has_open')
+    expect(guardIdx).toBeGreaterThan(-1)
+    expect(openIdx).toBeGreaterThan(-1)
+    expect(guardIdx).toBeLessThan(openIdx)
+  })
+})
