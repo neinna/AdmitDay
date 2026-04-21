@@ -19,6 +19,12 @@ export async function POST(request: NextRequest) {
     school.applicants_per_seat != null
       ? `Applicants per seat: ${school.applicants_per_seat}`
       : null,
+    school.doe_data?.language
+      ? `Languages offered: ${school.doe_data.language}`
+      : null,
+    school.doe_data?.extracurriculars
+      ? `Extracurriculars: ${String(school.doe_data.extracurriculars).slice(0, 400)}`
+      : null,
   ]
     .filter(Boolean)
     .join('\n')
@@ -46,18 +52,10 @@ export async function POST(request: NextRequest) {
     model: 'claude-sonnet-4-20250514',
     max_tokens: 150,
     system:
-      'You are a NYC high school admissions advisor writing a brief match summary for a parent reviewing their child\'s school list.\n\n' +
-      'Rules:\n' +
-      '- Do not restate the admissions type, academic score, or applicants per seat — those are already shown on the card\n' +
-      '- Do not say anything implying guaranteed admission\n' +
-      '- Focus on why this school fits this specific student: their interests, size preference, and academic level\n' +
-      '- If the school has a distinctive program, culture, or strength mentioned in the overview, lead with that\n' +
-      '- Be specific and human, not generic\n' +
-      '- 2 sentences max, under 50 words total\n\n' +
-      'Respond with only a valid JSON object with exactly two fields:\n' +
-      '- "title": 4-6 words summarizing the fit (e.g. "Strong STEM, matches your interests" or "Small school, arts focus")\n' +
-      '- "rationale": 1-2 sentences on why this school fits this student specifically\n\n' +
-      'No markdown, no code fences, no explanation outside the JSON.',
+      'You are a helpful NYC high school admissions assistant. Respond with only a valid JSON object — no markdown, no explanation, no code fences. The JSON must have exactly two fields:\n' +
+      '- "title": a 4-6 word summary of what makes this school distinctive (e.g., "Elite academics, competitive SHSAT" or "Arts focus, open lottery")\n' +
+      '- "rationale": 2-3 short sentences (under 80 words total) describing what makes this school stand out. First sentence: describe the school\'s academic focus, curriculum, or culture. Then use the language and extracurricular data to give concrete details with counts and examples (e.g., "Offers 7 languages including Japanese and Latin. 190+ clubs spanning robotics, debate, and theater."). Do NOT repeat the user\'s filter selections (academic level, size preference, borough) — they already know what they picked. Focus on what makes THIS school interesting.\n' +
+      'Example: {"title":"Elite STEM, highly competitive","rationale":"Rigorous STEM-focused curriculum for top performers. Offers 7 languages including Japanese and Latin. 190+ student-run clubs spanning robotics, debate, and theater."}',
     messages: [
       {
         role: 'user',
