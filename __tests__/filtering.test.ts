@@ -327,6 +327,58 @@ describe('selectSHSATSchools', () => {
   })
 })
 
+// ── Integration: list page and requirements page use same filtering logic ─────
+
+describe('integration: list and requirements page produce identical results', () => {
+  // Simulates the exact test case from issue #59:
+  // Borough=Manhattan, SHSAT=No, Audition=No, Ratings=exceptional+strong, size=small
+  const inputs = makeInputs({
+    boroughs: ['Manhattan'],
+    shsat: false,
+    auditions: false,
+    academicRatings: ['exceptional', 'strong'],
+    size: 'small',
+  })
+
+  // Audition-only schools that were incorrectly shown on requirements page
+  const auditionOnly1 = makeSchool({
+    dbn: 'AU01', name: 'Special Music School', borough: 'Manhattan',
+    flags: { has_audition: true, has_screened: false, has_shsat: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false },
+    academic_score_pct: 95,
+  })
+  const auditionOnly2 = makeSchool({
+    dbn: 'AU02', name: 'Fiorello LaGuardia', borough: 'Manhattan',
+    flags: { has_audition: true, has_screened: false, has_shsat: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false },
+    academic_score_pct: 88,
+  })
+  // Audition+screened school (Gramercy Arts) — eligible via screened pathway
+  const auditionAndScreened = makeSchool({
+    dbn: 'AS01', name: 'Gramercy Arts High School', borough: 'Manhattan',
+    flags: { has_audition: true, has_screened: true, has_shsat: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false },
+    academic_score_pct: 85,
+  })
+  const allSchools = [auditionOnly1, auditionOnly2, auditionAndScreened]
+
+  it('audition-only schools are excluded when auditions=false', () => {
+    const { results } = getResults(allSchools, inputs)
+    expect(results.map((s) => s.dbn)).not.toContain('AU01')
+    expect(results.map((s) => s.dbn)).not.toContain('AU02')
+  })
+
+  it('audition+screened school is included when auditions=false (eligible via screened)', () => {
+    const { results } = getResults(allSchools, inputs)
+    expect(results.map((s) => s.dbn)).toContain('AS01')
+  })
+
+  it('applyFilters and getResults agree on audition-only exclusion', () => {
+    const filtered = applyFilters(allSchools, inputs, false)
+    const { results } = getResults(allSchools, inputs)
+    const filteredDbns = filtered.map((s) => s.dbn).sort()
+    const resultsDbns = results.map((s) => s.dbn).sort()
+    expect(filteredDbns).toEqual(resultsDbns)
+  })
+})
+
 // ── groupSchools ─────────────────────────────────────────────────────────────
 
 describe('groupSchools', () => {
