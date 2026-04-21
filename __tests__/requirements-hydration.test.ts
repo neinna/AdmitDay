@@ -178,13 +178,9 @@ describe('Section render order (issue #47)', () => {
     expect(checklistIdx).toBeGreaterThan(schoolsIdx)
   })
 
-  it('has descriptions for all six admissions types', () => {
+  it('has descriptions for shsat and audition admissions types', () => {
     expect(src).toContain("shsat: 'SHSAT score is the sole admissions criterion")
     expect(src).toContain("audition: 'Requirements vary by school and by discipline")
-    expect(src).toContain("screened: 'Screened programs review your grades")
-    expect(src).toContain("screened_assessment: 'These programs require you to complete")
-    expect(src).toContain("edopt: 'Ed Opt programs are designed to reflect")
-    expect(src).toContain("lottery: 'Admission is by lottery.")
   })
 })
 
@@ -233,5 +229,62 @@ describe('All Applicants section (issue #63)', () => {
 
   it('does not contain old copy: open houses in October and November', () => {
     expect(src).not.toContain('Attend open houses and school tours in October and November')
+  })
+})
+
+// ── Issue #64: Summary cards + clean school list ──────────────────────────────
+
+describe('Requirements page simplification (issue #64)', () => {
+  it('has SCREENED_SUMMARY constant with grade average text', () => {
+    expect(src).toContain("Admission is based on your child's 7th grade course grade average.")
+  })
+
+  it('has SCREENED_SUMMARY mentioning grade groups', () => {
+    expect(src).toContain('grade groups')
+  })
+
+  it('has LOTTERY_EDOPT_SUMMARY constant', () => {
+    expect(src).toContain('These schools select students by lottery. No academic requirements.')
+  })
+
+  it('has LOTTERY_EDOPT_SUMMARY mentioning reading level bands', () => {
+    expect(src).toContain('reading level bands')
+  })
+
+  it('does not display attendance in screened section description', () => {
+    expect(src).not.toContain("grades, attendance record")
+  })
+
+  it('does not contain renderScreenedRequirements function', () => {
+    expect(src).not.toContain('renderScreenedRequirements')
+  })
+
+  it('does not render prgdesc for school list items', () => {
+    expect(src).not.toContain('school.prgdesc')
+  })
+
+  it('does not render screened program boxes (renderScreenedRequirements removed)', () => {
+    expect(src).not.toContain('renderScreenedRequirements')
+  })
+
+  it('imports getExtrasCallout from requirements-utils', () => {
+    expect(src).toContain("import { getExtrasCallout } from '@/lib/requirements-utils'")
+  })
+
+  it('uses getExtrasCallout for screened school extras callout', () => {
+    expect(src).toContain('getExtrasCallout(school.requirements)')
+  })
+
+  it('renders screened summary card with orange styling', () => {
+    expect(src).toContain('bg-orange-50')
+    expect(src).toContain('SCREENED_SUMMARY')
+  })
+
+  it('renders lottery/edopt summary card', () => {
+    expect(src).toContain('LOTTERY_EDOPT_SUMMARY')
+  })
+
+  it('screened description no longer says attendance record', () => {
+    expect(src).not.toContain("screened: 'Screened programs review your grades, attendance")
   })
 })
