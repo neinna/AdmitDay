@@ -566,12 +566,9 @@ describe('Issue #10: source_link_clicked event in SchoolRow', () => {
     expect(schoolRowSource).toContain("from 'posthog-js/react'")
   })
 
-  it('calls posthog.capture with source_link_clicked', () => {
-    expect(schoolRowSource).toContain("capture('source_link_clicked'")
-  })
-
-  it('captures school_dbn in source_link_clicked', () => {
-    expect(schoolRowSource).toContain('school_dbn')
+  // Issue #53: source attribution and NYC-SIFT link removed — these events no longer fire
+  it('does NOT call posthog.capture with source_link_clicked (removed in #53)', () => {
+    expect(schoolRowSource).not.toContain("capture('source_link_clicked'")
   })
 })
 
@@ -2510,5 +2507,27 @@ describe('Issue #52: Ed Opt section removed from MVP', () => {
     const fnMatch = listSource.match(/function getPrimarySection\([\s\S]*?\n\}/)
     expect(fnMatch).not.toBeNull()
     expect(fnMatch![0]).not.toContain("return 'edopt'")
+  })
+})
+
+// ── Issue #53: Remove source attribution and NYC-SIFT link ───────────────────
+
+describe('Issue #53: SchoolRow expanded view has no source attribution or external links', () => {
+  const schoolRowSource = fs.readFileSync(path.join(__dirname, '../components/SchoolRow.tsx'), 'utf-8')
+
+  it('does not contain "NYC-SIFT" text', () => {
+    expect(schoolRowSource).not.toContain('NYC-SIFT')
+  })
+
+  it('does not contain "Source: NYC" attribution span', () => {
+    expect(schoolRowSource).not.toContain('Source: NYC')
+  })
+
+  it('does not contain a link to sift_url', () => {
+    expect(schoolRowSource).not.toContain('href={school.sift_url}')
+  })
+
+  it('does not contain "View on NYC-SIFT" link text', () => {
+    expect(schoolRowSource).not.toContain('View on NYC-SIFT')
   })
 })
