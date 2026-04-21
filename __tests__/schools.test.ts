@@ -1698,20 +1698,26 @@ describe('Issue #41: formatSchoolName in requirements page', () => {
 
 describe('Issue #41: requirements page ordering matches list page', () => {
   const pageSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+  const sharedUtilsSource = fs.readFileSync(path.join(__dirname, '../lib/school-list-utils.ts'), 'utf-8')
 
-  it('uses selectSHSATSchools (same as list page) for SHSAT school selection', () => {
-    expect(pageSource).toContain('function selectSHSATSchools(')
+  it('imports selectSHSATSchools from shared utils (not a local copy)', () => {
+    expect(pageSource).toContain('selectSHSATSchools')
+    expect(pageSource).not.toContain('function selectSHSATSchools(')
+    expect(sharedUtilsSource).toContain('function selectSHSATSchools(')
     expect(pageSource).toContain('selectSHSATSchools(allSchools, inputs)')
   })
 
-  it('uses sortByHomeBorough (same as list page)', () => {
-    expect(pageSource).toContain('function sortByHomeBorough(')
+  it('imports sortByHomeBorough from shared utils (not a local copy)', () => {
+    expect(pageSource).toContain('sortByHomeBorough')
+    expect(pageSource).not.toContain('function sortByHomeBorough(')
+    expect(sharedUtilsSource).toContain('function sortByHomeBorough(')
     expect(pageSource).toContain('sortByHomeBorough(baseResults, inputs.boroughs)')
   })
 
-  it('uses sortBySize (same as list page)', () => {
-    expect(pageSource).toContain('function sortBySize(')
-    expect(pageSource).toContain('sortBySize(')
+  it('imports sortBySize from shared utils (not a local copy)', () => {
+    expect(pageSource).toContain('sortBySize')
+    expect(pageSource).not.toContain('function sortBySize(')
+    expect(sharedUtilsSource).toContain('function sortBySize(')
   })
 
   it('applies sports soft-filter same as list page', () => {
@@ -1719,9 +1725,9 @@ describe('Issue #41: requirements page ordering matches list page', () => {
     expect(pageSource).toContain('inputs.sports.length > 0')
   })
 
-  it('contains BOROUGH_ORDER for SHSAT borough prioritization', () => {
-    expect(pageSource).toContain('BOROUGH_ORDER')
-    expect(pageSource).toContain("'Staten Island'")
+  it('contains BOROUGH_ORDER for SHSAT borough prioritization in shared utils', () => {
+    expect(sharedUtilsSource).toContain('BOROUGH_ORDER')
+    expect(sharedUtilsSource).toContain("'Staten Island'")
   })
 })
 
