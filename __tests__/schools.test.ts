@@ -2738,3 +2738,25 @@ describe('Issue #56: source — isEligible has audition-only guard before has_op
     expect(guardIdx).toBeLessThan(openIdx)
   })
 })
+
+// ── Issue #60: Disable school size filter for user interviews ─────────────────
+
+describe('Issue #60: school size filter disabled on filter page', () => {
+  const pageSource = fs.readFileSync(path.join(__dirname, '../app/page.tsx'), 'utf-8')
+
+  it('shows "All sizes" label in the size section', () => {
+    expect(pageSource).toContain('All sizes')
+  })
+
+  it('does not render interactive size radio inputs (name="size" removed)', () => {
+    expect(pageSource).not.toContain('name="size"')
+  })
+
+  it('does not contain size validation error message', () => {
+    expect(pageSource).not.toContain('Please select a school size preference')
+  })
+
+  it('does not restore size from localStorage', () => {
+    expect(pageSource).not.toContain("includes(saved.size)")
+  })
+})

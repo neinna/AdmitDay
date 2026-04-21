@@ -32,7 +32,7 @@ function parseInputs(sp: Record<string, string | string[] | undefined>): UserInp
     auditions: str('auditions', 'false') === 'true',
     academicRatings: academicRatings as ('exceptional' | 'strong' | 'above_average')[],
     iep: str('iep', 'false') === 'true',
-    size: str('size', 'medium') as 'small' | 'medium' | 'large',
+    size: str('size', '') as 'small' | 'medium' | 'large' | '',
   }
 }
 
