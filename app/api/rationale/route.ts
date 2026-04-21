@@ -25,6 +25,15 @@ export async function POST(request: NextRequest) {
     school.doe_data?.extracurriculars
       ? `Extracurriculars: ${String(school.doe_data.extracurriculars).slice(0, 400)}`
       : null,
+    school.doe_data?.psal_sports_boys
+      ? `PSAL sports (boys): ${school.doe_data.psal_sports_boys}`
+      : null,
+    school.doe_data?.psal_sports_girls
+      ? `PSAL sports (girls): ${school.doe_data.psal_sports_girls}`
+      : null,
+    school.doe_data?.psal_sports_coed
+      ? `PSAL sports (coed): ${school.doe_data.psal_sports_coed}`
+      : null,
   ]
     .filter(Boolean)
     .join('\n')
@@ -46,7 +55,12 @@ export async function POST(request: NextRequest) {
     `Willing to audition: ${userInputs.auditions ? 'Yes' : 'No'}`,
     `IEP: ${userInputs.iep ? 'Yes' : 'No'}`,
     `Size preference: ${userInputs.size}`,
-  ].join('\n')
+    userInputs.sports?.length
+      ? `Sports filters selected: ${userInputs.sports.join(', ')}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join('\n')
 
   const message = await client.messages.create({
     model: 'claude-sonnet-4-20250514',
@@ -54,8 +68,8 @@ export async function POST(request: NextRequest) {
     system:
       'You are a helpful NYC high school admissions assistant. Respond with only a valid JSON object — no markdown, no explanation, no code fences. The JSON must have exactly two fields:\n' +
       '- "title": a 4-6 word summary of what makes this school distinctive (e.g., "Elite academics, competitive SHSAT" or "Arts focus, open lottery")\n' +
-      '- "rationale": 2-3 short sentences (under 80 words total) describing what makes this school stand out. First sentence: describe the school\'s academic focus, curriculum, or culture. Then use the language and extracurricular data to give concrete details with counts and examples (e.g., "Offers 7 languages including Japanese and Latin. 190+ clubs spanning robotics, debate, and theater."). Do NOT repeat the user\'s filter selections (academic level, size preference, borough) — they already know what they picked. Focus on what makes THIS school interesting.\n' +
-      'Example: {"title":"Elite STEM, highly competitive","rationale":"Rigorous STEM-focused curriculum for top performers. Offers 7 languages including Japanese and Latin. 190+ student-run clubs spanning robotics, debate, and theater."}',
+      '- "rationale": 2-3 short sentences (under 100 words total) describing what makes this school stand out. Use ONLY the concrete data provided — language counts, specific extracurricular names, actual program details. Never use vague phrases like "21st century skills," "global themes infused throughout," "culturally relevant," or "rigorous college prep" unless the overview explicitly uses those exact words. If the user selected sports: mention whether this school offers those specific sports. If the school has the sport, say "Offers [sport] through PSAL." If not, say "[Sport] not offered." Do NOT repeat the user\'s filter selections (academic level, size, borough). Focus on concrete, specific facts about THIS school.\n' +
+      'Example: {"title":"Elite STEM, highly competitive","rationale":"STEM-focused curriculum for top performers. Offers 7 languages including Japanese and Latin. 190+ student-run clubs spanning robotics, debate, and theater. Soccer offered through PSAL."}',
     messages: [
       {
         role: 'user',
