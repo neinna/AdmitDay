@@ -2447,12 +2447,12 @@ describe('Issue #49: rationale route system prompt and academicLevel mapping', (
     expect(routeSrc).not.toContain('End by naming the admissions type')
   })
 
-  it('system prompt caps output at 80 words', () => {
-    expect(routeSrc).toContain('under 80 words total')
+  it('system prompt caps output at 100 words', () => {
+    expect(routeSrc).toContain('under 100 words total')
   })
 
-  it('system prompt focuses on school distinctives, not repeating user filter selections', () => {
-    expect(routeSrc).toContain('Focus on what makes THIS school interesting')
+  it('system prompt focuses on concrete facts about the school', () => {
+    expect(routeSrc).toContain('Focus on concrete, specific facts about THIS school')
   })
 
   it('maps "exceptional" academicRating to human-readable sentence', () => {
@@ -2533,20 +2533,69 @@ describe('Issue #54: Rationale route passes language and extracurricular data', 
     expect(routeSrc).toContain("filter selections")
   })
 
-  it('system prompt asks for concrete details with counts and examples', () => {
-    expect(routeSrc).toContain('concrete details with counts and examples')
+  it('system prompt instructs AI to use only concrete data', () => {
+    expect(routeSrc).toContain('Use ONLY the concrete data provided')
   })
 
-  it('system prompt targets 2-3 sentences under 80 words', () => {
-    expect(routeSrc).toContain('under 80 words total')
+  it('system prompt targets 2-3 sentences under 100 words', () => {
+    expect(routeSrc).toContain('under 100 words total')
   })
 
-  it('system prompt focuses on what makes THIS school interesting', () => {
-    expect(routeSrc).toContain('Focus on what makes THIS school interesting')
+  it('system prompt focuses on concrete, specific facts about THIS school', () => {
+    expect(routeSrc).toContain('Focus on concrete, specific facts about THIS school')
   })
 
   it('does NOT contain the old "focus on why this school fits this specific student" directive', () => {
     expect(routeSrc).not.toContain('Focus on why this school fits this specific student')
+  })
+})
+
+// ── Issue #57: Remove generic phrases and add sports mentions ─────────────────
+
+describe('Issue #57: Rationale prompt bans generic phrases and adds sports logic', () => {
+  const routeSrc = fs.readFileSync(path.join(__dirname, '../app/api/rationale/route.ts'), 'utf-8')
+
+  it('system prompt bans "21st century skills" phrase', () => {
+    expect(routeSrc).toContain('21st century skills')
+    expect(routeSrc).toContain('Never use vague phrases')
+  })
+
+  it('system prompt bans "global themes infused throughout" phrase', () => {
+    expect(routeSrc).toContain('global themes infused throughout')
+  })
+
+  it('system prompt bans "culturally relevant" phrase', () => {
+    expect(routeSrc).toContain('culturally relevant')
+  })
+
+  it('system prompt bans "rigorous college prep" phrase', () => {
+    expect(routeSrc).toContain('rigorous college prep')
+  })
+
+  it('system prompt instructs AI to mention sports when user selected them', () => {
+    expect(routeSrc).toContain('If the user selected sports')
+    expect(routeSrc).toContain('Offers [sport] through PSAL')
+    expect(routeSrc).toContain('[Sport] not offered')
+  })
+
+  it('schoolCtx includes PSAL sports (boys)', () => {
+    expect(routeSrc).toContain('PSAL sports (boys): ${school.doe_data.psal_sports_boys}')
+  })
+
+  it('schoolCtx includes PSAL sports (girls)', () => {
+    expect(routeSrc).toContain('PSAL sports (girls): ${school.doe_data.psal_sports_girls}')
+  })
+
+  it('schoolCtx includes PSAL sports (coed)', () => {
+    expect(routeSrc).toContain('PSAL sports (coed): ${school.doe_data.psal_sports_coed}')
+  })
+
+  it('studentCtx includes sports filters when selected', () => {
+    expect(routeSrc).toContain('Sports filters selected: ${userInputs.sports.join(')
+  })
+
+  it('system prompt still uses only concrete data, not generic phrases', () => {
+    expect(routeSrc).toContain('Use ONLY the concrete data provided')
   })
 })
 
