@@ -2492,3 +2492,23 @@ describe('Issue #49: rationale route system prompt and academicLevel mapping', (
     expect(routeSrc).not.toContain('Academic ratings:')
   })
 })
+
+// ── Issue #52: Remove Ed Opt section from MVP ────────────────────────────────
+
+describe('Issue #52: Ed Opt section removed from MVP', () => {
+  const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
+
+  it('getPrimarySection does not route Educational Option to edopt', () => {
+    expect(listSource).not.toContain("admissions_types.includes('Educational Option')")
+  })
+
+  it('getPrimarySection falls through to lottery after screened check', () => {
+    // The function should end with: return 'lottery' immediately after the screened check
+    const match = listSource.match(/function getPrimarySection[\s\S]*?return 'lottery'\s*\n\}/)
+    expect(match).not.toBeNull()
+    // No edopt return inside getPrimarySection
+    const fnMatch = listSource.match(/function getPrimarySection\([\s\S]*?\n\}/)
+    expect(fnMatch).not.toBeNull()
+    expect(fnMatch![0]).not.toContain("return 'edopt'")
+  })
+})
