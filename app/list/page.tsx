@@ -190,7 +190,7 @@ function getPrimarySection(school: School): SectionType {
   if (school.flags.has_shsat) return 'shsat'
   if (school.flags.has_audition) return 'audition'
   if (school.flags.has_screened) return 'screened'
-  if (school.admissions_types.includes('Educational Option')) return 'edopt'
+  // Ed Opt removed for MVP - schools with open seats go to lottery
   return 'lottery'
 }
 
