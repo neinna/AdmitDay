@@ -914,7 +914,8 @@ describe('Issue #34: commute removed from list page', () => {
   })
 
   it('borough filter uses boroughs array — simpler condition exists', () => {
-    expect(listSource).toContain('!noBorough(inputs.boroughs) && !relaxBorough && !inputs.boroughs.includes(school.borough)')
+    const libSource = fs.readFileSync(path.join(__dirname, '../lib/school-list-utils.ts'), 'utf-8')
+    expect(libSource).toContain('!noBorough(inputs.boroughs) && !relaxBorough && !inputs.boroughs.includes(school.borough)')
   })
 
   it('relaxedNote does NOT mention short commute', () => {
@@ -994,11 +995,13 @@ describe('Issue #35: List page borough array filtering', () => {
   })
 
   it('noBorough checks array length', () => {
-    expect(listSource).toContain('boroughs.length === 0')
+    const libSource = fs.readFileSync(path.join(__dirname, '../lib/school-list-utils.ts'), 'utf-8')
+    expect(libSource).toContain('boroughs.length === 0')
   })
 
   it('applyFilters uses boroughs.includes()', () => {
-    expect(listSource).toContain('inputs.boroughs.includes(school.borough)')
+    const libSource = fs.readFileSync(path.join(__dirname, '../lib/school-list-utils.ts'), 'utf-8')
+    expect(libSource).toContain('inputs.boroughs.includes(school.borough)')
   })
 
   it('does NOT contain relaxedNote variable', () => {
@@ -1114,6 +1117,7 @@ describe('Issue #37: Home page Academic Rating checkboxes', () => {
 
 describe('Issue #37: List page academicRatings parsing and filtering', () => {
   const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
+  const libSource = fs.readFileSync(path.join(__dirname, '../lib/school-list-utils.ts'), 'utf-8')
 
   it('parseInputs reads academicRatings param (not level)', () => {
     expect(listSource).toContain("str('academicRatings', '')")
@@ -1121,20 +1125,20 @@ describe('Issue #37: List page academicRatings parsing and filtering', () => {
   })
 
   it('has matchesAcademicRating helper function', () => {
-    expect(listSource).toContain('function matchesAcademicRating(')
+    expect(libSource).toContain('function matchesAcademicRating(')
   })
 
   it('matchesAcademicRating includes null-score logic for above_average', () => {
-    expect(listSource).toContain("ratings.includes('above_average')")
+    expect(libSource).toContain("ratings.includes('above_average')")
   })
 
   it('isEligible calls matchesAcademicRating', () => {
-    expect(listSource).toContain('matchesAcademicRating(school, inputs.academicRatings)')
+    expect(libSource).toContain('matchesAcademicRating(school, inputs.academicRatings)')
   })
 
   it('showScreened logic based on exceptional or strong', () => {
-    expect(listSource).toContain("inputs.academicRatings.includes('exceptional')")
-    expect(listSource).toContain("inputs.academicRatings.includes('strong')")
+    expect(libSource).toContain("inputs.academicRatings.includes('exceptional')")
+    expect(libSource).toContain("inputs.academicRatings.includes('strong')")
   })
 
   it('does NOT contain the old academicLevel field', () => {
@@ -1318,10 +1322,10 @@ describe('Issue #38: single borough filter', () => {
 })
 
 describe('Issue #38: source — isEligible puts has_open before matchesAcademicRating gate', () => {
-  const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
-  const isEligibleBlock = listSource.slice(
-    listSource.indexOf('function isEligible('),
-    listSource.indexOf('function applyFilters('),
+  const libSource = fs.readFileSync(path.join(__dirname, '../lib/school-list-utils.ts'), 'utf-8')
+  const isEligibleBlock = libSource.slice(
+    libSource.indexOf('function isEligible('),
+    libSource.indexOf('function applyFilters('),
   )
 
   it('has_open check appears before matchesAcademicRating in isEligible', () => {
@@ -1339,10 +1343,10 @@ describe('Issue #38: source — isEligible puts has_open before matchesAcademicR
 })
 
 describe('Issue #38: source — noBorough handles all 5 boroughs', () => {
-  const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
-  const noBoroughBlock = listSource.slice(
-    listSource.indexOf('function noBorough('),
-    listSource.indexOf('function matchesAcademicRating('),
+  const libSource = fs.readFileSync(path.join(__dirname, '../lib/school-list-utils.ts'), 'utf-8')
+  const noBoroughBlock = libSource.slice(
+    libSource.indexOf('function noBorough('),
+    libSource.indexOf('function matchesAcademicRating('),
   )
 
   it('noBorough returns true for length >= 5', () => {
@@ -2177,9 +2181,9 @@ describe('Issue #42: SchoolRow expanded view and label changes', () => {
 
 describe('Issue #43: section order — Ed Opt after Lottery', () => {
   it('list page section order array has lottery before edopt', () => {
-    const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
+    const libSource = fs.readFileSync(path.join(__dirname, '../lib/school-list-utils.ts'), 'utf-8')
     // Match the order array specifically (single line)
-    const match = listSource.match(/const order: SectionType\[\] = \[([^\]]+)\]/)
+    const match = libSource.match(/const order: SectionType\[\] = \[([^\]]+)\]/)
     expect(match).not.toBeNull()
     const orderStr = match![1]
     const lotteryIdx = orderStr.indexOf("'lottery'")
@@ -2476,18 +2480,18 @@ describe('Issue #49: rationale route system prompt and academicLevel mapping', (
 // ── Issue #52: Remove Ed Opt section from MVP ────────────────────────────────
 
 describe('Issue #52: Ed Opt section removed from MVP', () => {
-  const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
+  const libSource = fs.readFileSync(path.join(__dirname, '../lib/school-list-utils.ts'), 'utf-8')
 
   it('getPrimarySection does not route Educational Option to edopt', () => {
-    expect(listSource).not.toContain("admissions_types.includes('Educational Option')")
+    expect(libSource).not.toContain("admissions_types.includes('Educational Option')")
   })
 
   it('getPrimarySection falls through to lottery after screened check', () => {
     // The function should end with: return 'lottery' immediately after the screened check
-    const match = listSource.match(/function getPrimarySection[\s\S]*?return 'lottery'\s*\n\}/)
+    const match = libSource.match(/function getPrimarySection[\s\S]*?return 'lottery'\s*\n\}/)
     expect(match).not.toBeNull()
     // No edopt return inside getPrimarySection
-    const fnMatch = listSource.match(/function getPrimarySection\([\s\S]*?\n\}/)
+    const fnMatch = libSource.match(/function getPrimarySection\([\s\S]*?\n\}/)
     expect(fnMatch).not.toBeNull()
     expect(fnMatch![0]).not.toContain("return 'edopt'")
   })
@@ -2716,10 +2720,10 @@ describe('Issue #56: audition-only schools excluded when auditions=NO', () => {
 })
 
 describe('Issue #56: source — isEligible has audition-only guard before has_open', () => {
-  const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
-  const isEligibleBlock = listSource.slice(
-    listSource.indexOf('function isEligible('),
-    listSource.indexOf('function applyFilters('),
+  const libSource = fs.readFileSync(path.join(__dirname, '../lib/school-list-utils.ts'), 'utf-8')
+  const isEligibleBlock = libSource.slice(
+    libSource.indexOf('function isEligible('),
+    libSource.indexOf('function applyFilters('),
   )
 
   it('has early-exit guard for audition+open schools when auditions=false', () => {
