@@ -187,3 +187,51 @@ describe('Section render order (issue #47)', () => {
     expect(src).toContain("lottery: 'Admission is by lottery.")
   })
 })
+
+// ── Issue #63: All Applicants section position and copy ───────────────────────
+
+describe('All Applicants section (issue #63)', () => {
+  it('All Applicants section renders before sections.map in JSX', () => {
+    const returnStart = src.indexOf('return (')
+    const allApplicantsIdx = src.indexOf('All Applicants — always shown first', returnStart)
+    const sectionMapIdx = src.indexOf('sections.map((section)', returnStart)
+    expect(allApplicantsIdx).toBeGreaterThan(returnStart)
+    expect(allApplicantsIdx).toBeLessThan(sectionMapIdx)
+  })
+
+  it('does not contain old "always shown last" comment', () => {
+    expect(src).not.toContain('All Applicants — always shown last')
+  })
+
+  it('has new copy: application window early October', () => {
+    expect(src).toContain('Application window opens in early October and closes in early December')
+  })
+
+  it('has new copy: attend open houses during window or before', () => {
+    expect(src).toContain('Attend open houses and school tours during the application open window or before')
+  })
+
+  it('has new copy: ranking 12 strong options with every program', () => {
+    expect(src).toContain('Create an application ranking at least 12 strong options in the order of true preference, make sure to list every program at each school')
+  })
+
+  it('has new copy: submit at myschools.nyc in the application window', () => {
+    expect(src).toContain('Submit your application at myschools.nyc in the application window')
+  })
+
+  it('has new copy: offers released in Spring, early March', () => {
+    expect(src).toContain('High school offers will be released in Spring, early March')
+  })
+
+  it('does not contain old copy: October 7 and closes December 3', () => {
+    expect(src).not.toContain('Application window opens October 7 and closes December 3')
+  })
+
+  it('does not contain old copy: High school offers are released March 5', () => {
+    expect(src).not.toContain('High school offers are released March 5')
+  })
+
+  it('does not contain old copy: open houses in October and November', () => {
+    expect(src).not.toContain('Attend open houses and school tours in October and November')
+  })
+})
