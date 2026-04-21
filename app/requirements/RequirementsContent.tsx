@@ -5,6 +5,7 @@ import { usePostHog } from 'posthog-js/react'
 import Link from 'next/link'
 import Footer from '@/components/Footer'
 import FeedbackRow from '@/components/FeedbackRow'
+import { getExtrasCallout } from '@/lib/requirements-utils'
 import type { ReqSection } from './page'
 
 const STORAGE_KEY = 'hs_nav_requirements'
@@ -24,11 +25,13 @@ const ALL_APPLICANTS_STYLE = { bg: 'bg-gray-700', text: 'text-white' }
 const SECTION_DESCRIPTIONS: Record<string, string> = {
   shsat: 'SHSAT score is the sole admissions criterion for these schools.',
   audition: 'Requirements vary by school and by discipline (visual art, music, dance, theater, film, etc.).',
-  screened: 'Screened programs review your grades, attendance record, and any submitted essays or assessments.',
-  screened_assessment: 'These programs require you to complete a school-specific assessment in addition to your grades and attendance record.',
-  edopt: 'Ed Opt programs are designed to reflect a mix of academic levels.',
-  lottery: 'Admission is by lottery.',
 }
+
+const SCREENED_SUMMARY =
+  "Admission is based on your child's 7th grade course grade average. Schools rank applicants into grade groups (1–5), then fill seats by lottery within each group. Some schools require an additional essay or on-site assessment."
+
+const LOTTERY_EDOPT_SUMMARY =
+  'These schools select students by lottery. No academic requirements. Ed Opt programs divide applicants into reading level bands (top 16%, middle 68%, bottom 16%) and fill seats randomly within each band.'
 
 const SECTION_REQUIREMENTS: Record<string, { id: string; text: string }[]> = {
   shsat: [
@@ -118,34 +121,6 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
       }
       return next
     })
-  }
-
-  function firstSentence(text: string): string {
-    const idx = text.indexOf('. ')
-    if (idx !== -1) return text.slice(0, idx + 1)
-    return text.length > 150 ? text.slice(0, 147) + '…' : text
-  }
-
-  function renderScreenedRequirements(requirements: Record<string, string>) {
-    const programs: Record<string, string[]> = {}
-    for (const [key, value] of Object.entries(requirements)) {
-      const match = key.match(/^requirement\d+_(\d+)$/)
-      if (match && value) {
-        const prog = match[1]
-        if (!programs[prog]) programs[prog] = []
-        programs[prog].push(value)
-      }
-    }
-    const entries = Object.entries(programs).sort((a, b) => Number(a[0]) - Number(b[0]))
-    const multi = entries.length > 1
-    return entries.map(([, reqs], i) => (
-      <div key={i} className="bg-gray-50 rounded p-2 mt-1">
-        {multi && <div className="font-medium text-gray-700 mb-0.5">Program {i + 1}</div>}
-        <ul className="space-y-0.5">
-          {reqs.map((req, j) => <li key={j}>{req}</li>)}
-        </ul>
-      </div>
-    ))
   }
 
   function renderItems(items: { id: string; text: string }[]) {
@@ -241,6 +216,8 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
             const cutoffMap = section.key === 'shsat' && section.shsatCutoffInfo
               ? new Map(section.shsatCutoffInfo.schoolCutoffs.map(({ name, score }) => [name, score]))
               : null
+            const isScreened = section.key === 'screened'
+            const isLotteryOrEdopt = section.key === 'lottery' || section.key === 'edopt'
             return (
               <div key={section.key}>
                 <h2 className={`text-sm font-semibold px-3 py-2 mb-3 rounded-md flex items-center gap-2 ${sStyle.bg} ${sStyle.text}`}>
@@ -249,9 +226,21 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
                     {section.schools.length}
                   </span>
                 </h2>
-                {/* Description */}
+                {/* Description for shsat/audition */}
                 {SECTION_DESCRIPTIONS[section.key] && (
                   <p className="text-sm text-gray-600 mb-4">{SECTION_DESCRIPTIONS[section.key]}</p>
+                )}
+                {/* Summary card for screened */}
+                {isScreened && (
+                  <div className="bg-orange-50 border border-orange-200 rounded-md p-3 mb-4">
+                    <p className="text-sm text-gray-700 leading-relaxed">{SCREENED_SUMMARY}</p>
+                  </div>
+                )}
+                {/* Summary card for lottery / ed opt */}
+                {isLotteryOrEdopt && (
+                  <div className="bg-gray-50 border border-gray-200 rounded-md p-3 mb-4">
+                    <p className="text-sm text-gray-700 leading-relaxed">{LOTTERY_EDOPT_SUMMARY}</p>
+                  </div>
                 )}
                 {/* Schools in this section */}
                 {section.schools.length > 0 && (
@@ -270,9 +259,6 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
                               {school.sectionNotes.join(' ')}
                             </span>
                           )}
-                          {!cutoffMap && school.prgdesc && (
-                            <p className="text-xs text-gray-500 mt-0.5 italic">{firstSentence(school.prgdesc)}</p>
-                          )}
                           {school.auditionInformation && school.auditionInformation.length > 0 && (
                             <div className="mt-2 space-y-2">
                               {school.auditionInformation.slice(0, 3).map((info, i) => (
@@ -285,17 +271,13 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
                               ))}
                             </div>
                           )}
-                          {school.requirements && Object.keys(school.requirements).length > 0 && (
-                            <div className="mt-1 text-xs text-gray-600">
-                              {renderScreenedRequirements(school.requirements)}
-                            </div>
-                          )}
-                          {PER_SCHOOL_KEYS.has(section.key) && !school.auditionInformation?.length && !school.requirements && (
-                            <ul className="mt-1.5 space-y-1">
-                              {(SECTION_REQUIREMENTS[section.key] ?? []).map((item) => (
-                                <li key={item.id} className="text-xs text-gray-500">• {item.text}</li>
-                              ))}
-                            </ul>
+                          {isScreened && school.requirements && (
+                            (() => {
+                              const callout = getExtrasCallout(school.requirements)
+                              return callout ? (
+                                <p className="text-xs text-gray-500 mt-0.5">{callout}</p>
+                              ) : null
+                            })()
                           )}
                         </li>
                       ))}
