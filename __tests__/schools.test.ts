@@ -1398,7 +1398,7 @@ describe('Issue #39: RequirementsContent.tsx is a client component', () => {
 
   it('contains SHSAT requirements copy', () => {
     expect(reqContentSource).toContain('SHSAT score is the sole admissions criterion for these schools.')
-    expect(reqContentSource).toContain('Register for the SHSAT by October 31, 2026')
+    expect(reqContentSource).toContain('Register for the SHSAT by late October')
   })
 
   it('contains Audition requirements copy', () => {
@@ -1421,7 +1421,8 @@ describe('Issue #39: RequirementsContent.tsx is a client component', () => {
 
   it('contains Lottery/Open Enrollment requirements copy (issue #64: summary card)', () => {
     expect(reqContentSource).toContain('These schools select students by lottery')
-    expect(reqContentSource).toContain('All applicants who rank the school have an equal chance')
+    // Lottery checkbox items removed in issue #65; summary card covers this
+    expect(reqContentSource).not.toContain('All applicants who rank the school have an equal chance')
   })
 
   it('contains All Applicants section (updated copy, issue #63)', () => {
@@ -2318,8 +2319,10 @@ describe('Issue #51: Per-school requirements rendering in RequirementsContent.ts
     expect(src).toContain('school.auditionInformation.slice(0, 3).map((info, i) =>')
   })
 
-  it('labels multiple audition programs as Program N', () => {
-    expect(src).toContain('Program {i + 1}')
+  it('labels multiple audition programs using inferAuditionLabel with Program N fallback', () => {
+    // issue #65: real program labels inferred from text; Program N is fallback
+    expect(src).toContain('inferAuditionLabel(info)')
+    expect(src).toContain('Program ${i + 1}')
   })
 
   it('renders extras callout for screened programs via getExtrasCallout (issue #64)', () => {
@@ -2327,17 +2330,21 @@ describe('Issue #51: Per-school requirements rendering in RequirementsContent.ts
   })
 
   it('renderItems is conditional on section key', () => {
-    expect(src).toContain('!PER_SCHOOL_KEYS.has(section.key) && renderItems(items)')
+    // issue #65: SHSAT checklist moved before schools; non-SHSAT guard added
+    expect(src).toContain('!PER_SCHOOL_KEYS.has(section.key) && !isSHSAT && renderItems(items)')
   })
 
-  it('section render order preserved: description → schools → renderItems', () => {
+  it('section render order: description → SHSAT Prep Checklist → schools → non-SHSAT renderItems', () => {
+    // issue #65: SHSAT checklist moved before schools
     const sectionLoopStart = src.indexOf('sections.map((section)')
     const descriptionIdx = src.indexOf('SECTION_DESCRIPTIONS[section.key]', sectionLoopStart)
+    const prepChecklistIdx = src.indexOf('isSHSAT && items.length > 0', sectionLoopStart)
     const schoolsIdx = src.indexOf('Your matched schools in this category', sectionLoopStart)
-    const checklistIdx = src.indexOf('renderItems(items)', sectionLoopStart)
+    const nonShsatChecklistIdx = src.indexOf('!isSHSAT && renderItems(items)', sectionLoopStart)
     expect(descriptionIdx).toBeGreaterThan(sectionLoopStart)
-    expect(schoolsIdx).toBeGreaterThan(descriptionIdx)
-    expect(checklistIdx).toBeGreaterThan(schoolsIdx)
+    expect(prepChecklistIdx).toBeGreaterThan(descriptionIdx)
+    expect(schoolsIdx).toBeGreaterThan(prepChecklistIdx)
+    expect(nonShsatChecklistIdx).toBeGreaterThan(schoolsIdx)
   })
 })
 
