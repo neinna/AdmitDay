@@ -2460,16 +2460,12 @@ describe('Issue #49: rationale route system prompt and academicLevel mapping', (
     expect(routeSrc).not.toContain('End by naming the admissions type')
   })
 
-  it('system prompt instructs Claude not to restate admissions type or academic score', () => {
-    expect(routeSrc).toContain('Do not restate the admissions type, academic score, or applicants per seat')
+  it('system prompt caps output at 80 words', () => {
+    expect(routeSrc).toContain('under 80 words total')
   })
 
-  it('system prompt caps output at 50 words', () => {
-    expect(routeSrc).toContain('under 50 words total')
-  })
-
-  it('system prompt focuses on fit reasoning, not generic data', () => {
-    expect(routeSrc).toContain('Focus on why this school fits this specific student')
+  it('system prompt focuses on school distinctives, not repeating user filter selections', () => {
+    expect(routeSrc).toContain('Focus on what makes THIS school interesting')
   })
 
   it('maps "exceptional" academicRating to human-readable sentence', () => {
@@ -2529,5 +2525,40 @@ describe('Issue #53: SchoolRow expanded view has no source attribution or extern
 
   it('does not contain "View on NYC-SIFT" link text', () => {
     expect(schoolRowSource).not.toContain('View on NYC-SIFT')
+  })
+})
+
+// ── Issue #54: Improve AI rationale prompt to use language and extracurricular data ──
+
+describe('Issue #54: Rationale route passes language and extracurricular data', () => {
+  const routeSrc = fs.readFileSync(path.join(__dirname, '../app/api/rationale/route.ts'), 'utf-8')
+
+  it('includes Languages offered in the schoolCtx', () => {
+    expect(routeSrc).toContain('Languages offered: ${school.doe_data.language}')
+  })
+
+  it('includes Extracurriculars in the schoolCtx', () => {
+    expect(routeSrc).toContain('Extracurriculars: ${String(school.doe_data.extracurriculars).slice(0, 400)}')
+  })
+
+  it('system prompt instructs AI NOT to repeat user filter selections', () => {
+    expect(routeSrc).toContain("Do NOT repeat the user")
+    expect(routeSrc).toContain("filter selections")
+  })
+
+  it('system prompt asks for concrete details with counts and examples', () => {
+    expect(routeSrc).toContain('concrete details with counts and examples')
+  })
+
+  it('system prompt targets 2-3 sentences under 80 words', () => {
+    expect(routeSrc).toContain('under 80 words total')
+  })
+
+  it('system prompt focuses on what makes THIS school interesting', () => {
+    expect(routeSrc).toContain('Focus on what makes THIS school interesting')
+  })
+
+  it('does NOT contain the old "focus on why this school fits this specific student" directive', () => {
+    expect(routeSrc).not.toContain('Focus on why this school fits this specific student')
   })
 })
