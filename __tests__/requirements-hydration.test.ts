@@ -138,8 +138,8 @@ describe('SHSAT section copy (issue #47)', () => {
     expect(src).toContain('SHSAT score is the sole admissions criterion for these schools.')
   })
 
-  it('has the register-by-October-31-2026 checklist item', () => {
-    expect(src).toContain('Register for the SHSAT by October 31, 2026.')
+  it('has the register-by-late-October checklist item', () => {
+    expect(src).toContain('Register for the SHSAT by late October.')
   })
 
   it('has the adaptive exam item mentioning SRT', () => {
@@ -147,7 +147,7 @@ describe('SHSAT section copy (issue #47)', () => {
   })
 
   it('has the practice-tests item', () => {
-    expect(src).toContain('Take 2-3 practice tests before October')
+    expect(src).toContain('Take at least 3-5 practice tests before the SHSAT test date')
   })
 
   it('SHSAT section has exactly 3 checklist items', () => {
@@ -172,10 +172,13 @@ describe('Section render order (issue #47)', () => {
     const sectionLoopStart = src.indexOf('sections.map((section)')
     const descriptionIdx = src.indexOf('SECTION_DESCRIPTIONS[section.key]', sectionLoopStart)
     const schoolsIdx = src.indexOf('Your matched schools in this category', sectionLoopStart)
-    const checklistIdx = src.indexOf('renderItems(items)', sectionLoopStart)
+    // SHSAT Prep Checklist renders before schools; non-SHSAT checklist renders after
+    const prepChecklistIdx = src.indexOf('Prep Checklist', sectionLoopStart)
+    const nonShsatChecklistIdx = src.indexOf('!isSHSAT && renderItems(items)', sectionLoopStart)
     expect(descriptionIdx).toBeGreaterThan(sectionLoopStart)
-    expect(schoolsIdx).toBeGreaterThan(descriptionIdx)
-    expect(checklistIdx).toBeGreaterThan(schoolsIdx)
+    expect(prepChecklistIdx).toBeGreaterThan(descriptionIdx)
+    expect(schoolsIdx).toBeGreaterThan(prepChecklistIdx)
+    expect(nonShsatChecklistIdx).toBeGreaterThan(schoolsIdx)
   })
 
   it('has descriptions for shsat and audition admissions types', () => {
@@ -236,7 +239,7 @@ describe('All Applicants section (issue #63)', () => {
 
 describe('Requirements page simplification (issue #64)', () => {
   it('has SCREENED_SUMMARY constant with grade average text', () => {
-    expect(src).toContain("Admission is based on your child's 7th grade course grade average.")
+    expect(src).toContain("Admission is based on your child's 7th grade course grade average across 4 core subjects")
   })
 
   it('has SCREENED_SUMMARY mentioning grade groups', () => {
@@ -286,5 +289,104 @@ describe('Requirements page simplification (issue #64)', () => {
 
   it('screened description no longer says attendance record', () => {
     expect(src).not.toContain("screened: 'Screened programs review your grades, attendance")
+  })
+})
+
+// ── Issue #65: Copy, layout, and formatting updates ───────────────────────────
+
+describe('All Schools Checklist rename (issue #65)', () => {
+  it('section heading is All Schools Checklist', () => {
+    expect(src).toContain('All Schools Checklist')
+  })
+
+  it('does not use old "All Applicants" heading text', () => {
+    // The h2 should say All Schools Checklist, not All Applicants
+    const h2Match = src.match(/All Schools Checklist/)
+    expect(h2Match).not.toBeNull()
+    // The old heading text must not appear as rendered text
+    expect(src).not.toContain('>All Applicants<')
+  })
+})
+
+describe('Screened summary 4 core subjects (issue #65)', () => {
+  it('SCREENED_SUMMARY mentions 4 core subjects', () => {
+    expect(src).toContain('4 core subjects: ELA, math, science, and history/social studies')
+  })
+
+  it('SCREENED_SUMMARY uses (1-5) notation', () => {
+    expect(src).toContain('grade groups (1-5)')
+  })
+})
+
+describe('Lottery checkbox items removed (issue #65)', () => {
+  it('lottery section has empty items array', () => {
+    expect(src).toContain('lottery: [],')
+  })
+
+  it('does not contain old lottery checklist text', () => {
+    expect(src).not.toContain('No additional materials required.')
+    expect(src).not.toContain('All applicants who rank the school have an equal chance.')
+  })
+})
+
+describe('SHSAT section order and Prep Checklist (issue #65)', () => {
+  it('has Prep Checklist title in source', () => {
+    expect(src).toContain('Prep Checklist')
+  })
+
+  it('SHSAT description mentions 2024 data', () => {
+    expect(src).toContain('based on 2024 data')
+  })
+
+  it('SHSAT register item says late October', () => {
+    expect(src).toContain('Register for the SHSAT by late October')
+  })
+
+  it('SHSAT practice item says 3-5 tests', () => {
+    expect(src).toContain('3-5 practice tests')
+  })
+
+  it('Prep Checklist renders for isSHSAT before schools list', () => {
+    const sectionLoopStart = src.indexOf('sections.map((section)')
+    const prepChecklistIdx = src.indexOf('isSHSAT && items.length > 0', sectionLoopStart)
+    const schoolsListIdx = src.indexOf('Your matched schools in this category', sectionLoopStart)
+    expect(prepChecklistIdx).toBeGreaterThan(sectionLoopStart)
+    expect(prepChecklistIdx).toBeLessThan(schoolsListIdx)
+  })
+
+  it('non-SHSAT checklist renders after schools with !isSHSAT guard', () => {
+    expect(src).toContain('!isSHSAT && renderItems(items)')
+  })
+})
+
+describe('Audition program label inference (issue #65)', () => {
+  it('defines inferAuditionLabel function', () => {
+    expect(src).toContain('function inferAuditionLabel(')
+  })
+
+  it('uses inferAuditionLabel in program label rendering', () => {
+    expect(src).toContain('inferAuditionLabel(info)')
+  })
+
+  it('does not use static Program N label for multi-program schools without fallback', () => {
+    // inferAuditionLabel result is used first; Program {i+1} is only the fallback
+    expect(src).toContain("inferAuditionLabel(info) || `Program ${i + 1}`")
+  })
+})
+
+describe('Numbered school list format (issue #65)', () => {
+  it('school list uses ol element', () => {
+    expect(src).toContain('<ol className=')
+  })
+
+  it('school list uses idx + 1 numbering', () => {
+    expect(src).toContain('{idx + 1}.')
+  })
+
+  it('school list no longer uses plain ul without numbers', () => {
+    // The school name list should use ol, not the old plain ul
+    const schoolListStart = src.indexOf('Your matched schools in this category')
+    const olIdx = src.indexOf('<ol', schoolListStart)
+    expect(olIdx).toBeGreaterThan(schoolListStart)
   })
 })
