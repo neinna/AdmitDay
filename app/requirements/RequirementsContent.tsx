@@ -63,17 +63,11 @@ const SECTION_REQUIREMENTS: Record<string, { id: string; text: string }[]> = {
 }
 
 const ALL_APPLICANTS_ITEMS = [
-  { id: 'all_1', text: 'Application window opens October 7 and closes December 3.' },
-  { id: 'all_2', text: 'Submit your application at myschools.nyc.' },
-  {
-    id: 'all_3',
-    text: 'You can rank more than 12 schools — list every program you would genuinely attend, in your true order of preference. The DOE recommends at least 12 strong options.',
-  },
-  { id: 'all_4', text: 'High school offers are released March 5.' },
-  {
-    id: 'all_5',
-    text: "Attend open houses and school tours in October and November. Check each school's calendar on MySchools.",
-  },
+  { id: 'all_1', text: 'Application window opens in early October and closes in early December' },
+  { id: 'all_2', text: 'Attend open houses and school tours during the application open window or before' },
+  { id: 'all_3', text: 'Create an application ranking at least 12 strong options in the order of true preference, make sure to list every program at each school' },
+  { id: 'all_4', text: 'Submit your application at myschools.nyc in the application window' },
+  { id: 'all_5', text: 'High school offers will be released in Spring, early March' },
 ]
 
 interface Props {
@@ -233,6 +227,14 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
 
         {/* Per-section requirements */}
         <div className="space-y-8">
+          {/* All Applicants — always shown first */}
+          <div>
+            <h2 className={`text-sm font-semibold px-3 py-2 mb-3 rounded-md ${ALL_APPLICANTS_STYLE.bg} ${ALL_APPLICANTS_STYLE.text}`}>
+              All Applicants
+            </h2>
+            {renderItems(ALL_APPLICANTS_ITEMS)}
+          </div>
+
           {sections.map((section) => {
             const items = SECTION_REQUIREMENTS[section.key] ?? []
             const sStyle = SECTION_STYLE[section.key] ?? { bg: 'bg-gray-600', text: 'text-white', countBg: 'bg-gray-500' }
@@ -305,13 +307,6 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
             )
           })}
 
-          {/* All Applicants — always shown last */}
-          <div>
-            <h2 className={`text-sm font-semibold px-3 py-2 mb-3 rounded-md ${ALL_APPLICANTS_STYLE.bg} ${ALL_APPLICANTS_STYLE.text}`}>
-              All Applicants
-            </h2>
-            {renderItems(ALL_APPLICANTS_ITEMS)}
-          </div>
         </div>
         {/* Disclaimer */}
         <div className="bg-amber-50 border border-amber-200 rounded-md p-3 mt-8 mb-3">
