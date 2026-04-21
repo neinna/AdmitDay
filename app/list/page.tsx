@@ -52,6 +52,12 @@ function matchesAcademicRating(school: School, ratings: string[]): boolean {
 function isEligible(school: School, inputs: UserInputs): boolean {
   const showScreened = inputs.academicRatings.includes('exceptional') || inputs.academicRatings.includes('strong')
 
+  // Audition-only schools have no viable non-audition pathway; exclude them when auditions=NO.
+  // Schools with screened or SHSAT programs can still appear via those pathways.
+  if (school.flags.has_audition && !inputs.auditions && !school.flags.has_screened && !school.flags.has_shsat) {
+    return false
+  }
+
   if (school.flags.has_open) return true
   if (school.flags.has_screened && showScreened) return true
   if (school.flags.has_shsat && inputs.shsat) return true
