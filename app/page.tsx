@@ -50,8 +50,6 @@ export default function HomePage() {
       if (typeof saved.auditions === 'boolean') setAuditions(saved.auditions)
       if (Array.isArray(saved.academicRatings)) setAcademicRatings(saved.academicRatings)
       if (saved.iep === 'iep' || saved.iep === 'gened') setIep(saved.iep)
-      if (['small', 'medium', 'large'].includes(saved.size))
-        setSize(saved.size as 'small' | 'medium' | 'large')
     } catch {
       // ignore corrupt data
     }
@@ -77,7 +75,6 @@ export default function HomePage() {
     const errs: string[] = []
     if (boroughs.length === 0) errs.push('Please select at least one borough.')
     if (academicRatings.length === 0) errs.push('Please select an academic rating.')
-    if (!size) errs.push('Please select a school size preference.')
     setErrors(errs)
     return errs.length === 0
   }
@@ -321,34 +318,22 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* School Size */}
+          {/* School Size — disabled for MVP */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
               School size preference
             </label>
             <div className="space-y-2">
-              {(
-                [
-                  { value: 'small', label: 'Small', helper: 'under 400 students' },
-                  { value: 'medium', label: 'Medium', helper: '400–1,200 students' },
-                  { value: 'large', label: 'Large', helper: 'over 1,200 students' },
-                ] as const
-              ).map((opt) => (
-                <label key={opt.value} className="flex items-start gap-2.5 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="size"
-                    value={opt.value}
-                    checked={size === opt.value}
-                    onChange={() => setSize(opt.value)}
-                    className="mt-0.5 accent-gray-900"
-                  />
-                  <span className="text-sm">
-                    <span className="font-medium text-gray-800">{opt.label}</span>
-                    <span className="text-gray-500"> — {opt.helper}</span>
-                  </span>
-                </label>
-              ))}
+              <label className="flex items-start gap-2.5">
+                <input
+                  type="radio"
+                  checked
+                  readOnly
+                  disabled
+                  className="mt-0.5 accent-gray-900"
+                />
+                <span className="text-sm font-medium text-gray-800">All sizes</span>
+              </label>
             </div>
           </div>
 
