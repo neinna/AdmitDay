@@ -23,21 +23,21 @@ const SECTION_STYLE: Record<string, { bg: string; text: string; countBg: string 
 const ALL_APPLICANTS_STYLE = { bg: 'bg-gray-700', text: 'text-white' }
 
 const SECTION_DESCRIPTIONS: Record<string, string> = {
-  shsat: 'SHSAT score is the sole admissions criterion for these schools.',
+  shsat: 'SHSAT score is the sole admissions criterion for these schools. Below are the minimum SHSAT scores for each school based on 2024 data.',
   audition: 'Requirements vary by school and by discipline (visual art, music, dance, theater, film, etc.).',
 }
 
 const SCREENED_SUMMARY =
-  "Admission is based on your child's 7th grade course grade average. Schools rank applicants into grade groups (1–5), then fill seats by lottery within each group. Some schools require an additional essay or on-site assessment."
+  "Admission is based on your child's 7th grade course grade average across 4 core subjects: ELA, math, science, and history/social studies. Schools rank applicants into grade groups (1-5), then fill seats by lottery within each group. Some schools require an additional essay or on-site assessment."
 
 const LOTTERY_EDOPT_SUMMARY =
   'These schools select students by lottery. No academic requirements. Ed Opt programs divide applicants into reading level bands (top 16%, middle 68%, bottom 16%) and fill seats randomly within each band.'
 
 const SECTION_REQUIREMENTS: Record<string, { id: string; text: string }[]> = {
   shsat: [
-    { id: 'shsat_1', text: 'Register for the SHSAT by October 31, 2026. The exam is digital and adaptive. This is the first year the SHSAT is adaptive.' },
+    { id: 'shsat_1', text: 'Register for the SHSAT by late October. The exam is digital and adaptive. This is the first year the SHSAT is adaptive.' },
     { id: 'shsat_2', text: 'Start prep in August using official DOE practice materials. The DOE provides a free Student Readiness Tool (SRT) that replicates the exact exam interface.' },
-    { id: 'shsat_3', text: 'Take 2-3 practice tests before October, then review weak areas in the final weeks.' },
+    { id: 'shsat_3', text: 'Take at least 3-5 practice tests before the SHSAT test date, then review weak areas in the final weeks.' },
   ],
   audition: [
     { id: 'aud_1', text: 'Prepare your audition or portfolio materials before the application window opens.' },
@@ -58,11 +58,7 @@ const SECTION_REQUIREMENTS: Record<string, { id: string; text: string }[]> = {
     { id: 'edopt_3', text: 'All students are eligible to apply.' },
     { id: 'edopt_4', text: 'Rank the school on your MySchools application.' },
   ],
-  lottery: [
-    { id: 'lot_1', text: 'No additional materials required.' },
-    { id: 'lot_3', text: 'All applicants who rank the school have an equal chance.' },
-    { id: 'lot_4', text: 'Rank the school on your MySchools application.' },
-  ],
+  lottery: [],
 }
 
 const ALL_APPLICANTS_ITEMS = [
@@ -72,6 +68,26 @@ const ALL_APPLICANTS_ITEMS = [
   { id: 'all_4', text: 'Submit your application at myschools.nyc in the application window' },
   { id: 'all_5', text: 'High school offers will be released in Spring, early March' },
 ]
+
+function inferAuditionLabel(info: string): string {
+  const lower = info.toLowerCase()
+  const hasStoryboard = lower.includes('storyboard')
+  const hasFilm = hasStoryboard || lower.includes('film production') || lower.includes('video production')
+  const hasPortfolio = lower.includes('portfolio') || lower.includes('drawing')
+  const hasDance = lower.includes('dance') || lower.includes('ballet') || lower.includes('movement class')
+  const hasSing = lower.includes('sing') || lower.includes('song') || lower.includes('voice') ||
+    (lower.includes('vocal') && lower.includes('music'))
+  const hasAct = lower.includes('monologue') || lower.includes('acting')
+  const hasInstrument = lower.includes('instrument') || (lower.includes('scale') && lower.includes('music'))
+  if (hasFilm) return 'Film & Media'
+  if (hasPortfolio) return 'Visual Art'
+  if ((hasDance && hasSing) || (hasAct && hasSing) || (hasDance && hasAct && hasSing)) return 'Musical Theater'
+  if (hasDance) return 'Dance'
+  if (hasSing) return 'Vocal Music'
+  if (hasAct) return 'Theater Arts'
+  if (hasInstrument) return 'Instrumental Music'
+  return ''
+}
 
 interface Props {
   sections: ReqSection[]
@@ -205,7 +221,7 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
           {/* All Applicants — always shown first */}
           <div>
             <h2 className={`text-sm font-semibold px-3 py-2 mb-3 rounded-md ${ALL_APPLICANTS_STYLE.bg} ${ALL_APPLICANTS_STYLE.text}`}>
-              All Applicants
+              All Schools Checklist
             </h2>
             {renderItems(ALL_APPLICANTS_ITEMS)}
           </div>
@@ -218,6 +234,7 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
               : null
             const isScreened = section.key === 'screened'
             const isLotteryOrEdopt = section.key === 'lottery' || section.key === 'edopt'
+            const isSHSAT = section.key === 'shsat'
             return (
               <div key={section.key}>
                 <h2 className={`text-sm font-semibold px-3 py-2 mb-3 rounded-md flex items-center gap-2 ${sStyle.bg} ${sStyle.text}`}>
@@ -242,17 +259,24 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
                     <p className="text-sm text-gray-700 leading-relaxed">{LOTTERY_EDOPT_SUMMARY}</p>
                   </div>
                 )}
+                {/* SHSAT: Prep Checklist renders before schools */}
+                {isSHSAT && items.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-sm font-semibold text-gray-700 mb-2">Prep Checklist</p>
+                    {renderItems(items)}
+                  </div>
+                )}
                 {/* Schools in this section */}
                 {section.schools.length > 0 && (
                   <div className="mb-4">
                     <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
                       Your matched schools in this category
                     </p>
-                    <ul className="space-y-4">
-                      {section.schools.map((school) => (
+                    <ol className="space-y-2">
+                      {section.schools.map((school, idx) => (
                         <li key={school.name} className="text-sm text-gray-700">
                           <span className="font-semibold text-gray-900">
-                            {school.name}{cutoffMap?.has(school.name) ? ` — ${cutoffMap.get(school.name)}` : ''}
+                            {idx + 1}. {school.name}{cutoffMap?.has(school.name) ? ` — ${cutoffMap.get(school.name)}` : ''}
                           </span>
                           {school.sectionNotes.length > 0 && (
                             <span className="ml-2 text-xs text-gray-400">
@@ -261,14 +285,19 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
                           )}
                           {school.auditionInformation && school.auditionInformation.length > 0 && (
                             <div className="mt-2 space-y-2">
-                              {school.auditionInformation.slice(0, 3).map((info, i) => (
-                                <div key={i} className="text-xs text-gray-600 bg-gray-50 rounded p-2">
-                                  {school.auditionInformation!.length > 1 && (
-                                    <div className="font-medium text-gray-700 mb-0.5">Program {i + 1}</div>
-                                  )}
-                                  <div>{info}</div>
-                                </div>
-                              ))}
+                              {school.auditionInformation.slice(0, 3).map((info, i) => {
+                                const label = school.auditionInformation!.length > 1
+                                  ? inferAuditionLabel(info) || `Program ${i + 1}`
+                                  : ''
+                                return (
+                                  <div key={i} className="text-xs text-gray-600 bg-gray-50 rounded p-2">
+                                    {label && (
+                                      <div className="font-medium text-gray-700 mb-0.5">{label}</div>
+                                    )}
+                                    <div>{info}</div>
+                                  </div>
+                                )
+                              })}
                             </div>
                           )}
                           {isScreened && school.requirements && (
@@ -281,10 +310,10 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
                           )}
                         </li>
                       ))}
-                    </ul>
+                    </ol>
                   </div>
                 )}
-                {!PER_SCHOOL_KEYS.has(section.key) && renderItems(items)}
+                {!PER_SCHOOL_KEYS.has(section.key) && !isSHSAT && renderItems(items)}
               </div>
             )
           })}
