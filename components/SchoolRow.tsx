@@ -295,22 +295,6 @@ export default function SchoolRow({ school, userInputs, rowNumber }: Props) {
               )}
             </p>
 
-            {/* Source + link */}
-            <div className="flex items-center gap-3 text-xs text-gray-400">
-              <span>Source: NYC-SIFT + NYC DOE Open Data</span>
-              <a
-                href={school.sift_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-gray-600 underline hover:text-gray-900"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  posthog?.capture('source_link_clicked', { school_dbn: school.dbn, school_name: school.name })
-                }}
-              >
-                View on NYC-SIFT →
-              </a>
-            </div>
           </div>
         </div>
       )}
