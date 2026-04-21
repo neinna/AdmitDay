@@ -360,16 +360,12 @@ describe('Issue #11: Ranking cap copy in requirements checklist', () => {
     expect(reqContentSource).not.toContain('rank up to 12 schools')
   })
 
-  it('contains the new copy about ranking more than 12 schools', () => {
-    expect(reqContentSource).toContain('You can rank more than 12 schools')
+  it('contains copy about ranking at least 12 strong options (updated by issue #63)', () => {
+    expect(reqContentSource).toContain('ranking at least 12 strong options')
   })
 
-  it('mentions DOE recommends at least 12 strong options', () => {
-    expect(reqContentSource).toContain('The DOE recommends at least 12 strong options.')
-  })
-
-  it('tells users to list every program they would genuinely attend', () => {
-    expect(reqContentSource).toContain('list every program you would genuinely attend')
+  it('tells users to list every program at each school', () => {
+    expect(reqContentSource).toContain('list every program at each school')
   })
 })
 
@@ -1428,10 +1424,10 @@ describe('Issue #39: RequirementsContent.tsx is a client component', () => {
     expect(reqContentSource).toContain('All applicants who rank the school have an equal chance')
   })
 
-  it('contains All Applicants section always shown last', () => {
+  it('contains All Applicants section (updated copy, issue #63)', () => {
     expect(reqContentSource).toContain('All Applicants')
-    expect(reqContentSource).toContain('Application window opens October 7 and closes December 3')
-    expect(reqContentSource).toContain('High school offers are released March 5')
+    expect(reqContentSource).toContain('Application window opens in early October and closes in early December')
+    expect(reqContentSource).toContain('High school offers will be released in Spring, early March')
   })
 
   it('shows matched school names under each section', () => {
@@ -1906,7 +1902,7 @@ describe('Issue #45: Disclaimer and verified line moved to bottom', () => {
   const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
 
   it('disclaimer appears AFTER All Applicants section in source order', () => {
-    const allApplicantsIdx = reqContentSource.indexOf('All Applicants — always shown last')
+    const allApplicantsIdx = reqContentSource.indexOf('All Applicants — always shown first')
     const disclaimerIdx = reqContentSource.indexOf('Every effort was made to keep this data current')
     expect(allApplicantsIdx).toBeGreaterThan(-1)
     expect(disclaimerIdx).toBeGreaterThan(-1)
@@ -1914,7 +1910,7 @@ describe('Issue #45: Disclaimer and verified line moved to bottom', () => {
   })
 
   it('"Deadlines last verified" line appears AFTER All Applicants section in source order', () => {
-    const allApplicantsIdx = reqContentSource.indexOf('All Applicants — always shown last')
+    const allApplicantsIdx = reqContentSource.indexOf('All Applicants — always shown first')
     const verifiedIdx = reqContentSource.indexOf('Deadlines last verified')
     expect(allApplicantsIdx).toBeGreaterThan(-1)
     expect(verifiedIdx).toBeGreaterThan(-1)
@@ -1980,8 +1976,8 @@ describe('Issue #45: Section headers styled with colored backgrounds', () => {
 
   it('All Applicants h2 uses ALL_APPLICANTS_STYLE', () => {
     const allApplicantsH2Block = reqContentSource.slice(
-      reqContentSource.indexOf('All Applicants — always shown last'),
-      reqContentSource.indexOf('All Applicants — always shown last') + 200,
+      reqContentSource.indexOf('All Applicants — always shown first'),
+      reqContentSource.indexOf('All Applicants — always shown first') + 200,
     )
     expect(allApplicantsH2Block).toContain('ALL_APPLICANTS_STYLE')
   })
@@ -2667,8 +2663,8 @@ describe('Issue #55: Section header styling matches list page', () => {
 
   it('All Applicants h2 does NOT use uppercase class', () => {
     const allApplicantsBlock = reqContentSource.slice(
-      reqContentSource.indexOf('All Applicants — always shown last'),
-      reqContentSource.indexOf('All Applicants — always shown last') + 300,
+      reqContentSource.indexOf('All Applicants — always shown first'),
+      reqContentSource.indexOf('All Applicants — always shown first') + 300,
     )
     expect(allApplicantsBlock).not.toContain('uppercase tracking-wide')
   })
