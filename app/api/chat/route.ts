@@ -20,8 +20,8 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: "question is required" }, { status: 400 });
   }
 
-  // Step 1: Retrieve the top 5 most relevant schools
-  const results = await searchSchools(question, 5);
+  // Step 1: Retrieve the top 10 most relevant schools
+  const results = await searchSchools(question, 10);
 
   // Step 2: Build context from retrieved schools
   // Each result already contains all chunks for that school, concatenated.
