@@ -24,8 +24,12 @@ export async function POST(request: NextRequest) {
   const results = await searchSchools(question, 5);
 
   // Step 2: Build context from retrieved schools
+  // Each result already contains all chunks for that school, concatenated.
   const schoolContext = results
-    .map((r, i) => `--- School ${i + 1} (similarity: ${r.score.toFixed(3)}) ---\n${r.chunk}`)
+    .map(
+      (r, i) =>
+        `--- School ${i + 1} (similarity: ${r.score.toFixed(3)}, matched on: ${r.matchedChunkType}) ---\n${r.chunk}`
+    )
     .join("\n\n");
 
   // Step 3: Send to Claude with the retrieved context
@@ -60,6 +64,7 @@ export async function POST(request: NextRequest) {
       dbn: r.dbn,
       borough: r.borough,
       score: r.score,
+      matchedOn: r.matchedChunkType,
     })),
   });
 }
