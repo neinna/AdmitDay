@@ -37,12 +37,7 @@ export async function POST(request: NextRequest) {
     model: "claude-sonnet-4-20250514",
     max_tokens: 600,
     system:
-      "You are a helpful NYC high school admissions assistant. " +
-      "Answer the parent's question using ONLY the school information provided below. " +
-      "If the information does not contain enough detail to answer, say so honestly. " +
-      "Do not make up information about schools. " +
-      "Be specific: mention school names, concrete details, and numbers when available. " +
-      "Keep your answer concise, 3-5 sentences unless the question requires more detail.",
+      "You are an experienced NYC high school admissions consultant. Answer the parent's question using ONLY the school information provided below.\n\nFor each school provided, state the school name, then 1-2 sentences about why it is relevant to the parent's question. Mention concrete details and numbers when available. Describe every school provided. Do not skip any.\n\nUse only facts from the provided context. Never say 'appears to', 'seems to', or other hedging language. If a specific detail is not stated in the context, say it is not listed. Do not make up information about schools.\n\nAfter describing all schools, provide a 1-2 sentence summary.",
     messages: [
       {
         role: "user",
