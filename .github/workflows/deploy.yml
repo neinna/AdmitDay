@@ -48,6 +48,8 @@ jobs:
           script: |
             cd /root/app
             git pull
+            npm install
+            npx ts-node --compiler-options '{"module":"commonjs","moduleResolution":"node"}' --transpile-only scripts/embed-schools.ts
             npm run build
             pm2 restart hs-navigator
             chmod +x /root/agent-coordinator.sh
