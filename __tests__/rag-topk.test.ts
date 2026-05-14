@@ -1,7 +1,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 
-describe('Chat API top-K change (issue #67)', () => {
+describe('Chat API top-K (issue #70: reverted from 10 to 5)', () => {
   const routePath = path.join(__dirname, '../app/api/chat/route.ts')
   let src: string
 
@@ -9,12 +9,12 @@ describe('Chat API top-K change (issue #67)', () => {
     src = fs.readFileSync(routePath, 'utf-8')
   })
 
-  it('calls searchSchools with topK = 10', () => {
-    expect(src).toMatch(/searchSchools\(\s*question\s*,\s*10\s*\)/)
+  it('calls searchSchools with topK = 5', () => {
+    expect(src).toMatch(/searchSchools\(\s*question\s*,\s*5\s*\)/)
   })
 
-  it('no longer uses topK = 5', () => {
-    expect(src).not.toMatch(/searchSchools\(\s*question\s*,\s*5\s*\)/)
+  it('no longer uses topK = 10', () => {
+    expect(src).not.toMatch(/searchSchools\(\s*question\s*,\s*10\s*\)/)
   })
 })
 
