@@ -12,6 +12,7 @@
 
 # misc
 .DS_Store
+*.log
 *.pem
 
 # env files — never commit
