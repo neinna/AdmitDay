@@ -38,3 +38,5 @@ install.cmd
 
 # Sentry Config File
 .env.sentry-build-plugin
+build_output.log
+scraper.log
