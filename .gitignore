@@ -40,3 +40,14 @@ install.cmd
 .env.sentry-build-plugin
 build_output.log
 scraper.log
+
+# planning & strategy docs — keep private, never publish to the public repo
+DEVLOG.md
+ROADMAP.md
+NEXT.md
+NEXT_SKILL.md
+TODO.md
+Strategy_PRD.md
+CompAnalysis.md
+SHSAT_PLAN.md
+*.pdf
