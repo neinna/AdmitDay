@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb } from '@/lib/shsat-db'
+import { insertResult } from '@/lib/shsat-db'
 
 const VALID_KIDS = ['alice', 'jake']
 
@@ -32,14 +32,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'scaled_score mismatch' }, { status: 400 })
     }
 
-    const db = getDb()
-    const stmt = db.prepare(`
-      INSERT INTO shsat_results (kid, test_id, raw_score, total_q, scaled_score, time_used_s, answers_json)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `)
-    const result = stmt.run(kid, test_id, raw_score, total_q, scaled_score, time_used_s, answers_json)
+    const id = await insertResult({
+      kid,
+      test_id,
+      raw_score,
+      total_q,
+      scaled_score,
+      time_used_s,
+      answers_json,
+    })
 
-    return NextResponse.json({ ok: true, id: result.lastInsertRowid })
+    return NextResponse.json({ ok: true, id })
   } catch (err) {
     console.error('POST /api/shsat/results error:', err)
     return NextResponse.json({ ok: false, error: 'Internal server error' }, { status: 500 })

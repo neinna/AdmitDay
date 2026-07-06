@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
-import { getDb } from '@/lib/shsat-db'
+import { getPinHash, getResultsByKid } from '@/lib/shsat-db'
 
 const VALID_KIDS = ['alice', 'jake']
 
@@ -18,25 +18,17 @@ export async function GET(
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }
 
-  const db = getDb()
-  const pinRow = db.prepare('SELECT pin_hash FROM shsat_pins WHERE kid = ?').get(kid) as
-    | { pin_hash: string }
-    | undefined
-  if (!pinRow) {
+  const pinHash = await getPinHash(kid)
+  if (!pinHash) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }
 
-  const match = await bcrypt.compare(pin, pinRow.pin_hash)
+  const match = await bcrypt.compare(pin, pinHash)
   if (!match) {
     return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
   }
 
-  const results = db
-    .prepare(
-      `SELECT id, kid, test_id, timestamp, raw_score, total_q, scaled_score, time_used_s
-       FROM shsat_results WHERE kid = ? ORDER BY timestamp DESC`
-    )
-    .all(kid)
+  const results = await getResultsByKid(kid)
 
   return NextResponse.json({ ok: true, results })
 }

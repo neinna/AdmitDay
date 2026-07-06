@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
-import { getDb } from '@/lib/shsat-db'
+import { pinExists, createPin, getPinHash } from '@/lib/shsat-db'
 
 const VALID_KIDS = ['alice', 'jake']
 const PIN_REGEX = /^\d{4}$/
@@ -20,24 +20,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'PIN must be exactly 4 numeric digits' }, { status: 400 })
     }
 
-    const db = getDb()
-
     if (action === 'create') {
-      const existing = db.prepare('SELECT kid FROM shsat_pins WHERE kid = ?').get(kid)
-      if (existing) {
+      if (await pinExists(kid)) {
         return NextResponse.json({ ok: false, error: 'PIN already set' }, { status: 400 })
       }
       const hash = await bcrypt.hash(pin, 10)
-      db.prepare('INSERT INTO shsat_pins (kid, pin_hash) VALUES (?, ?)').run(kid, hash)
+      await createPin(kid, hash)
       return NextResponse.json({ ok: true })
     }
 
     // action === 'verify'
-    const row = db.prepare('SELECT pin_hash FROM shsat_pins WHERE kid = ?').get(kid) as { pin_hash: string } | undefined
-    if (!row) {
+    const pinHash = await getPinHash(kid)
+    if (!pinHash) {
       return NextResponse.json({ ok: false, error: 'Invalid PIN' })
     }
-    const match = await bcrypt.compare(pin, row.pin_hash)
+    const match = await bcrypt.compare(pin, pinHash)
     if (!match) {
       return NextResponse.json({ ok: false, error: 'Invalid PIN' })
     }
@@ -54,7 +51,6 @@ export async function GET(req: NextRequest) {
   if (!kid || !VALID_KIDS.includes(kid)) {
     return NextResponse.json({ ok: false, error: 'Invalid kid' }, { status: 400 })
   }
-  const db = getDb()
-  const row = db.prepare('SELECT kid FROM shsat_pins WHERE kid = ?').get(kid)
-  return NextResponse.json({ ok: true, hasPIN: !!row })
+  const hasPIN = await pinExists(kid)
+  return NextResponse.json({ ok: true, hasPIN })
 }

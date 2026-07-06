@@ -51,3 +51,6 @@ Strategy_PRD.md
 CompAnalysis.md
 SHSAT_PLAN.md
 *.pdf
+
+# Local SQLite DB (replaced by Postgres) — never commit
+shsat.db
