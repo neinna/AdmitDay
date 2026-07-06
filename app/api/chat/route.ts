@@ -1,7 +1,7 @@
 /**
  * app/api/chat/route.ts
  *
- * RAG-powered chat endpoint for ListReady.
+ * RAG-powered chat endpoint for AdmitDay.
  * Takes a user question, retrieves the most relevant schools
  * from the vector store, and passes them to Claude to generate
  * a grounded answer.

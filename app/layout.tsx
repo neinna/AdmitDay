@@ -9,7 +9,7 @@ const inter = Inter({ subsets: ['latin'] })
 
 export function generateMetadata(): Metadata {
   return {
-    title: 'ListReady',
+    title: 'AdmitDay',
     description: "Find NYC public high schools that match your student's profile.",
     other: {
       ...Sentry.getTraceData()

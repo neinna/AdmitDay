@@ -46,7 +46,7 @@ export default function NavBar() {
         {/* Left: logo + links */}
         <div className="flex items-center gap-6">
           <Link href="/" className="text-sm font-bold text-gray-900 tracking-tight shrink-0">
-            ListReady
+            AdmitDay
           </Link>
 
           <div className="flex items-center gap-5">

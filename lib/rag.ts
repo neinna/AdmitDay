@@ -1,7 +1,7 @@
 /**
  * rag.ts
  *
- * RAG search module for ListReady.
+ * RAG search module for AdmitDay.
  * Loads pre-computed school embeddings into memory,
  * embeds a user query via OpenAI, and returns the
  * most similar schools using cosine similarity.
