@@ -4,8 +4,8 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
 const KID_META: Record<string, { name: string; emoji: string }> = {
-  alice: { name: 'Alice', emoji: '🌸' },
-  jake: { name: 'Jake', emoji: '⚡' },
+  alice: { name: 'Student 1', emoji: '🌸' },
+  jake: { name: 'Student 2', emoji: '⚡' },
 }
 
 interface AnswerRecord {

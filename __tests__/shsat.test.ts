@@ -236,16 +236,18 @@ describe('SHSAT table of contents page content', () => {
     expect(src).toContain('SHSAT Micro Tests')
   })
 
-  it('defines Alice with 🌸 emoji', () => {
+  it('defines student 1 (🌸) by id, with the name hidden', () => {
     expect(src).toContain('alice')
-    expect(src).toContain('Alice')
+    expect(src).toContain('Student 1')
     expect(src).toContain('🌸')
+    expect(src).not.toContain('Alice')
   })
 
-  it('defines Jake with ⚡ emoji', () => {
+  it('defines student 2 (⚡) by id, with the name hidden', () => {
     expect(src).toContain('jake')
-    expect(src).toContain('Jake')
+    expect(src).toContain('Student 2')
     expect(src).toContain('⚡')
+    expect(src).not.toContain('Jake')
   })
 
   it('links to results history pages', () => {
@@ -297,14 +299,16 @@ describe('Parent results page content', () => {
     expect(src).toContain('All Results')
   })
 
-  it('shows Alice with 🌸 emoji', () => {
-    expect(src).toContain('Alice')
+  it('shows student 1 (🌸) with the name hidden', () => {
+    expect(src).toContain('Student 1')
     expect(src).toContain('🌸')
+    expect(src).not.toContain('Alice')
   })
 
-  it('shows Jake with ⚡ emoji', () => {
-    expect(src).toContain('Jake')
+  it('shows student 2 (⚡) with the name hidden', () => {
+    expect(src).toContain('Student 2')
     expect(src).toContain('⚡')
+    expect(src).not.toContain('Jake')
   })
 
   it('fetches from /api/shsat/results/parent without PIN header', () => {

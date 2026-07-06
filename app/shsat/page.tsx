@@ -1,8 +1,8 @@
 import Link from 'next/link'
 
 const KIDS = [
-  { id: 'alice', name: 'Alice', emoji: '🌸' },
-  { id: 'jake', name: 'Jake', emoji: '⚡' },
+  { id: 'alice', name: 'Student 1', emoji: '🌸' },
+  { id: 'jake', name: 'Student 2', emoji: '⚡' },
 ]
 
 const TESTS = [
