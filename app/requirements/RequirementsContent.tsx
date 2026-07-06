@@ -205,7 +205,7 @@ export default function RequirementsContent({ sections, listHref, lockedCount }:
           <Link href={listHref} className="text-sm text-gray-500 hover:text-gray-700">
             &larr; Back to your list
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900 mt-1">Your requirements checklist</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mt-1">Your readiness checklist</h1>
           {hydrated && (
             <div className="flex items-center justify-between mt-0.5">
               <p className="text-sm text-gray-500">
