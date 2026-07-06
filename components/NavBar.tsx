@@ -76,10 +76,10 @@ export default function NavBar() {
                 href={requirementsHref}
                 className={pathname === '/requirements' ? activeClass : enabledClass}
               >
-                Requirements
+                Readiness
               </Link>
             ) : (
-              <span className={disabledClass}>Requirements</span>
+              <span className={disabledClass}>Readiness</span>
             )}
           </div>
         </div>
