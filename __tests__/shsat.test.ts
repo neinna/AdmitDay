@@ -1,8 +1,6 @@
 import * as fs from 'fs'
 import * as path from 'path'
-import Database from 'better-sqlite3'
 import * as bcrypt from 'bcryptjs'
-import * as os from 'os'
 
 // ── Question bank ────────────────────────────────────────────────────────────
 
@@ -74,73 +72,22 @@ describe('shsat-questions.json', () => {
   })
 })
 
-// ── shsat-db.ts ──────────────────────────────────────────────────────────────
+// ── PIN hashing (bcrypt) ─────────────────────────────────────────────────────
+// The SHSAT DB layer now runs on Postgres (@vercel/postgres); the storage itself
+// is exercised at runtime, not in unit tests. These verify the PIN hashing logic
+// the routes rely on, independent of the database.
 
-describe('shsat-db', () => {
-  let tmpDb: Database.Database
-  let tmpPath: string
-
-  beforeAll(() => {
-    tmpPath = path.join(os.tmpdir(), `shsat-test-${Date.now()}.db`)
-    tmpDb = new Database(tmpPath)
-    tmpDb.exec(`
-      CREATE TABLE IF NOT EXISTS shsat_results (
-        id            INTEGER PRIMARY KEY AUTOINCREMENT,
-        kid           TEXT NOT NULL,
-        test_id       TEXT NOT NULL,
-        timestamp     DATETIME DEFAULT CURRENT_TIMESTAMP,
-        raw_score     INTEGER NOT NULL,
-        total_q       INTEGER NOT NULL,
-        scaled_score  INTEGER NOT NULL,
-        time_used_s   INTEGER NOT NULL,
-        answers_json  TEXT NOT NULL
-      );
-      CREATE TABLE IF NOT EXISTS shsat_pins (
-        kid       TEXT PRIMARY KEY,
-        pin_hash  TEXT NOT NULL
-      );
-    `)
-  })
-
-  afterAll(() => {
-    tmpDb.close()
-    fs.unlinkSync(tmpPath)
-  })
-
-  it('can insert and retrieve a result', () => {
-    tmpDb
-      .prepare(
-        `INSERT INTO shsat_results (kid, test_id, raw_score, total_q, scaled_score, time_used_s, answers_json)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`
-      )
-      .run('alice', 'test-1', 11, 15, 640, 1247, '[]')
-
-    const row: any = tmpDb
-      .prepare('SELECT * FROM shsat_results WHERE kid = ?')
-      .get('alice')
-    expect(row).toBeDefined()
-    expect(row.raw_score).toBe(11)
-    expect(row.scaled_score).toBe(640)
-  })
-
-  it('can insert and verify PIN with bcrypt', async () => {
+describe('PIN hashing', () => {
+  it('verifies a correct PIN and rejects a wrong one', async () => {
     const hash = await bcrypt.hash('1234', 10)
-    tmpDb.prepare('INSERT INTO shsat_pins (kid, pin_hash) VALUES (?, ?)').run('jake', hash)
-
-    const row: any = tmpDb.prepare('SELECT pin_hash FROM shsat_pins WHERE kid = ?').get('jake')
-    expect(row).toBeDefined()
-
-    const match = await bcrypt.compare('1234', row.pin_hash)
-    expect(match).toBe(true)
-
-    const noMatch = await bcrypt.compare('9999', row.pin_hash)
-    expect(noMatch).toBe(false)
+    expect(await bcrypt.compare('1234', hash)).toBe(true)
+    expect(await bcrypt.compare('9999', hash)).toBe(false)
   })
 
-  it('pin is stored as hash, not plaintext', () => {
-    const row: any = tmpDb.prepare('SELECT pin_hash FROM shsat_pins WHERE kid = ?').get('jake')
-    expect(row.pin_hash).not.toBe('1234')
-    expect(row.pin_hash.startsWith('$2')).toBe(true)
+  it('stores the PIN as a bcrypt hash, not plaintext', async () => {
+    const hash = await bcrypt.hash('1234', 10)
+    expect(hash).not.toBe('1234')
+    expect(hash.startsWith('$2')).toBe(true)
   })
 })
 
@@ -216,6 +163,21 @@ describe('topic stats', () => {
     expect(thumbIcon(0.5)).toBe('🟡')
     expect(thumbIcon(0.49)).toBe('🔴')
     expect(thumbIcon(0)).toBe('🔴')
+  })
+
+  it('parses answers_json and computes stats end-to-end', () => {
+    const answers_json = JSON.stringify([
+      { q_id: 'q1', topic: 'Percents', is_correct: true },
+      { q_id: 'q2', topic: 'Percents', is_correct: false },
+      { q_id: 'q3', topic: 'Probability', is_correct: true },
+    ])
+    const parsed = JSON.parse(answers_json)
+    expect(parsed.length).toBe(3)
+    const stats = computeTopicStats(parsed)
+    const percents = stats.find((s) => s.topic === 'Percents')!
+    expect(percents.correct).toBe(1)
+    expect(percents.total).toBe(2)
+    expect(percents.pct).toBe(0.5)
   })
 })
 
@@ -399,93 +361,14 @@ describe('Parent results API route content', () => {
     expect(src).not.toContain('pin_hash')
   })
 
-  it('orders results by timestamp DESC', () => {
-    expect(src).toContain('timestamp DESC')
+  it('orders results by timestamp DESC (in the data layer)', () => {
+    // Ordering moved into lib/shsat-db.ts (getResultsForKids) after the Postgres migration.
+    const dbSrc = fs.readFileSync(path.join(__dirname, '../lib/shsat-db.ts'), 'utf-8')
+    expect(dbSrc).toContain('timestamp DESC')
   })
 
   it('exports dynamic = force-dynamic to prevent static caching', () => {
     expect(src).toContain("export const dynamic = 'force-dynamic'")
-  })
-})
-
-describe('Parent results: topic stats + DB integration', () => {
-  let tmpDb: Database.Database
-  let tmpPath: string
-
-  beforeAll(() => {
-    tmpPath = path.join(os.tmpdir(), `shsat-parent-test-${Date.now()}.db`)
-    tmpDb = new Database(tmpPath)
-    tmpDb.exec(`
-      CREATE TABLE IF NOT EXISTS shsat_results (
-        id            INTEGER PRIMARY KEY AUTOINCREMENT,
-        kid           TEXT NOT NULL,
-        test_id       TEXT NOT NULL,
-        timestamp     DATETIME DEFAULT CURRENT_TIMESTAMP,
-        raw_score     INTEGER NOT NULL,
-        total_q       INTEGER NOT NULL,
-        scaled_score  INTEGER NOT NULL,
-        time_used_s   INTEGER NOT NULL,
-        answers_json  TEXT NOT NULL
-      );
-    `)
-    const answers = JSON.stringify([
-      { q_id: 'q1', topic: 'Percents', is_correct: true },
-      { q_id: 'q2', topic: 'Percents', is_correct: false },
-      { q_id: 'q3', topic: 'Probability', is_correct: true },
-    ])
-    tmpDb.prepare(`
-      INSERT INTO shsat_results (kid, test_id, raw_score, total_q, scaled_score, time_used_s, answers_json)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run('alice', 'test-1', 2, 3, 600, 900, answers)
-    tmpDb.prepare(`
-      INSERT INTO shsat_results (kid, test_id, raw_score, total_q, scaled_score, time_used_s, answers_json)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run('jake', 'test-1', 3, 3, 800, 1200, answers)
-  })
-
-  afterAll(() => {
-    tmpDb.close()
-    fs.unlinkSync(tmpPath)
-  })
-
-  it('can query results for both kids from DB', () => {
-    const KIDS = ['alice', 'jake']
-    const rows = tmpDb
-      .prepare(
-        `SELECT id, kid, test_id, raw_score FROM shsat_results WHERE kid IN (${KIDS.map(() => '?').join(',')}) ORDER BY timestamp DESC`
-      )
-      .all(...KIDS) as any[]
-    expect(rows.length).toBe(2)
-    const kids = rows.map((r) => r.kid)
-    expect(kids).toContain('alice')
-    expect(kids).toContain('jake')
-  })
-
-  it('answers_json parses correctly with topic stats', () => {
-    const row = tmpDb.prepare('SELECT answers_json FROM shsat_results WHERE kid = ?').get('alice') as any
-    const answers = JSON.parse(row.answers_json)
-    expect(answers.length).toBe(3)
-
-    function computeTopicStats(ans: any[]) {
-      const map: Record<string, { correct: number; total: number }> = {}
-      for (const a of ans) {
-        if (!map[a.topic]) map[a.topic] = { correct: 0, total: 0 }
-        map[a.topic].total++
-        if (a.is_correct) map[a.topic].correct++
-      }
-      return Object.entries(map).map(([topic, stats]) => ({
-        topic,
-        correct: stats.correct,
-        total: stats.total,
-        pct: stats.total > 0 ? stats.correct / stats.total : 0,
-      }))
-    }
-
-    const stats = computeTopicStats(answers)
-    const percents = stats.find((s) => s.topic === 'Percents')!
-    expect(percents.correct).toBe(1)
-    expect(percents.total).toBe(2)
-    expect(percents.pct).toBe(0.5)
   })
 })
 

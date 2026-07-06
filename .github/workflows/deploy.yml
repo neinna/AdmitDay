@@ -1,9 +1,11 @@
 name: Deploy to VPS
 
+# Auto-deploy to the VPS is retired — the app is hosted on Vercel, which deploys
+# automatically on push. This workflow is kept for manual, on-demand VPS deploys
+# only (Actions tab → Run workflow). To re-enable auto-deploy, restore the
+# `push` trigger below.
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
   test:
