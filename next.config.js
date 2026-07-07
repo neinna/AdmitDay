@@ -42,3 +42,4 @@ module.exports = withSentryConfig(module.exports, {
   tunnelRoute: "/monitoring",
 
 });
+// deployed via AdmitDay agent pipeline
