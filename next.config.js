@@ -1,5 +1,14 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {}
+const nextConfig = {
+  webpack: (config, { dev }) => {
+    // The persistent filesystem cache (~400MB in .next/cache) exceeds the
+    // free disk on the deploy host, causing ENOSPC. Keep it for dev only.
+    if (!dev) {
+      config.cache = { type: 'memory' }
+    }
+    return config
+  },
+}
 
 module.exports = nextConfig
 
