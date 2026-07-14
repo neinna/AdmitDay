@@ -54,3 +54,15 @@ SHSAT_PLAN.md
 
 # Local SQLite DB (replaced by Postgres) — never commit
 shsat.db
+
+# Local personal tool — not part of the app
+domaincheck.py
+
+# Local Claude Code state (worktrees, local settings) — never commit
+.claude/
+
+# Private planning/strategy lives in the separate private Planning repo
+planning-docs/
+
+# Finder duplicate files
+* copy*
