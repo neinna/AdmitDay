@@ -8,10 +8,12 @@ Every year, roughly 75,000 NYC families navigate high school admissions. The inf
  
 ## How It Works
  
-Two discovery modes:
+Two separate discovery surfaces. Each is its own page today, and they are not connected.
  
-1. **Structured filters.** Boolean matching on borough, academics, SHSAT status, interests. Filter-then-generate: match on structured fields, then Claude generates personalized descriptions for each school.
-2. **RAG-powered chat.** Ask natural language questions ("which schools in Brooklyn have strong CS programs and soccer?"). The system retrieves relevant school data via semantic search and generates grounded answers.
+1. **Structured filters** (https://www.admitday.com). Boolean matching on borough, academics, SHSAT status, interests. Filter-then-generate: match on structured fields, then Claude generates personalized descriptions for each school.
+2. **RAG-powered chat** (https://www.admitday.com/chat). Ask natural language questions ("which schools in Brooklyn have strong CS programs and soccer?"). The system retrieves relevant school data via semantic search and generates grounded answers.
+ 
+The filter page and the chat page do not share state or hand off to each other. They are two separate surfaces today. Unifying them into a single flow is the next build.
 ## Architecture
  
 - **Frontend:** Next.js, Tailwind CSS
@@ -45,4 +47,4 @@ npm run dev
  
 ## Status
  
-Deployed to production with pilot users. Active development.
+Deployed to production at https://www.admitday.com. Five moderated user sessions with NYC parents. Active development.
