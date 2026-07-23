@@ -40,10 +40,13 @@ export async function getAllSchools(): Promise<School[]> {
     const schools = rows.map((row) => row.data)
     if (schools.length === 0) {
       // Connected fine but the table is empty (or points at the wrong DB) —
-      // surface it (host only, never credentials) so an empty /list isn't a
-      // silent mystery in production.
+      // surface the connection identity (no credentials) so an empty /list
+      // isn't a silent mystery in production.
       const host = (process.env.POSTGRES_URL || '(unset)').replace(/^.*@/, '').split('/')[0]
-      console.warn('[load-schools] SELECT returned 0 rows; db host=' + host)
+      const meta = await sql`SELECT current_database() AS db, current_schema() AS schema`
+      console.warn(
+        '[load-schools] 0 rows; host=' + host + ' db=' + meta.rows[0].db + ' schema=' + meta.rows[0].schema,
+      )
     }
     if (schools.length > 0) cachedSchools = schools
     return schools
