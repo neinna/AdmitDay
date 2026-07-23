@@ -21,7 +21,7 @@ export default function ChatPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SyntheticEvent) {
     e.preventDefault()
     const trimmed = question.trim()
     if (!trimmed) return
@@ -43,7 +43,7 @@ export default function ChatPage() {
       }
 
       const data: ChatResponse = await res.json()
-      setAnswer(data.answer ?? '')
+      setAnswer((data.answer ?? '').replace(/\*\*/g, ''))
       setSources(Array.isArray(data.sources) ? data.sources : [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.')
@@ -71,7 +71,13 @@ export default function ChatPage() {
               id="question"
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
-              placeholder="e.g. Which Brooklyn high schools have strong STEM programs?"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault()
+                  handleSubmit(e)
+                }
+              }}
+              placeholder="e.g. Which Brooklyn high schools have strong STEM programs? (Enter to ask, Shift+Enter for a new line)"
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-gray-900"
               disabled={loading}
@@ -103,7 +109,6 @@ export default function ChatPage() {
 
         {!loading && answer && (
           <div className="mt-8">
-            <h2 className="text-sm font-medium text-gray-700 mb-2">Answer</h2>
             <p className="text-gray-900 text-sm whitespace-pre-wrap leading-relaxed">{answer}</p>
           </div>
         )}
@@ -111,13 +116,14 @@ export default function ChatPage() {
         {!loading && sources.length > 0 && (
           <div className="mt-8">
             <h2 className="text-sm font-medium text-gray-700 mb-2">Sources</h2>
-            <ul className="space-y-2">
-              {sources.map((s) => (
+            <ol className="space-y-2 list-decimal list-inside">
+              {sources.map((s, i) => (
                 <li
                   key={s.dbn}
                   className="flex items-center justify-between px-3 py-2 rounded-md border border-gray-200 bg-gray-50"
                 >
                   <div className="text-sm text-gray-900">
+                    <span className="text-gray-500 tabular-nums mr-1.5">{i + 1}.</span>
                     <span className="font-medium">{s.name}</span>
                     <span className="text-gray-500"> — {s.borough}</span>
                   </div>
@@ -126,7 +132,7 @@ export default function ChatPage() {
                   </div>
                 </li>
               ))}
-            </ul>
+            </ol>
           </div>
         )}
       </div>
