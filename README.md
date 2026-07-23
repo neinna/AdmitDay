@@ -19,7 +19,7 @@ The filter page and the chat page do not share state or hand off to each other. 
 - **Frontend:** Next.js, Tailwind CSS
 - **AI:** Claude API (Anthropic) for generation, grounding prompts to prevent hallucination
 - **RAG pipeline:** Built from scratch. Data ingestion, semantic chunking (identity/academics/activities splits per school), in-memory vector search, chat API route
-- **Data:** 457 NYC public high schools scraped and structured from DOE sources
+- **Data:** 457 NYC public high schools scraped and structured from DOE sources. After re-scraping, run the seed script (`npx ts-node scripts/seed-schools.ts`) to push `data/schools.json` into Postgres.
 - **Observability:** Sentry (error tracking), PostHog (product analytics)
 - **Deployment:** DigitalOcean VPS, PM2 process manager, GitHub Actions CI/CD
 - **Coding agent:** Autonomous agent (agent-coordinator.sh) watches GitHub Issues labeled `todo`, runs Claude Code, commits on success, notifies via Telegram
