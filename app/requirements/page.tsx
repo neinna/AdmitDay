@@ -2,8 +2,6 @@ import { School, UserInputs, SectionType } from '@/types'
 import RequirementsContent from './RequirementsContent'
 import {
   capSchoolsByCategory,
-  FREE_TIER_CAP,
-  PAID_TIER_CAP,
   applyFilters,
   selectSHSATSchools,
   sortByHomeBorough,
@@ -157,7 +155,6 @@ export default async function RequirementsPage({
   // Cap at FREE_TIER_CAP with per-category limits (same as list page)
   const cappedSchools = capSchoolsByCategory(matchedSchools)
   const sections = buildReqSections(cappedSchools)
-  const lockedCount = PAID_TIER_CAP - FREE_TIER_CAP
 
   // Compute SHSAT cutoff info for the matched schools in the SHSAT section
   if (inputs.shsat) {
@@ -185,5 +182,5 @@ export default async function RequirementsPage({
   )
   const listHref = `/list?${reqParams.toString()}`
 
-  return <RequirementsContent sections={sections} listHref={listHref} lockedCount={lockedCount} />
+  return <RequirementsContent sections={sections} listHref={listHref} />
 }

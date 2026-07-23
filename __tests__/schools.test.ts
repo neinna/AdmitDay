@@ -318,17 +318,17 @@ describe('Issue #9: Jest setup in package.json', () => {
   })
 })
 
-// ── Issue #12: Locked paid tier placeholders ─────────────────────────────────
+// ── Issue #12/#84: Locked paid tier placeholders (removed in #84) ────────────
 
-describe('Issue #12: SchoolList locked expand placeholder', () => {
+describe('Issue #12/#84: SchoolList locked expand placeholder removed', () => {
   const schoolListSource = fs.readFileSync(path.join(__dirname, '../components/SchoolList.tsx'), 'utf-8')
 
-  it('shows a lock icon SVG when more schools exist beyond visible count', () => {
-    expect(schoolListSource).toContain('M12 15v2m-6 4h12')
+  it('does NOT show a lock icon SVG (locked UI removed in #84)', () => {
+    expect(schoolListSource).not.toContain('M12 15v2m-6 4h12')
   })
 
-  it('shows "Full Access" label in the expand area', () => {
-    expect(schoolListSource).toContain('Full Access')
+  it('does NOT show "Full Access" label (locked UI removed in #84)', () => {
+    expect(schoolListSource).not.toContain('Full Access')
   })
 
   it('does NOT show "coming soon" label in the expand area', () => {
@@ -339,31 +339,26 @@ describe('Issue #12: SchoolList locked expand placeholder', () => {
     expect(schoolListSource).not.toContain('>Load 15 more<')
     expect(schoolListSource).not.toContain('Load 15 more\n')
   })
-
-  it('shows remaining school count in the lock placeholder using PAID_TIER_CAP - FREE_TIER_CAP', () => {
-    // Issue #40: lock banner now always shows a fixed count (PAID_TIER_CAP - FREE_TIER_CAP = 15)
-    expect(schoolListSource).toContain('PAID_TIER_CAP - FREE_TIER_CAP')
-  })
 })
 
-describe('Issue #12: List page locked save button', () => {
+describe('Issue #12/#84: List page locked save button removed', () => {
   const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
 
-  it('contains a Save list label', () => {
-    expect(listSource).toContain('Save list')
+  it('does NOT contain a Save list label (locked UI removed in #84)', () => {
+    expect(listSource).not.toContain('Save list')
   })
 
-  it('aria-label reflects Full Access save list text', () => {
-    expect(listSource).toContain('Save list — Full Access')
+  it('does NOT contain the Full Access save aria-label (locked UI removed in #84)', () => {
+    expect(listSource).not.toContain('Save list — Full Access')
     expect(listSource).not.toContain('Download school list — Season Pass coming soon')
   })
 
-  it('save button is not a real link or button (cursor-not-allowed)', () => {
-    expect(listSource).toContain('cursor-not-allowed')
+  it('does NOT contain a locked cursor-not-allowed button (locked UI removed in #84)', () => {
+    expect(listSource).not.toContain('cursor-not-allowed')
   })
 
-  it('save area shows Full Access label', () => {
-    expect(listSource).toContain('Full Access')
+  it('does NOT show Full Access label anywhere (locked UI removed in #84)', () => {
+    expect(listSource).not.toContain('Full Access')
   })
 })
 
@@ -455,16 +450,16 @@ describe('Issue #12/#39: Requirements page — locked deadline tracking section 
 
 // ── Issue #16: Season Pass banners + last verified fix ───────────────────────
 
-describe('Issue #16: List page save banner rename', () => {
+describe('Issue #16/#84: List page save banner removed', () => {
   const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
 
-  it('uses "Save list" label (not "Download list")', () => {
-    expect(listSource).toContain('Save list')
+  it('does NOT contain a save banner label (locked UI removed in #84)', () => {
+    expect(listSource).not.toContain('Save list')
     expect(listSource).not.toContain('Download list')
   })
 
-  it('aria-label reflects Full Access save list text', () => {
-    expect(listSource).toContain('Save list — Full Access')
+  it('does NOT contain the Full Access save aria-label (locked UI removed in #84)', () => {
+    expect(listSource).not.toContain('Save list — Full Access')
     expect(listSource).not.toContain('Download school list — Season Pass coming soon')
   })
 })
@@ -503,25 +498,23 @@ describe('Issue #16: Requirements page deadlines last verified', () => {
   })
 })
 
-describe('Issue #16: Home page locked save banner', () => {
+describe('Issue #16/#84: Home page locked save banner removed', () => {
   const homeSource = fs.readFileSync(path.join(__dirname, '../app/page.tsx'), 'utf-8')
 
-  it('has a locked save banner after the form', () => {
-    expect(homeSource).toContain('Save your HS guardrails')
+  it('does NOT have a locked save banner (locked UI removed in #84)', () => {
+    expect(homeSource).not.toContain('Save your HS guardrails')
   })
 
-  it('save banner shows Full Access label', () => {
-    expect(homeSource).toContain('Save your HS guardrails — Full Access')
+  it('does NOT show a Full Access label (locked UI removed in #84)', () => {
+    expect(homeSource).not.toContain('Full Access')
   })
 
-  it('save banner is cursor-not-allowed (locked)', () => {
-    expect(homeSource).toContain('cursor-not-allowed')
+  it('does NOT contain a locked cursor-not-allowed element (locked UI removed in #84)', () => {
+    expect(homeSource).not.toContain('cursor-not-allowed')
   })
 
-  it('save banner appears after the submit button', () => {
-    const submitIdx = homeSource.indexOf('Find schools')
-    const bannerIdx = homeSource.indexOf('Save your HS guardrails')
-    expect(bannerIdx).toBeGreaterThan(submitIdx)
+  it('still has the submit button', () => {
+    expect(homeSource).toContain('Find schools')
   })
 })
 
@@ -844,11 +837,9 @@ describe('Issue #23: FeedbackRow placed in SummaryBar (SchoolList)', () => {
   })
 
   it('FeedbackRow is NOT rendered standalone at the bottom of SchoolList', () => {
-    // The standalone usage after the locked-rows section should be gone
-    const afterLockedRows = schoolListSource.slice(
-      schoolListSource.indexOf('Lock badge'),
-    )
-    expect(afterLockedRows).not.toContain('<FeedbackRow')
+    // The only usage is inside SummaryBar (the standalone bottom usage is gone)
+    const feedbackRowUses = schoolListSource.match(/<FeedbackRow/g) ?? []
+    expect(feedbackRowUses.length).toBe(1)
   })
 
   it('globals.css contains feedback-pop keyframe', () => {
@@ -1475,22 +1466,22 @@ describe('Issue #39: RequirementsContent.tsx is a client component', () => {
   })
 })
 
-describe('Issue #39: Season Pass → Full Access across all files', () => {
-  it('list page uses "Full Access" not "Season Pass"', () => {
+describe('Issue #39/#84: no Season Pass or Full Access across all files', () => {
+  it('list page has neither "Full Access" nor "Season Pass" (locked UI removed in #84)', () => {
     const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
-    expect(listSource).toContain('Full Access')
+    expect(listSource).not.toContain('Full Access')
     expect(listSource).not.toContain('Season Pass')
   })
 
-  it('home page uses "Full Access" not "Season Pass"', () => {
+  it('home page has neither "Full Access" nor "Season Pass" (locked UI removed in #84)', () => {
     const homeSource = fs.readFileSync(path.join(__dirname, '../app/page.tsx'), 'utf-8')
-    expect(homeSource).toContain('Full Access')
+    expect(homeSource).not.toContain('Full Access')
     expect(homeSource).not.toContain('Season Pass')
   })
 
-  it('SchoolList uses "Full Access" not "Season Pass"', () => {
+  it('SchoolList has neither "Full Access" nor "Season Pass" (locked UI removed in #84)', () => {
     const schoolListSource = fs.readFileSync(path.join(__dirname, '../components/SchoolList.tsx'), 'utf-8')
-    expect(schoolListSource).toContain('Full Access')
+    expect(schoolListSource).not.toContain('Full Access')
     expect(schoolListSource).not.toContain('Season Pass')
   })
 
@@ -1641,16 +1632,17 @@ describe('Issue #40: capSchoolsByCategory', () => {
   })
 })
 
-describe('Issue #40: SchoolList lock banner', () => {
-  it('SchoolList always shows lock banner (no conditional on totalCount)', () => {
+describe('Issue #40/#84: SchoolList lock banner removed', () => {
+  it('SchoolList has no lock banner (locked UI removed in #84)', () => {
     const schoolListSource = fs.readFileSync(path.join(__dirname, '../components/SchoolList.tsx'), 'utf-8')
     // Must NOT use the old "visibleCount < totalCount" guard
     expect(schoolListSource).not.toContain('visibleCount < totalCount')
-    // Must reference PAID_TIER_CAP and FREE_TIER_CAP for the count
-    expect(schoolListSource).toContain('PAID_TIER_CAP - FREE_TIER_CAP')
+    // The lock banner count (and its PAID_TIER_CAP import) is gone
+    expect(schoolListSource).not.toContain('PAID_TIER_CAP - FREE_TIER_CAP')
+    expect(schoolListSource).not.toContain('PAID_TIER_CAP')
   })
 
-  it('lock banner shows "15 more schools" (PAID_TIER_CAP 30 minus FREE_TIER_CAP 15)', () => {
+  it('tier cap constants are unchanged in lib (PAID_TIER_CAP 30 minus FREE_TIER_CAP 15)', () => {
     expect(PAID_TIER_CAP - FREE_TIER_CAP).toBe(15)
   })
 })
@@ -1678,11 +1670,11 @@ describe('Issue #40: requirements page uses capped results and lock banner', () 
     expect(pageSource).toContain('cappedSchools')
   })
 
-  it('RequirementsContent renders lock banners', () => {
+  it('RequirementsContent does NOT render lock banners (locked UI removed in #84)', () => {
     const contentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
-    expect(contentSource).toContain('lockedCount')
-    expect(contentSource).toContain('Full Access')
-    expect(contentSource).toContain('LockBanner')
+    expect(contentSource).not.toContain('lockedCount')
+    expect(contentSource).not.toContain('Full Access')
+    expect(contentSource).not.toContain('LockBanner')
   })
 })
 
@@ -1942,12 +1934,10 @@ describe('Issue #45: Disclaimer and verified line moved to bottom', () => {
     expect(disclaimerIdx).toBeGreaterThan(sectionsLoopIdx)
   })
 
-  it('disclaimer appears BEFORE the bottom Lock banner', () => {
+  it('has no bottom Lock banner (locked UI removed in #84)', () => {
     const disclaimerIdx = reqContentSource.indexOf('Every effort was made to keep this data current')
-    const lockBannerBottomIdx = reqContentSource.indexOf('Lock banner — bottom')
     expect(disclaimerIdx).toBeGreaterThan(-1)
-    expect(lockBannerBottomIdx).toBeGreaterThan(-1)
-    expect(disclaimerIdx).toBeLessThan(lockBannerBottomIdx)
+    expect(reqContentSource).not.toContain('Lock banner — bottom')
   })
 })
 
@@ -2822,5 +2812,40 @@ describe('Issue #60: school size filter disabled on filter page', () => {
 
   it('does not restore size from localStorage', () => {
     expect(pageSource).not.toContain("includes(saved.size)")
+  })
+})
+
+// ── Issue #84: Hide the unbuilt "Full Access" paid-tier UI ────────────────────
+
+describe('Issue #84: no Full Access paid-tier chrome remains in the UI', () => {
+  const uiFiles = [
+    '../app/page.tsx',
+    '../app/list/page.tsx',
+    '../components/SchoolList.tsx',
+    '../app/requirements/RequirementsContent.tsx',
+  ]
+
+  it.each(uiFiles)('%s does NOT contain "Full Access"', (file) => {
+    const source = fs.readFileSync(path.join(__dirname, file), 'utf-8')
+    expect(source).not.toContain('Full Access')
+  })
+
+  it('requirements page.tsx no longer computes or passes lockedCount', () => {
+    const pageSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
+    expect(pageSource).not.toContain('lockedCount')
+    expect(pageSource).not.toContain('PAID_TIER_CAP')
+  })
+
+  it('SchoolList no longer imports the tier cap constants', () => {
+    const schoolListSource = fs.readFileSync(path.join(__dirname, '../components/SchoolList.tsx'), 'utf-8')
+    expect(schoolListSource).not.toContain('FREE_TIER_CAP')
+    expect(schoolListSource).not.toContain('PAID_TIER_CAP')
+  })
+
+  it('free-tier cap logic in lib is untouched (FREE_TIER_CAP still 15)', () => {
+    expect(FREE_TIER_CAP).toBe(15)
+    const libSource = fs.readFileSync(path.join(__dirname, '../lib/school-list-utils.ts'), 'utf-8')
+    expect(libSource).toContain('FREE_TIER_CAP')
+    expect(libSource).toContain('PAID_TIER_CAP')
   })
 })
