@@ -1,5 +1,3 @@
-import fs from 'fs'
-import path from 'path'
 import Link from 'next/link'
 import SchoolList from '@/components/SchoolList'
 import ViewRequirementsLink from '@/components/ViewRequirementsLink'
@@ -11,6 +9,7 @@ import {
   selectSHSATSchools,
   groupSchools,
 } from '@/lib/school-list-utils'
+import { getAllSchools } from '@/lib/load-schools'
 
 // ── Input parsing ────────────────────────────────────────────────────────────
 
@@ -53,14 +52,7 @@ export default async function ListPage({
 }) {
   const inputs = parseInputs(searchParams)
 
-  let allSchools: School[] = []
-  try {
-    const filePath = path.join(process.cwd(), 'data', 'schools.json')
-    const raw = fs.readFileSync(filePath, 'utf-8')
-    allSchools = JSON.parse(raw)
-  } catch {
-    // schools.json not yet present
-  }
+  const allSchools = await getAllSchools()
 
   const { results: baseResults } = getResults(allSchools, inputs)
 

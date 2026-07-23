@@ -1379,8 +1379,9 @@ describe('Issue #39: requirements page.tsx is a server component', () => {
     expect(pageSource).not.toContain("'use client'")
   })
 
-  it('imports fs for server-side file reading', () => {
-    expect(pageSource).toContain("import fs from 'fs'")
+  it('loads school data server-side via getAllSchools (issue #80: Postgres, not fs)', () => {
+    expect(pageSource).toContain("import { getAllSchools } from '@/lib/load-schools'")
+    expect(pageSource).not.toContain("import fs from 'fs'")
   })
 
   it('exports ReqSection type for client component', () => {
