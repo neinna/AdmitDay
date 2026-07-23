@@ -10,10 +10,19 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest } from "next/server";
 import { searchSchools } from "@/lib/rag";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 export async function POST(request: NextRequest) {
+  const rl = checkRateLimit(request);
+  if (!rl.ok) {
+    return Response.json(
+      { error: "You're sending requests too quickly — please wait a moment and try again." },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } },
+    );
+  }
+
   const { question } = await request.json();
 
   if (!question || typeof question !== "string") {

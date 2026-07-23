@@ -38,6 +38,15 @@ export default function ChatPage() {
         body: JSON.stringify({ question: trimmed }),
       })
 
+      if (res.status === 429) {
+        const data = await res.json().catch(() => null)
+        setError(
+          data?.error ??
+            "You're sending requests too quickly — please wait a moment and try again."
+        )
+        return
+      }
+
       if (!res.ok) {
         throw new Error(`Request failed (${res.status})`)
       }
