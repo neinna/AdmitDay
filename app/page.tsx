@@ -344,20 +344,6 @@ export default function HomePage() {
             Find schools &rarr;
           </button>
         </form>
-
-        {/* Locked save banner */}
-        <div className="mt-4">
-          <span
-            aria-label="Save your HS guardrails — Full Access"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-400 border border-gray-200 bg-gray-50 rounded-md cursor-not-allowed select-none"
-          >
-            <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-            <span>Save your HS guardrails</span>
-            <span className="text-xs text-gray-400 font-normal">— Full Access</span>
-          </span>
-        </div>
       </div>
       <Footer />
     </main>
