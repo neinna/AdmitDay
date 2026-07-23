@@ -37,7 +37,8 @@ describe('RequirementsContent hydration guard', () => {
   it('uses displayChecked for SVG checkmark in renderItems', () => {
     // All 4 uses of item.id lookup in renderItems should use displayChecked
     const renderItemsStart = src.indexOf('function renderItems(')
-    const renderItemsEnd = src.indexOf('\n  function LockBanner', renderItemsStart)
+    // renderItems is the last helper before the component's return (LockBanner removed in #84)
+    const renderItemsEnd = src.indexOf('\n  return (', renderItemsStart)
     const renderItemsBody = src.slice(renderItemsStart, renderItemsEnd)
 
     const displayCheckedUses = (renderItemsBody.match(/displayChecked\[item\.id\]/g) ?? []).length
