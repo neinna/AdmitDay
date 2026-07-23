@@ -38,11 +38,17 @@ export async function getAllSchools(): Promise<School[]> {
     await ensureSchema()
     const { rows } = await sql<{ data: School }>`SELECT data FROM schools`
     const schools = rows.map((row) => row.data)
+    if (schools.length === 0) {
+      // Connected fine but the table is empty (or points at the wrong DB) —
+      // surface it so an empty /list isn't a silent mystery in production.
+      console.warn('[load-schools] SELECT returned 0 rows from the schools table')
+    }
     if (schools.length > 0) cachedSchools = schools
     return schools
-  } catch {
-    // No DB / connection hiccup: return [] so the pages render their
-    // "School data not yet loaded on the server" banner instead of crashing.
+  } catch (e) {
+    // Return [] so the page shows its empty-state banner instead of crashing —
+    // but log the real error; a silent catch made a prod outage undiagnosable.
+    console.error('[load-schools] getAllSchools failed:', (e as Error)?.message ?? e)
     return []
   }
 }
