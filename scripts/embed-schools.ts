@@ -1,7 +1,7 @@
 /**
  * embed-schools.ts
  *
- * Ingestion script for ListReady RAG.
+ * Ingestion script for AdmitDay RAG.
  * Reads schools.json, converts each school record into one or more
  * semantic text chunks, embeds them using OpenAI's text-embedding-3-small,
  * and saves the vectors + metadata to data/school-embeddings.json.

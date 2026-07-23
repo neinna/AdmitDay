@@ -1,10 +1,10 @@
-# ListReady
+# AdmitDay
  
 AI-powered NYC public high school admissions navigator. Helps families build personalized school lists from 700+ programs based on their preferences.
  
 ## Problem
  
-Every year, roughly 75,000 NYC families navigate high school admissions. The information exists (NYC DOE website, School Information Finder, NYC_SIFT), but it's scattered, hard to filter, and impossible to personalize. Parents end up relying on Facebook groups, word of mouth, and spreadsheets. ListReady uses AI to help parents define their criteria and build a list of high schools based on them. 
+Every year, roughly 75,000 NYC families navigate high school admissions. The information exists (NYC DOE website, School Information Finder, NYC_SIFT), but it's scattered, hard to filter, and impossible to personalize. Parents end up relying on Facebook groups, word of mouth, and spreadsheets. AdmitDay uses AI to help parents define their criteria and build a list of high schools based on them. 
  
 ## How It Works
  
@@ -37,8 +37,8 @@ The filter page and the chat page do not share state or hand off to each other. 
 ## Running Locally
  
 ```bash
-git clone https://github.com/neinna/hs-navigator.git
-cd hs-navigator
+git clone https://github.com/neinna/AdmitDay.git
+cd AdmitDay
 npm install
 cp .env.local.example .env.local
 # Add your ANTHROPIC_API_KEY to .env.local

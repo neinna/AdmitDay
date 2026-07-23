@@ -1,4 +1,4 @@
-# HS Navigator: Strategy + PRD
+# AdmitDay: Strategy + PRD
 
 **Author:** Inna Raykhman **Date:** March 25, 2026 **Status:** V1 build-ready draft
 
@@ -81,7 +81,7 @@ Message: *Built by a parent, for a constantly evolving landscape.*
 
 The following disclaimer must appear persistently on every screen in V1, and in full on the About page:
 
-> **HS Navigator is a navigation and organization tool. It does not predict outcomes, recommend schools, or guarantee admissions offers. Even the NYC DOE's own offer-chances prediction tool is based on historical data and cannot guarantee results. Always verify all requirements, deadlines, and program details in the [official MySchools portal](https://www.myschools.nyc). HS Navigator is not affiliated with the NYC Department of Education.**
+> **AdmitDay is a navigation and organization tool. It does not predict outcomes, recommend schools, or guarantee admissions offers. Even the NYC DOE's own offer-chances prediction tool is based on historical data and cannot guarantee results. Always verify all requirements, deadlines, and program details in the [official MySchools portal](https://www.myschools.nyc). AdmitDay is not affiliated with the NYC Department of Education.**
 
 The link to MySchools must be live and explicit wherever deadlines or requirements are shown. This is both a legal protection and a trust signal: showing families exactly where the official source is reinforces the product's positioning rather than undermining it.
 
@@ -427,7 +427,7 @@ After each conversation, write one sentence: what was the moment they leaned in,
 ## Links
 
 - List of resources: Local: PRIMER - NYC Public High School Admissions List of Resources
-- Additional information: HS Navigator: FB, Add Info
+- Additional information: AdmitDay: FB, Add Info
 - What matters: Local: HS What Matters?
 - Hidden gems: Local: "NYC High Schools - HIDDEN GEMS"
 - Decoding lottery numbers: https://medium.com/algorithms-in-the-wild/decoding-the-nyc-school-admission-lottery-numbers-bae7148e337d

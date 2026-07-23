@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-HS Navigator - School Data Builder
+AdmitDay - School Data Builder
 Pulls all NYC public high schools from NYC-SIFT and the DOE HS Directory.
 Run this on your VPS: python3 build_school_data.py
 Outputs: schools.json (used directly by the app)
@@ -348,7 +348,7 @@ def validate(schools):
 
 
 if __name__ == "__main__":
-    print("HS Navigator - School Data Builder")
+    print("AdmitDay - School Data Builder")
     print("Sources: NYC-SIFT + NYC Open Data (DOE)")
     print("Both are public domain / open data. Safe to use with attribution.")
     print()
