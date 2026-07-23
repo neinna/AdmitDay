@@ -95,22 +95,38 @@ describe('parseIssueCommand', () => {
   })
 })
 
-// ── Issue #6: agent-coordinator.sh build before pm2 restart ─────────────────
+// ── agent-coordinator.sh: PR-flow invariants (replaces retired pm2 deploy) ──
+// The coordinator no longer deploys from the VPS (Vercel deploys from main).
+// It runs the agent on a branch, verifies objectively, and opens a PR for
+// human review. These tests pin that contract so a regression can't quietly
+// reintroduce self-merge-to-main or VPS deploy steps.
 
-describe('agent-coordinator.sh deploy sequence', () => {
+describe('agent-coordinator.sh PR flow', () => {
   const coordinatorSource = fs.readFileSync(path.join(__dirname, '../agent-coordinator.sh'), 'utf-8')
 
-  it('runs npm run build before pm2 restart', () => {
-    expect(coordinatorSource).toContain('npm run build >> "$LOG_FILE" 2>&1 && pm2 restart hs-navigator')
+  it('uses the "agent-ok" trigger label (nothing runs unless deliberately labeled)', () => {
+    expect(coordinatorSource).toContain('TRIGGER_LABEL="agent-ok"')
   })
 
-  it('does NOT call bare pm2 restart without a preceding build', () => {
-    // The only pm2 restart line should be preceded by npm run build
-    const lines = coordinatorSource.split('\n')
-    const pm2Lines = lines.filter(l => l.includes('pm2 restart hs-navigator'))
-    pm2Lines.forEach(line => {
-      expect(line).toContain('npm run build')
-    })
+  it('does NOT reference pm2 (VPS deploy retired; Vercel deploys from main)', () => {
+    expect(coordinatorSource).not.toMatch(/pm2/)
+  })
+
+  it('never merges or pushes to main — it opens a PR for review instead', () => {
+    expect(coordinatorSource).not.toMatch(/git merge/)
+    expect(coordinatorSource).not.toMatch(/git push origin main\b/)
+  })
+
+  it('opens a pull request against main via the PR API', () => {
+    expect(coordinatorSource).toContain('github_open_pr')
+    expect(coordinatorSource).toContain('POST "/pulls"')
+    // JSON body is embedded in a shell double-quoted string, so quotes are escaped
+    expect(coordinatorSource).toMatch(/\\"base\\":\\"main\\"/)
+  })
+
+  it('objectively verifies by running npm test and npm run build itself', () => {
+    expect(coordinatorSource).toContain('npm test')
+    expect(coordinatorSource).toContain('npm run build')
   })
 })
 
