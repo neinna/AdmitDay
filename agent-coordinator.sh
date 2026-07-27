@@ -3,8 +3,12 @@
 # AdmitDay autonomous coding agent coordinator.
 # Polls GitHub for open issues labeled "agent-ok", runs a Claude agent per issue
 # on a branch, verifies with npm test + npm run build, has an independent
-# reviewer approve the diff, and opens a PR.
-# This coordinator NEVER pushes to main and NEVER merges.
+# reviewer approve the diff, and opens a PR. On a clean approval it enables
+# GitHub auto-merge on the PR (GitHub merges once the required "test" check
+# passes); a diff the reviewer flags as touching the database/connection
+# layer, migrations, seeding, secrets, or deploy/infra config is labeled
+# "needs-review" instead and left for a human to merge.
+# This coordinator itself NEVER pushes to main and NEVER merges directly.
 
 # Load credentials
 source /home/agent/.env.agents
@@ -79,6 +83,37 @@ github_open_pr() {
   BODY_JSON=$(printf '%s' "$3" | json_escape)
   RESPONSE=$(gh_api POST "/pulls" "{\"title\":${TITLE_JSON},\"head\":\"$1\",\"base\":\"main\",\"body\":${BODY_JSON}}")
   echo "$RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('html_url',''))" 2>/dev/null
+}
+
+github_get_pr_node_id() {
+  # github_get_pr_node_id PR_NUMBER -> echoes GraphQL node_id (empty on failure)
+  gh_api GET "/pulls/$1" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('node_id','') or '')" 2>/dev/null
+}
+
+github_enable_automerge() {
+  # github_enable_automerge PR_NODE_ID -> 0 on success, 1 on failure
+  # No gh CLI on this box, so we hit the GraphQL endpoint directly with the
+  # same GITHUB_TOKEN used by gh_api (REST has no auto-merge toggle).
+  local NODE_ID="$1" QUERY_DATA RESPONSE
+  QUERY_DATA=$(python3 -c "
+import json, sys
+query = 'mutation(\$id: ID!) { enablePullRequestAutoMerge(input: {pullRequestId: \$id, mergeMethod: SQUASH}) { pullRequest { autoMergeRequest { enabledAt } } } }'
+print(json.dumps({'query': query, 'variables': {'id': sys.argv[1]}}))
+" "$NODE_ID")
+  RESPONSE=$(curl -sL -X POST \
+    -H "Authorization: bearer ${GITHUB_TOKEN}" \
+    -H "Content-Type: application/json" \
+    "https://api.github.com/graphql" \
+    -d "$QUERY_DATA")
+  echo "$RESPONSE" | python3 -c "
+import json,sys
+try:
+    d = json.load(sys.stdin)
+    ok = bool(d.get('data',{}).get('enablePullRequestAutoMerge',{}).get('pullRequest',{}).get('autoMergeRequest',{}).get('enabledAt'))
+    sys.exit(0 if ok else 1)
+except Exception:
+    sys.exit(1)
+"
 }
 
 # Run one claude agent call with timeout, capturing the JSON result.
@@ -167,13 +202,17 @@ ${DIFF}
 Questions to answer:
 1. Does this diff actually resolve the issue?
 2. What did it break or put at risk? Look for scope creep (changes the issue did not ask for), modifications to data/schools.json (forbidden), deleted or weakened tests, and unrelated refactors.
+3. Does this diff touch the database/connection layer, migrations, seeding, environment/secrets handling, or the deploy/infra config? CI has no live database, so an APPROVE here cannot confirm the change actually works at runtime — that is exactly how a runtime bug shipped before.
 
 You may read files in /home/agent/app for context. Be strict about scope: if the diff contains significant changes beyond what the issue asked for, reject it.
 
 End your response with exactly one line:
 VERDICT: APPROVE
 or
-VERDICT: REJECT - <one-line reason>"
+VERDICT: REJECT - <one-line reason>
+
+Then, ONLY if the diff touches the database/connection layer, migrations, seeding, environment/secrets handling, or deploy/infra config (regardless of the verdict above), add exactly one more line:
+RISK: LIVE-VERIFY-NEEDED"
 
   run_claude "$REVIEW_OUT" "" "Read,Glob,Grep"
   local RC=$?
@@ -505,13 +544,40 @@ Closes #${ISSUE_NUMBER}"
     PR_URL=$(github_open_pr "$BRANCH" "$COMMIT_TITLE" "$PR_BODY")
 
     if [ -n "$PR_URL" ]; then
-      github_comment "$ISSUE_NUMBER" "Agent opened a pull request for this issue: ${PR_URL}
+      if echo "$REVIEW_TEXT" | grep -q "RISK: LIVE-VERIFY-NEEDED" || [ "$REVIEW_RC" -eq 2 ]; then
+        # Escalate instead of auto-merging when either: the reviewer flagged
+        # the diff as unverifiable in CI (no live database), or the reviewer
+        # itself was unavailable — an unreviewed diff is the most extreme
+        # case of "can't truly verify" and must never auto-merge unattended.
+        local ESCALATION_REASON="flagged it as touching the database/connection layer, migrations, seeding, environment/secrets, or deploy/infra config (RISK: LIVE-VERIFY-NEEDED)"
+        [ "$REVIEW_RC" -eq 2 ] && ESCALATION_REASON="was unavailable, so this diff was never independently reviewed"
+        github_comment "$ISSUE_NUMBER" "Agent opened a pull request for this issue: ${PR_URL}
 
-Tests and build verified green by the coordinator, and an independent reviewer approved the diff. Please review and merge."
-      github_label "$ISSUE_NUMBER" "pr-open"
-      github_remove_label "$ISSUE_NUMBER" "in-progress"
-      log "Issue #${ISSUE_NUMBER}: PR opened at ${PR_URL}"
-      telegram "PR ready for issue #${ISSUE_NUMBER}: ${ISSUE_TITLE} — ${PR_URL}"
+Tests and build verified green by the coordinator. The independent reviewer ${ESCALATION_REASON}. Auto-merge was NOT enabled — please verify before merging."
+        github_label "$ISSUE_NUMBER" "needs-review"
+        github_remove_label "$ISSUE_NUMBER" "in-progress"
+        log "Issue #${ISSUE_NUMBER}: PR opened at ${PR_URL}, escalated (${ESCALATION_REASON}), auto-merge NOT enabled"
+        telegram "PR ready for issue #${ISSUE_NUMBER} but ESCALATED for human review: ${ISSUE_TITLE} — ${PR_URL}"
+      else
+        local PR_NUMBER="${PR_URL##*/}"
+        local PR_NODE_ID
+        PR_NODE_ID=$(github_get_pr_node_id "$PR_NUMBER")
+        if [ -n "$PR_NODE_ID" ] && github_enable_automerge "$PR_NODE_ID"; then
+          log "Issue #${ISSUE_NUMBER}: auto-merge enabled on PR ${PR_URL}"
+          github_comment "$ISSUE_NUMBER" "Agent opened a pull request for this issue: ${PR_URL}
+
+Tests and build verified green by the coordinator, and an independent reviewer approved the diff. Auto-merge has been enabled — GitHub will merge it once the required checks pass."
+        else
+          log "Issue #${ISSUE_NUMBER}: failed to enable auto-merge on PR ${PR_URL}"
+          github_comment "$ISSUE_NUMBER" "Agent opened a pull request for this issue: ${PR_URL}
+
+Tests and build verified green by the coordinator, and an independent reviewer approved the diff. Auto-merge could not be enabled automatically — please review and merge."
+        fi
+        github_label "$ISSUE_NUMBER" "pr-open"
+        github_remove_label "$ISSUE_NUMBER" "in-progress"
+        log "Issue #${ISSUE_NUMBER}: PR opened at ${PR_URL}"
+        telegram "PR ready for issue #${ISSUE_NUMBER}: ${ISSUE_TITLE} — ${PR_URL}"
+      fi
     else
       github_label "$ISSUE_NUMBER" "needs-review"
       github_remove_label "$ISSUE_NUMBER" "in-progress"
