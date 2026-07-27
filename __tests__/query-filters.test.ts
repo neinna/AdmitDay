@@ -47,4 +47,52 @@ describe('extractFilters (issue #92: hybrid search deterministic pre-filter)', (
     const filters = extractFilters('Any schools with track and field or track?')
     expect(filters.sports.filter((s) => s === 'Track')).toHaveLength(1)
   })
+
+  it('returns empty filters and hasFilters=false for an empty string', () => {
+    const filters = extractFilters('')
+    expect(filters.borough).toBeUndefined()
+    expect(filters.sports).toEqual([])
+    expect(filters.interests).toEqual([])
+    expect(hasFilters(filters)).toBe(false)
+  })
+
+  it('returns empty filters and hasFilters=false for whitespace-only input', () => {
+    const filters = extractFilters('   \t\n  ')
+    expect(filters.borough).toBeUndefined()
+    expect(filters.sports).toEqual([])
+    expect(filters.interests).toEqual([])
+    expect(hasFilters(filters)).toBe(false)
+  })
+
+  it('detects the same borough regardless of case', () => {
+    expect(extractFilters('schools in BROOKLYN').borough).toBe('Brooklyn')
+    expect(extractFilters('schools in brooklyn').borough).toBe('Brooklyn')
+    expect(extractFilters('schools in Brooklyn').borough).toBe('Brooklyn')
+  })
+
+  it('does not false-match a sport keyword inside a larger word', () => {
+    const filters = extractFilters('Is he a good golfer?')
+    expect(filters.sports).toEqual([])
+  })
+
+  it('does not false-match an interest keyword inside a larger word', () => {
+    const filters = extractFilters('Tell me about governmental agencies')
+    expect(filters.interests).toEqual([])
+  })
+
+  it('hasFilters returns true when only a borough is present', () => {
+    expect(hasFilters({ borough: 'Queens', sports: [], interests: [] })).toBe(true)
+  })
+
+  it('hasFilters returns true when only sports are present', () => {
+    expect(hasFilters({ sports: ['Soccer'], interests: [] })).toBe(true)
+  })
+
+  it('hasFilters returns true when only interests are present', () => {
+    expect(hasFilters({ sports: [], interests: ['Computer Science'] })).toBe(true)
+  })
+
+  it('hasFilters returns false when borough, sports, and interests are all empty', () => {
+    expect(hasFilters({ sports: [], interests: [] })).toBe(false)
+  })
 })
