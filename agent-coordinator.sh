@@ -544,16 +544,20 @@ Closes #${ISSUE_NUMBER}"
     PR_URL=$(github_open_pr "$BRANCH" "$COMMIT_TITLE" "$PR_BODY")
 
     if [ -n "$PR_URL" ]; then
-      if echo "$REVIEW_TEXT" | grep -q "RISK: LIVE-VERIFY-NEEDED"; then
-        # Reviewer approved but flagged the change as unverifiable in CI (no
-        # live database) — escalate to a human instead of auto-merging.
+      if echo "$REVIEW_TEXT" | grep -q "RISK: LIVE-VERIFY-NEEDED" || [ "$REVIEW_RC" -eq 2 ]; then
+        # Escalate instead of auto-merging when either: the reviewer flagged
+        # the diff as unverifiable in CI (no live database), or the reviewer
+        # itself was unavailable — an unreviewed diff is the most extreme
+        # case of "can't truly verify" and must never auto-merge unattended.
+        local ESCALATION_REASON="flagged it as touching the database/connection layer, migrations, seeding, environment/secrets, or deploy/infra config (RISK: LIVE-VERIFY-NEEDED)"
+        [ "$REVIEW_RC" -eq 2 ] && ESCALATION_REASON="was unavailable, so this diff was never independently reviewed"
         github_comment "$ISSUE_NUMBER" "Agent opened a pull request for this issue: ${PR_URL}
 
-Tests and build verified green by the coordinator, and an independent reviewer approved the diff, but flagged it as touching the database/connection layer, migrations, seeding, environment/secrets, or deploy/infra config (RISK: LIVE-VERIFY-NEEDED). Auto-merge was NOT enabled — please verify live behavior before merging."
+Tests and build verified green by the coordinator. The independent reviewer ${ESCALATION_REASON}. Auto-merge was NOT enabled — please verify before merging."
         github_label "$ISSUE_NUMBER" "needs-review"
         github_remove_label "$ISSUE_NUMBER" "in-progress"
-        log "Issue #${ISSUE_NUMBER}: PR opened at ${PR_URL}, escalated (live-verify risk), auto-merge NOT enabled"
-        telegram "PR ready for issue #${ISSUE_NUMBER} but ESCALATED for human live-verify: ${ISSUE_TITLE} — ${PR_URL}"
+        log "Issue #${ISSUE_NUMBER}: PR opened at ${PR_URL}, escalated (${ESCALATION_REASON}), auto-merge NOT enabled"
+        telegram "PR ready for issue #${ISSUE_NUMBER} but ESCALATED for human review: ${ISSUE_TITLE} — ${PR_URL}"
       else
         local PR_NUMBER="${PR_URL##*/}"
         local PR_NODE_ID
