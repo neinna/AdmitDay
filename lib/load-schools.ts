@@ -1,10 +1,9 @@
 import { sql } from '@vercel/postgres'
 import { School } from '@/types'
 
-// School data lives in Vercel Postgres (same Neon store as SHSAT results in
-// lib/shsat-db.ts). data/schools.json is gitignored scraped output, so it never
-// reaches Vercel deploys — the schools table is seeded manually from it via
-// scripts/seed-schools.ts after each scrape.
+// School data lives in Vercel Postgres. data/schools.json is gitignored scraped
+// output, so it never reaches Vercel deploys — the schools table is seeded
+// manually from it via scripts/seed-schools.ts after each scrape.
 
 // Create the table once per cold start. The guard promise dedupes concurrent
 // calls; on failure it resets so the next request can retry.
