@@ -128,6 +128,35 @@ describe('agent-coordinator.sh PR flow', () => {
     expect(coordinatorSource).toContain('npm test')
     expect(coordinatorSource).toContain('npm run build')
   })
+
+  it('enables GitHub auto-merge via the GraphQL mutation on clean approval', () => {
+    expect(coordinatorSource).toContain('github_enable_automerge')
+    expect(coordinatorSource).toContain('enablePullRequestAutoMerge')
+    expect(coordinatorSource).toContain('https://api.github.com/graphql')
+    expect(coordinatorSource).toMatch(/mergeMethod:\s*\$?\{?SQUASH|"SQUASH"|mergeMethod, SQUASH/)
+  })
+
+  it('extends the reviewer prompt to flag risky changes for live verification', () => {
+    expect(coordinatorSource).toContain('RISK: LIVE-VERIFY-NEEDED')
+    // The prompt must name the risk categories from the issue's escalation carve-out
+    expect(coordinatorSource).toMatch(/database\/connection layer, migrations, seeding/)
+  })
+
+  it('escalates a RISK: LIVE-VERIFY-NEEDED review instead of auto-merging', () => {
+    // Isolate the success branch that runs after a PR is opened
+    const successBranch = coordinatorSource.match(
+      /if \[ -n "\$PR_URL" \]; then([\s\S]*?)\n    else\n/
+    )
+    expect(successBranch).not.toBeNull()
+    const body = successBranch![1]
+    // The risk check must gate auto-merge: escalated diffs get "needs-review"
+    // and skip github_enable_automerge; everything else gets "pr-open" and
+    // auto-merge enabled.
+    expect(body).toMatch(/RISK: LIVE-VERIFY-NEEDED/)
+    expect(body).toMatch(/needs-review/)
+    expect(body).toMatch(/github_enable_automerge/)
+    expect(body).toMatch(/pr-open/)
+  })
 })
 
 // ── Issue #2: Pagination — getVisibleGroups ──────────────────────────────────
