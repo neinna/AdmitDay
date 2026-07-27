@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
 
   // Step 3: Send to Claude with the retrieved context
   const message = await client.messages.create({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-5",
     max_tokens: 600,
     system:
       "You are an experienced NYC high school admissions consultant. Answer the parent's question using ONLY the school information provided below.\n\nFor each school provided, state the school name, then 1-2 sentences about why it is relevant to the parent's question. Mention concrete details and numbers when available. Describe every school provided. Do not skip any.\n\nUse only facts from the provided context. Never say 'appears to', 'seems to', or other hedging language. If a specific detail is not stated in the context, say it is not listed. Do not make up information about schools.\n\nAfter describing all schools, provide a 1-2 sentence summary.",
