@@ -49,11 +49,7 @@ NEXT_SKILL.md
 TODO.md
 Strategy_PRD.md
 CompAnalysis.md
-SHSAT_PLAN.md
 *.pdf
-
-# Local SQLite DB (replaced by Postgres) — never commit
-shsat.db
 
 # Local personal tool — not part of the app
 domaincheck.py
