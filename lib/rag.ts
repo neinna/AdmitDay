@@ -18,6 +18,7 @@
 import fs from "fs";
 import path from "path";
 import OpenAI from "openai";
+import { extractFilters, hasFilters, QueryFilters } from "./query-filters";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -106,6 +107,76 @@ function loadEmbeddings(): SchoolEmbedding[] {
 }
 
 // ---------------------------------------------------------------------------
+// Deterministic pre-filter (roadmap #72 item 6): restrict the candidate pool
+// by borough/sport/interest signals extracted from the question, before the
+// existing semantic ranking runs within that pool.
+// ---------------------------------------------------------------------------
+
+function includesWord(haystack: string, needle: string): boolean {
+  const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`\\b${escaped}\\b`, "i").test(haystack);
+}
+
+function schoolMatchesFilters(entries: SchoolEmbedding[], filters: QueryFilters): boolean {
+  const { borough, metadata } = entries[0];
+
+  if (filters.borough && borough !== filters.borough) return false;
+
+  if (filters.sports.length > 0 || filters.interests.length > 0) {
+    const combinedText = entries.map((e) => e.chunk).join(" ");
+    const interestsList = metadata.interests ?? [];
+
+    if (
+      filters.sports.length > 0 &&
+      !filters.sports.some((sport) => includesWord(combinedText, sport))
+    ) {
+      return false;
+    }
+
+    if (
+      filters.interests.length > 0 &&
+      !filters.interests.some(
+        (interest) =>
+          includesWord(combinedText, interest) ||
+          interestsList.some((i) => includesWord(i, interest))
+      )
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/**
+ * Restricts chunks to schools matching the deterministic filters. Falls back
+ * to the full candidate pool if the filters match zero schools, so an
+ * overly-specific extraction can't zero out retrieval entirely.
+ */
+function applyDeterministicFilters(
+  chunks: SchoolEmbedding[],
+  filters: QueryFilters
+): SchoolEmbedding[] {
+  if (!hasFilters(filters)) return chunks;
+
+  const byDbn = new Map<string, SchoolEmbedding[]>();
+  for (const entry of chunks) {
+    const group = byDbn.get(entry.dbn);
+    if (group) group.push(entry);
+    else byDbn.set(entry.dbn, [entry]);
+  }
+
+  const matchingDbns = new Set(
+    Array.from(byDbn.entries())
+      .filter(([, entries]) => schoolMatchesFilters(entries, filters))
+      .map(([dbn]) => dbn)
+  );
+
+  if (matchingDbns.size === 0) return chunks;
+  return chunks.filter((entry) => matchingDbns.has(entry.dbn));
+}
+
+// ---------------------------------------------------------------------------
 // Search: embed query, find top matches, deduplicate by school
 // ---------------------------------------------------------------------------
 
@@ -122,11 +193,14 @@ export async function searchSchools(
   });
   const queryEmbedding = response.data[0].embedding;
 
-  // Load all chunk embeddings
+  // Load all chunk embeddings, then restrict to schools matching any
+  // deterministic filters (borough/sport/interest) extracted from the query.
   const allChunks = loadEmbeddings();
+  const filters = extractFilters(query);
+  const candidateChunks = applyDeterministicFilters(allChunks, filters);
 
-  // Score every chunk against the query
-  const scored = allChunks.map((entry) => ({
+  // Score every candidate chunk against the query
+  const scored = candidateChunks.map((entry) => ({
     ...entry,
     score: cosineSimilarity(queryEmbedding, entry.embedding),
   }));
