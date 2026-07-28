@@ -3,7 +3,7 @@ import json
 import time
 from bs4 import BeautifulSoup
 
-HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; HSNavigator/1.0; research tool)"}
+HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; AdmitDay/1.0; research tool)"}
 
 def classify_admissions(text):
     text = text.lower().strip()

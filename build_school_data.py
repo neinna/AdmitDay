@@ -19,7 +19,7 @@ import re
 from bs4 import BeautifulSoup
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0 (compatible; HSNavigator/1.0; research tool)"
+    "User-Agent": "Mozilla/5.0 (compatible; AdmitDay/1.0; research tool)"
 }
 
 # Minimum SHSAT score that received a specialized high school offer.

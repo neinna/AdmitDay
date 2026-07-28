@@ -5,7 +5,7 @@ Sends each golden dataset test case to Claude for automated scoring,
 then compares against manual human scores.
 
 Usage:
-    ANTHROPIC_API_KEY="sk-ant-..." python listready_eval.py
+    ANTHROPIC_API_KEY="sk-ant-..." python admitday_eval.py
 
 Output:
     - Per-case comparison table (human score vs judge score)
@@ -244,7 +244,7 @@ GOLDEN_DATASET = [
 # ---------------------------------------------------------------------------
 # Judge prompt
 # ---------------------------------------------------------------------------
-JUDGE_SYSTEM_PROMPT = """You are an eval judge for a NYC high school recommendation app called ListReady.
+JUDGE_SYSTEM_PROMPT = """You are an eval judge for a NYC high school recommendation app called AdmitDay.
 
 You will receive:
 - The user's filter selections (what they were looking for)
@@ -386,9 +386,9 @@ def run_eval():
         "agreement_rate_pct": round(agreement_rate, 1),
         "results": results,
     }
-    with open("listready_eval_results.json", "w") as f:
+    with open("admitday_eval_results.json", "w") as f:
         json.dump(output, f, indent=2)
-    print(f"\nFull results written to listready_eval_results.json")
+    print(f"\nFull results written to admitday_eval_results.json")
 
 
 if __name__ == "__main__":
