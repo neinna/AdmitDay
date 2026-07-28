@@ -13,7 +13,7 @@ Two discovery surfaces today (unifying them into a single flow is the next build
 1. **Structured filters** (https://www.admitday.com). Deterministic matching on borough, size, admissions track, and interests. Filter-then-generate: match on structured fields in code, then Claude writes a personalized rationale for each school.
 2. **RAG-powered chat** (https://www.admitday.com/chat). Ask in plain language ("which Brooklyn schools have strong CS and soccer?"). The system extracts exact signals from the question (borough, sport, interest), hard-filters the candidate pool, then semantic-ranks within it (**hybrid search**), and generates a grounded answer citing only the schools it found.
 
-The filter page and the chat page are still two separate surfaces that don't share state. Unifying them into a single "find schools" flow is the **next build**.
+The filter surface and the chat don't share state today — filtering in one doesn't carry anything to the other. Unifying them into a single flow is the **next build**.
 
 ## Architecture
 
