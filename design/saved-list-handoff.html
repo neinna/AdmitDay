@@ -1,0 +1,211 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Admit Day — Saved List Design Handoff</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:900px;margin:40px auto;padding:0 20px;line-height:1.6;color:#222}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:6px 10px;text-align:left}th{background:#f5f5f5}code{background:#f0f0f0;padding:2px 5px}pre{background:#f6f6f6;padding:14px;overflow-x:auto}h1,h2,h3{line-height:1.25}</style></head><body><h1>Handoff: Admit Day — saved list (<code>/my-schools</code>)</h1>
+<h2>Overview</h2>
+<p>The screen behind the saved count in the header. A family lands here after adding schools from <code>/find</code> or a school detail page, and it answers three questions and only three:</p>
+<ol>
+<li><strong>What's on my list, and in what order?</strong></li>
+<li><strong>What does that list look like as a whole?</strong></li>
+<li><strong>Can I get it out of here?</strong></li>
+</ol>
+<p>Everything else was deliberately removed. Requirements and deadlines live on <code>/checklist</code>, not here — this page is about the list itself.</p>
+<p><strong>Rank order is the product.</strong> NYC families submit an ordered list of programs in MySchools; the ranking on this page is a draft of that submission. So the ranking table is the page's spine, and the reorder control is treated as a primary control, not a nicety.</p>
+<p><strong>The list is generated, not just collected.</strong> Schools arrive here because they matched the family's selection criteria on <code>/find</code>. There is no cap on length — counselors advise ranking twelve or more, but the design never counts down to a target or nags. No "3 of 12 slots used", no progress bar, no completion badge.</p>
+<p>Target codebase: Next.js 14 App Router + React + Tailwind, tokens already in <code>tailwind.config.ts</code> from the <code>/find</code> handoff.</p>
+<h2>About the design files</h2>
+<p><code>saved-list.html</code> is a <strong>design reference created in HTML</strong> — intended look and layout, not production code. Recreate it with the codebase's Tailwind tokens and App Router patterns; don't paste the markup in. All schools, ratios and dates are <strong>placeholder</strong>.</p>
+<p><strong>Fidelity: high.</strong> Colors, type, spacing and layout are final. Interactions are indicated, not implemented.</p>
+<p><strong><code>6b</code> is the approved direction.</strong> <code>6a</code> and <code>6c</code> are the same layout in two other data conditions — build one component that produces all three.</p>
+<h2>Inherited system — unchanged</h2>
+<p>Radius <code>0</code> everywhere. No shadows. Separation by 1px rules, never cards. One accent: <code>#1D4ED8</code>.</p>
+<p>Tokens: <code>ink #0B0B0C</code>, <code>ink-2 #2A2A2F</code>, <code>muted #55555A</code>, <code>faint #8A8A90</code>, <code>rule #E8E8E4</code>, <code>rule-light #F0F0EC</code>, <code>border #DEDEDA</code>, <code>surface #FFFFFF</code>, <code>surface-2 #FAFAF8</code>, <code>accent #1D4ED8</code>, <code>accent-bg #EEF2FF</code>, <code>accent-border #C7D2FE</code>.</p>
+<p>Three faces, three jobs — <strong>Space Grotesk 700</strong> for the page title (<code>My Schools</code>) and the <code>Admit</code> wordmark only; <strong>Libre Franklin</strong> for everything read; <strong>JetBrains Mono</strong> for every number, code, date and uppercase eyebrow; <strong>Newsreader italic 500</strong> for the <code>Day</code> in the wordmark only.</p>
+<p>1120px max width. Same header. Nav is <code>Find</code> / <code>My Schools</code> + mono saved count in accent / <strong><code>Checklist</code></strong> — note the rename from <code>Readiness</code>; it applies across all screens.</p>
+<h2>Design decisions (and why)</h2>
+<h3>Reordering is explicit controls, with drag as a shortcut</h3>
+<p>Each row carries a mono rank numeral and a pair of 26px <code>↑</code> / <code>↓</code> buttons; the whole row is also draggable via a <code>⠿</code> handle. Drag alone was rejected for three reasons: this list can run to 14+ rows so drag means scroll-drag, the audience skews toward parents on phones and shared/older machines, and rank order is the one thing on the page that must be verifiable — a parent needs to see <code>07</code> and know it is seventh, then move it one place with certainty.</p>
+<p>The <code>↑</code> on the first row and <code>↓</code> on the last are rendered in <code>border</code> grey (disabled), never hidden — the control's shape stays constant down the column.</p>
+<p><strong>Rank numerals are positional, not stored.</strong> They re-render <code>01…N</code> after every move. Never show a stale number.</p>
+<h3>Composition is a proportion band plus counts. It is never a score.</h3>
+<p>A 12px-tall band of <code>flex</code>-weighted segments in four greys (<code>ink</code> → <code>ink-2</code> → <code>muted</code> → <code>faint</code>), followed by a legend of <code>swatch · label · mono count</code>. Greyscale is deliberate: color would encode good/bad. Nothing is ordered by desirability, nothing is labelled "risky", "safe", "reach" or "balanced", and no percentage is shown — a percentage invites a target.</p>
+<p><strong>The segment weights must be derived from the same counts as the legend.</strong> They encoded a different set in an early build and it read as three open/zoned schools where there were two — precisely the misread this section exists to prevent. One function, one source.</p>
+<p><strong>Track buckets are mutually exclusive and priority-ordered</strong>, because DOE programs carry several methods at once (<code>Screened, Audition</code>). Resolve in this order: <code>SHSAT</code> → <code>Audition / Portfolio</code> → <code>Screened</code> → <code>Open / Zoned</code>. A program is counted once, in its most selective bucket. The buckets must sum to the saved total — assert this in a test.</p>
+<p>A zero-count bucket stays in the legend with a hollow swatch (1px <code>border</code> on <code>surface</code>) and <code>faint</code> text. <strong>This is the point of the section</strong>: a family with no open or zoned option needs to see <code>Open / Zoned 0</code>, and it cannot be seen if the row is dropped.</p>
+<p>Below the legend, one factual sentence under a mono <code>READING THE SHAPE</code> eyebrow — generated from the counts, describing only what is there ("Every school on the list screens or tests. No open or zoned program is on it yet."). Never advisory, never predictive. The page footer carries the standing disclaimer: <em>"Counts only — we don't score a list or predict an outcome."</em></p>
+<p>Boroughs and applicants-per-seat get the same treatment as <code>/school</code>'s stats grid: a 3-up cell grid, <code>gap: 1px</code> on a <code>rule</code> background, mono number over an uppercase label. Number first, label second — the digit is the content.</p>
+<h3>Requirements are not on this page</h3>
+<p>They were designed here and cut. Deadlines belong to <code>/checklist</code>, and a family looking at both saw the same three dates twice. Nothing on <code>/my-schools</code> links to it except the nav item. When <code>/checklist</code> is designed, it reads the same saved set.</p>
+<h3>Export is one primary button in the header</h3>
+<p>Labelled just <strong><code>Export</code></strong> — <code>ink</code> fill, white, <code>11px 20px</code>, top right of the title band. It was originally a rail card with explanatory copy and a PDF label; both were removed. Export is the growth mechanic, so it gets the page's only filled button and no competition. Share-link is deliberately deferred — the design has room for it as a second button in the same cluster.</p>
+<p>The export itself is the ranked list in order with each program's DBN: the sheet a parent keeps open while typing into MySchools. Rules-and-rows on white prints cleanly, which is why the layout was built this way.</p>
+<h3>The match strip is borrowed content and is labelled as such</h3>
+<p><code>6a</code> carries a 3-up strip under the eyebrow <strong><code>FROM YOUR 31 MATCHES ON FIND</code></strong>, with an <code>Open in Find ↗</code> link. It is the <code>/find</code> result set for the saved criteria, re-run and de-duplicated against the list — nothing new is computed here, and <code>/find</code> stays the source of truth. Each card names <em>why</em> it matched in accent text.</p>
+<p><strong>Show it below 6 saved; drop it above.</strong> Once the list is long, re-showing search results competes with the ranking, and the nav handles it from there.</p>
+<h2>Layout</h2>
+<h3>1. Header — <code>18px 36px</code>, <code>border-bottom: 1px rule</code></h3>
+<p>As <code>/find</code>, with <code>Checklist</code> as the third nav item and the mono saved count on <code>My Schools</code>.</p>
+<h3>2. Title band — grid <code>1fr auto</code>, <code>align-items: end</code>, <code>30px 36px 24px</code>, <code>border-bottom: 1px rule</code></h3>
+<p>Left: <code>My Schools</code> (Space Grotesk 700, 40px, lh 1.04, ls −0.038em). Right: the <code>Export</code> button. No subtitle, no count line — the nav count and the table's own numerals carry that.</p>
+<h3>3. Selection criteria strip — <code>11px 36px</code>, <code>surface-2</code>, <code>border-bottom: 1px rule</code></h3>
+<p>Mono uppercase <code>SELECTION CRITERIA</code> label, then one accent chip per criterion (12.5px, <code>accent-bg</code>, 1px <code>accent-border</code>, <code>5px 9px</code>), then a right-aligned <code>Edit criteria</code> link back to <code>/find</code> with those filters applied. Same chip treatment as the ask chips on <code>/find</code> — same mechanic, so the same styling. Omit the strip when a list was built without criteria.</p>
+<h3>4. Body — grid <code>1fr 316px</code>, main column <code>border-right: 1px solid rule</code></h3>
+<p>316px matches the <code>/find</code> filter rail and the <code>/school</code> info rail, so all three screens share a spine.</p>
+<p><strong>Main column — the ranking</strong> (<code>26px 36px 30px</code>). Eyebrow row: <code>YOUR RANKING</code> left, and right, 12.5px <code>faint</code>: <em>"Drag a row, or use ↑ ↓"</em> — on the wider single-column states the sentence extends to <em>"— this order is the one you'll enter in MySchools."</em></p>
+<p>Table is a set of grid rows, not a <code>&lt;table&gt;</code>. Column template at 14 rows (<code>1fr</code> main column): <code>46px 1fr 132px 62px 74px</code>, gap 12px, <code>11px 0</code>, <code>border-bottom: 1px rule-light</code>. At full width (<code>6a</code>, <code>6c</code>, single-column states) it opens up to <code>54px 1fr 156px 112px 96px</code>, gap 16px, <code>15px 0</code>, and the remove control becomes the word <code>Remove</code> instead of <code>×</code>.</p>
+<p>Header row: mono 10px uppercase, ls .1em, <code>faint</code> — <code>Rank</code> / <code>School &amp; Program</code> / <code>Track</code> / <code>A/Seat</code>, plus an empty cell for controls. <code>border-bottom: 1px rule</code>.</p>
+<p>Each row:<br />
+1. <code>⠿</code> drag handle (13px, <code>border</code> grey; <code>faint</code> on hover) + mono rank numeral (16px, weight 500, <code>ink</code>).<br />
+2. School name as a link to <code>/school/[dbn]</code> (15px/600 <code>ink</code>) over a 12.5px <code>muted</code> line: <code>Program · Neighborhood, Borough</code>. At full width the DBN sits in that line in mono.<br />
+3. Track (13.5px <code>ink-2</code>) — the program's methods as published, comma-separated. This is the raw string; the composition buckets are a separate derivation.<br />
+4. Applicants per seat, mono 14px <code>ink</code>.<br />
+5. <code>↑</code> <code>↓</code> (23px square at 14 rows, 26px at full width, 1px <code>border</code>) + remove.</p>
+<p>Hovered/dragging row takes <code>surface-2</code> and its controls darken to <code>1px muted</code>.</p>
+<p><strong>Rail</strong> — two stacked sections divided by <code>border-bottom: 1px rule</code>:</p>
+<ul>
+<li><strong>Composition</strong> (<code>26px 28px</code>) — eyebrow with a right-aligned mono <code>14 SAVED</code>; the band; the legend as full-width rows (<code>swatch · label · flex:1 · mono count</code>); then the Boroughs and Applicants-Per-Seat cell grids, each under its own mono label, separated by <code>border-top: 1px rule-light</code> and <code>14px</code> padding.</li>
+<li><strong>Last edited</strong> (<code>20px 28px</code>) — mono <code>LAST EDITED</code> label + a 13px line naming the change (<code>Jul 28, 2026 · moved Beacon to 3</code>). Small, but it is the only confirmation that a reorder persisted.</li>
+</ul>
+<h3>5. Footer band — <code>16px 36px</code>, <code>surface-2</code>, <code>border-top: 1px rule</code></h3>
+<p>Two 13px <code>faint</code> lines, spread apart: left <em>"DOE-published data for the 2026–27 cycle · confirm each program on the official listing before you apply"</em>; right, right-aligned, <em>"Counts only — we don't score a list or predict an outcome."</em></p>
+<h2>Type scale (as built)</h2>
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Face / size</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Page title</td>
+<td>Space Grotesk 700, 40px, lh 1.04, ls −0.038em</td>
+</tr>
+<tr>
+<td>Section eyebrow</td>
+<td>JetBrains Mono 400, 11px, uppercase, ls .12em, <code>faint</code></td>
+</tr>
+<tr>
+<td>Table header</td>
+<td>JetBrains Mono 400, 10px, uppercase, ls .1em, <code>faint</code></td>
+</tr>
+<tr>
+<td>Rank numeral</td>
+<td>JetBrains Mono 500, 16px (18px at full width), <code>ink</code></td>
+</tr>
+<tr>
+<td>School name</td>
+<td>Libre Franklin 600, 15px (16px at full width)</td>
+</tr>
+<tr>
+<td>Row metadata</td>
+<td>Libre Franklin 400, 12.5px (13.5px), <code>muted</code></td>
+</tr>
+<tr>
+<td>Track</td>
+<td>Libre Franklin 400, 13.5px, <code>ink-2</code></td>
+</tr>
+<tr>
+<td>Applicants / seat</td>
+<td>JetBrains Mono 400, 14px (15px), <code>ink</code></td>
+</tr>
+<tr>
+<td>Composition label</td>
+<td>Libre Franklin 400, 13.5px, <code>ink-2</code></td>
+</tr>
+<tr>
+<td>Composition count</td>
+<td>JetBrains Mono 400, 13px, <code>ink</code></td>
+</tr>
+<tr>
+<td>Breakdown cell value</td>
+<td>JetBrains Mono 500, 18px, ls −0.02em</td>
+</tr>
+<tr>
+<td>Breakdown cell label</td>
+<td>Libre Franklin 400, 11px, uppercase, ls .04em, <code>faint</code></td>
+</tr>
+<tr>
+<td>Criteria chip</td>
+<td>Libre Franklin 400, 12.5px, <code>5px 9px</code></td>
+</tr>
+<tr>
+<td>Export button</td>
+<td>Libre Franklin 500, 14px, <code>11px 20px</code></td>
+</tr>
+<tr>
+<td>Footer / disclaimers</td>
+<td>Libre Franklin 400, 13px, <code>faint</code></td>
+</tr>
+</tbody>
+</table>
+<p>Spacing steps: 2, 5, 7, 8, 9, 11, 12, 14, 16, 20, 24, 26, 28, 30, 36. Section padding <code>26px 36px 30px</code>; rail sections <code>26px 28px</code>.</p>
+<h2>States</h2>
+<p><strong>Empty (never saved anything).</strong> Not in the reference — it was designed, reviewed and cut, and it should be built as the simplest possible version: keep the header and title band, then one line stating nothing is saved and a single accent link to <code>/find</code>. Do not build an onboarding panel, a three-fact explainer or a three-up "start somewhere" grid; that was the rejected version. A parent who lands here by accident needs one door, not a tour.</p>
+<p><strong>1–3 saved (<code>6a</code>).</strong> Full-width single-column layout — no rail. Order: ranking → composition → match strip. The ranking is short, so composition sits below it rather than beside it, and the match strip carries the bottom of the page.</p>
+<p><strong>Long list (<code>6b</code>, the approved direction).</strong> Two columns from the criteria strip down. Ranking left, composition + last-edited right. No match strip. Applies at 7+ saved; there is no upper bound.</p>
+<p><strong>Thin data (<code>6c</code>).</strong> A school with no published applicants-per-seat renders mono uppercase <code>NOT REPORTED</code> in <code>faint</code> in that cell — never <code>—</code>, never <code>0</code>. Immediately below the row, spanning the content columns, a mono <code>DATA GAP</code> eyebrow + 13px <code>muted</code> sentence: <em>"The DOE doesn't publish an applicants-per-seat figure for this school. That's a gap in the source data, not a low number."</em> The final clause is required. The <code>READING THE SHAPE</code> line also notes that the column is incomplete for this list, so the family isn't comparing against a partial set unknowingly.</p>
+<p><strong>Reorder.</strong> Optimistic and immediate: renumber, then persist. On failure, revert to the previous order and show one 13px line under the table — never a toast that can be missed while the parent is reading the list. <code>↑</code>/<code>↓</code> must be keyboard-operable and announce the new position.</p>
+<p><strong>Remove.</strong> Optimistic; row leaves, list renumbers, header count decrements in the same tick. <strong>No confirmation dialog</strong> — instead, hold an undo affordance for ~10s in the same 13px line slot below the table. The list is a draft; a modal per removal is the wrong weight.</p>
+<p><strong>Export pending.</strong> Button takes a disabled state with the label unchanged; a mono status line appears in the footer band. Never a spinner overlay.</p>
+<p><strong>Hover.</strong> Rows and rail links take <code>surface-2</code>. Buttons invert to <code>ink</code> fill / white. Transitions 120ms ease-out. No transforms, no lift.</p>
+<p><strong>Focus.</strong> 2px <code>accent</code> outline, 2px offset, on every interactive element including the drag handle. The rank cell must be reachable by keyboard.</p>
+<h2>Responsive (below ~900px)</h2>
+<ul>
+<li>The 1120px layout <strong>reflows; it never compresses.</strong> Single column below 900px.</li>
+<li>The 316px rail moves below the ranking, in order: Composition → Last edited. It drops <code>border-right</code> and keeps its own 1px <code>rule</code> dividers.</li>
+<li><strong>The ranking table collapses to a two-line row, not a scrolling table.</strong> Line one: drag handle + rank numeral + school name, with <code>↑ ↓</code> and remove right-aligned. Line two, indented to the name: <code>Program · Neighborhood</code>, then <code>Track</code> and the mono ratio separated by <code>·</code>. Nothing scrolls horizontally.</li>
+<li>Reorder controls grow to 44px hit targets at ≤700px. They stay side by side, right-aligned.</li>
+<li>Composition band stays full width. The legend goes two-up. Borough and applicants-per-seat cell grids stay 3-up (they are narrow) and become 1-up only at ≤420px.</li>
+<li>Criteria strip wraps to two lines: label + chips, then <code>Edit criteria</code> on its own line.</li>
+<li><code>Export</code> stays in the title band, full width beneath the title at ≤520px.</li>
+<li>Footer disclaimers stack, left-aligned, 4px gap.</li>
+<li>Title drops to 30px at ≤700px. Horizontal padding 36px → 20px.</li>
+</ul>
+<h2>Data shape</h2>
+<pre><code class="language-ts">type SavedList = {
+  criteria: { id: string; label: string }[];   // from the /find query that built this list
+  items: SavedItem[];                           // stored in rank order — the array IS the ranking
+  lastEditedAt: string;
+  lastEditedSummary?: string;                   // &quot;moved Beacon to 3&quot;
+};
+
+type SavedItem = {
+  dbn: string; name: string; program: string;
+  neighborhood?: string; borough: string;
+  methods: string[];                            // as published: ['Screened','Audition']
+  applicantsPerSeat?: number;                   // absent → NOT REPORTED + data-gap line
+};
+</code></pre>
+<p>Derive on the server:</p>
+<pre><code class="language-ts">type Composition = {
+  total: number;
+  buckets: { key: 'shsat'|'audition'|'screened'|'open'; label: string; count: number }[]; // zeroes kept
+  byBorough: { label: string; count: number }[];
+  byRatio:   { label: string; count: number }[];   // Under 3 / 3 to 6 / Over 6
+  shapeSentence: string;                            // generated from buckets
+  ratioMissing: number;                             // drives the incomplete-column note
+};
+</code></pre>
+<p><code>buckets</code> drives both the band weights and the legend — one array, no second source. Assert <code>sum(buckets) === total</code>.</p>
+<h2>New primitives</h2>
+<p>On top of <code>/find</code>'s five (<code>Chip</code>, <code>SegmentedControl</code>, <code>Button</code>, <code>StatBlock</code>, <code>SchoolRow</code>) and <code>/school</code>'s four (<code>StatGrid</code>, <code>Eyebrow</code>, <code>DefinitionRow</code>, <code>NotReportedLine</code>):</p>
+<ul>
+<li><strong><code>RankRow</code></strong> — one saved school; owns the handle, numeral, <code>↑ ↓</code>, remove, and the two-line mobile collapse.</li>
+<li><strong><code>ProportionBand</code></strong> — takes <code>Composition.buckets</code>, renders weighted segments + legend, keeps zero buckets.</li>
+<li><strong><code>BreakdownCells</code></strong> — the 3-up mono-number cell grid (a <code>StatGrid</code> variant; consider merging with a <code>size</code> prop).</li>
+</ul>
+<p><code>NotReportedLine</code> is reused as-is for the data-gap line.</p>
+<h2>Build order</h2>
+<ol>
+<li><strong>Nav rename <code>Readiness</code> → <code>Checklist</code></strong> across all screens, and make the header saved count live.</li>
+<li><code>RankRow</code> + reorder persistence. Nothing else on this page works until order is durable.</li>
+<li>Composition derivation with the bucket-priority rule and the sum assertion.</li>
+<li><code>Export</code>.</li>
+<li>The match strip (needs <code>/find</code>'s criteria in the URL — see the <code>/find</code> diff doc).</li>
+</ol>
+<h2>Files</h2>
+<ul>
+<li><code>saved-list.html</code> — standalone reference. <code>6b</code> is the approved direction; <code>6a</code> short-list and <code>6c</code> thin-data are the other states. <strong>Build from this.</strong></li>
+<li><code>Admit Day - Saved List.dc.html</code> — source, scaled to fit the browser window.</li>
+<li><code>../design_handoff_find_screen/FIND-DIFF.md</code> — what <code>/find</code> needs before this screen can be reached.</li>
+</ul>
+<h2>Still not designed</h2>
+<p><code>/checklist</code> (requirements and deadlines across the saved set — the paid tier grows here), the empty state as described above, and the landing page. Same rules when they come: three faces, radius 0, one accent, no derived scores.</p></body></html>

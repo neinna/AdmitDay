@@ -1,0 +1,68 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Admit Day — /find: live build vs design</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:900px;margin:40px auto;padding:0 20px;line-height:1.6;color:#222}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:6px 10px;text-align:left}th{background:#f5f5f5}code{background:#f0f0f0;padding:2px 5px}pre{background:#f6f6f6;padding:14px;overflow-x:auto}h1,h2,h3{line-height:1.25}</style></head><body><h1><code>/find</code> — live build vs. design, and what has to change</h1>
+<p>Written against <code>https://www.admitday.com/find</code> as of Jul 30, 2026, read as content (structure and copy, not pixels). Read with <code>design_handoff_find_screen/README.md</code>; this file only lists deltas and the decisions made after that handoff shipped.</p>
+<p>Two of these are <strong>blocking</strong> — <code>/my-schools</code> cannot be reached or populated without them.</p>
+<hr />
+<h2>1. Rows have no <code>Add to list</code> control — BLOCKING</h2>
+<p>The design's row grid is <code>34px 1fr 128px 96px</code>, where the last 96px column is an <code>Add</code> button (1px <code>ink</code> outline; filled + <code>Remove</code> when already saved). The live rows end at the metadata line.</p>
+<p>Without it there is no way into <code>/my-schools</code> from the list, and the whole saved-list screen is unreachable.</p>
+<p><strong>Fix:</strong> add the fourth column. Optimistic toggle, <code>localStorage</code> until auth, header count increments in the same tick. Same two states as the button on <code>/school</code>, so the control is recognisable across screens.</p>
+<h2>2. The header carries no saved count, and nav item three is stale — BLOCKING</h2>
+<p>Live: <code>Home</code> / <code>My Schools</code> / <code>Readiness</code>.<br />
+Design: <code>Find</code> / <code>My Schools</code> + mono saved count in <code>accent</code> / <code>Checklist</code>.</p>
+<p>Three separate changes:</p>
+<ul>
+<li><strong><code>Home</code> → <code>Find</code>.</strong> The route is the product's core screen, not a homepage. If a marketing landing page needs a nav slot, it goes on the wordmark, which already links to <code>/</code>.</li>
+<li><strong>Mono saved count</strong> on <code>My Schools</code>, in <code>accent</code>, at 12.5px. This is the only feedback that <code>Add</code> worked, and it's the entry point to <code>/my-schools</code>.</li>
+<li><strong><code>Readiness</code> → <code>Checklist</code>.</strong> Decided while designing <code>/my-schools</code>: requirements and deadlines live on that screen, and "Readiness" implied a score, which the product does not produce. Rename everywhere.</li>
+</ul>
+<h2>3. Rows are missing the two fields the saved list compares on</h2>
+<p>Live rows show <code>Borough · Track</code>. The design shows <code>Neighborhood · Track · N students</code> (or DBN) plus a <strong>stat column: applicants per seat</strong> in mono.</p>
+<p><code>/my-schools</code> puts applicants-per-seat and neighborhood side by side on every saved school, because that is how a family tells its list apart. If <code>/find</code> doesn't surface the ratio, the only selectivity signal in the product is two clicks deep — the specific trust failure the <code>/school</code> stats grid was built to fix. A parent should not be able to add twelve schools without once seeing how selective any of them are.</p>
+<p><strong>Fix:</strong> add the stat column (<code>applicants_per_seat</code>, mono 16px over a 10.5px uppercase <code>faint</code> label) and put neighborhood in the metadata line. Omit the stat cell entirely when the DOE didn't publish it — never <code>—</code>, never <code>0</code>. Same rule as <code>/school</code> and <code>/my-schools</code>.</p>
+<h2>4. Rows don't appear to link to <code>/school/[dbn]</code></h2>
+<p>School names read as plain text. They are the primary navigation into the detail view, which is designed and handed off.</p>
+<p><strong>Fix:</strong> name is a link; whole row is hoverable (<code>surface-2</code>), name and <code>Add</code> are the only click targets.</p>
+<h2>5. All 457 schools render as one flat list</h2>
+<p>No result-count band, no active-filter summary, no paging.</p>
+<p>The design has a <strong>results count band</strong> (<code>16px 36px</code>, <code>surface-2</code>, <code>border-bottom: 1px rule</code>): left, mono count + the active filters named in plain language (<code>31 matches in Brooklyn + Queens, Screened</code>); right, mono uppercase <code>SORTED BY FIT</code>. And a <strong>footer band</strong> with <code>26 more matches</code> — paginate or lazy-load.</p>
+<p>Naming the filters is load-bearing in two places downstream: <code>/school</code>'s back band echoes that exact string (<code>‹ Back to 31 matches · Brooklyn + Queens, Screened</code>), and <code>/my-schools</code> shows the same criteria as chips. All three read one source.</p>
+<p><strong>Fix:</strong> add both bands. Cap the initial render (~25 rows).</p>
+<h2>6. The ask box is a separate field below the filters, with no chip mechanic</h2>
+<p>Live: <code>Interests</code>, then <code>Ask</code>, as two more fields in the filter stack, with the note <em>"Filters narrow the list. The ask box below just annotates it — nothing gets removed."</em></p>
+<p>The design puts the ask in the right column as a command bar with a mono <code>›</code> prompt and a square accent submit, and — the important part — renders every signal it extracts as an <strong>individually removable accent chip</strong> under an <code>APPLIED</code> eyebrow.</p>
+<p>That copy line is honest about the current behavior, but it's describing a workaround: if the ask only annotates, the system has inferred something it won't show and can't be corrected. The chips are the trust mechanic, and they're also the input for two downstream screens: <code>/school</code>'s <code>MATCHED YOUR ASK</code> accent chips, and <code>/my-schools</code>' <code>SELECTION CRITERIA</code> strip. <strong>Neither has an input until the ask returns structured signals.</strong></p>
+<p><strong>Fix, in order:</strong><br />
+1. The ask endpoint returns the extracted signals as structured data (<code>{ id, label, kind }</code>), not just prose. If this needs API work, it is the first thing to do — everything else here is layout.<br />
+2. Render them as chips with a trailing <code>×</code>. Removing one re-runs matching locally, <strong>without</strong> re-calling the model.<br />
+3. Move the ask out of the filter stack into the right column above the results.<br />
+4. Fold <code>Interests</code> into it — a free-text interest is an ask signal, not a fourth filter group.</p>
+<h2>7. Filter rail — mostly right, two gaps</h2>
+<p>Borough, Admissions track and Size are all present with the right options, and <code>Reset filters</code> exists. Missing from the content:</p>
+<ul>
+<li><strong>Per-track match counts</strong> — the design shows a mono count of matching schools on each track row, and <code>N selected</code> in <code>accent</code> on the Borough group label. Counts are what make a deterministic filter feel deterministic.</li>
+<li><strong>Size as a segmented control</strong> — 4 equal cells in one 1px <code>border</code> box, selected cell <code>ink</code>-filled. Live it reads as a list of four options. Behaviorally the same, visually a different primitive.</li>
+<li>Confirm the rail is 316px with <code>border-right: 1px solid rule</code>. That measure is now shared by <code>/school</code>'s info rail and <code>/my-schools</code>' composition rail — it's the product's spine.</li>
+</ul>
+<p><code>Zoned</code> and <code>Educational Option</code> are in the live data, so keep both in the track list.</p>
+<h2>8. Filter state must be in the URL</h2>
+<p>Can't be confirmed from content, so flagging it: the design requires filter state as query params. <code>/school</code>'s back band and <code>/my-schools</code>' <code>Edit criteria</code> link both serialize back to a filtered <code>/find</code>. If state is component-only, both break on refresh or share.</p>
+<h2>9. Footer disclaimer — keep, and reword slightly</h2>
+<p>The live footer is doing the right job and says more than the design asked for. Two notes:</p>
+<ul>
+<li>Keep the MySchools link and the "no tool can guarantee an offer" framing. That is the trust story.</li>
+<li>The DOE-randomness sentence is good but long for a persistent band. The design's version — <em>"Requirements and deadlines from DOE data · confirm at MySchools before you submit"</em> — is the standing line; the fuller paragraph belongs on an About or methodology page, or in the sign-up flow. <code>/my-schools</code> follows the short pattern (two 13px <code>faint</code> lines).</li>
+</ul>
+<hr />
+<h2>Order of work</h2>
+<ol>
+<li><code>Add to list</code> on rows + live saved count in the header. <em>(Unblocks <code>/my-schools</code>.)</em></li>
+<li><code>Readiness</code> → <code>Checklist</code>; <code>Home</code> → <code>Find</code>.</li>
+<li>Row links to <code>/school/[dbn]</code>; applicants-per-seat stat column; neighborhood in the metadata line.</li>
+<li>Filter state in the URL.</li>
+<li>Ask returns structured signals → chip bar → move the ask into the right column, absorb <code>Interests</code>.</li>
+<li>Results count band with named filters, footer paging.</li>
+<li>Rail polish: per-track counts, <code>N selected</code>, segmented Size control.</li>
+</ol>
+<p>1–3 are enough to make <code>/my-schools</code> real. 5 is what makes <code>/school</code> and <code>/my-schools</code> show the family their own words back.</p>
+<h2>Not a delta, but worth stating</h2>
+<p>Nothing in the live content suggests a derived score, rating, or admissions prediction anywhere. That's the hardest constraint in this product to hold, and it's being held. Keep it that way: no "reach/target/likely", no fit percentage, no selectivity rating — only DOE values, published as given.</p></body></html>
