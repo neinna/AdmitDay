@@ -219,6 +219,89 @@ export function getPrimarySection(school: School): SectionType {
   return 'lottery'
 }
 
+// ── /find rail filters (issue #114) ─────────────────────────────────────────
+// The rail's borough/track/size controls are a hard floor — unlike the ask
+// box (lib/soft-match.ts), matching schools here are excluded, not annotated.
+// State round-trips through the URL so a filtered /find view is linkable.
+
+export interface FindFilters {
+  boroughs: string[]
+  tracks: string[]
+  size: string
+}
+
+export const EMPTY_FIND_FILTERS: FindFilters = { boroughs: [], tracks: [], size: '' }
+
+function splitParam(value: string | string[] | undefined): string[] {
+  const str = typeof value === 'string' ? value : ''
+  return str ? str.split(',').filter(Boolean) : []
+}
+
+/** Parses /find's rail filters from a Next.js page's searchParams prop. */
+export function parseFindFilters(sp: Record<string, string | string[] | undefined>): FindFilters {
+  return {
+    boroughs: splitParam(sp.borough),
+    tracks: splitParam(sp.track),
+    size: typeof sp.size === 'string' ? sp.size : '',
+  }
+}
+
+/** Serializes /find's rail filters back to a query string (no leading '?'). */
+export function findFiltersToQueryString(filters: FindFilters): string {
+  const params = new URLSearchParams()
+  if (filters.boroughs.length > 0) params.set('borough', filters.boroughs.join(','))
+  if (filters.tracks.length > 0) params.set('track', filters.tracks.join(','))
+  if (filters.size) params.set('size', filters.size)
+  return params.toString()
+}
+
+/** Hard-filters schools by the rail's borough/track/size controls. */
+export function applyFindFilters(schools: School[], filters: FindFilters): School[] {
+  return schools.filter((school) => {
+    if (filters.boroughs.length > 0 && !filters.boroughs.includes(school.borough)) return false
+    if (
+      filters.tracks.length > 0 &&
+      !(school.admissions_types ?? []).some((t) => filters.tracks.includes(t))
+    )
+      return false
+    if (filters.size && school.size !== filters.size) return false
+    return true
+  })
+}
+
+/**
+ * Live count of schools that would match `track`, under the current
+ * borough/size filters only — the track filter itself is excluded so the
+ * count reflects "if I also picked this track", not the current selection.
+ */
+export function countMatchingTrack(schools: School[], filters: FindFilters, track: string): number {
+  const withoutTrack: FindFilters = { ...filters, tracks: [] }
+  return applyFindFilters(schools, withoutTrack).filter((s) =>
+    (s.admissions_types ?? []).includes(track)
+  ).length
+}
+
+/** Plain-language description of the active rail filters, e.g. "in Brooklyn + Queens". */
+export function describeFindFilters(filters: FindFilters): string {
+  const parts: string[] = []
+  if (filters.boroughs.length > 0) parts.push(`in ${filters.boroughs.join(' + ')}`)
+  if (filters.tracks.length > 0) parts.push(`for ${filters.tracks.join(', ')}`)
+  if (filters.size) parts.push(`sized ${filters.size}`)
+  return parts.length > 0 ? parts.join(', ') : 'citywide'
+}
+
+/**
+ * Names one active filter to loosen when the current combination returns
+ * zero schools. Prefers the most narrowing dimension first: size, then
+ * track, then borough. Returns null when no rail filters are active.
+ */
+export function findFilterToLoosen(filters: FindFilters): string | null {
+  if (filters.size) return `Size (${filters.size})`
+  if (filters.tracks.length > 0) return `Admissions track (${filters.tracks.join(', ')})`
+  if (filters.boroughs.length > 0) return `Borough (${filters.boroughs.join(', ')})`
+  return null
+}
+
 export function groupSchools(schools: School[]): SectionGroup[] {
   const buckets: Record<SectionType, School[]> = {
     shsat: [], audition: [], screened: [], edopt: [], lottery: [],

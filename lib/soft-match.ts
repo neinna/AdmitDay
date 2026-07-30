@@ -58,3 +58,17 @@ export function getUnmetCriteria(school: School, filters: QueryFilters): string[
 
   return unmet
 }
+
+/**
+ * Ranks schools by how many ask-derived criteria they satisfy — schools
+ * satisfying more (or all) of the ask float up. Never removes a school:
+ * output length always equals input length. A stable sort keeps ties in
+ * their existing relative order (the rail's hard-filter order).
+ */
+export function rankBySoftMatch(schools: School[], filters: QueryFilters | null): School[] {
+  if (!filters) return schools
+  return schools
+    .map((school, index) => ({ school, index, missing: getUnmetCriteria(school, filters).length }))
+    .sort((a, b) => a.missing - b.missing || a.index - b.index)
+    .map((row) => row.school)
+}
