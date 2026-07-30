@@ -1,5 +1,10 @@
 import { School, SectionGroup, SectionType, UserInputs } from '@/types'
 
+// localStorage key for the optimistic "added to My Schools" set. Shared by
+// /find (FindClient) and /school/[dbn] so both pages agree on the same saved
+// list and the header count stays in sync between them.
+export const ADDED_SCHOOLS_KEY = 'admitday_find_added_schools'
+
 export const PAGE_SIZE = 15
 export const FREE_TIER_CAP = 15
 export const PAID_TIER_CAP = 30

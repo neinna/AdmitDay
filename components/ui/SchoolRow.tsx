@@ -2,7 +2,7 @@ import { ReactNode } from 'react'
 
 interface Props {
   rowNumber: number
-  name: string
+  name: ReactNode
   isHiddenGem?: boolean
   metadata: string
   rationale: string

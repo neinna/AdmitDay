@@ -8,6 +8,7 @@ import {
   FindFilters,
   EMPTY_FIND_FILTERS,
   PAGE_SIZE,
+  ADDED_SCHOOLS_KEY,
   applyFindFilters,
   describeFindFilters,
   findFilterToLoosen,
@@ -17,8 +18,6 @@ import { extractFilters, QueryFilters, appliedSignals, removeSignal } from '@/li
 import { getUnmetCriteria } from '@/lib/soft-match'
 import { Chip, Button, SchoolRow } from '@/components/ui'
 import FindRail, { trackLabel } from './FindRail'
-
-const ADDED_SCHOOLS_KEY = 'admitday_find_added_schools'
 
 interface AskSource {
   name: string
@@ -365,11 +364,27 @@ export default function FindClient({ schools, initialFilters }: Props) {
                 const tracks = (school.admissions_types ?? []).map(trackLabel).join(', ') || '—'
                 const students =
                   school.total_students != null ? school.total_students.toLocaleString() : '—'
+
+                // Carries the active rail filters + this row's rank + the
+                // ask-derived signals through to /school/[dbn] via the URL —
+                // the detail page must never re-call the LLM, so whatever it
+                // needs to know has to arrive as a query param.
+                const detailQuery = new URLSearchParams(findFiltersToQueryString(filters))
+                detailQuery.set('pos', String(i + 1))
+                detailQuery.set('total', String(ranked.length))
+                const matchedValues = signals.filter((s) => s.kind !== 'borough').map((s) => s.value)
+                if (matchedValues.length > 0) detailQuery.set('matched', matchedValues.join(','))
+                const detailHref = `/school/${school.dbn}?${detailQuery.toString()}`
+
                 return (
                   <SchoolRow
                     key={school.dbn}
                     rowNumber={i + 1}
-                    name={formatSchoolName(school.name)}
+                    name={
+                      <Link href={detailHref} className="hover:underline underline-offset-2">
+                        {formatSchoolName(school.name)}
+                      </Link>
+                    }
                     isHiddenGem={school.flags.is_hidden_gem}
                     metadata={`${neighborhood} · ${tracks} · ${students} students`}
                     rationale={truncate(school.doe_data?.overview ?? '', 140)}
