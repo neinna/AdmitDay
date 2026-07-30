@@ -695,7 +695,7 @@ describe('Issue #19: Sentry source maps in next.config.js', () => {
 
   it('has org and project set for Sentry upload targeting', () => {
     expect(nextConfigSource).toContain('org: "long-tail-studio"')
-    expect(nextConfigSource).toContain('project: "listready"')
+    expect(nextConfigSource).toContain('project: "admitday"')
   })
 })
 
