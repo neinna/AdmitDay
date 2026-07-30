@@ -1,0 +1,237 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Admit Day — /find Design Handoff</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:900px;margin:40px auto;padding:0 20px;line-height:1.6;color:#222}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:6px 10px;text-align:left}th{background:#f5f5f5}code{background:#f0f0f0;padding:2px 5px}pre{background:#f6f6f6;padding:14px;overflow-x:auto}h1,h2,h3{line-height:1.25}</style></head><body><h1>Handoff: Admit Day — <code>/find</code> (unified filter + ask surface)</h1>
+<h2>Overview</h2>
+<p>This is the visual direction for Admit Day's core screen: the unified <code>/find</code> surface that replaces the separate <code>/list</code> → <code>/requirements</code> filter flow and <code>/chat</code> (roadmap item #99). One screen: a deterministic filter rail, a natural-language ask box whose inferred signals appear as removable chips, and one ranked list of schools with real per-school requirements and stats.</p>
+<p>Target codebase: Next.js 14 App Router + React + Tailwind CSS, Vercel Postgres. Data is one <code>schools (dbn TEXT PRIMARY KEY, data JSONB)</code> row per school, loaded via <code>lib/load-schools.ts</code> → <code>getAllSchools()</code>.</p>
+<h2>About the design files</h2>
+<p>The files in this bundle are <strong>design references created in HTML</strong> — prototypes showing intended look and layout, not production code to copy. The task is to <strong>recreate this design in the existing Next.js + Tailwind codebase</strong> using its established patterns (App Router server components for data, Tailwind classes rather than inline styles, existing <code>lib/school-list-utils.ts</code> filtering helpers). Do not paste the HTML in.</p>
+<p>All content in the mock is <strong>placeholder</strong> — school names, rationales, and stats are illustrative. Real values come from Postgres.</p>
+<h2>Fidelity</h2>
+<p><strong>High-fidelity.</strong> Colors, typography, spacing, and layout are final and should be matched closely. Interactions are indicated but not implemented — the mock is static.</p>
+<h2>Design tokens</h2>
+<p>Add these to <code>tailwind.config.ts</code> rather than hardcoding hex values.</p>
+<h3>Color</h3>
+<table>
+<thead>
+<tr>
+<th>Token</th>
+<th>Hex</th>
+<th>Use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ink</code></td>
+<td><code>#0B0B0C</code></td>
+<td>Primary text, selected chip fill, primary button fill</td>
+</tr>
+<tr>
+<td><code>ink-2</code></td>
+<td><code>#2A2A2F</code></td>
+<td>School rationale body copy</td>
+</tr>
+<tr>
+<td><code>muted</code></td>
+<td><code>#55555A</code></td>
+<td>Secondary body copy, nav items</td>
+</tr>
+<tr>
+<td><code>faint</code></td>
+<td><code>#8A8A90</code></td>
+<td>Metadata lines, stat labels, section eyebrows</td>
+</tr>
+<tr>
+<td><code>rule</code></td>
+<td><code>#E8E8E4</code></td>
+<td>Structural dividers (header, panel, band edges)</td>
+</tr>
+<tr>
+<td><code>rule-light</code></td>
+<td><code>#F0F0EC</code></td>
+<td>Row dividers inside the results list</td>
+</tr>
+<tr>
+<td><code>border</code></td>
+<td><code>#DEDEDA</code></td>
+<td>Unselected chip and control borders</td>
+</tr>
+<tr>
+<td><code>border-strong</code></td>
+<td><code>#C9C9C4</code></td>
+<td>Dashed "+ Filter" affordance</td>
+</tr>
+<tr>
+<td><code>accent</code></td>
+<td><code>#1D4ED8</code></td>
+<td>Links, active nav underline, Ask button, ask-derived chips, counts</td>
+</tr>
+<tr>
+<td><code>accent-bg</code></td>
+<td><code>#EEF2FF</code></td>
+<td>Ask-derived chip background</td>
+</tr>
+<tr>
+<td><code>accent-border</code></td>
+<td><code>#C7D2FE</code></td>
+<td>Ask-derived chip border</td>
+</tr>
+<tr>
+<td><code>gem</code></td>
+<td><code>#0F7B5A</code></td>
+<td>"Hidden gem" badge text</td>
+</tr>
+<tr>
+<td><code>gem-bg</code></td>
+<td><code>#F0F8F5</code></td>
+<td>"Hidden gem" badge background</td>
+</tr>
+<tr>
+<td><code>gem-border</code></td>
+<td><code>#BFE3D5</code></td>
+<td>"Hidden gem" badge border</td>
+</tr>
+<tr>
+<td><code>surface</code></td>
+<td><code>#FFFFFF</code></td>
+<td>Page/panel background</td>
+</tr>
+<tr>
+<td><code>surface-2</code></td>
+<td><code>#FAFAF8</code></td>
+<td>Results-count band, footer band</td>
+</tr>
+</tbody>
+</table>
+<p>Only one accent color. Do not introduce a second.</p>
+<h3>Typography</h3>
+<p>Three faces, three jobs. This split is deliberate — do not collapse it.</p>
+<table>
+<thead>
+<tr>
+<th>Face</th>
+<th>Weights</th>
+<th>Used for</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Space Grotesk</strong></td>
+<td>700</td>
+<td>Page title (<code>Find schools</code>, 44px) and the word <code>Admit</code> in the wordmark. Nowhere else. Never in a paragraph.</td>
+</tr>
+<tr>
+<td><strong>Newsreader</strong> <em>italic</em></td>
+<td>500</td>
+<td>The word <code>Day</code> in the wordmark only, in <code>accent</code>. Nowhere else.</td>
+</tr>
+<tr>
+<td><strong>Libre Franklin</strong></td>
+<td>400 / 500 / 700</td>
+<td>Everything a user reads: school names, rationales, filters, buttons, nav. The workhorse.</td>
+</tr>
+<tr>
+<td><strong>JetBrains Mono</strong></td>
+<td>400 / 500</td>
+<td>Numbers and codes only — stat values, match count, DBNs, row numerals, uppercase eyebrow labels. Keeps digit columns aligned.</td>
+</tr>
+</tbody>
+</table>
+<p>All four are Google Fonts. Load via <code>next/font/google</code> with <code>display: swap</code>.</p>
+<p>Type scale as used:</p>
+<ul>
+<li>Page title — Space Grotesk 700, 44px, line-height 1.02, letter-spacing −0.038em</li>
+<li>Wordmark — <code>Admit</code> Space Grotesk 700 21px, ls −0.035em; <code>Day</code> Newsreader italic 500 24px, ls −0.01em, <code>margin-left: 3px</code></li>
+<li>Page subhead — Libre Franklin 400, 15.5px, color <code>muted</code>, max-width 560px</li>
+<li>Match count — JetBrains Mono 500, 22px, ls −0.02em</li>
+<li>School name — Libre Franklin 700, 18px, ls −0.015em</li>
+<li>School metadata — Libre Franklin 400, 13.5px, <code>faint</code></li>
+<li>School rationale — Libre Franklin 400, 14.5px, line-height 1.5, <code>ink-2</code>, max-width 430px</li>
+<li>Stat value — JetBrains Mono 400, 16px, <code>ink</code></li>
+<li>Stat label — Libre Franklin 400, 10.5px, uppercase, ls 0.06em, <code>faint</code></li>
+<li>Rail group label — JetBrains Mono 400, 11px, uppercase, ls 0.12em, <code>faint</code></li>
+<li>Chips / buttons / nav — Libre Franklin 400–500, 13.5–14.5px</li>
+<li>Row numeral — JetBrains Mono 400, 13px, <code>#B8B8B4</code></li>
+</ul>
+<p>Apply <code>text-wrap: pretty</code> to all multi-line body copy.</p>
+<h3>Geometry</h3>
+<ul>
+<li><strong>Radius: 0 everywhere.</strong> No rounded corners on chips, buttons, inputs, or panels. This is load-bearing for the editorial feel.</li>
+<li><strong>Shadows: none</strong> inside the UI. (The mock's outer drop shadow is presentation only — do not implement.)</li>
+<li>Separation is done with 1px rules, not cards or shadows.</li>
+<li>Design width 1120px. Spacing steps used: 6, 8, 10, 12, 14, 16, 18, 22, 26, 28, 30, 34, 36px.</li>
+</ul>
+<h2>Screen: <code>/find</code></h2>
+<p>Single column, 1120px max width, centered, white on white with 1px rules.</p>
+<h3>1. Header — 18px 36px padding, <code>border-bottom: 1px solid rule</code></h3>
+<p>Left: 9px accent dot + wordmark (<code>Admit</code> black / <em>Day</em> accent italic), 9px gap.<br />
+Right: nav <code>Find</code> / <code>My Schools</code> / <code>Readiness</code>, 28px gap, 14.5px, <code>muted</code>. Active item is <code>ink</code> + 500 weight + <code>border-bottom: 2px solid accent</code> with 3px padding-bottom. <code>My Schools</code> carries a mono count of saved schools in <code>accent</code>.</p>
+<h3>2. Body — CSS grid <code>316px 1fr</code>, rail divided by <code>border-right: 1px solid rule</code></h3>
+<h4>Left rail — 32px 28px padding, 30px gap between groups</h4>
+<p>Each group: mono uppercase label, then controls.</p>
+<ul>
+<li><strong>Borough</strong> — multi-select chips (Brooklyn, Manhattan, Queens, Bronx, Staten Is.), 7px 13px padding, 8px gap, wrapping. Selected = <code>ink</code> fill, white text, <code>✓</code> suffix. Unselected = 1px <code>border</code>, <code>#3A3A3F</code> text. Label row has a right-aligned <code>N selected</code> count in <code>accent</code> when any are on.</li>
+<li><strong>Admissions track</strong> — multi-select list rows, not chips. 9px 0 padding, <code>border-bottom: 1px solid rule-light</code> between. 14px label; right side shows a mono count of matching schools. Selected rows are <code>ink</code> text with a <code>✓ 62</code> count in <code>accent</code>; unselected are <code>faint</code> with a plain count. Tracks: Screened, Screened w/ assessment, SHSAT, Audition, Educational Option, Open. (Add Zoned if the data supports it.)</li>
+<li><strong>Size</strong> — single-select segmented control, 4 equal cells in a 1px <code>border</code> box with 1px dividers: Any / Small / Medium / Large. Selected cell = <code>ink</code> fill, white text.</li>
+<li><strong>Footer note</strong> — <code>border-top: 1px solid rule</code>, 13px <code>faint</code> copy ("Boroughs and tracks are multi-select. Cleared filters return all 457 schools.") + a <code>Reset</code> link in <code>accent</code>, underlined, 3px underline offset.</li>
+</ul>
+<p><strong>Do not add a Selectivity or Reach/Target/Likely control</strong> — that data does not exist and must not be implied.</p>
+<h4>Right column</h4>
+<p><strong>Ask band</strong> — 34px 36px 26px padding, <code>border-bottom: 1px solid rule</code>, 18px gap:</p>
+<ol>
+<li>Page title <code>Find schools</code> + 15.5px subhead explaining that filters set the floor and the ask box handles what filters can't.</li>
+<li><strong>Ask input row</strong> — 10px gap. Input: <code>flex: 1</code>, 1px <code>border-strong</code>, 13px 15px padding, with a mono <code>›</code> prompt in <code>accent</code> before the text. Submit button: <code>accent</code> fill, white, 15px, 500 weight, 13px 26px padding, square. Placeholder used in the mock: <em>"strong CS and a soccer team, small classes"</em>.</li>
+<li><strong>Applied chips row</strong> — mono uppercase <code>APPLIED</code> eyebrow, then one chip per signal extracted from the ask: <code>accent-bg</code> fill, 1px <code>accent-border</code>, <code>accent</code> text, 13px, 5px 10px padding, with a trailing <code>×</code>. This is the trust mechanic: <strong>every filter the system infers must be visible and individually removable.</strong> In the fuller variant (see <code>find-screen-alt-*</code> in the source file) chips are grouped under two eyebrows — <code>YOU SET</code> (solid <code>ink</code> chips) and <code>FROM YOUR ASK</code> (accent chips) — plus a dashed <code>+ Filter</code> affordance. Adopt that grouping if the unified flow lets a user set filters both ways.</li>
+</ol>
+<p><strong>Results count band</strong> — 16px 36px, <code>surface-2</code> background, <code>border-bottom: 1px solid rule</code>. Left: mono count + <code>matches in Brooklyn + Queens</code> (must name the active filters in plain language). Right: mono uppercase <code>SORTED BY FIT</code>.</p>
+<p><strong>Results list</strong> — one row per school, <code>border-bottom: 1px solid rule-light</code>, last row none.</p>
+<p>Row grid: <code>34px 1fr 128px 96px</code>, 16px gap, 22px 36px padding, <code>align-items: start</code>.</p>
+<ol>
+<li>Mono row numeral (<code>01</code>…), <code>#B8B8B4</code>, 5px padding-top.</li>
+<li>School name (700/18px) → metadata line (<code>Neighborhood · Track · N students</code> or <code>· DBN</code>) → rationale (14.5px, max-width 430px). If flagged <code>is_hidden_gem</code>, a badge sits inline after the name: mono 10.5px uppercase, <code>gem</code> text on <code>gem-bg</code> with 1px <code>gem-border</code>, 3px 7px padding. <strong>Give the name and badge a flex row with a gap so the badge never lands inside a wrapped title.</strong></li>
+<li>Stat: mono value over uppercase label. The mock shows <code>Apps/seat</code> (from <code>applicants_per_seat</code>); the wider variant shows three stats — apps/seat, students, grad rate.</li>
+<li><code>Add</code> button, 96px wide, 8–9px vertical padding. First row (best fit) is <code>ink</code> filled + white; the rest are 1px <code>ink</code> outline. In production all rows should be outline; filled reflects an already-added state.</li>
+</ol>
+<p><strong>Footer band</strong> — 16px 36px, <code>surface-2</code>, <code>border-top: 1px solid rule</code>. Left: <code>26 more matches</code> (paginate or lazy-load). Right, 13px <code>faint</code>: <em>"Requirements and deadlines from DOE data · confirm at MySchools before you submit."</em> <strong>Keep this line</strong> — it sets honest expectations and is part of the trust story.</p>
+<h2>Interactions &amp; behavior</h2>
+<ul>
+<li><strong>Filters</strong> — client state; each change re-runs deterministic filtering (<code>lib/school-list-utils.ts</code>) and updates counts. Filter state belongs in the URL as query params so a list is linkable (prerequisite for the shareable-output roadmap item).</li>
+<li><strong>Ask submit</strong> — POST to the existing RAG route. Response must return (a) the extracted exact signals so they can be rendered as chips, (b) the ranked <code>dbn</code> list, (c) per-school rationale strings, and (d) the one-sentence summary. Rate limiting already exists per-IP; surface a plain-language message when it trips.</li>
+<li><strong>Chip removal</strong> — removing an ask-derived chip re-runs matching <strong>without</strong> re-calling the LLM: the extracted signals are structured filters once returned. Only a new ask hits the model.</li>
+<li><strong>Add</strong> — optimistic toggle; button flips to an added/<code>Remove</code> state and the header count increments. Persist to <code>localStorage</code> until auth lands.</li>
+<li><strong>Sort</strong> — <code>Sorted by fit</code> is a dropdown: Fit, Applicants per seat (low→high), Size, Name.</li>
+<li><strong>Loading</strong> — the ask box gets a determinate-feeling pending state (disable submit, show a mono status line in the band); results keep the previous list visible rather than emptying. Do not use skeleton cards; rules-and-rows layouts flicker badly.</li>
+<li><strong>Empty</strong> — when filters return nothing, keep the rail and band and show one line in the results area naming which filter to loosen. When <code>getAllSchools()</code> returns <code>[]</code> (DB error), keep the existing empty-state banner.</li>
+<li><strong>Hover</strong> — rows get <code>surface-2</code> background; <code>Add</code> inverts (fill <code>ink</code>, white text); chips show a stronger <code>×</code>. All transitions 120ms ease-out. No transforms, no lift.</li>
+<li><strong>Responsive</strong> — below ~900px the 316px rail collapses to a <code>Filters</code> disclosure above the ask box, and result rows stack: name/metadata/rationale, then stats in a horizontal row, then a full-width <code>Add</code>. The 1120px layout must never be allowed to squeeze — below design width, reflow, don't compress.</li>
+</ul>
+<h2>State</h2>
+<pre><code class="language-ts">filters:  { boroughs: string[]; tracks: string[]; size: 'any'|'small'|'medium'|'large' }
+ask:      { query: string; status: 'idle'|'pending'|'error'; signals: Signal[]; summary: string }
+results:  { dbns: string[]; rationales: Record&lt;string,string&gt;; total: number; shown: number }
+saved:    string[]   // dbns, localStorage until auth
+sort:     'fit'|'apps_per_seat'|'size'|'name'
+</code></pre>
+<p><code>Signal = { id: string; label: string; source: 'user'|'ask'; kind: 'borough'|'track'|'interest'|'sport'|'geo' }</code> — <code>source</code> drives chip styling; <code>kind</code> drives how it is applied in filtering.</p>
+<h2>Do you need a design system?</h2>
+<p>Not a component library — but yes to a <strong>token layer</strong>, and it's about a day of work:</p>
+<ol>
+<li>Put the colors above in <code>tailwind.config.ts</code> as named tokens. Never write a raw hex in a component.</li>
+<li>Load the four fonts via <code>next/font/google</code> and expose them as <code>font-display</code> (Space Grotesk), <code>font-sans</code> (Libre Franklin), <code>font-mono</code> (JetBrains Mono), <code>font-wordmark</code> (Newsreader italic).</li>
+<li>Set global defaults: <code>rounded-none</code>, no shadows, <code>text-wrap: pretty</code> on body copy.</li>
+<li>Extract exactly five primitives — <code>Chip</code> (variants: <code>set</code> / <code>inferred</code> / <code>unselected</code> / <code>add</code>), <code>SegmentedControl</code>, <code>Button</code> (variants: <code>primary</code> / <code>outline</code>), <code>StatBlock</code>, <code>SchoolRow</code>. That's the whole system. Everything else is layout.</li>
+</ol>
+<p>Skip anything more until there is a second screen. The tokens are what stop drift; a component library this early just slows you down.</p>
+<h2>What happens next</h2>
+<ol>
+<li>Land the token layer and the five primitives.</li>
+<li>Build <code>/find</code> as the new unified route behind the existing filter + RAG endpoints, with filter state in the URL. Delete <code>/list</code>, <code>/requirements</code> and <code>/chat</code> once it works — per the roadmap there are no users to protect yet.</li>
+<li>Make sure the ask response returns extracted signals as structured data. If it doesn't, the chip mechanic — the whole reason this screen works — cannot be built. Do this first if it needs API changes.</li>
+<li>Then the shareable list / PDF export, which this layout is deliberately built for: rules-and-rows on white prints cleanly and screenshots legibly.</li>
+</ol>
+<p>Not designed yet: the school detail view, the saved-list view, and the landing page. Ask for them before improvising — they should follow the same three-faces / no-radius / one-accent rules.</p>
+<h2>Assets</h2>
+<p>None. No images, icons, or illustrations — the only graphic elements are the 9px accent dot in the wordmark and text glyphs (<code>›</code>, <code>✓</code>, <code>×</code>, <code>⌄</code>). Replace the glyphs with your icon set if you already have one; keep them at text size and weight.</p>
+<h2>Files</h2>
+<ul>
+<li><code>find-screen.html</code> — the approved direction (turn 4a), standalone and openable in a browser. <strong>This is the reference to build from.</strong></li>
+<li><code>Admit Day - Find Screen Directions.dc.html</code> — the full exploration: the three original directions (1a Broadsheet / 1b Console / 1c Calm), the merged variants with the two-tier chip bar and three-stat rows (2a / 2b), a scaled side-by-side comparison, the approved 4a, and the four-way workhorse-font test (4f). Useful for the reasoning behind the choices and for the fuller chip/stat treatment referenced above.</li>
+</ul></body></html>
