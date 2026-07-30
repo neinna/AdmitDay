@@ -9,7 +9,6 @@ import {
   groupSchools,
 } from '@/lib/school-list-utils'
 import { getAllSchools } from '@/lib/load-schools'
-import { SHSAT_CUTOFFS_YEAR, getShsatCutoff } from '@/lib/shsat-cutoffs'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -34,9 +33,19 @@ export interface ReqSection {
   shsatCutoffInfo?: ShsatCutoffInfo
 }
 
-// SHSAT cutoff scores (specialized HS DBNs '02M475', '05M692', '10X445', '10X696',
-// '13K430', '14K449', '28Q687', '31R605') come from lib/shsat-cutoffs.ts — the single
-// TypeScript source of truth for this data (see getShsatCutoff / SHSAT_CUTOFFS_YEAR above).
+// Minimum SHSAT score that received a specialized HS offer, by DBN.
+// Source: NYC DOE "Specialized High School Offers" press release, 2024 admissions cycle.
+const SHSAT_CUTOFFS: Record<string, number> = {
+  '02M475': 560, // Stuyvesant High School
+  '05M692': 514, // High School for Math, Science and Engineering at City College
+  '10X445': 521, // Bronx High School of Science
+  '10X696': 512, // High School of American Studies at Lehman College
+  '13K430': 478, // Brooklyn Technical High School
+  '14K449': 439, // Brooklyn Latin School
+  '28Q687': 489, // Queens High School for the Sciences at York College
+  '31R605': 528, // Staten Island Technical High School
+}
+const SHSAT_CUTOFFS_YEAR = '2024'
 
 // ── Name formatting (same as SchoolRow.tsx) ───────────────────────────────────
 
@@ -153,8 +162,8 @@ export default async function RequirementsPage({
     if (shsatSection) {
       const cappedShsatSchools = cappedSchools.filter((s) => s.flags.has_shsat)
       const schoolCutoffs = cappedShsatSchools
-        .filter((s) => getShsatCutoff(s.dbn) !== undefined)
-        .map((s) => ({ name: formatSchoolName(s.name), score: getShsatCutoff(s.dbn) as number }))
+        .filter((s) => SHSAT_CUTOFFS[s.dbn] !== undefined)
+        .map((s) => ({ name: formatSchoolName(s.name), score: SHSAT_CUTOFFS[s.dbn] }))
         .sort((a, b) => b.score - a.score)
       if (schoolCutoffs.length > 0) {
         shsatSection.shsatCutoffInfo = {
