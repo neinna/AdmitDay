@@ -6,6 +6,13 @@ import { BOROUGH_ORDER } from '@/lib/school-list-utils'
 import { extractFilters, QueryFilters } from '@/lib/query-filters'
 import { getUnmetCriteria } from '@/lib/soft-match'
 
+interface AskSource {
+  name: string
+  dbn: string
+  borough: string
+  score: number
+}
+
 const BOROUGHS = Object.keys(BOROUGH_ORDER)
 const SIZES: { value: School['size']; label: string }[] = [
   { value: 'small', label: 'Small (<400)' },
@@ -33,6 +40,10 @@ export default function FindClient({ schools }: Props) {
 
   const [askText, setAskText] = useState('')
   const [askFilters, setAskFilters] = useState<QueryFilters | null>(null)
+  const [askAnswer, setAskAnswer] = useState('')
+  const [askSources, setAskSources] = useState<AskSource[]>([])
+  const [askLoading, setAskLoading] = useState(false)
+  const [askAnswerError, setAskAnswerError] = useState('')
 
   const admissionsTrackOptions = useMemo(
     () => uniqueSorted(schools.flatMap((s) => s.admissions_types ?? [])),
@@ -69,9 +80,47 @@ export default function FindClient({ schools }: Props) {
     return rows.sort((a, b) => a.missing.length - b.missing.length)
   }, [hardFiltered, askFilters])
 
-  function handleAskSubmit(e: React.FormEvent) {
+  async function handleAskSubmit(e: React.FormEvent) {
     e.preventDefault()
+    const trimmed = askText.trim()
+
+    // Soft annotation pass — deterministic, unchanged from #108.
     setAskFilters(extractFilters(askText))
+
+    if (!trimmed) return
+
+    setAskLoading(true)
+    setAskAnswerError('')
+    setAskAnswer('')
+    setAskSources([])
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: trimmed }),
+      })
+
+      if (res.status === 429) {
+        const data = await res.json().catch(() => null)
+        setAskAnswerError(
+          data?.error ?? "You're sending requests too quickly — please wait a moment and try again."
+        )
+        return
+      }
+
+      if (!res.ok) {
+        throw new Error(`Request failed (${res.status})`)
+      }
+
+      const data = await res.json()
+      setAskAnswer(typeof data.answer === 'string' ? data.answer : '')
+      setAskSources(Array.isArray(data.sources) ? data.sources : [])
+    } catch {
+      setAskAnswerError('Something went wrong getting an answer. Please try again.')
+    } finally {
+      setAskLoading(false)
+    }
   }
 
   return (
@@ -183,6 +232,39 @@ export default function FindClient({ schools }: Props) {
           Ask
         </button>
       </form>
+
+      {/* Grounded answer panel (RAG via /api/chat) — sits above the results
+          list. The question below never removes schools from that list. */}
+      {(askLoading || askAnswerError || askAnswer) && (
+        <div className="mb-5 border border-gray-200 rounded-md p-4">
+          {askLoading && <p className="text-sm text-gray-500">Searching schools and generating an answer…</p>}
+          {!askLoading && askAnswerError && (
+            <p role="alert" className="text-sm text-red-700">
+              {askAnswerError}
+            </p>
+          )}
+          {!askLoading && !askAnswerError && askAnswer && (
+            <div>
+              <p className="text-sm text-gray-900 whitespace-pre-wrap leading-relaxed">{askAnswer}</p>
+              {askSources.length > 0 && (
+                <div className="mt-3">
+                  <h2 className="text-xs font-medium text-gray-500 mb-1.5">Sources</h2>
+                  <ul className="flex flex-wrap gap-2">
+                    {askSources.map((s) => (
+                      <li
+                        key={s.dbn}
+                        className="text-xs px-2 py-1 rounded-full bg-gray-50 text-gray-700 border border-gray-200"
+                      >
+                        {s.name} &middot; {s.borough}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* One shared, ranked results list */}
       <div>
