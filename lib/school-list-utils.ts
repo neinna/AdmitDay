@@ -286,6 +286,17 @@ export function countMatchingTrack(schools: School[], filters: FindFilters, trac
   ).length
 }
 
+// Display abbreviations only — the underlying admissions_types value (used
+// for filtering and the URL) is unabbreviated.
+const TRACK_DISPLAY: Record<string, string> = {
+  'Screened with Assessment': 'Screened w/ assessment',
+  'Educational Option': 'Ed. Opt.',
+}
+
+export function trackLabel(track: string): string {
+  return TRACK_DISPLAY[track] ?? track
+}
+
 /** Plain-language description of the active rail filters, e.g. "in Brooklyn + Queens". */
 export function describeFindFilters(filters: FindFilters): string {
   const parts: string[] = []
