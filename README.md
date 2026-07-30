@@ -18,6 +18,7 @@ The filter page and the chat page are still two separate surfaces that don't sha
 ## Architecture
 
 - **Frontend:** Next.js 14 (App Router), Tailwind CSS.
+- **Design system:** a token layer + five primitives (`Chip`, `SegmentedControl`, `Button`, `StatBlock`, `SchoolRow`) in `components/ui/`, backing the approved `/find` redesign (see `design/find-screen.html`). Named color tokens and four `next/font/google` families (Space Grotesk, Newsreader, Libre Franklin, JetBrains Mono) live in `tailwind.config.ts` / `lib/fonts.ts`. No existing page consumes these yet — landing them is a separate, later change.
 - **Generation:** Claude **Sonnet 5** (Anthropic), grounded prompts to prevent hallucination.
 - **Retrieval (RAG):** built from scratch — OpenAI `text-embedding-3-small` (1536-dim), semantic chunking (identity / academics / activities per school), hybrid deterministic-plus-semantic search, grounded chat API route.
 - **Data:** 457 NYC public high schools in Vercel Postgres (`dbn TEXT PRIMARY KEY, data JSONB`), read through a cached loader (`lib/load-schools.ts` → `getAllSchools()`) that degrades gracefully to an empty-state banner on any DB error. After a re-scrape, run `npx ts-node scripts/seed-schools.ts` to upsert `data/schools.json` into Postgres (the JSON is gitignored and never ships in the repo).
