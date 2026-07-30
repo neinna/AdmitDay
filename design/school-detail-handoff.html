@@ -1,0 +1,171 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Admit Day — School Detail Design Handoff</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:900px;margin:40px auto;padding:0 20px;line-height:1.6;color:#222}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:6px 10px;text-align:left}th{background:#f5f5f5}code{background:#f0f0f0;padding:2px 5px}pre{background:#f6f6f6;padding:14px;overflow-x:auto}h1,h2,h3{line-height:1.25}</style></head><body><h1>Handoff: Admit Day — school detail (<code>/school/[dbn]</code>)</h1>
+<h2>Overview</h2>
+<p>The screen a parent lands on after clicking a school in <code>/find</code>. It is the page where the product either earns trust or loses it, so it obeys one rule above all others:</p>
+<p><strong>Every number on this page is a value the DOE published. Nothing is computed, scored, rated, ranked, or estimated. There is no admissions-odds language anywhere.</strong> Research showed parents ignore AI-written descriptions as "too general," and one lost trust because the app gave no signal of selectivity. The answer is not a friendlier prose paragraph or a derived rating — it is <code>4.1 applicants per seat</code> in mono, unlabelled by opinion, and a visible "last verified" date. Restraint is the feature.</p>
+<p>Target codebase: Next.js 14 App Router + React + Tailwind, tokens already in <code>tailwind.config.ts</code> from the <code>/find</code> handoff. Data from <code>schools (dbn TEXT PRIMARY KEY, data JSONB)</code>.</p>
+<h2>About the design files</h2>
+<p><code>school-detail.html</code> is a <strong>design reference created in HTML</strong> — intended look and layout, not production code. Recreate it with the codebase's Tailwind tokens and App Router patterns; do not paste the markup in. All school content is <strong>placeholder</strong> (Brooklyn Tech and a composite small school); real values come from Postgres.</p>
+<p><strong>Fidelity: high.</strong> Colors, type, spacing and layout are final. Interactions are indicated, not implemented.</p>
+<h2>Inherited system — unchanged from <code>/find</code></h2>
+<p>Radius <code>0</code> everywhere. No shadows. Separation by 1px rules, never cards. One accent: <code>#1D4ED8</code>.</p>
+<p>Tokens: <code>ink #0B0B0C</code>, <code>ink-2 #2A2A2F</code>, <code>muted #55555A</code>, <code>faint #8A8A90</code>, <code>rule #E8E8E4</code>, <code>rule-light #F0F0EC</code>, <code>border #DEDEDA</code>, <code>surface #FFFFFF</code>, <code>surface-2 #FAFAF8</code>, <code>accent #1D4ED8</code>, <code>accent-bg #EEF2FF</code>, <code>accent-border #C7D2FE</code>, <code>gem #0F7B5A</code> / <code>gem-bg #F0F8F5</code> / <code>gem-border #BFE3D5</code>.</p>
+<p>Three faces, three jobs — <strong>Space Grotesk 700</strong> for the page title (school name) and the <code>Admit</code> wordmark only, never in a paragraph; <strong>Libre Franklin</strong> 400/500/700 for everything read; <strong>JetBrains Mono</strong> for all numbers, codes, transit bullets and uppercase eyebrows; <strong>Newsreader italic 500</strong> for the <code>Day</code> in the wordmark only.</p>
+<p>Section eyebrow, used for every section label on this page: JetBrains Mono, 11px, uppercase, letter-spacing <code>.12em</code>, <code>faint</code>.</p>
+<p>1120px max width, centered. Same header: 9px accent dot + wordmark, nav <code>Find</code> / <code>My Schools</code> (with mono saved count in accent) / <code>Readiness</code>, active item <code>ink</code> 500 with <code>border-bottom: 2px solid accent</code>.</p>
+<h2>Design decisions (and why)</h2>
+<p><strong>Hierarchy — what a parent scans first.</strong> Name → track badges → the numbers → what's required → programs → activities → transit. So the order is exactly that, top to bottom. The numbers sit <em>above</em> the two-column split, full width, immediately under the title: the selectivity signal is the first thing the eye lands on after the name, which is the specific failure the research surfaced. Programs and requirements come next because they are the decision content; activities are third because they are confirmation ("why did this match my ask"); transit and provenance are reference, so they go in the rail.</p>
+<p><strong>Stat row, not a table.</strong> A table implies comparison between rows and invites a "score" column. A bordered grid of equal cells — 4 across, <code>gap: 1px</code> on a <code>rule</code> background so the dividers <em>are</em> the gap — reads as a set of independent facts, aligns mono digits into columns, and degrades by simply having fewer cells. The final cell of the grid is a <code>surface-2</code> note cell: <em>"DOE reported figures. We publish them as given and do not score or rank them."</em> It fills the grid's last slot and states the principle where the numbers are.</p>
+<p><strong>Two columns, but only below the numbers.</strong> Header, title and stats are full-width single-column; the body splits <code>1fr / 316px</code> with <code>border-right: 1px solid rule</code> on the main column. 316px matches the <code>/find</code> filter rail exactly, so the two screens share a spine. Decision content is in the main column; the rail holds Getting there, Also on your list, Provenance.</p>
+<p><strong>Missing data — never an empty slot.</strong> Three rules:</p>
+<ol>
+<li><strong>A stat with no value is not rendered.</strong> No <code>—</code>, no zero, no greyed card. The grid just has fewer cells.</li>
+<li><strong>Absence is then stated once, in words, below the grid</strong>: a mono <code>NOT REPORTED</code> eyebrow followed by <em>"Applicants per seat, academic score, survey score, and college &amp; career rate are not published for this school. That is a gap in the DOE data, not a low result."</em> That last clause is required — without it a parent reads absence as failure.</li>
+<li><strong>A section with no content is dropped entirely</strong> (5b has no AP/PSAL rows), and the fact is stated in the same eyebrow + sentence pattern under the section: <code>NOT OFFERED</code> — <em>"No PSAL teams and no AP courses are listed for this school."</em> Use <code>NOT REPORTED</code> when the DOE simply didn't publish, <code>NOT OFFERED</code> when the school genuinely lacks it. Do not blur those two — one is a data gap, the other is a fact about the school.</li>
+</ol>
+<p>Compare 5a and 5b in the reference: same layout, no holes.</p>
+<h2>Layout</h2>
+<h3>1. Header — <code>18px 36px</code>, <code>border-bottom: 1px rule</code></h3>
+<p>As <code>/find</code>, unchanged.</p>
+<h3>2. Back band — <code>11px 36px</code>, <code>surface-2</code>, <code>border-bottom: 1px rule</code></h3>
+<p>Left: accent link <code>‹ Back to 31 matches · Brooklyn + Queens, Screened</code> at 13.5px — it <strong>names the active filters</strong> so the parent knows the list is intact. Right: mono uppercase <code>2 OF 31</code> position indicator.</p>
+<p>This band is the persistent way back. Filter state lives in the URL, so the link is the serialized query string; it must survive a hard refresh or a shared link. Do not rely on <code>history.back()</code>.</p>
+<h3>3. Title band — grid <code>1fr 200px</code>, gap 28px, <code>30px 36px 26px</code>, <code>border-bottom: 1px rule</code></h3>
+<p>Left column, 12px gap: school name (Space Grotesk 700, 40px, line-height 1.04, ls −0.038em, max-width 700px, <code>text-wrap: pretty</code>) → mono metadata line <code>13K430 · Fort Greene · Brooklyn</code> (13px, <code>faint</code>, ls .02em) → badge row (8px gap, wrapping): one <code>1px ink</code> outline badge per admissions track (13px, <code>5px 11px</code>), then the hidden-gem badge when flagged (mono 10.5px uppercase, ls .08em, <code>gem</code> on <code>gem-bg</code>, 1px <code>gem-border</code>, <code>4px 8px</code>).</p>
+<p>Right column, 200px, 8px gap: primary <strong>Add to list</strong> (<code>ink</code> fill, white, 14px/500, <code>11px 0</code>) and a secondary <strong>MySchools page ↗</strong> (1px <code>border</code>, accent text, <code>10px 0</code>). When already saved, the primary becomes a <code>1px ink</code> outline reading <strong>On your list · Remove</strong> (see 5b) — same geometry as the <code>/find</code> row <code>Add</code> button in its two states, so the control is recognisable across screens.</p>
+<h3>4. The numbers — <code>26px 36px 28px</code>, <code>border-bottom: 1px rule</code></h3>
+<p>Eyebrow <code>THE NUMBERS</code>, 14px padding-bottom. Then <code>display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: rule; border: 1px solid rule</code>.</p>
+<p>Each cell: <code>surface</code>, <code>16px 18px</code>, 4px gap — mono value (24px, weight 500, ls −0.02em, <code>ink</code>) over label (Libre Franklin 10.5px, uppercase, ls .06em, <code>faint</code>).</p>
+<p>Fields in order: Applicants per seat · Total students · Academic score · Survey score · Graduation rate · Attendance rate · College &amp; career. Render only those present, in this order; the note cell always occupies the final slot.</p>
+<p>Below the grid, when anything is missing: the <code>NOT REPORTED</code> line described above (12px padding-top, mono eyebrow + 13.5px <code>muted</code> sentence).</p>
+<h3>5. Body — grid <code>1fr 316px</code>; main column has <code>border-right: 1px solid rule</code></h3>
+<p><strong>Programs</strong> — <code>26px 36px 28px</code>, <code>border-bottom: 1px rule</code>. Eyebrow row with a right-aligned mono count. Each program is a <code>1fr 190px</code> grid row, <code>11px 0</code>, <code>border-bottom: 1px rule-light</code> (last row none): name (15px/500 <code>ink</code>) + admissions method (13.5px <code>muted</code>). Cap at 6 rows with a <code>Show all N programs</code> accent link; expand in place.</p>
+<p><strong>What's required to apply</strong> — <code>26px 36px 28px</code>, <code>border-bottom: 1px rule</code>, 16px gap. One block per track, each <code>border-left: 2px solid</code> + <code>padding-left: 16px</code> — accent on the primary/dominant track, <code>border</code> grey on secondary tracks. Block heading 15px/700 naming the track and its scope (<code>SHSAT — 8 of 9 programs</code>). Then definition rows as <code>152px 1fr</code> grids, 6px gap, 14.5px: label <code>faint</code>, value <code>ink-2</code>; dates in mono 13.5px. Fields: Test, Register by, Test dates, Grades used, Attendance, Priority, Selection — render only what exists.</p>
+<p>Closes with a <code>surface-2</code> / 1px <code>rule</code> strip (<code>13px 16px</code>): <em>"Requirements change year to year. Confirm on the official listing before you apply."</em> + an <strong>Open in MySchools ↗</strong> button (1px accent border, 13.5px/500). Deep-link to the school's MySchools page when the DBN maps to one; fall back to the directory search. Never present our copy of a requirement as authoritative.</p>
+<p><strong>Activities</strong> — <code>26px 36px 30px</code>, 18px gap. Eyebrow row; on the right, when the parent arrived from an ask, a mono <code>MATCHED YOUR ASK</code> label plus the matched signals as accent chips (12.5px, <code>accent-bg</code> / <code>accent-border</code>). This is the payoff for the chip mechanic on <code>/find</code>.</p>
+<p>Then one <code>152px 1fr</code> grid row per group, separated by <code>padding-top: 14px; border-top: 1px solid rule-light</code>: left is the group name (14px/500) + mono count; right is a wrapping 7px-gap chip set (13px, <code>5px 10px</code>, 1px <code>border</code>, <code>ink-2</code>). Groups: PSAL sports, AP courses, Languages, Extracurriculars.</p>
+<p><strong>Chips that satisfy the parent's ask get the accent treatment</strong> (1px <code>accent</code> border, <code>accent-bg</code>, accent text) — e.g. <code>Soccer, boys</code> and <code>Computer Science A</code> in 5a. Cap each group at ~7 chips with a dashed <code>+N more</code> / <code>See all</code> chip (1px dashed <code>border</code>, <code>faint</code>) that expands in place. Matched chips always sort first.</p>
+<h3>6. Right rail — 316px, sections stacked, <code>26px 28px</code>, divided by <code>border-bottom: 1px rule</code></h3>
+<ul>
+<li><strong>Getting there</strong> — <code>Subway</code> then <code>Bus</code> sub-labels (12.5px <code>faint</code>) with route bullets as mono 13px chips (<code>4px 9px</code>, 1px <code>border</code>). Square, not circular, and <strong>not</strong> MTA line colors — that would be a second and third accent. Then <code>Address</code> as a <code>92px 1fr</code> row. Omit a missing mode and state it with the <code>NOT REPORTED</code> pattern (5b has no bus routes).</li>
+<li><strong>Also on your list</strong> — up to 3–4 saved schools as 14px <code>ink</code> links, <code>9px 0</code>, <code>border-bottom: 1px rule-light</code>. Lets a parent move between saved schools without going back. Omit the section when the list is empty.</li>
+<li><strong>Provenance</strong> — <code>92px 1fr</code> grid, 13.5px: Source (<code>NYC DOE School Directory &amp; MySchools</code>), Verified (mono date), Cycle (<code>2026–27 admissions</code>), then a <code>View source record ↗</code> accent link. <strong>Always visible, never collapsed.</strong></li>
+</ul>
+<h3>7. Footer band — <code>16px 36px</code>, <code>surface-2</code>, <code>border-top: 1px rule</code></h3>
+<p>Left: <code>‹ Back to results</code>. Right, 13px <code>faint</code>: <em>"Admit Day publishes DOE data as reported · we do not estimate admissions chances."</em></p>
+<h2>Type scale (as built)</h2>
+<table>
+<thead>
+<tr>
+<th>Element</th>
+<th>Face / size</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>School name</td>
+<td>Space Grotesk 700, 40px, lh 1.04, ls −0.038em</td>
+</tr>
+<tr>
+<td>Metadata line</td>
+<td>JetBrains Mono 400, 13px, ls .02em, <code>faint</code></td>
+</tr>
+<tr>
+<td>Section eyebrow</td>
+<td>JetBrains Mono 400, 11px, uppercase, ls .12em, <code>faint</code></td>
+</tr>
+<tr>
+<td>Stat value</td>
+<td>JetBrains Mono 500, 24px, ls −0.02em, <code>ink</code></td>
+</tr>
+<tr>
+<td>Stat label</td>
+<td>Libre Franklin 400, 10.5px, uppercase, ls .06em, <code>faint</code></td>
+</tr>
+<tr>
+<td>Requirement block heading</td>
+<td>Libre Franklin 700, 15px, <code>ink</code></td>
+</tr>
+<tr>
+<td>Definition label / value</td>
+<td>Libre Franklin 400, 14.5px — <code>faint</code> / <code>ink-2</code></td>
+</tr>
+<tr>
+<td>Program name / method</td>
+<td>Libre Franklin 500 15px <code>ink</code> / 400 13.5px <code>muted</code></td>
+</tr>
+<tr>
+<td>Chip</td>
+<td>Libre Franklin 400, 13px, <code>5px 10px</code></td>
+</tr>
+<tr>
+<td>Transit bullet</td>
+<td>JetBrains Mono 400, 13px, <code>4px 9px</code></td>
+</tr>
+<tr>
+<td>Links, back band, footer</td>
+<td>Libre Franklin 400, 13.5px</td>
+</tr>
+<tr>
+<td>Track badge</td>
+<td>Libre Franklin 400, 13px, <code>5px 11px</code></td>
+</tr>
+<tr>
+<td>Hidden-gem badge</td>
+<td>JetBrains Mono 400, 10.5px, uppercase, ls .08em</td>
+</tr>
+</tbody>
+</table>
+<p>Spacing steps: 4, 6, 7, 8, 9, 10, 11, 12, 14, 16, 18, 20, 26, 28, 30, 36. Section padding is <code>26px 36px 28px</code>; rail sections <code>26px 28px</code>.</p>
+<h2>States</h2>
+<p><strong>Loading.</strong> Server-render the page; there is no client fetch for core data. If a streaming boundary is used, hold the header, back band and title band (name and DBN are known from the list) and stream the numbers and body. Do <strong>not</strong> use skeleton cards — a rules-and-rows layout flickers badly. A single <code>surface-2</code> band the height of the stat grid, containing only the mono eyebrow, is enough.</p>
+<p><strong>Not found.</strong> Unknown or retired DBN → keep header and back band, then one centered block at 1120px: Space Grotesk title <em>"We don't have a record for this school"</em>, one 15px <code>muted</code> line explaining the DBN may be retired or mistyped, and two controls: <code>Back to results</code> (primary) and <code>Search all 457 schools</code>. Return HTTP 404. Never a generic error page — the back link is the whole point.</p>
+<p><strong>Data error.</strong> If the row exists but <code>data</code> fails to parse, render the header, title band and provenance section with an honest <code>NOT REPORTED</code> line covering everything else, and link to MySchools. A parent should always leave with the official link.</p>
+<p><strong>Add / Remove.</strong> Optimistic. Primary button flips fill↔outline and label <code>Add to list</code> ↔ <code>On your list · Remove</code>; the header <code>My Schools</code> count increments in the same tick. Persist to <code>localStorage</code> until auth. On failure, revert and show one 13.5px line under the button.</p>
+<p><strong>Hover.</strong> Program rows and rail links take <code>surface-2</code>. Buttons invert (<code>ink</code> fill / white). Expandable <code>+N more</code> chips take a solid <code>border</code>. All transitions 120ms ease-out. No transforms, no lift.</p>
+<p><strong>Focus.</strong> 2px <code>accent</code> outline with 2px offset on every interactive element. Requirement values must be selectable text — parents copy dates.</p>
+<h2>Responsive (below ~900px)</h2>
+<ul>
+<li>The 1120px layout <strong>reflows; it never compresses</strong>. Single column below 900px.</li>
+<li>The 316px rail moves below the main column, in order: Getting there → Also on your list → Provenance. It keeps its own 1px <code>rule</code> dividers and drops <code>border-right</code>.</li>
+<li>Stat grid: <code>repeat(2, 1fr)</code> at ≤900px, <code>1fr</code> at ≤520px. The note cell moves to the end as a full-width row. Stat values drop to 22px.</li>
+<li>Title band stacks: name → metadata → badges → then the Add / MySchools buttons full width, side by side with a 8px gap.</li>
+<li>Back band stacks to two lines (link, then position indicator) and the <code>‹ Back</code> link stays first — it is the primary navigation on mobile.</li>
+<li>Definition grids (<code>152px 1fr</code>) collapse to stacked label-over-value with a 2px gap; keep the accent left border.</li>
+<li>Activities rows collapse: group name + count on its own line, chips wrapping below full width.</li>
+<li>School name drops to 30px at ≤700px, 26px at ≤520px. Horizontal padding 36px → 20px.</li>
+</ul>
+<h2>Data shape</h2>
+<pre><code class="language-ts">type School = {
+  dbn: string; name: string; neighborhood?: string; borough: string;
+  address?: string; subway?: string[]; bus?: string[];
+  tracks: ('screened'|'screened_assessment'|'shsat'|'audition'|'ed_opt'|'open'|'zoned')[];
+  isHiddenGem?: boolean;
+  stats: {                    // every field optional — omit, never zero
+    applicantsPerSeat?: number; totalStudents?: number;
+    academicScore?: number; surveyScore?: number;
+    graduationRate?: number; attendanceRate?: number; collegeCareerRate?: number;
+  };
+  programs: { name: string; method: string }[];
+  requirements: { track: string; scope?: string; fields: { label: string; value: string }[] }[];
+  activities: { psalSports?: string[]; apCourses?: string[]; languages?: string[]; extracurriculars?: string[] };
+  myschoolsUrl?: string;
+  provenance: { source: string; verifiedAt: string; cycle: string; sourceUrl?: string };
+};
+</code></pre>
+<p>Server-side, derive <code>notReported: string[]</code> (present-but-empty stat labels) and <code>notOffered: string[]</code> so the copy lines are generated from data rather than hand-written per school. <code>matchedSignals: string[]</code> comes in from the <code>/find</code> query params and drives accent chips — the detail page must not re-call the LLM to compute it.</p>
+<h2>New primitives</h2>
+<p>Beyond the five from <code>/find</code> (<code>Chip</code>, <code>SegmentedControl</code>, <code>Button</code>, <code>StatBlock</code>, <code>SchoolRow</code>), this screen adds four:</p>
+<ul>
+<li><strong><code>StatGrid</code></strong> — takes the stats object, renders present cells + the note cell, returns the missing-labels list.</li>
+<li><strong><code>Eyebrow</code></strong> — mono uppercase section label.</li>
+<li><strong><code>DefinitionRow</code></strong> — <code>152px 1fr</code> label/value pair, collapses on mobile.</li>
+<li><strong><code>NotReportedLine</code></strong> — mono eyebrow + sentence; variant <code>reported | offered</code>.</li>
+</ul>
+<p><code>StatBlock</code> from <code>/find</code> is the small stat used in list rows; <code>StatGrid</code> cells are its larger sibling. Consider one component with a <code>size</code> prop.</p>
+<h2>Still not designed</h2>
+<p>Saved-list view (<code>/my-schools</code>) and the landing page. The Readiness nav item has no screen yet. Follow the same rules when they come: three faces, radius 0, one accent, no derived scores.</p>
+<h2>Files</h2>
+<ul>
+<li><code>school-detail.html</code> — standalone reference, 5a (complete data) and 5b (sparse data). <strong>Build from this.</strong></li>
+<li><code>Admit Day - School Detail.dc.html</code> — source, scaled to fit the browser window.</li>
+</ul></body></html>
