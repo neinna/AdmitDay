@@ -10,3 +10,4 @@
 - Never push, never merge, never switch branches — the coordinator owns git remotes.
 - `LESSONS.md` is coordinator-owned runtime state — read it for context, but never commit it (use `git add -A -- ':(exclude)LESSONS.md'`).
 - Stay strictly within the scope of the issue you were given; an independent reviewer rejects scope creep.
+- **Issue sequencing:** the coordinator picks up `agent-ok` issues in **ascending issue-number order** (file them in the order they should be built). An issue whose body contains a line `Blocked by #N` is skipped while issue #N is still open.
