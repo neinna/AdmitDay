@@ -24,7 +24,7 @@ module.exports = withSentryConfig(module.exports, {
   // https://www.npmjs.com/package/@sentry/webpack-plugin#options
 
   org: "long-tail-studio",
-  project: "listready",
+  project: "admitday",
 
   // Authentication token for uploading source maps
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/sourcemaps/
