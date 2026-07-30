@@ -1,10 +1,24 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
 import { School } from '@/types'
-import { BOROUGH_ORDER } from '@/lib/school-list-utils'
-import { extractFilters, QueryFilters } from '@/lib/query-filters'
+import {
+  FindFilters,
+  EMPTY_FIND_FILTERS,
+  PAGE_SIZE,
+  applyFindFilters,
+  describeFindFilters,
+  findFilterToLoosen,
+  findFiltersToQueryString,
+} from '@/lib/school-list-utils'
+import { extractFilters, QueryFilters, appliedSignals, removeSignal } from '@/lib/query-filters'
 import { getUnmetCriteria } from '@/lib/soft-match'
+import { Chip, Button, SchoolRow } from '@/components/ui'
+import FindRail, { trackLabel } from './FindRail'
+
+const ADDED_SCHOOLS_KEY = 'admitday_find_added_schools'
 
 interface AskSource {
   name: string
@@ -13,30 +27,39 @@ interface AskSource {
   score: number
 }
 
-const BOROUGHS = Object.keys(BOROUGH_ORDER)
-const SIZES: { value: School['size']; label: string }[] = [
-  { value: 'small', label: 'Small (<400)' },
-  { value: 'medium', label: 'Medium (400–1,200)' },
-  { value: 'large', label: 'Large (1,200+)' },
-]
-
-function toggle(list: string[], value: string): string[] {
-  return list.includes(value) ? list.filter((v) => v !== value) : [...list, value]
-}
-
 function uniqueSorted(values: string[]): string[] {
   return Array.from(new Set(values)).sort((a, b) => a.localeCompare(b))
 }
 
-interface Props {
-  schools: School[]
+function toggleValue(list: string[], value: string): string[] {
+  return list.includes(value) ? list.filter((v) => v !== value) : [...list, value]
 }
 
-export default function FindClient({ schools }: Props) {
-  const [boroughs, setBoroughs] = useState<string[]>([])
-  const [admissionsTracks, setAdmissionsTracks] = useState<string[]>([])
-  const [size, setSize] = useState<string>('')
-  const [interests, setInterests] = useState<string[]>([])
+// Same fix applied by the existing components/SchoolRow.tsx.
+function formatSchoolName(name: string): string {
+  if (name.endsWith(', The')) return 'The ' + name.slice(0, -5)
+  return name
+}
+
+function truncate(text: string, maxLen: number): string {
+  if (text.length <= maxLen) return text
+  const cut = text.slice(0, maxLen)
+  const lastSpace = cut.lastIndexOf(' ')
+  return `${cut.slice(0, lastSpace > 0 ? lastSpace : maxLen)}…`
+}
+
+interface Props {
+  schools: School[]
+  initialFilters: FindFilters
+}
+
+export default function FindClient({ schools, initialFilters }: Props) {
+  const router = useRouter()
+  const pathname = usePathname()
+
+  const [filters, setFilters] = useState<FindFilters>(initialFilters)
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
 
   const [askText, setAskText] = useState('')
   const [askFilters, setAskFilters] = useState<QueryFilters | null>(null)
@@ -45,40 +68,95 @@ export default function FindClient({ schools }: Props) {
   const [askLoading, setAskLoading] = useState(false)
   const [askAnswerError, setAskAnswerError] = useState('')
 
-  const admissionsTrackOptions = useMemo(
+  const [addedDbns, setAddedDbns] = useState<Set<string>>(new Set())
+  const [hydrated, setHydrated] = useState(false)
+
+  // Rail filters are a hard floor and live in the URL so a filtered /find
+  // view is linkable — reloading the URL restores them (parsed server-side
+  // in page.tsx and passed in as initialFilters).
+  useEffect(() => {
+    const qs = findFiltersToQueryString(filters)
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+  }, [filters, pathname, router])
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(ADDED_SCHOOLS_KEY)
+      if (stored) setAddedDbns(new Set(JSON.parse(stored)))
+    } catch {
+      // ignore
+    }
+    setHydrated(true)
+  }, [])
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE)
+  }, [filters])
+
+  const trackOptions = useMemo(
     () => uniqueSorted(schools.flatMap((s) => s.admissions_types ?? [])),
     [schools]
   )
-  const interestOptions = useMemo(
-    () => uniqueSorted(schools.flatMap((s) => s.doe_data?.interests ?? [])),
-    [schools]
+
+  // Hard filter — the rail excludes schools. This is the hard floor.
+  const hardFiltered = useMemo(() => applyFindFilters(schools, filters), [schools, filters])
+
+  // Soft annotation pass from the ask box — never removes a school from
+  // hardFiltered, only ranks it. Schools satisfying more (or all) of the ask
+  // criteria float up.
+  const annotated = useMemo(
+    () =>
+      hardFiltered.map((school) => ({
+        school,
+        missing: askFilters ? getUnmetCriteria(school, askFilters) : [],
+      })),
+    [hardFiltered, askFilters]
+  )
+  const ranked = useMemo(
+    () => [...annotated].sort((a, b) => a.missing.length - b.missing.length),
+    [annotated]
   )
 
-  const hardFiltered = useMemo(() => {
-    return schools.filter((school) => {
-      if (boroughs.length > 0 && !boroughs.includes(school.borough)) return false
-      if (
-        admissionsTracks.length > 0 &&
-        !(school.admissions_types ?? []).some((t) => admissionsTracks.includes(t))
-      )
-        return false
-      if (size && school.size !== size) return false
-      if (interests.length > 0) {
-        const schoolInterests = school.doe_data?.interests ?? []
-        if (!interests.some((i) => schoolInterests.includes(i))) return false
-      }
-      return true
-    })
-  }, [schools, boroughs, admissionsTracks, size, interests])
+  const visible = ranked.slice(0, visibleCount)
+  const remaining = ranked.length - visible.length
 
-  const annotated = useMemo(() => {
-    const rows = hardFiltered.map((school) => ({
-      school,
-      missing: askFilters ? getUnmetCriteria(school, askFilters) : [],
-    }))
-    // Ranked: schools satisfying more (or all) of the ask criteria float up.
-    return rows.sort((a, b) => a.missing.length - b.missing.length)
-  }, [hardFiltered, askFilters])
+  const signals = useMemo(() => (askFilters ? appliedSignals(askFilters) : []), [askFilters])
+
+  function toggleBorough(borough: string) {
+    setFilters((f) => ({ ...f, boroughs: toggleValue(f.boroughs, borough) }))
+  }
+
+  function toggleTrack(track: string) {
+    setFilters((f) => ({ ...f, tracks: toggleValue(f.tracks, track) }))
+  }
+
+  function setSize(size: string) {
+    setFilters((f) => ({ ...f, size }))
+  }
+
+  function resetFilters() {
+    setFilters(EMPTY_FIND_FILTERS)
+  }
+
+  function toggleAdded(dbn: string) {
+    setAddedDbns((prev) => {
+      const next = new Set(prev)
+      if (next.has(dbn)) next.delete(dbn)
+      else next.add(dbn)
+      try {
+        localStorage.setItem(ADDED_SCHOOLS_KEY, JSON.stringify(Array.from(next)))
+      } catch {
+        // ignore
+      }
+      return next
+    })
+  }
+
+  function removeChip(kind: 'borough' | 'sport' | 'interest', value: string) {
+    // Pure edit of the already-extracted filters — re-ranks without ever
+    // calling the model again. Only a new ask (handleAskSubmit) does that.
+    setAskFilters((prev) => (prev ? removeSignal(prev, kind, value) : prev))
+  }
 
   async function handleAskSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -123,175 +201,217 @@ export default function FindClient({ schools }: Props) {
     }
   }
 
+  const addedCount = hydrated ? addedDbns.size : 0
+
   return (
-    <div>
-      {/* Hard filter controls */}
-      <div className="border border-gray-200 rounded-md p-4 mb-5 space-y-5">
+    <div className="max-w-[1120px] mx-auto bg-surface">
+      <header className="flex items-center justify-between px-9 py-[18px] border-b border-rule">
+        <div className="flex items-center gap-[9px]">
+          <span className="w-[9px] h-[9px] bg-accent" />
+          <div className="flex items-baseline">
+            <span className="font-display font-bold text-[21px] text-ink tracking-[-0.035em]">
+              Admit
+            </span>
+            <span className="font-wordmark italic text-[24px] text-accent ml-[3px] tracking-[-0.01em]">
+              Day
+            </span>
+          </div>
+        </div>
+        <nav className="flex items-center gap-[28px] text-[14.5px] text-muted">
+          <span className="text-ink font-medium border-b-2 border-accent pb-[3px]">Find</span>
+          <Link href="/list" className="hover:text-ink transition-colors duration-[120ms] ease-out">
+            My Schools
+            {addedCount > 0 && <span className="font-mono text-accent ml-1">{addedCount}</span>}
+          </Link>
+          <Link
+            href="/requirements"
+            className="hover:text-ink transition-colors duration-[120ms] ease-out"
+          >
+            Readiness
+          </Link>
+        </nav>
+      </header>
+
+      <div className="grid grid-cols-1 min-[900px]:grid-cols-[316px_1fr]">
         <div>
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-sm font-medium text-gray-700">Borough</span>
-            {boroughs.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setBoroughs([])}
-                className="text-xs text-blue-600 hover:underline"
-              >
-                Clear
-              </button>
+          <button
+            type="button"
+            onClick={() => setFiltersOpen((o) => !o)}
+            className="min-[900px]:hidden w-full text-left px-9 py-4 border-b border-rule font-mono text-[11px] tracking-[0.12em] uppercase text-faint"
+          >
+            Filters {filtersOpen ? '▴' : '▾'}
+          </button>
+          <div className={`${filtersOpen ? 'block' : 'hidden'} min-[900px]:block`}>
+            <FindRail
+              schools={schools}
+              filters={filters}
+              trackOptions={trackOptions}
+              onToggleBorough={toggleBorough}
+              onToggleTrack={toggleTrack}
+              onSizeChange={setSize}
+              onReset={resetFilters}
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-col">
+          <div className="flex flex-col gap-[18px] px-9 pt-[34px] pb-[26px] border-b border-rule">
+            <div className="flex flex-col gap-2">
+              <h1 className="font-display font-bold text-[44px] leading-[1.02] tracking-[-0.038em] text-ink">
+                Find schools
+              </h1>
+              <p className="text-[15.5px] text-muted max-w-[560px]" style={{ textWrap: 'pretty' }}>
+                Filters set the floor. The ask box adds what a filter can&rsquo;t — &ldquo;strong CS,
+                a real soccer team, walkable from Sunset Park.&rdquo;
+              </p>
+            </div>
+
+            <form onSubmit={handleAskSubmit} className="flex gap-[10px]">
+              <div className="flex-1 flex items-center gap-[10px] border border-border-strong px-[15px] py-[13px]">
+                <span className="font-mono text-[13px] text-accent">›</span>
+                <input
+                  type="text"
+                  value={askText}
+                  onChange={(e) => setAskText(e.target.value)}
+                  placeholder="strong CS and a soccer team, small classes"
+                  disabled={askLoading}
+                  className="flex-1 text-[15px] text-ink outline-none placeholder:text-faint bg-transparent"
+                />
+              </div>
+              <Button type="submit" disabled={askLoading}>
+                Ask
+              </Button>
+            </form>
+            {askLoading && (
+              <p className="font-mono text-[12px] text-faint">Searching schools and generating an answer…</p>
+            )}
+
+            {signals.length > 0 && (
+              <div className="flex flex-wrap gap-2 items-center">
+                <span className="font-mono text-[11px] tracking-[0.1em] uppercase text-faint">
+                  Applied
+                </span>
+                {signals.map((signal) => (
+                  <Chip
+                    key={`${signal.kind}:${signal.value}`}
+                    variant="inferred"
+                    onClick={() => removeChip(signal.kind, signal.value)}
+                  >
+                    {signal.label}
+                  </Chip>
+                ))}
+              </div>
+            )}
+
+            {(askAnswerError || askAnswer) && !askLoading && (
+              <div className="border border-rule px-4 py-3 flex flex-col gap-2">
+                {askAnswerError && (
+                  <p role="alert" className="text-[13.5px] text-red-700">
+                    {askAnswerError}
+                  </p>
+                )}
+                {!askAnswerError && askAnswer && (
+                  <div>
+                    <p className="text-[14px] text-ink-2 whitespace-pre-wrap leading-relaxed">
+                      {askAnswer}
+                    </p>
+                    {askSources.length > 0 && (
+                      <div className="mt-3">
+                        <h2 className="font-mono text-[11px] tracking-[0.1em] uppercase text-faint mb-1.5">
+                          Sources
+                        </h2>
+                        <ul className="flex flex-wrap gap-2">
+                          {askSources.map((s) => (
+                            <li
+                              key={s.dbn}
+                              className="text-[12px] px-2 py-1 bg-surface-2 text-ink-2 border border-rule"
+                            >
+                              {s.name} &middot; {s.borough}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
           </div>
-          <div className="flex flex-wrap gap-x-4 gap-y-1">
-            {BOROUGHS.map((b) => (
-              <label key={b} className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={boroughs.includes(b)}
-                  onChange={() => setBoroughs(toggle(boroughs, b))}
-                />
-                {b}
-              </label>
-            ))}
+
+          <div className="flex items-baseline justify-between px-9 py-4 bg-surface-2 border-b border-rule">
+            <div className="flex items-baseline gap-2">
+              <span className="font-mono text-[22px] font-medium text-ink tracking-[-0.02em]">
+                {ranked.length}
+              </span>
+              <span className="text-[14px] text-muted">
+                match{ranked.length === 1 ? '' : 'es'} {describeFindFilters(filters)}
+              </span>
+            </div>
+            <div className="font-mono text-[11.5px] tracking-[0.1em] uppercase text-faint">
+              Sorted by fit
+            </div>
           </div>
-        </div>
 
-        <div>
-          <span className="text-sm font-medium text-gray-700 mb-1 block">Admissions track</span>
-          <div className="flex flex-wrap gap-2">
-            {admissionsTrackOptions.map((track) => (
-              <button
-                key={track}
-                type="button"
-                onClick={() => setAdmissionsTracks(toggle(admissionsTracks, track))}
-                className={`px-3 py-1.5 rounded-full border text-sm transition-colors ${
-                  admissionsTracks.includes(track)
-                    ? 'bg-gray-900 text-white border-gray-900'
-                    : 'bg-white text-gray-600 border-gray-300 hover:border-gray-500'
-                }`}
-              >
-                {track}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <span className="text-sm font-medium text-gray-700 mb-1 block">Size</span>
-          <div className="flex gap-5">
-            <label className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
-              <input type="radio" name="size" checked={size === ''} onChange={() => setSize('')} />
-              Any
-            </label>
-            {SIZES.map((s) => (
-              <label key={s.value} className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
-                <input
-                  type="radio"
-                  name="size"
-                  checked={size === s.value}
-                  onChange={() => setSize(s.value)}
-                />
-                {s.label}
-              </label>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <span className="text-sm font-medium text-gray-700 mb-1 block">Interests</span>
-          <div className="flex flex-wrap gap-2">
-            {interestOptions.map((interest) => (
-              <button
-                key={interest}
-                type="button"
-                onClick={() => setInterests(toggle(interests, interest))}
-                className={`px-3 py-1.5 rounded-full border text-sm transition-colors ${
-                  interests.includes(interest)
-                    ? 'bg-gray-900 text-white border-gray-900'
-                    : 'bg-white text-gray-600 border-gray-300 hover:border-gray-500'
-                }`}
-              >
-                {interest}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Soft "ask" box */}
-      <form onSubmit={handleAskSubmit} className="mb-5 flex gap-2">
-        <input
-          type="text"
-          value={askText}
-          onChange={(e) => setAskText(e.target.value)}
-          placeholder='e.g. "soccer in Brooklyn"'
-          className="flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm"
-        />
-        <button
-          type="submit"
-          className="bg-gray-900 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-700 transition-colors"
-        >
-          Ask
-        </button>
-      </form>
-
-      {/* Grounded answer panel (RAG via /api/chat) — sits above the results
-          list. The question below never removes schools from that list. */}
-      {(askLoading || askAnswerError || askAnswer) && (
-        <div className="mb-5 border border-gray-200 rounded-md p-4">
-          {askLoading && <p className="text-sm text-gray-500">Searching schools and generating an answer…</p>}
-          {!askLoading && askAnswerError && (
-            <p role="alert" className="text-sm text-red-700">
-              {askAnswerError}
-            </p>
-          )}
-          {!askLoading && !askAnswerError && askAnswer && (
-            <div>
-              <p className="text-sm text-gray-900 whitespace-pre-wrap leading-relaxed">{askAnswer}</p>
-              {askSources.length > 0 && (
-                <div className="mt-3">
-                  <h2 className="text-xs font-medium text-gray-500 mb-1.5">Sources</h2>
-                  <ul className="flex flex-wrap gap-2">
-                    {askSources.map((s) => (
-                      <li
-                        key={s.dbn}
-                        className="text-xs px-2 py-1 rounded-full bg-gray-50 text-gray-700 border border-gray-200"
+          <div className="flex flex-col">
+            {hardFiltered.length === 0 ? (
+              <div className="px-9 py-10 text-[14px] text-muted">
+                No schools match the current filters — try loosening{' '}
+                {findFilterToLoosen(filters) ?? 'a filter'}.
+              </div>
+            ) : (
+              visible.map(({ school }, i) => {
+                const added = addedDbns.has(school.dbn)
+                const neighborhood = school.doe_data?.neighborhood || school.borough
+                const tracks = (school.admissions_types ?? []).map(trackLabel).join(', ') || '—'
+                const students =
+                  school.total_students != null ? school.total_students.toLocaleString() : '—'
+                return (
+                  <SchoolRow
+                    key={school.dbn}
+                    rowNumber={i + 1}
+                    name={formatSchoolName(school.name)}
+                    isHiddenGem={school.flags.is_hidden_gem}
+                    metadata={`${neighborhood} · ${tracks} · ${students} students`}
+                    rationale={truncate(school.doe_data?.overview ?? '', 140)}
+                    statValue={
+                      school.applicants_per_seat != null ? school.applicants_per_seat.toFixed(1) : '—'
+                    }
+                    statLabel="Apps / seat"
+                    action={
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => toggleAdded(school.dbn)}
+                        className={`w-24 max-[899px]:w-full text-center hover:bg-ink hover:text-white ${
+                          added ? 'bg-ink text-white' : ''
+                        }`}
                       >
-                        {s.name} &middot; {s.borough}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                        {added ? 'Remove' : 'Add'}
+                      </Button>
+                    }
+                  />
+                )
+              })
+            )}
+          </div>
+
+          <div className="flex items-center justify-between px-9 py-4 bg-surface-2 border-t border-rule">
+            <div className="text-[14px] text-ink">
+              {remaining > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                  className="text-accent underline underline-offset-[3px]"
+                >
+                  {remaining} more match{remaining === 1 ? '' : 'es'}
+                </button>
               )}
             </div>
-          )}
+            <div className="text-[13px] text-faint">
+              Requirements and deadlines from DOE data · confirm at MySchools before you submit.
+            </div>
+          </div>
         </div>
-      )}
-
-      {/* One shared, ranked results list */}
-      <div>
-        <p className="text-sm text-gray-500 mb-2">
-          {annotated.length} school{annotated.length !== 1 ? 's' : ''}
-        </p>
-        {annotated.length === 0 ? (
-          <p className="text-gray-400 text-sm py-8 text-center">No schools match the current filters.</p>
-        ) : (
-          <ul className="border border-gray-200 rounded-md divide-y divide-gray-200">
-            {annotated.map(({ school, missing }) => (
-              <li key={school.dbn} className="px-3 py-2.5 flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">{school.name}</p>
-                  <p className="text-xs text-gray-500">
-                    {school.borough} &middot; {(school.admissions_types ?? []).join(', ')}
-                  </p>
-                </div>
-                {missing.length > 0 && (
-                  <span className="flex-shrink-0 text-xs px-2 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
-                    missing: {missing.join(', ')}
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
       </div>
     </div>
   )

@@ -121,3 +121,48 @@ export function extractFilters(question: string): QueryFilters {
 export function hasFilters(filters: QueryFilters): boolean {
   return Boolean(filters.borough) || filters.sports.length > 0 || filters.interests.length > 0;
 }
+
+// ── Applied chips (issue #114: /find ask band) ──────────────────────────────
+// The ask band shows one removable chip per extracted signal. Removing a
+// chip must re-rank without calling the model again, so chip removal is a
+// pure edit of the already-extracted QueryFilters, not a new extraction.
+
+export interface AppliedSignal {
+  kind: "borough" | "sport" | "interest";
+  value: string;
+  label: string;
+}
+
+/** Flattens extracted ask criteria into individually-removable chip descriptors. */
+export function appliedSignals(filters: QueryFilters): AppliedSignal[] {
+  const signals: AppliedSignal[] = [];
+  if (filters.borough) {
+    signals.push({ kind: "borough", value: filters.borough, label: filters.borough });
+  }
+  for (const sport of filters.sports) {
+    signals.push({ kind: "sport", value: sport, label: `${sport} (PSAL)` });
+  }
+  for (const interest of filters.interests) {
+    signals.push({ kind: "interest", value: interest, label: interest });
+  }
+  return signals;
+}
+
+/**
+ * Removes a single signal from a previously-extracted QueryFilters. Pure and
+ * deterministic — callers use this for chip removal so re-ranking never
+ * triggers another /api/chat (LLM) call.
+ */
+export function removeSignal(
+  filters: QueryFilters,
+  kind: AppliedSignal["kind"],
+  value: string
+): QueryFilters {
+  if (kind === "borough") {
+    return { ...filters, borough: filters.borough === value ? undefined : filters.borough };
+  }
+  if (kind === "sport") {
+    return { ...filters, sports: filters.sports.filter((s) => s !== value) };
+  }
+  return { ...filters, interests: filters.interests.filter((i) => i !== value) };
+}
