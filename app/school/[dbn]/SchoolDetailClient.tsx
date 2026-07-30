@@ -3,10 +3,9 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { School } from '@/types'
-import { ADDED_SCHOOLS_KEY } from '@/lib/school-list-utils'
+import { ADDED_SCHOOLS_KEY, trackLabel } from '@/lib/school-list-utils'
 import { StatCell, ActivityGroup, ProgramRow, RequirementBlock, chipIsMatched } from '@/lib/school-detail-utils'
 import { Eyebrow, DefinitionRow, NotReportedLine, StatGrid } from '@/components/ui'
-import { trackLabel } from '@/app/find/FindRail'
 import SiteHeader from './SiteHeader'
 
 const PROGRAMS_CAP = 6

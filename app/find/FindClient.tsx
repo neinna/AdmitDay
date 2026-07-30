@@ -13,11 +13,12 @@ import {
   describeFindFilters,
   findFilterToLoosen,
   findFiltersToQueryString,
+  trackLabel,
 } from '@/lib/school-list-utils'
 import { extractFilters, QueryFilters, appliedSignals, removeSignal } from '@/lib/query-filters'
 import { getUnmetCriteria } from '@/lib/soft-match'
 import { Chip, Button, SchoolRow } from '@/components/ui'
-import FindRail, { trackLabel } from './FindRail'
+import FindRail from './FindRail'
 
 interface AskSource {
   name: string

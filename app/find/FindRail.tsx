@@ -2,7 +2,7 @@
 
 import { School } from '@/types'
 import { BOROUGH_ORDER } from '@/lib/school-list-utils'
-import { FindFilters, countMatchingTrack } from '@/lib/school-list-utils'
+import { FindFilters, countMatchingTrack, trackLabel } from '@/lib/school-list-utils'
 import { Chip, SegmentedControl } from '@/components/ui'
 
 const BOROUGHS = Object.keys(BOROUGH_ORDER)
@@ -13,17 +13,6 @@ const SIZE_OPTIONS = [
   { label: 'Medium', value: 'medium' },
   { label: 'Large', value: 'large' },
 ]
-
-// Display abbreviations only — the underlying admissions_types value (used
-// for filtering and the URL) is unabbreviated.
-const TRACK_DISPLAY: Record<string, string> = {
-  'Screened with Assessment': 'Screened w/ assessment',
-  'Educational Option': 'Ed. Opt.',
-}
-
-export function trackLabel(track: string): string {
-  return TRACK_DISPLAY[track] ?? track
-}
 
 interface Props {
   schools: School[]

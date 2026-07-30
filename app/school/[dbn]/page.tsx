@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import Footer from '@/components/Footer'
 import { getAllSchools } from '@/lib/load-schools'
-import { parseFindFilters, findFiltersToQueryString } from '@/lib/school-list-utils'
+import { parseFindFilters, findFiltersToQueryString, trackLabel } from '@/lib/school-list-utils'
 import {
   findSchoolByDbn,
   formatSchoolName,
@@ -24,7 +24,6 @@ import {
   describeBackFilters,
   parseMatchedSignals,
 } from '@/lib/school-detail-utils'
-import { trackLabel } from '@/app/find/FindRail'
 import SchoolDetailClient from './SchoolDetailClient'
 
 // Issue #116: the school detail view. Server component — loads via
