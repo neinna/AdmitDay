@@ -1,6 +1,8 @@
 import Anthropic from '@anthropic-ai/sdk'
+import * as Sentry from '@sentry/nextjs'
 import { NextRequest } from 'next/server'
 import { checkRateLimit } from '@/lib/rate-limit'
+import { classifyProviderError } from '@/lib/provider-error'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -71,34 +73,42 @@ export async function POST(request: NextRequest) {
     .filter(Boolean)
     .join('\n')
 
-  const message = await client.messages.create({
-    model: 'claude-sonnet-5',
-    max_tokens: 150,
-    system:
-      'You are a helpful NYC high school admissions assistant. Respond with only a valid JSON object — no markdown, no explanation, no code fences. The JSON must have exactly two fields:\n' +
-      '- "title": a 4-6 word summary of what makes this school distinctive (e.g., "Elite STEM, highly competitive" or "Arts focus, open lottery")\n' +
-      '- "rationale": 2-3 short sentences (under 80 words total) describing what makes this school stand out. First sentence: describe the school\'s academic focus, curriculum, or culture based on available data. Then use the language and extracurricular data to give concrete details with counts and examples (e.g., "Offers 7 languages including Japanese and Latin. 190+ clubs spanning robotics, debate, and theater."). If the user selected sports, mention whether this school offers those specific sports (e.g., "Soccer offered through PSAL" or "Soccer not offered"). Do NOT repeat academic scores or applicants per seat — these are already shown on the card. Do NOT repeat the user\'s filter selections (academic level, size preference, borough). Focus on what makes THIS school interesting.\n' +
-      'Example: {"title":"Elite STEM, highly competitive","rationale":"Rigorous STEM-focused curriculum for top performers with strong humanities offerings. Offers 7 languages including Japanese and Latin. 190+ student-run clubs spanning robotics, debate, and theater. Soccer offered through PSAL."}',
-    messages: [
-      {
-        role: 'user',
-        content: `${schoolCtx}\n\nStudent profile:\n${studentCtx}\n\nReturn the JSON object.`,
-      },
-    ],
-  })
-
-  const raw = message.content[0].type === 'text' ? message.content[0].text : '{}'
-
-  let parsed: { title: string; rationale: string }
   try {
-    parsed = JSON.parse(raw)
-  } catch {
-    // If Claude returned something unexpected, surface it as rationale only
-    parsed = { title: '', rationale: raw.slice(0, 200) }
-  }
+    const message = await client.messages.create({
+      model: 'claude-sonnet-5',
+      max_tokens: 150,
+      system:
+        'You are a helpful NYC high school admissions assistant. Respond with only a valid JSON object — no markdown, no explanation, no code fences. The JSON must have exactly two fields:\n' +
+        '- "title": a 4-6 word summary of what makes this school distinctive (e.g., "Elite STEM, highly competitive" or "Arts focus, open lottery")\n' +
+        '- "rationale": 2-3 short sentences (under 80 words total) describing what makes this school stand out. First sentence: describe the school\'s academic focus, curriculum, or culture based on available data. Then use the language and extracurricular data to give concrete details with counts and examples (e.g., "Offers 7 languages including Japanese and Latin. 190+ clubs spanning robotics, debate, and theater."). If the user selected sports, mention whether this school offers those specific sports (e.g., "Soccer offered through PSAL" or "Soccer not offered"). Do NOT repeat academic scores or applicants per seat — these are already shown on the card. Do NOT repeat the user\'s filter selections (academic level, size preference, borough). Focus on what makes THIS school interesting.\n' +
+        'Example: {"title":"Elite STEM, highly competitive","rationale":"Rigorous STEM-focused curriculum for top performers with strong humanities offerings. Offers 7 languages including Japanese and Latin. 190+ student-run clubs spanning robotics, debate, and theater. Soccer offered through PSAL."}',
+      messages: [
+        {
+          role: 'user',
+          content: `${schoolCtx}\n\nStudent profile:\n${studentCtx}\n\nReturn the JSON object.`,
+        },
+      ],
+    })
 
-  return Response.json({
-    title: parsed.title ?? '',
-    rationale: parsed.rationale ?? '',
-  })
+    const raw = message.content[0].type === 'text' ? message.content[0].text : '{}'
+
+    let parsed: { title: string; rationale: string }
+    try {
+      parsed = JSON.parse(raw)
+    } catch {
+      // If Claude returned something unexpected, surface it as rationale only
+      parsed = { title: '', rationale: raw.slice(0, 200) }
+    }
+
+    return Response.json({
+      title: parsed.title ?? '',
+      rationale: parsed.rationale ?? '',
+    })
+  } catch (err) {
+    // Log the real error (vendor detail, status, request id) to Sentry —
+    // never let any part of it reach the client.
+    Sentry.captureException(err)
+    const { status, body } = classifyProviderError(err)
+    return Response.json(body, { status })
+  }
 }
