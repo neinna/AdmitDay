@@ -1,0 +1,119 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Admit Day — Landing Page Handoff</title><style>body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:900px;margin:40px auto;padding:0 20px;line-height:1.6;color:#222}table{border-collapse:collapse;width:100%}th,td{border:1px solid #ddd;padding:6px 10px;text-align:left}th{background:#f5f5f5}code{background:#f0f0f0;padding:2px 5px}pre{background:#f6f6f6;padding:14px;overflow-x:auto}h1,h2,h3{line-height:1.25}</style></head><body><h1>Handoff: Admit Day — landing page (<code>/</code>)</h1>
+<p><strong>Conforms to the Admit Day design system v1.0</strong> (<code>design_system/design-system.html</code>). Deviations are listed in §7. This doc does not restate tokens, faces, the type scale, geometry, the header, band geometry, primitive specs, hover/focus, the missing-data rules or the product invariants — those live in the system file and are inherited.</p>
+<p>Target codebase: Next.js 14 App Router + React + Tailwind, tokens already in <code>tailwind.config.ts</code>.</p>
+<h2>1. Purpose</h2>
+<p>Replaces the old filter flow at <code>/</code>, which is being deleted. The front door for someone who has never heard of Admit Day, arriving from a Facebook parent group, a Reddit thread, or a link from another parent.</p>
+<p><strong>Audience: the overwhelmed first-timer.</strong> An NYC parent of a 7th or 8th grader with no local network, who doesn't yet know that "screened" and "Ed Opt" are different things, and who suspects they are already behind. Not the spreadsheet-building power researcher. Every line of copy on this page assumes the reader is anxious, not optimizing — which is why the page explains the <em>process</em> before it explains the product, and why the vocabulary (<code>screened</code>, <code>Ed Opt</code>, <code>applicants per seat</code>) is always used with its meaning attached.</p>
+<p><strong>One job:</strong> get them into <code>/find</code> with enough trust to try it. It answers three questions in this order — <em>is this about my problem? what does it actually do? why should I believe the numbers?</em> — and then asks once.</p>
+<p>Deliberately not here: pricing, feature list, FAQ, roadmap, newsletter capture, account creation, any second destination.</p>
+<h2>2. Decisions and why</h2>
+<p><strong>Show the product, don't describe it.</strong> The "This is the whole product" section renders a real ask input, a real count band, and two real <code>SchoolRow</code>s — built from the system's own primitives, not a screenshot. Three reasons: a screenshot goes stale and can't be rebuilt from a token change; the product's entire pitch is <em>legibility</em>, so the fastest proof is showing a row a parent can read in four seconds; and a rendered fragment stays crisp and printable. It is labelled <code>Sample rows. Real values come from the DOE directory.</code> — the invariant against implied precision applies to marketing too.</p>
+<p>The fragment uses the <strong>filled</strong> <code>Add</code> button in both rows — system §06: fill = action available, outline = already done. A demo of an unsaved result set must show the action, not a set of schools that read as already saved. It deliberately shows a match that is <em>partial</em> — Millennium "matches two of your three asks" — because a page that only shows perfect results is the kind of claim this product doesn't make.</p>
+<p><strong>Problem before CTA, but only briefly.</strong> One band of four stat cells and two short paragraphs. The numbers do the work (700+ / 400+ / 5), and the prose only names the two things a first-timer doesn't know: that one school can run several admissions methods at once, and that the information is scattered rather than missing. Anything more is telling an anxious person how bad their situation is, which loses them.</p>
+<p>The counts sit in a <code>StatGrid lg</code> with a note cell naming the source — the same component and the same honesty as <code>/school</code>'s numbers. This is deliberate: the first grid a visitor ever sees teaches the pattern they'll meet again on the detail page.</p>
+<p><strong>The refusal is a section, not a footnote.</strong> "And what it will never do" gets its own bordered <code>surface-2</code> block, the most emphasized copy on the page after the title. It names the three things we won't produce (chance-of-admission, reach/target/likely, any score or rating), then gives the reason: the inputs aren't public, and a confident-looking estimate is how families talk themselves out of applying somewhere they should have ranked. The official portal's prediction feature is referred to as "other tools will give you a number" — the contrast is made without naming or attacking anyone.</p>
+<p><strong>The parent's story is explicit, first-person, and small.</strong> It sits in the 316px rail under <code>WHO MADE THIS</code>, ~55 words, signed <em>"— A public school parent in Brooklyn"</em>. First person because the positioning <em>is</em> the credibility — with no users, no press and no testimonials, the only honest trust signal is that a person with the same problem built it and will show their sources. In the rail rather than the hero because a landing page that opens with the founder's story is about the founder; this one opens with the parent's problem. No photo, no name until there's a real one to use — a stock portrait would be exactly the fake social proof we're avoiding.</p>
+<p><strong>No social proof, and no substitute for it.</strong> No counts of users, no logos, no "trusted by", no fabricated quotes, no vanity metrics dressed as traction. The trust section is built entirely from verifiable properties of the product: where every figure comes from, that every requirement links out, that absence is stated in words, and what we refuse to compute. Those claims are checkable on the very next screen, which is the point.</p>
+<p><strong>Freshness is stated as a limitation, in the rail.</strong> "Some DOE figures are older than the current cycle — survey and academic scores in particular. Those are labelled with their own date wherever they appear." Never "always up to date". Admitting the staleness is a stronger trust signal than hiding it, and it matches what the product actually does in-product.</p>
+<p><strong>One CTA, two placements.</strong> One destination (<code>/find</code>), one label (<code>Start with your schools</code>), rendered twice: hero and closing band. No secondary button, no "learn more", no demo link, no email capture. The repeat exists because the page is long enough that a reader who finishes the trust section shouldn't have to scroll back; it is the identical control, not an alternative path.</p>
+<p><strong>Closing line, not a closing pitch.</strong> "You don't have to know the vocabulary to start." That is the specific fear of the target reader, answered in one sentence.</p>
+<p><strong>No hero image, no gradient, no rounded card, no illustration.</strong> Not an omission — the app has none of these, and a landing page that looks like a different product than the app it fronts breaks the promise before the first click. The page is white, ruled, and typographic, exactly like <code>/find</code>.</p>
+<h2>3. Layout</h2>
+<p>No rail for most of the page — a landing page is a single reading column of full-width sections. The spine appears once, in the trust section, so the page shares the system's proportions where it matters.</p>
+<p>Band order, top to bottom (<code>7a</code>):</p>
+<ol>
+<li><strong>Header</strong> — system default. <strong>No active nav item</strong> on <code>/</code>, and <code>My Schools</code> carries no count when the saved list is empty (see §7).</li>
+<li><strong>Hero / title band</strong> — grid <code>1fr 300px</code>, gap 40px, <code>align-items: end</code>, <code>44px 36px 34px</code>, <code>border-bottom: 1px rule</code>. Left: page title (max-width 700px) over the 15.5px subhead. Right: the CTA over a 13px <code>faint</code> reassurance line. Taller than the standard title band; see §7.</li>
+<li><strong>What you're actually up against</strong> — standard section. Eyebrow, <code>StatGrid lg</code> 4-up (3 values + note cell), then a two-column <code>1fr 1fr</code> prose pair at 14.5px, gap 28px.</li>
+<li><strong>How it works</strong> — standard section. Three rows, grid <code>34px 300px 1fr</code>, gap 16px, <code>16px 0</code>, <code>border-bottom: 1px rule-light</code> (last none). Mono <code>numeral</code> step number · 18px/700 step title · 14.5px body capped at 560px. Same numeral treatment as a <code>SchoolRow</code>, so the page's list rhythm matches the app's.</li>
+<li><strong>This is the whole product</strong> — <code>26px 36px 30px</code>. Eyebrow row with a right-aligned 13px <code>faint</code> sample disclaimer. Then a single 1px <code>rule</code> box containing, in order: an ask row (<code>surface-2</code>, mono <code>›</code> prompt, three inferred chips right-aligned), a count band (<code>surface-2</code>, mono 22px count + filter string + <code>SORTED BY FIT</code>), and two <code>SchoolRow</code>s at <code>20px 18px</code> (reduced horizontal padding because the box is already inset). Row grid is the system's <code>34px 1fr 128px 96px</code>.</li>
+<li><strong>Trust</strong> — the only <code>1fr 316px</code> split on the page, <code>border-right: 1px rule</code> on the main column.<br />
+   - Main (<code>26px 36px 28px</code>): eyebrow, three <code>DefinitionRow</code>s (<code>152px 1fr</code>, separated by <code>border-bottom: 1px rule-light</code>, 16px padding), then the refusal block — <code>surface-2</code>, 1px <code>rule</code>, <code>18px 20px</code>: eyebrow, a 15px/600 statement, and a 14.5px <code>muted</code> explanation.<br />
+   - Rail: <strong>Where the data comes from</strong> (<code>26px 28px</code>) — a <code>92px 1fr</code> definition grid, then the freshness caveat at 13px above a <code>rule-light</code> divider. <strong>Who made this</strong> (<code>26px 28px</code>) — two 14.5px paragraphs at lh 1.6 and the signature line.</li>
+<li><strong>Closing CTA band</strong> — grid <code>1fr 300px</code>, <code>30px 36px 32px</code>. A 26px Space Grotesk line + 14.5px support copy; the same CTA, with the quiet "Free while it's being built. More is coming." beneath it. That is the only forward reference to paid — no pricing, no tiers, no table.</li>
+<li><strong>Footer band</strong> — system geometry. Left: <em>"Independent and not affiliated with, or endorsed by, the New York City Department of Education."</em> Right: the standing record-type disclaimer. The affiliation line is mandatory and appears on this page in full.</li>
+</ol>
+<h2>4. Screen-specific primitives</h2>
+<p>None. The page is assembled entirely from <code>StatGrid</code>, <code>SchoolRow</code>, <code>Chip</code> (inferred), <code>Button</code> (primary, outline), <code>Eyebrow</code>, <code>DefinitionRow</code> and <code>Band</code>.</p>
+<p>The step rows in "How it works" are a layout, not a primitive — if a second screen ever needs them, promote them then.</p>
+<h2>5. States</h2>
+<p>Additions to system §08 only.</p>
+<ul>
+<li><strong>Returning visitor with a saved list (<code>7b</code>).</strong> Detected from the same <code>localStorage</code> key <code>/find</code> writes; server-render <code>7a</code> and swap client-side on mount to avoid a flash of the wrong hero. Changes: nav shows the saved count; the title becomes <em>"Your list is where you left it."</em> with the count in the subhead; the CTA becomes <strong><code>Open your list</code></strong> → <code>/my-schools</code>, with <code>Saved in this browser · last edited {date}</code>; a criteria strip echoes the saved criteria with a <code>Back to Find ↗</code> link; a <strong>Your top three</strong> section shows the first three <code>RankRow</code>s read-only (<code>54px 1fr 156px 112px</code>, no drag handle, no controls) with <code>N more below on My Schools</code>. Sections 3–7 of <code>7a</code> are replaced by a single 22px band: <em>"New here?"</em> + a link to the full page. <strong>Never hide the explanation entirely</strong> — a returning visitor is often a parent who came back to check whether this thing is legitimate.</li>
+<li><strong>Returning visitor with criteria but no saved schools.</strong> Use <code>7a</code> unchanged, except the CTA reads <code>Pick up where you left off</code> and links to <code>/find</code> with the stored query. No top-three section.</li>
+<li><strong>Empty / loading.</strong> Not applicable — the page is static and server-rendered with no client data dependency. The sample rows are hard-coded content, not a query; they must never be wired to live data, or the landing page acquires a failure mode.</li>
+<li><strong>JS disabled.</strong> <code>7a</code> renders and the CTA works. Only the returning-visitor swap is lost.</li>
+</ul>
+<h2>6. Data shape</h2>
+<pre><code class="language-ts">// Read-only, client-side, on mount.
+type LandingState = {
+  savedCount: number;                 // localStorage, same key as /find
+  topThree: { dbn: string; name: string; track: string; applicantsPerSeat?: number }[];
+  criteria: { id: string; label: string }[];
+  lastEditedAt?: string;
+};
+</code></pre>
+<p>The three landscape counts (<code>700+</code>, <code>400+</code>, <code>5</code>) are <strong>build-time constants derived from the schools table</strong>, not hard-coded strings and not a runtime query — regenerate them when the directory is loaded, and assert they are non-zero at build. A landing page that claims 700+ programs while the database holds 300 is the exact failure this product cannot afford.</p>
+<h2>7. Deviations from the system</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Deviation</th>
+<th>Reason</th>
+<th>Absorb?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>Hero CTA is <code>15px/500</code>, padding <code>13px 26px</code></strong> — larger than <code>Button primary</code> (<code>14px/500</code>, <code>11px 20px</code>).</td>
+<td>A landing page's single action can't be the same weight as a row-level <code>Add</code>. Metrics borrowed from the existing <code>accent</code> Ask button, so it's not a new size in the system.</td>
+<td>Yes — add <code>Button primary/lg</code> to §06.</td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>Hero band is <code>44px 36px 34px</code></strong>, not the standard <code>30px 36px 26px</code> title band.</td>
+<td>It is the only band above the fold on a page with no content band under it.</td>
+<td>No — landing-only.</td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>No active nav item, and <code>My Schools</code> shows no count at zero.</strong></td>
+<td><code>/</code> isn't one of the three app sections, and a <code>0</code> next to a nav item on a first visit reads as a scolding.</td>
+<td>Yes — state the zero-count rule in §05.</td>
+</tr>
+<tr>
+<td>4</td>
+<td><strong>The CTA appears twice.</strong></td>
+<td>Page length. Identical control, identical destination — still one call to action.</td>
+<td>No.</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>Step rows use a <code>300px</code> fixed title column</strong>, not a documented measure.</td>
+<td>Keeps three step titles on one line each at 1120px.</td>
+<td>No.</td>
+</tr>
+</tbody>
+</table>
+<h2>8. What the system is missing</h2>
+<p>Found while building this screen — these are gaps, not deviations:</p>
+<ol>
+<li><strong>No marketing / pre-product voice.</strong> Every documented type role assumes a logged-in reading context. This page needed a mid-weight display size (26px Space Grotesk 700, ls −0.03em) for a sub-hero statement. It is used once here and once in the system doc itself; it should be named <strong><code>Display / sm</code></strong> in §03.</li>
+<li><strong>No spec for a non-app page.</strong> The system assumes header → title band → context band → body → footer. It holds here, but §05 should say explicitly that a page with no rail is legitimate and that a landing page uses the reading column.</li>
+<li><strong>No rule for sample or illustrative data in the UI.</strong> This page renders product-shaped rows that aren't real. The convention used — a 13px <code>faint</code> line in the section's eyebrow row naming it as a sample — should become the system rule, since any future demo, empty-state preview or export template will need it.</li>
+</ol>
+<h2>9. Build order</h2>
+<ol>
+<li>Delete the old <code>/</code> filter flow. Ship <code>7a</code> static — it has no data dependency and can go live before anything else.</li>
+<li>Wire the build-time landscape counts.</li>
+<li><code>7b</code> (reads the same <code>localStorage</code> shape <code>/find</code> and <code>/my-schools</code> already use).</li>
+<li>Meta: title, description, and an OG image that is a render of the hero band — no separate visual language for social cards.</li>
+</ol>
+<h2>Files</h2>
+<ul>
+<li><code>landing.html</code> — standalone reference, <code>7a</code> (first-time visitor, the approved direction) and <code>7b</code> (returning visitor). <strong>Build from this.</strong></li>
+<li><code>Admit Day - Landing Page.dc.html</code> — source.</li>
+<li><code>../design_system/design-system.html</code> — the canonical system. Read it first.</li>
+</ul></body></html>

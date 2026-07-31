@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admit Day — Design System (canonical)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Libre+Franklin:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@1,6..72,400;1,6..72,500&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; background: #B9B9B5; font-family: 'Libre Franklin', sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: #1D4ED8; text-decoration: none; }
+  a:hover { color: #163FB0; }
+  code { font-family: 'JetBrains Mono', monospace; font-size: 0.92em; }
+</style>
+</head>
+<body>
+<div style="padding: 44px 32px 80px; background: #B9B9B5;">
+<div style="width: 1120px; max-width: 100%; margin: 0 auto; background: #FFFFFF; border: 1px solid #DEDEDA;">
+
+  <!-- ========== HEADER ========== -->
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 18px 36px; border-bottom: 1px solid #E8E8E4;">
+    <div style="display: flex; align-items: center; gap: 9px;">
+      <div style="width: 9px; height: 9px; border-radius: 999px; background: #1D4ED8;"></div>
+      <span style="font-family: 'Space Grotesk', sans-serif; font-size: 21px; font-weight: 700; color: #0B0B0C; letter-spacing: -0.035em;">Admit</span><span style="font-family: 'Newsreader', serif; font-style: italic; font-size: 24px; font-weight: 500; color: #1D4ED8; letter-spacing: -0.01em; margin-left: 3px;">Day</span>
+    </div>
+    <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">Design System · v1.0 · Jul 2026</div>
+  </div>
+
+  <!-- ========== TITLE BAND ========== -->
+  <div style="display: grid; grid-template-columns: 1fr 300px; gap: 28px; align-items: end; padding: 34px 36px 26px; border-bottom: 1px solid #E8E8E4;">
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="font-family: 'Space Grotesk', sans-serif; font-size: 40px; font-weight: 700; line-height: 1.04; letter-spacing: -0.038em; color: #0B0B0C;">The Admit&nbsp;Day system</div>
+      <div style="font-size: 15.5px; line-height: 1.5; color: #55555A; max-width: 620px; text-wrap: pretty;">The single source of truth for colour, type, geometry, layout, primitives and behaviour across every Admit Day screen. Extracted from the <code>/find</code>, <code>/school/[dbn]</code> and <code>/my-schools</code> handoffs, which each restated it. From here, those three documents are screen deltas; this file is the system.</div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: #8A8A90; line-height: 1.5;">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase;">Read by</span>
+      <span style="color: #2A2A2F; font-size: 13.5px;">A designer producing the next screen, and a coding agent implementing it from the repo. Every value here is literal. Nothing requires judgement, and nothing is inferable only from a screenshot.</span>
+    </div>
+  </div>
+
+  <!-- ========== CONTENTS ========== -->
+  <div style="display: flex; align-items: baseline; gap: 14px; padding: 12px 36px; background: #FAFAF8; border-bottom: 1px solid #E8E8E4;">
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90; white-space: nowrap;">Contents</span>
+    <div style="display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px;">
+      <a href="#s01">01 Invariants</a>
+      <a href="#s02">02 Colour</a>
+      <a href="#s03">03 Type</a>
+      <a href="#s04">04 Geometry</a>
+      <a href="#s05">05 Layout spine</a>
+      <a href="#s06">06 Primitives</a>
+      <a href="#s07">07 Cross-screen patterns</a>
+      <a href="#s08">08 States</a>
+      <a href="#s09">09 Responsive</a>
+      <a href="#s10">10 Drift register</a>
+      <a href="#s11">11 Handoff template</a>
+    </div>
+  </div>
+
+  <!-- ========== 01 INVARIANTS ========== -->
+  <div id="s01" style="padding: 30px 36px 30px; border-bottom: 1px solid #E8E8E4; display: flex; flex-direction: column; gap: 18px;">
+    <div style="display: flex; align-items: baseline; gap: 14px;">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #8A8A90;">01</span>
+      <span style="font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -0.03em; color: #0B0B0C;">Product invariants</span>
+      <span style="font-size: 13px; color: #8A8A90;">Non-negotiable. Every future screen inherits these; a screen doc may not override them.</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px; background: #E8E8E4; border: 1px solid #E8E8E4;">
+      <div style="background: #FFFFFF; padding: 18px 20px; display: flex; flex-direction: column; gap: 7px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">Invariant 01</div>
+        <div style="font-size: 15px; font-weight: 600; color: #0B0B0C;">No derived score, rating, tier or prediction. Anywhere.</div>
+        <div style="font-size: 13.5px; line-height: 1.5; color: #55555A; text-wrap: pretty;">No fit score, no reach/target/likely, no selectivity index, no admissions-odds language, no percentage that implies a target, no ordering by desirability. If a value is not published by the DOE, it is not on the screen. Counts and ratios are facts; a composed judgement is not.</div>
+      </div>
+      <div style="background: #FFFFFF; padding: 18px 20px; display: flex; flex-direction: column; gap: 7px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">Invariant 02</div>
+        <div style="font-size: 15px; font-weight: 600; color: #0B0B0C;">DOE values are published as given.</div>
+        <div style="font-size: 13.5px; line-height: 1.5; color: #55555A; text-wrap: pretty;">Not rounded into bands, not re-expressed as adjectives, not annotated with our opinion. <code>4.1 applicants per seat</code> in mono, unlabelled. Provenance (source, verified date, cycle) is always visible, never collapsed, and every requirement links out to the official listing.</div>
+      </div>
+      <div style="background: #FFFFFF; padding: 18px 20px; display: flex; flex-direction: column; gap: 7px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">Invariant 03</div>
+        <div style="font-size: 15px; font-weight: 600; color: #0B0B0C;">Absence is stated in words. Never <code>0</code>, never <code>—</code>.</div>
+        <div style="font-size: 13.5px; line-height: 1.5; color: #55555A; text-wrap: pretty;">A missing value is omitted from its grid or rendered as mono <code>NOT REPORTED</code>, then explained in a sentence that says it is a gap in the source and not a low result. A genuine zero count (e.g. <code>Open / Zoned 0</code> in a legend) is a different thing and is shown — see §07.</div>
+      </div>
+      <div style="background: #FFFFFF; padding: 18px 20px; display: flex; flex-direction: column; gap: 7px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">Invariant 04</div>
+        <div style="font-size: 15px; font-weight: 600; color: #0B0B0C;">Everything the system infers is visible and removable.</div>
+        <div style="font-size: 13.5px; line-height: 1.5; color: #55555A; text-wrap: pretty;">Any signal extracted from a natural-language ask surfaces as an individually removable chip in <code>accent</code>. Nothing filters the results invisibly. Removing a chip re-runs matching without re-calling the model.</div>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 10px; align-items: baseline; padding-top: 14px; border-top: 1px solid #F0F0EC;">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90; white-space: nowrap;">Why it's here</span>
+      <span style="font-size: 13.5px; line-height: 1.5; color: #55555A; text-wrap: pretty;">These are design constraints, not copy guidelines — they decide which components may exist. They rule out badges, meters, ranked-by-quality sorts, empty placeholder cells and “estimated” anything. Restraint is the feature; a screen that needs one of these to work has the wrong idea, not a missing component.</span>
+    </div>
+  </div>
+
+  <!-- ========== 02 COLOUR ========== -->
+  <div id="s02" style="padding: 30px 36px 30px; border-bottom: 1px solid #E8E8E4; display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; align-items: baseline; gap: 14px;">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #8A8A90;">02</span>
+      <span style="font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -0.03em; color: #0B0B0C;">Colour tokens</span>
+      <span style="font-size: 13px; color: #8A8A90;">Declared in <code>tailwind.config.ts</code>. A raw hex in a component is a bug.</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column;">
+      <div style="display: grid; grid-template-columns: 34px 148px 92px 1fr; gap: 16px; padding: 8px 0; border-bottom: 1px solid #E8E8E4; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">
+        <span></span><span>Token</span><span>Hex</span><span>Job — and only this job</span>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 34px 148px 92px 1fr; gap: 16px; align-items: center; padding: 9px 0; border-bottom: 1px solid #F0F0EC;">
+        <div style="width: 26px; height: 26px; background: #0B0B0C; border: 1px solid #DEDEDA;"></div>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C;">ink</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #55555A;">#0B0B0C</span>
+        <span style="font-size: 13.5px; color: #2A2A2F;">Primary text, page titles, school names, primary button fill, selected chip fill, heaviest band segment.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 148px 92px 1fr; gap: 16px; align-items: center; padding: 9px 0; border-bottom: 1px solid #F0F0EC;">
+        <div style="width: 26px; height: 26px; background: #2A2A2F; border: 1px solid #DEDEDA;"></div>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C;">ink-2</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #55555A;">#2A2A2F</span>
+        <span style="font-size: 13.5px; color: #2A2A2F;">Read body copy: rationales, definition values, track strings, chip labels, legend labels.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 148px 92px 1fr; gap: 16px; align-items: center; padding: 9px 0; border-bottom: 1px solid #F0F0EC;">
+        <div style="width: 26px; height: 26px; background: #55555A; border: 1px solid #DEDEDA;"></div>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C;">muted</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #55555A;">#55555A</span>
+        <span style="font-size: 13.5px; color: #2A2A2F;">Secondary copy: subheads, row metadata, program methods, nav items at rest, explanatory sentences.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 148px 92px 1fr; gap: 16px; align-items: center; padding: 9px 0; border-bottom: 1px solid #F0F0EC;">
+        <div style="width: 26px; height: 26px; background: #8A8A90; border: 1px solid #DEDEDA;"></div>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C;">faint</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #55555A;">#8A8A90</span>
+        <span style="font-size: 13.5px; color: #2A2A2F;">All eyebrows, all stat labels, table headers, footer disclaimers, zero-count legend rows, <code>NOT REPORTED</code>.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 148px 92px 1fr; gap: 16px; align-items: center; padding: 9px 0; border-bottom: 1px solid #F0F0EC;">
+        <div style="width: 26px; height: 26px; background: #B8B8B4; border: 1px solid #DEDEDA;"></div>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C;">numeral</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #55555A;">#B8B8B4</span>
+        <span style="font-size: 13.5px; color: #2A2A2F;">Result-list row numerals (<code>01…</code>) only. <span style="color: #8A8A90;">New token — was a raw hex on <code>/find</code>.</span></span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 148px 92px 1fr; gap: 16px; align-items: center; padding: 9px 0; border-bottom: 1px solid #F0F0EC;">
+        <div style="width: 26px; height: 26px; background: #3A3A3F; border: 1px solid #DEDEDA;"></div>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C;">chip-ink</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #55555A;">#3A3A3F</span>
+        <span style="font-size: 13.5px; color: #2A2A2F;">Unselected chip label only. <span style="color: #8A8A90;">New token — was a raw hex on <code>/find</code>.</span></span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 148px 92px 1fr; gap: 16px; align-items: center; padding: 9px 0; border-bottom: 1px solid #F0F0EC;">
+        <div style="width: 26px; height: 26px; background: #E8E8E4; border: 1px solid #DEDEDA;"></div>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C;">rule</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #55555A;">#E8E8E4</span>
+        <span style="font-size: 13.5px; color: #2A2A2F;">Structural 1px dividers (header, band edges, section edges, rail edge) and the background behind <code>gap: 1px</code> cell grids.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 148px 92px 1fr; gap: 16px; align-items: center; padding: 9px 0; border-bottom: 1px solid #F0F0EC;">
+        <div style="width: 26px; height: 26px; background: #F0F0EC; border: 1px solid #DEDEDA;"></div>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C;">rule-light</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #55555A;">#F0F0EC</span>
+        <span style="font-size: 13.5px; color: #2A2A2F;">Dividers <em>inside</em> a list or table — between result rows, rank rows, program rows, rail sub-groups.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 148px 92px 1fr; gap: 16px; align-items: center; padding: 9px 0; border-bottom: 1px solid #F0F0EC;">
+        <div style="width: 26px; height: 26px; background: #DEDEDA; border: 1px solid #C9C9C4;"></div>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C;">border</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #55555A;">#DEDEDA</span>
+        <span style="font-size: 13.5px; color: #2A2A2F;">Control and chip borders, page-frame border, drag handles, and disabled control glyphs (border-coloured, never hidden).</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 148px 92px 1fr; gap: 16px; align-items: center; padding: 9px 0; border-bottom: 1px solid #F0F0EC;">
+        <div style="width: 26px; height: 26px; background: #C9C9C4; border: 1px solid #B8B8B4;"></div>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C;">border-strong</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #55555A;">#C9C9C4</span>
+        <span style="font-size: 13.5px; color: #2A2A2F;">Ask-input border, and every dashed affordance (<code>+ Filter</code>, <code>+N more</code>).</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 148px 92px 1fr; gap: 16px; align-items: center; padding: 9px 0; border-bottom: 1px solid #F0F0EC;">
+        <div style="width: 26px; height: 26px; background: #FFFFFF; border: 1px solid #DEDEDA;"></div>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C;">surface</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #55555A;">#FFFFFF</span>
+        <span style="font-size: 13.5px; color: #2A2A2F;">Page and panel background. The default; almost everything sits on it.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 148px 92px 1fr; gap: 16px; align-items: center; padding: 9px 0; border-bottom: 1px solid #F0F0EC;">
+        <div style="width: 26px; height: 26px; background: #FAFAF8; border: 1px solid #DEDEDA;"></div>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C;">surface-2</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #55555A;">#FAFAF8</span>
+        <span style="font-size: 13.5px; color: #2A2A2F;">Every band (back, count, criteria, footer), the stat-grid note cell, and row/link hover.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 148px 92px 1fr; gap: 16px; align-items: center; padding: 9px 0; border-bottom: 1px solid #F0F0EC;">
+        <div style="width: 26px; height: 26px; background: #1D4ED8;"></div>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C;">accent</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #55555A;">#1D4ED8</span>
+        <span style="font-size: 13.5px; color: #2A2A2F;">Links, wordmark dot, <em>Day</em>, active nav underline, saved count, Ask submit fill, inferred-chip text, match rationale, focus ring.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 148px 92px 1fr; gap: 16px; align-items: center; padding: 9px 0; border-bottom: 1px solid #F0F0EC;">
+        <div style="width: 26px; height: 26px; background: #EEF2FF; border: 1px solid #C7D2FE;"></div>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C;">accent-bg</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #55555A;">#EEF2FF</span>
+        <span style="font-size: 13.5px; color: #2A2A2F;">Fill of any ask-derived / matched chip. Never a section background.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 148px 92px 1fr; gap: 16px; align-items: center; padding: 9px 0; border-bottom: 1px solid #F0F0EC;">
+        <div style="width: 26px; height: 26px; background: #FFFFFF; border: 2px solid #C7D2FE;"></div>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C;">accent-border</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #55555A;">#C7D2FE</span>
+        <span style="font-size: 13.5px; color: #2A2A2F;">1px border of any ask-derived / matched chip.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 148px 92px 1fr; gap: 16px; align-items: center; padding: 9px 0; border-bottom: 1px solid #F0F0EC;">
+        <div style="width: 26px; height: 26px; background: #F0F8F5; border: 1px solid #BFE3D5;"></div>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C;">gem / -bg / -border</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #55555A;">#0F7B5A<br>#F0F8F5<br>#BFE3D5</span>
+        <span style="font-size: 13.5px; color: #2A2A2F;">The hidden-gem badge, and nothing else. See the note below — this is a status colour, not a second accent.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 148px 92px 1fr; gap: 16px; align-items: center; padding: 9px 0; border-bottom: 1px solid #F0F0EC;">
+        <div style="width: 26px; height: 26px; background: #B9B9B5; border: 1px solid #DEDEDA;"></div>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C;">page</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #55555A;">#B9B9B5</span>
+        <span style="font-size: 13.5px; color: #2A2A2F;">Backdrop of the reference documents only. <strong>Not a product colour</strong> — the app is white to the edges.</span>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #E8E8E4; border: 1px solid #E8E8E4;">
+      <div style="background: #FAFAF8; padding: 16px 20px; display: flex; flex-direction: column; gap: 6px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">One accent. There is no second accent.</div>
+        <div style="font-size: 13.5px; line-height: 1.5; color: #55555A; text-wrap: pretty;"><code>accent #1D4ED8</code> is the only hue in the product. Everything else is a neutral. Do not introduce a second accent for a new screen, a new state, a category, a chart series, or a “success” colour — encode difference with weight, size, rules and greyscale instead. Proportion bands use four greys (<code>ink → ink-2 → muted → faint</code>) precisely so that colour can never imply good and bad.</div>
+      </div>
+      <div style="background: #FAFAF8; padding: 16px 20px; display: flex; flex-direction: column; gap: 6px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">The gem exception, bounded</div>
+        <div style="font-size: 13.5px; line-height: 1.5; color: #55555A; text-wrap: pretty;">The green <code>gem</code> trio is a data flag carried on one badge on <code>/find</code> and <code>/school</code>. It is not available for links, buttons, borders, backgrounds, charts or any other component, and it does not get a hover state. If a screen wants green for anything else, the answer is no. It is listed here so the exception is explicit rather than rediscovered.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 03 TYPE ========== -->
+  <div id="s03" style="padding: 30px 36px 30px; border-bottom: 1px solid #E8E8E4; display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; align-items: baseline; gap: 14px;">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #8A8A90;">03</span>
+      <span style="font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -0.03em; color: #0B0B0C;">Typography</span>
+      <span style="font-size: 13px; color: #8A8A90;">Four faces, three jobs. The split is load-bearing — do not collapse it.</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: #E8E8E4; border: 1px solid #E8E8E4;">
+      <div style="background: #FFFFFF; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-family: 'Space Grotesk', sans-serif; font-size: 30px; font-weight: 700; letter-spacing: -0.035em; color: #0B0B0C;">Space Grotesk</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #8A8A90;">700 only</span>
+        <span style="font-size: 13.5px; line-height: 1.5; color: #55555A;">Job 1 — <strong>display</strong>. Page titles and the word <em>Admit</em>. Nowhere else. Never in a paragraph, never below 26px, never in a label.</span>
+      </div>
+      <div style="background: #FFFFFF; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-size: 30px; font-weight: 600; letter-spacing: -0.02em; color: #0B0B0C;">Libre Franklin</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #8A8A90;">400 / 500 / 600 / 700</span>
+        <span style="font-size: 13.5px; line-height: 1.5; color: #55555A;">Job 2 — <strong>everything a person reads</strong>. School names, copy, chips, buttons, nav, labels. The workhorse and the default face on <code>body</code>.</span>
+      </div>
+      <div style="background: #FFFFFF; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 500; letter-spacing: -0.02em; color: #0B0B0C;">JetBrains</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #8A8A90;">400 / 500</span>
+        <span style="font-size: 13.5px; line-height: 1.5; color: #55555A;">Job 3 — <strong>numbers, codes and uppercase eyebrows</strong>. Stat values, ratios, counts, DBNs, dates, transit bullets, row and rank numerals. Keeps digit columns aligned.</span>
+      </div>
+      <div style="background: #FFFFFF; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-family: 'Newsreader', serif; font-style: italic; font-size: 32px; font-weight: 500; letter-spacing: -0.01em; color: #1D4ED8;">Newsreader</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #8A8A90;">Italic 500 only</span>
+        <span style="font-size: 13.5px; line-height: 1.5; color: #55555A;">The fourth face, with no job of its own: the word <em>Day</em> in the wordmark, in <code>accent</code>. It appears exactly once per screen and must never be used for anything else.</span>
+      </div>
+    </div>
+
+    <div style="font-size: 13.5px; line-height: 1.5; color: #55555A; max-width: 900px; text-wrap: pretty;">All four are Google Fonts; load via <code>next/font/google</code> with <code>display: swap</code>, exposed as <code>font-display</code> (Space Grotesk), <code>font-sans</code> (Libre Franklin), <code>font-mono</code> (JetBrains Mono), <code>font-wordmark</code> (Newsreader italic). Apply <code>text-wrap: pretty</code> to every multi-line body string. Mono is never used for a sentence; Libre Franklin is never used for a stat value.</div>
+
+    <div style="display: flex; flex-direction: column; padding-top: 6px;">
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #E8E8E4; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">
+        <span>Element</span><span>Face</span><span>Size</span><span>Weight</span><span>Letter-sp.</span><span>Colour / notes</span>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Wordmark “Admit”</span><span>Grotesk</span><span style="font-family: 'JetBrains Mono', monospace;">21px</span><span style="font-family: 'JetBrains Mono', monospace;">700</span><span style="font-family: 'JetBrains Mono', monospace;">−0.035em</span><span style="color: #55555A;">ink</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Wordmark “Day”</span><span>Newsreader <em>it.</em></span><span style="font-family: 'JetBrains Mono', monospace;">24px</span><span style="font-family: 'JetBrains Mono', monospace;">500</span><span style="font-family: 'JetBrains Mono', monospace;">−0.01em</span><span style="color: #55555A;">accent · <code>margin-left: 3px</code></span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Page title</span><span>Grotesk</span><span style="font-family: 'JetBrains Mono', monospace;">40px</span><span style="font-family: 'JetBrains Mono', monospace;">700</span><span style="font-family: 'JetBrains Mono', monospace;">−0.038em</span><span style="color: #55555A;">ink · lh 1.04 · max-w 700px · <code>text-wrap: pretty</code></span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Page subhead</span><span>Franklin</span><span style="font-family: 'JetBrains Mono', monospace;">15.5px</span><span style="font-family: 'JetBrains Mono', monospace;">400</span><span style="font-family: 'JetBrains Mono', monospace;">—</span><span style="color: #55555A;">muted · lh 1.5 · max-w 560px</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Eyebrow / md — section</span><span>Mono</span><span style="font-family: 'JetBrains Mono', monospace;">11px</span><span style="font-family: 'JetBrains Mono', monospace;">400</span><span style="font-family: 'JetBrains Mono', monospace;">.12em</span><span style="color: #55555A;">faint · uppercase · every section label</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Eyebrow / sm — inline</span><span>Mono</span><span style="font-family: 'JetBrains Mono', monospace;">10.5px</span><span style="font-family: 'JetBrains Mono', monospace;">400</span><span style="font-family: 'JetBrains Mono', monospace;">.1em</span><span style="color: #55555A;">faint · table headers, band labels, <code>NOT REPORTED</code></span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Eyebrow / xs — compact</span><span>Mono</span><span style="font-family: 'JetBrains Mono', monospace;">10px</span><span style="font-family: 'JetBrains Mono', monospace;">400</span><span style="font-family: 'JetBrains Mono', monospace;">.1em</span><span style="color: #55555A;">faint · sub-labels inside the 316px rail only</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Nav item / active</span><span>Franklin</span><span style="font-family: 'JetBrains Mono', monospace;">14.5px</span><span style="font-family: 'JetBrains Mono', monospace;">400 / 500</span><span style="font-family: 'JetBrains Mono', monospace;">—</span><span style="color: #55555A;">muted / ink + 2px accent underline, 3px offset</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Nav saved count</span><span>Mono</span><span style="font-family: 'JetBrains Mono', monospace;">12.5px</span><span style="font-family: 'JetBrains Mono', monospace;">400</span><span style="font-family: 'JetBrains Mono', monospace;">—</span><span style="color: #55555A;">accent</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">School name — result row</span><span>Franklin</span><span style="font-family: 'JetBrains Mono', monospace;">18px</span><span style="font-family: 'JetBrains Mono', monospace;">700</span><span style="font-family: 'JetBrains Mono', monospace;">−0.015em</span><span style="color: #55555A;">ink</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">School name — rank row</span><span>Franklin</span><span style="font-family: 'JetBrains Mono', monospace;">16 / 15px</span><span style="font-family: 'JetBrains Mono', monospace;">600</span><span style="font-family: 'JetBrains Mono', monospace;">—</span><span style="color: #55555A;">ink · 15px when the rail is present</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">School name — card</span><span>Franklin</span><span style="font-family: 'JetBrains Mono', monospace;">15.5px</span><span style="font-family: 'JetBrains Mono', monospace;">600</span><span style="font-family: 'JetBrains Mono', monospace;">—</span><span style="color: #55555A;">ink · match-strip cards</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Row metadata line</span><span>Franklin</span><span style="font-family: 'JetBrains Mono', monospace;">13.5 / 12.5px</span><span style="font-family: 'JetBrains Mono', monospace;">400</span><span style="font-family: 'JetBrains Mono', monospace;">—</span><span style="color: #55555A;">muted (faint on <code>/find</code> rows) · 12.5px when compact</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Metadata line — detail</span><span>Mono</span><span style="font-family: 'JetBrains Mono', monospace;">13px</span><span style="font-family: 'JetBrains Mono', monospace;">400</span><span style="font-family: 'JetBrains Mono', monospace;">.02em</span><span style="color: #55555A;">faint · <code>13K430 · Fort Greene · Brooklyn</code></span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Rationale / match copy</span><span>Franklin</span><span style="font-family: 'JetBrains Mono', monospace;">14.5px</span><span style="font-family: 'JetBrains Mono', monospace;">400</span><span style="font-family: 'JetBrains Mono', monospace;">—</span><span style="color: #55555A;">ink-2 · lh 1.5 · max-w 430px</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Stat value / lg</span><span>Mono</span><span style="font-family: 'JetBrains Mono', monospace;">24px</span><span style="font-family: 'JetBrains Mono', monospace;">500</span><span style="font-family: 'JetBrains Mono', monospace;">−0.02em</span><span style="color: #55555A;">ink · full-width stat grid</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Stat value / md</span><span>Mono</span><span style="font-family: 'JetBrains Mono', monospace;">18px</span><span style="font-family: 'JetBrains Mono', monospace;">500</span><span style="font-family: 'JetBrains Mono', monospace;">−0.02em</span><span style="color: #55555A;">ink · rail breakdown grids</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Stat value / sm</span><span>Mono</span><span style="font-family: 'JetBrains Mono', monospace;">16px</span><span style="font-family: 'JetBrains Mono', monospace;">400</span><span style="font-family: 'JetBrains Mono', monospace;">—</span><span style="color: #55555A;">ink · inside a result row</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Stat label — all sizes</span><span>Franklin</span><span style="font-family: 'JetBrains Mono', monospace;">10.5px</span><span style="font-family: 'JetBrains Mono', monospace;">400</span><span style="font-family: 'JetBrains Mono', monospace;">.06em</span><span style="color: #55555A;">faint · uppercase · never scales with the value</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Match count (band)</span><span>Mono</span><span style="font-family: 'JetBrains Mono', monospace;">22px</span><span style="font-family: 'JetBrains Mono', monospace;">500</span><span style="font-family: 'JetBrains Mono', monospace;">−0.02em</span><span style="color: #55555A;">ink</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Result row numeral</span><span>Mono</span><span style="font-family: 'JetBrains Mono', monospace;">13px</span><span style="font-family: 'JetBrains Mono', monospace;">400</span><span style="font-family: 'JetBrains Mono', monospace;">—</span><span style="color: #55555A;">numeral <code>#B8B8B4</code> · 5px padding-top</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Rank numeral</span><span>Mono</span><span style="font-family: 'JetBrains Mono', monospace;">17 / 16px</span><span style="font-family: 'JetBrains Mono', monospace;">500</span><span style="font-family: 'JetBrains Mono', monospace;">—</span><span style="color: #55555A;">ink · 16px when the rail is present · zero-padded <code>01</code></span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Ratio in a row</span><span>Mono</span><span style="font-family: 'JetBrains Mono', monospace;">15 / 14px</span><span style="font-family: 'JetBrains Mono', monospace;">400</span><span style="font-family: 'JetBrains Mono', monospace;">—</span><span style="color: #55555A;">ink · 14px when compact</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Track / method string</span><span>Franklin</span><span style="font-family: 'JetBrains Mono', monospace;">13.5px</span><span style="font-family: 'JetBrains Mono', monospace;">400</span><span style="font-family: 'JetBrains Mono', monospace;">—</span><span style="color: #55555A;">ink-2 (muted for a program method)</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Requirement heading</span><span>Franklin</span><span style="font-family: 'JetBrains Mono', monospace;">15px</span><span style="font-family: 'JetBrains Mono', monospace;">700</span><span style="font-family: 'JetBrains Mono', monospace;">—</span><span style="color: #55555A;">ink · <code>SHSAT — 8 of 9 programs</code></span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Definition label / value</span><span>Franklin</span><span style="font-family: 'JetBrains Mono', monospace;">14.5px</span><span style="font-family: 'JetBrains Mono', monospace;">400</span><span style="font-family: 'JetBrains Mono', monospace;">—</span><span style="color: #55555A;">faint / ink-2 · dates in Mono 13.5px</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Program name</span><span>Franklin</span><span style="font-family: 'JetBrains Mono', monospace;">15px</span><span style="font-family: 'JetBrains Mono', monospace;">500</span><span style="font-family: 'JetBrains Mono', monospace;">—</span><span style="color: #55555A;">ink</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Chip / md</span><span>Franklin</span><span style="font-family: 'JetBrains Mono', monospace;">13px</span><span style="font-family: 'JetBrains Mono', monospace;">400</span><span style="font-family: 'JetBrains Mono', monospace;">—</span><span style="color: #55555A;">padding <code>5px 10px</code> · the default chip</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Chip / sm</span><span>Franklin</span><span style="font-family: 'JetBrains Mono', monospace;">12.5px</span><span style="font-family: 'JetBrains Mono', monospace;">400</span><span style="font-family: 'JetBrains Mono', monospace;">—</span><span style="color: #55555A;">padding <code>4px 9px</code> · bands and dense rails only</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Chip / filter (rail)</span><span>Franklin</span><span style="font-family: 'JetBrains Mono', monospace;">13.5px</span><span style="font-family: 'JetBrains Mono', monospace;">400</span><span style="font-family: 'JetBrains Mono', monospace;">—</span><span style="color: #55555A;">padding <code>7px 13px</code> · the larger tap target in the filter rail</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Track badge</span><span>Franklin</span><span style="font-family: 'JetBrains Mono', monospace;">13px</span><span style="font-family: 'JetBrains Mono', monospace;">400</span><span style="font-family: 'JetBrains Mono', monospace;">—</span><span style="color: #55555A;">ink · padding <code>5px 11px</code> · 1px ink border</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Hidden-gem badge</span><span>Mono</span><span style="font-family: 'JetBrains Mono', monospace;">10.5px</span><span style="font-family: 'JetBrains Mono', monospace;">400</span><span style="font-family: 'JetBrains Mono', monospace;">.08em</span><span style="color: #55555A;">gem on gem-bg · uppercase · <code>3px 7px</code> (row) / <code>4px 8px</code> (title)</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Transit bullet</span><span>Mono</span><span style="font-family: 'JetBrains Mono', monospace;">13px</span><span style="font-family: 'JetBrains Mono', monospace;">400</span><span style="font-family: 'JetBrains Mono', monospace;">—</span><span style="color: #55555A;">ink-2 · <code>4px 9px</code> · 1px border · square, never MTA colours</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Button — primary</span><span>Franklin</span><span style="font-family: 'JetBrains Mono', monospace;">14px</span><span style="font-family: 'JetBrains Mono', monospace;">500</span><span style="font-family: 'JetBrains Mono', monospace;">—</span><span style="color: #55555A;">white on ink · <code>11px 20px</code> (or <code>11px 0</code> full-width)</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Button — outline / row</span><span>Franklin</span><span style="font-family: 'JetBrains Mono', monospace;">13.5px</span><span style="font-family: 'JetBrains Mono', monospace;">400–500</span><span style="font-family: 'JetBrains Mono', monospace;">—</span><span style="color: #55555A;">ink on surface · 1px ink · <code>8px 0</code>, 96px wide in a result row</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Link — inline / band</span><span>Franklin</span><span style="font-family: 'JetBrains Mono', monospace;">13–13.5px</span><span style="font-family: 'JetBrains Mono', monospace;">400</span><span style="font-family: 'JetBrains Mono', monospace;">—</span><span style="color: #55555A;">accent · underline only in the rail footer note (3px offset)</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Explanatory sentence</span><span>Franklin</span><span style="font-family: 'JetBrains Mono', monospace;">13.5px</span><span style="font-family: 'JetBrains Mono', monospace;">400</span><span style="font-family: 'JetBrains Mono', monospace;">—</span><span style="color: #55555A;">muted · lh 1.5 · <code>text-wrap: pretty</code> · data-gap and shape lines</span></div>
+      <div style="display: grid; grid-template-columns: 210px 96px 62px 62px 92px 1fr; gap: 14px; padding: 8px 0; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;"><span style="font-weight: 500; color: #0B0B0C;">Footer / disclaimer</span><span>Franklin</span><span style="font-family: 'JetBrains Mono', monospace;">13px</span><span style="font-family: 'JetBrains Mono', monospace;">400</span><span style="font-family: 'JetBrains Mono', monospace;">—</span><span style="color: #55555A;">faint</span></div>
+    </div>
+  </div>
+
+  <!-- ========== 04 GEOMETRY ========== -->
+  <div id="s04" style="padding: 30px 36px 30px; border-bottom: 1px solid #E8E8E4; display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; align-items: baseline; gap: 14px;">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #8A8A90;">04</span>
+      <span style="font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -0.03em; color: #0B0B0C;">Geometry</span>
+      <span style="font-size: 13px; color: #8A8A90;">Four rules and two scales. They produce the editorial feel; breaking one breaks it.</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: #E8E8E4; border: 1px solid #E8E8E4;">
+      <div style="background: #FFFFFF; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 500; color: #0B0B0C;">radius: 0</span>
+        <span style="font-size: 13px; line-height: 1.5; color: #55555A;">Everywhere. Chips, buttons, inputs, badges, panels, images. The one exception is the 9px wordmark dot, which is a circle. Set <code>rounded-none</code> globally.</span>
+      </div>
+      <div style="background: #FFFFFF; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 500; color: #0B0B0C;">shadow: none</span>
+        <span style="font-size: 13px; line-height: 1.5; color: #55555A;">No elevation of any kind inside the UI, including on hover, drag and overlays. Drop shadows in the reference files are presentation only.</span>
+      </div>
+      <div style="background: #FFFFFF; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 500; color: #0B0B0C;">1px rules</span>
+        <span style="font-size: 13px; line-height: 1.5; color: #55555A;">Separation is done with rules, never cards. <code>rule</code> between structures, <code>rule-light</code> inside a list. Cell grids use <code>gap: 1px</code> on a <code>rule</code> background so the divider <em>is</em> the gap.</span>
+      </div>
+      <div style="background: #FFFFFF; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 18px; font-weight: 500; color: #0B0B0C;">1120px</span>
+        <span style="font-size: 13px; line-height: 1.5; color: #55555A;">Max content width, centred, white on white. Every screen. Below it the layout reflows; it never compresses (§09).</span>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 28px; padding-top: 6px;">
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #8A8A90;">Spacing — layout scale</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C; border: 1px solid #DEDEDA; padding: 5px 10px;">8</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C; border: 1px solid #DEDEDA; padding: 5px 10px;">12</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C; border: 1px solid #DEDEDA; padding: 5px 10px;">14</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C; border: 1px solid #DEDEDA; padding: 5px 10px;">16</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C; border: 1px solid #DEDEDA; padding: 5px 10px;">18</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C; border: 1px solid #DEDEDA; padding: 5px 10px;">20</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C; border: 1px solid #DEDEDA; padding: 5px 10px;">24</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C; border: 1px solid #DEDEDA; padding: 5px 10px;">26</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C; border: 1px solid #DEDEDA; padding: 5px 10px;">28</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C; border: 1px solid #DEDEDA; padding: 5px 10px;">30</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C; border: 1px solid #DEDEDA; padding: 5px 10px;">36</span>
+        </div>
+        <div style="font-size: 13.5px; line-height: 1.5; color: #55555A; text-wrap: pretty;">Section and band padding, gaps between groups, gutters. New layout work uses only these. <strong>Standard section padding is <code>26px 36px 28px</code></strong>; a section that closes a column may take <code>30px</code> bottom. Bands are <code>16px 36px</code>, tight bands <code>11–12px 36px</code>, the header <code>18px 36px</code>, rail sections <code>26px 28px</code>. Horizontal page padding is always <code>36px</code>.</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #8A8A90;">Spacing — component scale</div>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C; border: 1px solid #DEDEDA; padding: 5px 10px;">2</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C; border: 1px solid #DEDEDA; padding: 5px 10px;">4</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C; border: 1px solid #DEDEDA; padding: 5px 10px;">5</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C; border: 1px solid #DEDEDA; padding: 5px 10px;">6</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C; border: 1px solid #DEDEDA; padding: 5px 10px;">7</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C; border: 1px solid #DEDEDA; padding: 5px 10px;">8</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C; border: 1px solid #DEDEDA; padding: 5px 10px;">9</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C; border: 1px solid #DEDEDA; padding: 5px 10px;">10</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C; border: 1px solid #DEDEDA; padding: 5px 10px;">11</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C; border: 1px solid #DEDEDA; padding: 5px 10px;">12</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C; border: 1px solid #DEDEDA; padding: 5px 10px;">13</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C; border: 1px solid #DEDEDA; padding: 5px 10px;">14</span>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C; border: 1px solid #DEDEDA; padding: 5px 10px;">16</span>
+        </div>
+        <div style="font-size: 13.5px; line-height: 1.5; color: #55555A; text-wrap: pretty;">Padding and gaps <em>inside</em> a primitive, where optical fit beats arithmetic — chip <code>5px 10px</code>, row <code>9px 0</code>, stat cell <code>16px 18px</code>. These values are frozen per primitive in §06; do not invent new ones, and never use a component step for layout. Grid column templates (<code>34px</code>, <code>54px</code>, <code>92px</code>, <code>152px</code>, <code>190px</code>, <code>316px</code>) are fixed measures, not spacing.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 05 LAYOUT SPINE ========== -->
+  <div id="s05" style="padding: 30px 36px 30px; border-bottom: 1px solid #E8E8E4; display: flex; flex-direction: column; gap: 18px;">
+    <div style="display: flex; align-items: baseline; gap: 14px;">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #8A8A90;">05</span>
+      <span style="font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -0.03em; color: #0B0B0C;">The layout spine</span>
+      <span style="font-size: 13px; color: #8A8A90;">Every screen is the same stack of full-width bands over a <code>1fr / 316px</code> body.</span>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 300px 1fr; gap: 28px; align-items: start;">
+      <!-- diagram -->
+      <div style="border: 1px solid #DEDEDA;">
+        <div style="padding: 9px 12px; border-bottom: 1px solid #E8E8E4; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">Header · 18 36</div>
+        <div style="padding: 18px 12px; border-bottom: 1px solid #E8E8E4; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #0B0B0C;">Title band · 30 36 26</div>
+        <div style="padding: 8px 12px; border-bottom: 1px solid #E8E8E4; background: #FAFAF8; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">Context band · surface-2</div>
+        <div style="display: grid; grid-template-columns: 1fr 96px;">
+          <div style="border-right: 1px solid #E8E8E4; padding: 44px 12px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #0B0B0C;">Main · 1fr</div>
+          <div style="padding: 44px 10px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">Rail<br>316</div>
+        </div>
+        <div style="padding: 9px 12px; border-top: 1px solid #E8E8E4; background: #FAFAF8; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">Footer band · 16 36</div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div style="display: flex; gap: 10px; align-items: baseline;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90; white-space: nowrap; width: 92px; flex: none;">Header</span>
+          <span style="font-size: 13.5px; line-height: 1.5; color: #2A2A2F; text-wrap: pretty;">Identical on every screen. <code>18px 36px</code>, <code>border-bottom: 1px rule</code>. Left: 9px accent dot + wordmark, 9px gap. Right: nav <strong>Find / My Schools / Checklist</strong>, 28px gap, 14.5px muted; the active item is ink 500 with <code>border-bottom: 2px solid accent</code> and 3px padding-bottom. <code>My Schools</code> always carries the live saved count in mono accent. <span style="color: #8A8A90;">The third item is <code>Checklist</code>, not <code>Readiness</code> — see drift 01.</span></span>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: baseline;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90; white-space: nowrap; width: 92px; flex: none;">Title band</span>
+          <span style="font-size: 13.5px; line-height: 1.5; color: #2A2A2F; text-wrap: pretty;">Grid <code>1fr auto</code> (or <code>1fr 200px</code> when the screen has a two-button action stack), gap 28px, <code>align-items: end</code>, <code>30px 36px 26px</code>, <code>border-bottom: 1px rule</code>. Left: the page title, plus its metadata line and badge row if the screen is a record. Right: at most one primary action and one secondary. No counts here — the nav and the content carry those.</span>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: baseline;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90; white-space: nowrap; width: 92px; flex: none;">Body</span>
+          <span style="font-size: 13.5px; line-height: 1.5; color: #2A2A2F; text-wrap: pretty;">CSS grid. <code>316px 1fr</code> when the rail is a control surface (<code>/find</code> filters — rail leads, <code>border-right: 1px rule</code> on the rail). <code>1fr 316px</code> when the rail is reference (<code>/school</code>, <code>/my-schools</code> — <code>border-right: 1px rule</code> on the main column). The 316px measure is fixed and shared by all three screens; it is the spine, and a new screen either uses it or has no rail at all. Rail sections stack, <code>26px 28px</code> each, divided by <code>border-bottom: 1px rule</code>. <strong>The rail never holds the primary action</strong> and never holds decision content.</span>
+        </div>
+        <div style="display: flex; gap: 10px; align-items: baseline;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90; white-space: nowrap; width: 92px; flex: none;">Sections</span>
+          <span style="font-size: 13.5px; line-height: 1.5; color: #2A2A2F; text-wrap: pretty;">Inside the main column, one section per idea: <code>26px 36px 28px</code>, <code>border-bottom: 1px rule</code>, opening with an Eyebrow/md row that may carry a right-aligned mono count or link. The last section in a column drops its bottom border.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- band pattern -->
+    <div style="display: flex; flex-direction: column; padding-top: 6px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #8A8A90; padding-bottom: 10px;">The band pattern — <span style="text-transform: none; letter-spacing: 0; color: #55555A;">a <code>surface-2</code> full-bleed strip that carries context, never content</span></div>
+      <div style="display: grid; grid-template-columns: 120px 128px 150px 1fr; gap: 16px; padding: 8px 0; border-bottom: 1px solid #E8E8E4; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">
+        <span>Band</span><span>Geometry</span><span>Appears on</span><span>Contents and rule for when it applies</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 120px 128px 150px 1fr; gap: 16px; padding: 10px 0; border-bottom: 1px solid #F0F0EC; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-weight: 600; color: #0B0B0C;">Back band</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: #55555A;">11px 36px<br>border-bottom</span>
+        <span style="color: #55555A;">Any screen entered <em>from</em> a list</span>
+        <span style="line-height: 1.5;">Left: accent link <code>‹ Back to 31 matches · Brooklyn + Queens, Screened</code> at 13.5px, naming the active filters. Right: mono <code>2 OF 31</code>. Applies whenever a record was opened from a result set. The link is the serialised URL query — never <code>history.back()</code>, so it survives refresh and sharing.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 120px 128px 150px 1fr; gap: 16px; padding: 10px 0; border-bottom: 1px solid #F0F0EC; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-weight: 600; color: #0B0B0C;">Count band</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: #55555A;">16px 36px<br>border-bottom</span>
+        <span style="color: #55555A;">Any screen that <em>produces</em> a result set</span>
+        <span style="line-height: 1.5;">Left: mono count (22px/500) + the active-filter string in plain language. Right: mono uppercase sort state (<code>SORTED BY FIT</code>). Applies directly above a list whose length depends on user input.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 120px 128px 150px 1fr; gap: 16px; padding: 10px 0; border-bottom: 1px solid #F0F0EC; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-weight: 600; color: #0B0B0C;">Criteria strip</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: #55555A;">11px 36px<br>border-bottom</span>
+        <span style="color: #55555A;">Any screen showing a <em>saved</em> set</span>
+        <span style="line-height: 1.5;">Eyebrow/sm <code>SELECTION CRITERIA</code>, then one Chip/sm inferred per criterion, then a right-aligned <code>Edit criteria</code> link back to <code>/find</code> with those filters applied. Omit entirely when the set was built without criteria — never render an empty strip.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 120px 128px 150px 1fr; gap: 16px; padding: 10px 0; border-bottom: 1px solid #F0F0EC; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-weight: 600; color: #0B0B0C;">Footer band</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: #55555A;">16px 36px<br>border-top</span>
+        <span style="color: #55555A;">Every screen, always</span>
+        <span style="line-height: 1.5;">Two 13px faint lines, spread apart. Left: continuation or provenance. Right, right-aligned: the standing disclaimer for that screen type — see §07. Mandatory; a screen without one is incomplete.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 120px 128px 150px 1fr; gap: 16px; padding: 10px 0; border-bottom: 1px solid #F0F0EC; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-weight: 600; color: #0B0B0C;">Note strip</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 12.5px; color: #55555A;">13px 16px<br>1px rule box</span>
+        <span style="color: #55555A;">Inside a section</span>
+        <span style="line-height: 1.5;">The only inset variant: a bordered <code>surface-2</code> box closing a section that makes a claim about the outside world (requirements), pairing the caveat with the outbound official link.</span>
+      </div>
+      <div style="display: flex; gap: 10px; align-items: baseline; padding-top: 14px;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90; white-space: nowrap;">Order</span>
+        <span style="font-size: 13.5px; line-height: 1.5; color: #55555A; text-wrap: pretty;">At most one context band per screen, and it sits directly under the header when it is navigational (back band) or under the title band when it describes the content below it (count band, criteria strip). Two stacked context bands is a sign the screen is doing two jobs.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 06 PRIMITIVES ========== -->
+  <div id="s06" style="padding: 30px 36px 30px; border-bottom: 1px solid #E8E8E4; display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; align-items: baseline; gap: 14px;">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #8A8A90;">06</span>
+      <span style="font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -0.03em; color: #0B0B0C;">Primitives</span>
+      <span style="font-size: 13px; color: #8A8A90;">Eleven after the merges below. Everything else is layout — resist adding a twelfth.</span>
+    </div>
+
+    <!-- CHIP -->
+    <div style="border: 1px solid #E8E8E4; display: grid; grid-template-columns: 1fr 300px;">
+      <div style="padding: 18px 20px; border-right: 1px solid #E8E8E4; display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; align-items: baseline; gap: 10px;"><span style="font-size: 16px; font-weight: 700; color: #0B0B0C;">Chip</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">6 variants · 3 sizes</span></div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+          <span style="background: #0B0B0C; color: #FFFFFF; font-size: 13.5px; padding: 7px 13px;">Brooklyn ✓</span>
+          <span style="border: 1px solid #DEDEDA; color: #3A3A3F; font-size: 13.5px; padding: 7px 13px;">Bronx</span>
+          <span style="background: #EEF2FF; border: 1px solid #C7D2FE; color: #1D4ED8; font-size: 13px; padding: 5px 10px;">Computer Science ×</span>
+          <span style="background: #EEF2FF; border: 1px solid #C7D2FE; color: #1D4ED8; font-size: 13px; padding: 5px 10px;">Soccer, boys</span>
+          <span style="border: 1px solid #DEDEDA; color: #2A2A2F; font-size: 13px; padding: 5px 10px;">AP Calculus AB</span>
+          <span style="border: 1px dashed #C9C9C4; color: #8A8A90; font-size: 13px; padding: 5px 10px;">+7 more</span>
+          <span style="border: 1px solid #0B0B0C; color: #0B0B0C; font-size: 13px; padding: 5px 11px;">Screened</span>
+        </div>
+        <div style="font-size: 13.5px; line-height: 1.55; color: #2A2A2F; text-wrap: pretty;"><strong>set</strong> — ink fill, white, trailing <code>✓</code>; a filter the user chose. <strong>unselected</strong> — 1px <code>border</code>, <code>chip-ink</code>. <strong>inferred</strong> — <code>accent-bg</code> / 1px <code>accent-border</code> / accent text, trailing <code>×</code>; anything the system derived from an ask, always removable. <strong>matched</strong> — identical to inferred but with no <code>×</code>; a read-only echo of a signal on another screen. <strong>affordance</strong> — 1px dashed <code>border-strong</code>, faint (<code>+ Filter</code>, <code>+N more</code>); expands in place. <strong>outline-ink</strong> — 1px <code>ink</code>, ink text, <code>5px 11px</code>; the track badge in a title band (this replaces a separate TrackBadge primitive).</div>
+      </div>
+      <div style="padding: 18px 20px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">Geometry</div>
+        <div style="font-size: 13px; line-height: 1.55; color: #55555A;">Radius 0. <code>md</code> 13px / <code>5px 10px</code> (default). <code>sm</code> 12.5px / <code>4px 9px</code> (bands, dense rails). <code>filter</code> 13.5px / <code>7px 13px</code> (rail, larger tap target). Sets wrap with <code>gap: 7–8px</code>. Mono variant for transit bullets: 13px / <code>4px 9px</code>, 1px <code>border</code>, square.</div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90; padding-top: 4px;">Used on</div>
+        <div style="font-size: 13px; color: #55555A;">/find rail + applied row · /school badges, activities, transit · /my-schools criteria strip</div>
+      </div>
+    </div>
+
+    <!-- BUTTON -->
+    <div style="border: 1px solid #E8E8E4; display: grid; grid-template-columns: 1fr 300px;">
+      <div style="padding: 18px 20px; border-right: 1px solid #E8E8E4; display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; align-items: baseline; gap: 10px;"><span style="font-size: 16px; font-weight: 700; color: #0B0B0C;">Button</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">4 variants</span></div>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
+          <span style="background: #0B0B0C; color: #FFFFFF; font-size: 14px; font-weight: 500; padding: 11px 20px;">Add to list</span>
+          <span style="border: 1px solid #0B0B0C; color: #0B0B0C; font-size: 14px; font-weight: 500; padding: 10px 20px;">On your list · Remove</span>
+          <span style="border: 1px solid #DEDEDA; color: #1D4ED8; font-size: 13.5px; padding: 10px 18px;">MySchools page ↗</span>
+          <span style="background: #1D4ED8; color: #FFFFFF; font-size: 15px; font-weight: 500; padding: 13px 26px;">Ask</span>
+          <span style="border: 1px solid #DEDEDA; color: #55555A; font-size: 12px; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center;">↑</span>
+          <span style="border: 1px solid #DEDEDA; color: #DEDEDA; font-size: 12px; width: 26px; height: 26px; display: inline-flex; align-items: center; justify-content: center;">↓</span>
+        </div>
+        <div style="font-size: 13.5px; line-height: 1.55; color: #2A2A2F; text-wrap: pretty;"><strong>primary</strong> — ink fill, white, 14px/500, <code>11px 20px</code>. One per screen. <strong>outline</strong> — 1px ink, ink text, same metrics minus the border. <strong>secondary</strong> — 1px <code>border</code>, accent text, <code>10px 0</code>; outbound and low-emphasis. <strong>accent</strong> — accent fill, white, 15px/500, <code>13px 26px</code>; reserved for the Ask submit, the one place the product acts on natural language. <strong>icon-square</strong> — 26px (23px compact), 1px <code>border</code>, glyph at 12px; disabled renders the glyph in <code>border</code> grey, never hidden, so the control's shape stays constant down a column.</div>
+        <div style="font-size: 13.5px; line-height: 1.55; color: #55555A; border-top: 1px solid #F0F0EC; padding-top: 10px; text-wrap: pretty;"><strong style="color: #0B0B0C;">Fill means “not yet done”.</strong> Ink fill = the primary action available; ink outline = the action already taken (<code>On your list · Remove</code>). This holds on every screen and in every list row. <span style="color: #8A8A90;">The <code>/find</code> handoff states the inverse — see drift 05.</span></div>
+      </div>
+      <div style="padding: 18px 20px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">Geometry</div>
+        <div style="font-size: 13px; line-height: 1.55; color: #55555A;">Radius 0, no shadow, no transform. Row-scale button is 96px wide, <code>8px 0</code>, 13.5px. Full-width in a 200px action stack: <code>11px 0</code> primary over <code>10px 0</code> secondary, 8px gap. Hover inverts fill↔outline in 120ms ease-out.</div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90; padding-top: 4px;">Used on</div>
+        <div style="font-size: 13px; color: #55555A;">All three screens. icon-square is /my-schools only so far.</div>
+      </div>
+    </div>
+
+    <!-- STATGRID -->
+    <div style="border: 1px solid #E8E8E4; display: grid; grid-template-columns: 1fr 300px;">
+      <div style="padding: 18px 20px; border-right: 1px solid #E8E8E4; display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; align-items: baseline; gap: 10px;"><span style="font-size: 16px; font-weight: 700; color: #0B0B0C;">StatCell + StatGrid</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #0F7B5A;">Merged — 3 primitives become 1</span></div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: #E8E8E4; border: 1px solid #E8E8E4;">
+          <div style="background: #FFFFFF; padding: 16px 18px; display: flex; flex-direction: column; gap: 4px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 500; letter-spacing: -0.02em; color: #0B0B0C;">4.1</span><span style="font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: #8A8A90;">Applicants / seat</span></div>
+          <div style="background: #FFFFFF; padding: 16px 18px; display: flex; flex-direction: column; gap: 4px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 500; letter-spacing: -0.02em; color: #0B0B0C;">5,847</span><span style="font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: #8A8A90;">Total students</span></div>
+          <div style="background: #FFFFFF; padding: 16px 18px; display: flex; flex-direction: column; gap: 4px;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 500; letter-spacing: -0.02em; color: #0B0B0C;">96%</span><span style="font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; color: #8A8A90;">Graduation rate</span></div>
+          <div style="background: #FAFAF8; padding: 16px 18px; display: flex; align-items: center;"><span style="font-size: 12.5px; line-height: 1.45; color: #55555A;">DOE reported figures. We publish them as given and do not score or rank them.</span></div>
+        </div>
+        <div style="font-size: 13.5px; line-height: 1.55; color: #2A2A2F; text-wrap: pretty;">A container of equal cells, <code>gap: 1px</code> on a <code>rule</code> background with a 1px <code>rule</code> border, so the dividers <em>are</em> the gap. Cell: <code>surface</code>, <code>16px 18px</code>, 4px gap, mono value over uppercase label — number first, label second. Sizes <code>lg</code> 24px/500 (full-width stat row), <code>md</code> 18px/500 (rail breakdowns), <code>sm</code> 16px/400 (inside a result row, unbordered and standalone). The label metric never changes with size. Fields render in a fixed order; a field with no value is <strong>not rendered at all</strong>, and the grid simply has fewer cells. On the full-width stat row the final slot is always the <code>surface-2</code> note cell.</div>
+      </div>
+      <div style="padding: 18px 20px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">Merge note</div>
+        <div style="font-size: 13px; line-height: 1.55; color: #55555A;"><code>StatBlock</code> (from <code>/find</code>) and <code>BreakdownCells</code> (from <code>/my-schools</code>) are retired as separate names. They were the same cell at three sizes. Ship one <code>StatCell</code> with a <code>size</code> prop and one <code>StatGrid</code> with <code>cols</code> and <code>note</code>. Both earlier handoffs already flagged the merge and neither made it — do it before the fourth screen.</div>
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90; padding-top: 4px;">Used on</div>
+        <div style="font-size: 13px; color: #55555A;">/find result rows (sm) · /school the numbers (lg, 4-up) · /my-schools rail (md, 3-up)</div>
+      </div>
+    </div>
+
+    <!-- ROWS -->
+    <div style="border: 1px solid #E8E8E4; display: grid; grid-template-columns: 1fr 300px;">
+      <div style="padding: 18px 20px; border-right: 1px solid #E8E8E4; display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; align-items: baseline; gap: 10px;"><span style="font-size: 16px; font-weight: 700; color: #0B0B0C;">SchoolRow · RankRow</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">Sibling list rows — keep separate</span></div>
+        <div style="font-size: 13.5px; line-height: 1.55; color: #2A2A2F; text-wrap: pretty;"><strong>SchoolRow</strong> — a result row on <code>/find</code>. Grid <code>34px 1fr 128px 96px</code>, gap 16px, <code>22px 36px</code>, <code>align-items: start</code>, <code>border-bottom: 1px rule-light</code> (last row none). Numeral · name+badge / metadata / rationale · StatCell sm · Button. The name and badge share a flex row with a gap so a badge never lands inside a wrapped title.</div>
+        <div style="font-size: 13.5px; line-height: 1.55; color: #2A2A2F; text-wrap: pretty;"><strong>RankRow</strong> — a saved row on <code>/my-schools</code>. Grid <code>54px 1fr 156px 112px 96px</code>, gap 16px, <code>15px 0</code> at full width; <code>46px 1fr 132px 62px 74px</code>, gap 12px, <code>11px 0</code> when the rail is present (and the remove control becomes <code>×</code> instead of the word <code>Remove</code>). Drag handle <code>⠿</code> + mono rank numeral · name over metadata · track · ratio · <code>↑ ↓</code> + remove. <strong>Rank numerals are positional, not stored</strong> — they re-render <code>01…N</code> after every move; a stale number is a bug.</div>
+        <div style="font-size: 13.5px; line-height: 1.55; color: #55555A; border-top: 1px solid #F0F0EC; padding-top: 10px; text-wrap: pretty;">They stay separate: one is a rendering of a query, the other is a rendering of an ordered draft the family submits. Different affordances, different failure modes. Both collapse to two lines on mobile rather than scrolling horizontally.</div>
+      </div>
+      <div style="padding: 18px 20px; display: flex; flex-direction: column; gap: 10px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">Shared rules</div>
+        <div style="font-size: 13px; line-height: 1.55; color: #55555A;">Rows are grids, never <code>&lt;table&gt;</code>. Hover fills <code>surface-2</code> and darkens row controls to 1px <code>muted</code>. Header rows are Eyebrow/sm over <code>border-bottom: 1px rule</code>. The school name is always a link to <code>/school/[dbn]</code>.</div>
+      </div>
+    </div>
+
+    <!-- SMALL PRIMITIVES -->
+    <div style="display: flex; flex-direction: column; border: 1px solid #E8E8E4;">
+      <div style="display: grid; grid-template-columns: 190px 1fr 250px; gap: 16px; padding: 9px 20px; border-bottom: 1px solid #E8E8E4; background: #FAFAF8; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">
+        <span>Primitive</span><span>Variants and geometry</span><span>Where it's used</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 190px 1fr 250px; gap: 16px; padding: 12px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-weight: 600; color: #0B0B0C;">SegmentedControl</span>
+        <span style="line-height: 1.5;">Single-select. N equal cells inside a 1px <code>border</code> box with 1px <code>border</code> dividers; selected cell is ink fill / white. No radius, no animation, no thumb.</span>
+        <span style="color: #55555A;">/find rail (Size). The only single-select control in the system — anything multi-select is Chips.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 190px 1fr 250px; gap: 16px; padding: 12px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-weight: 600; color: #0B0B0C;">Eyebrow</span>
+        <span style="line-height: 1.5;">Mono uppercase faint label, 3 sizes: <code>md</code> 11px/.12em (section), <code>sm</code> 10.5px/.1em (inline, table header, band label), <code>xs</code> 10px/.1em (rail sub-label). Often a flex row with a right-aligned mono count or accent link.</span>
+        <span style="color: #55555A;">Every section on every screen. If a block has no eyebrow it is not a section.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 190px 1fr 250px; gap: 16px; padding: 12px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-weight: 600; color: #0B0B0C;">DefinitionRow</span>
+        <span style="line-height: 1.5;">Grid <code>152px 1fr</code>, gap 6px, 14.5px: label <code>faint</code>, value <code>ink-2</code>, dates in mono 13.5px. A <code>92px 1fr</code> narrow variant for the rail. Collapses to stacked label-over-value (2px gap) below 900px. Values must be selectable text.</span>
+        <span style="color: #55555A;">/school requirements, address, provenance. Any label/value pair anywhere.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 190px 1fr 250px; gap: 16px; padding: 12px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-weight: 600; color: #0B0B0C;">NotReportedLine</span>
+        <span style="line-height: 1.5;">Eyebrow/sm + a 13.5px <code>muted</code> sentence, 10–12px above the rule it follows. Variants <code>reported</code> / <code>offered</code> / <code>gap</code> (see §07). Generated from data, never hand-written per record.</span>
+        <span style="color: #55555A;">/school under the stat grid and any empty section · /my-schools under a thin-data rank row.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 190px 1fr 250px; gap: 16px; padding: 12px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-weight: 600; color: #0B0B0C;">ProportionBand</span>
+        <span style="line-height: 1.5;">12px-tall row of <code>flex</code>-weighted segments, <code>gap: 1px</code> on a <code>rule</code> background, in four greys <code>ink → ink-2 → muted → faint</code>. Legend below: 9px square swatch · label · mono count. Zero buckets keep their row with a hollow swatch (1px <code>border</code> on <code>surface</code>) and faint text. No percentages, ever.</span>
+        <span style="color: #55555A;">/my-schools composition. Available to any screen describing the shape of a set — never for comparing sets.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 190px 1fr 250px; gap: 16px; padding: 12px 20px; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-weight: 600; color: #0B0B0C;">Band</span>
+        <span style="line-height: 1.5;">The full-bleed <code>surface-2</code> context strip, variants <code>back</code> / <code>count</code> / <code>criteria</code> / <code>footer</code> / <code>note</code>. Geometry in §05. Promoted to a primitive here because all three screens hand-built it.</span>
+        <span style="color: #55555A;">Every screen.</span>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 10px; align-items: baseline;">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90; white-space: nowrap;">Merges to make</span>
+      <span style="font-size: 13.5px; line-height: 1.5; color: #55555A; text-wrap: pretty;"><strong style="color: #0B0B0C;">StatBlock + StatGrid + BreakdownCells → StatCell/StatGrid</strong> with a <code>size</code> prop (do this first; it is flagged in two handoffs and unresolved in both). <strong style="color: #0B0B0C;">TrackBadge → Chip <code>outline-ink</code></strong>. <strong style="color: #0B0B0C;">Transit bullet → Chip <code>mono</code></strong>. Do <em>not</em> merge SchoolRow with RankRow, and do not merge Button <code>icon-square</code> into Chip — a chip is a value, a button is an action.</span>
+    </div>
+  </div>
+
+  <!-- ========== 07 PATTERNS ========== -->
+  <div id="s07" style="padding: 30px 36px 30px; border-bottom: 1px solid #E8E8E4; display: flex; flex-direction: column; gap: 18px;">
+    <div style="display: flex; align-items: baseline; gap: 14px;">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #8A8A90;">07</span>
+      <span style="font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -0.03em; color: #0B0B0C;">Cross-screen patterns</span>
+      <span style="font-size: 13px; color: #8A8A90;">Behaviour that must be identical wherever it appears, because the meaning is the product.</span>
+    </div>
+
+    <!-- missing data -->
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #8A8A90;">Pattern A — missing data</div>
+      <div style="font-size: 13.5px; line-height: 1.55; color: #2A2A2F; max-width: 900px; text-wrap: pretty;">There are three kinds of absence and they mean different things to a parent. Blurring them is the single most damaging mistake this product can make: a family reading “no data” as “bad school”, or “no PSAL teams” as “we don't know”, makes a real decision on a false signal. Each has its own eyebrow, its own sentence, and its own trigger.</div>
+      <div style="display: flex; flex-direction: column; border: 1px solid #E8E8E4;">
+        <div style="display: grid; grid-template-columns: 132px 210px 1fr; gap: 16px; padding: 9px 20px; border-bottom: 1px solid #E8E8E4; background: #FAFAF8; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">
+          <span>Eyebrow</span><span>Trigger</span><span>Rendering and required sentence</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 132px 210px 1fr; gap: 16px; padding: 12px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #8A8A90;">Not reported</span>
+          <span style="color: #55555A; line-height: 1.5;">The DOE publishes this field, but not for this school.</span>
+          <span style="line-height: 1.55;">In a grid: the cell is <strong>not rendered</strong>. In a row where the column must hold its place: mono uppercase <code>NOT REPORTED</code> in <code>faint</code> — never <code>—</code>, never <code>0</code>. Then one sentence naming the missing fields and ending, in substance: <em>“That is a gap in the DOE data, not a low result.”</em> <strong>That final clause is required</strong>, not stylistic.</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 132px 210px 1fr; gap: 16px; padding: 12px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #8A8A90;">Not offered</span>
+          <span style="color: #55555A; line-height: 1.5;">The school genuinely does not have it.</span>
+          <span style="line-height: 1.55;">The whole section is <strong>dropped</strong>, and the fact is stated in the same eyebrow + sentence pattern where the section would have been: <em>“No PSAL teams and no AP courses are listed for this school.”</em> This is a fact about the school, stated plainly and without apology.</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 132px 210px 1fr; gap: 16px; padding: 12px 20px; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #8A8A90;">Data gap</span>
+          <span style="color: #55555A; line-height: 1.5;">A <code>NOT REPORTED</code> value inside a set the user is comparing.</span>
+          <span style="line-height: 1.55;">The row-level variant of the same idea: an indented line immediately below the affected row, spanning the content columns. Additionally, any summary of that set must say the column is incomplete, so nobody compares against a partial set unknowingly.</span>
+        </div>
+      </div>
+      <div style="display: flex; gap: 10px; align-items: baseline;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90; white-space: nowrap;">Zero is not absence</span>
+        <span style="font-size: 13.5px; line-height: 1.5; color: #55555A; text-wrap: pretty;">A genuine count of zero <em>is</em> content and is always shown: a legend bucket at <code>0</code> keeps its row with a hollow swatch and faint text, because a family with no open or zoned option most needs to see that. The rule is not “never show 0” — it is “never use <code>0</code> or <code>—</code> to stand in for something we don't know”. Copy is generated from a derived <code>notReported[]</code> / <code>notOffered[]</code> list, never hand-written per record.</span>
+      </div>
+    </div>
+
+    <!-- ask chips -->
+    <div style="display: flex; flex-direction: column; gap: 12px; padding-top: 6px; border-top: 1px solid #F0F0EC;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #8A8A90;">Pattern B — ask-derived chips and where they surface</div>
+      <div style="font-size: 13.5px; line-height: 1.55; color: #2A2A2F; max-width: 900px; text-wrap: pretty;">A signal extracted from a natural-language ask is a structured filter the moment it comes back from the model. It is created once on <code>/find</code> and then <em>echoed</em>, never recomputed. The chip is the trust mechanic: it is how the parent sees what the system decided on their behalf.</div>
+      <div style="display: flex; flex-direction: column; border: 1px solid #E8E8E4;">
+        <div style="display: grid; grid-template-columns: 150px 150px 1fr; gap: 16px; padding: 9px 20px; border-bottom: 1px solid #E8E8E4; background: #FAFAF8; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">
+          <span>Screen</span><span>Chip variant</span><span>Behaviour</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 150px 150px 1fr; gap: 16px; padding: 12px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C;">/find</span>
+          <span style="color: #55555A;">inferred (with <code>×</code>)</span>
+          <span style="line-height: 1.55;">Source of truth. Under an <code>APPLIED</code> eyebrow, or split into <code>YOU SET</code> (set chips) and <code>FROM YOUR ASK</code> (inferred chips) when both routes are live. Removing one re-runs matching <strong>without calling the model again</strong>; only a new ask hits it. Signals live in the URL as query params, so a list is linkable.</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 150px 150px 1fr; gap: 16px; padding: 12px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C;">/school/[dbn]</span>
+          <span style="color: #55555A;">matched (no <code>×</code>)</span>
+          <span style="line-height: 1.55;">Arrives as <code>matchedSignals</code> in the query params. Two appearances only: a <code>MATCHED YOUR ASK</code> label with the signals in the Activities eyebrow row, and accent treatment on the individual activity chips that satisfy them (matched chips sort first). The detail page <strong>never re-calls the model</strong> to work out why a school matched.</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 150px 150px 1fr; gap: 16px; padding: 12px 20px; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C;">/my-schools</span>
+          <span style="color: #55555A;">matched, size sm</span>
+          <span style="line-height: 1.55;">Persisted with the list as <code>criteria[]</code> and echoed in the criteria strip, plus one accent line per card in the match strip naming why that school matched. <code>Edit criteria</code> returns to <code>/find</code> with the same signals applied — the round trip must be lossless.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- filter string -->
+    <div style="display: flex; flex-direction: column; gap: 12px; padding-top: 6px; border-top: 1px solid #F0F0EC;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #8A8A90;">Pattern C — the active-filter string is written once</div>
+      <div style="display: grid; grid-template-columns: 1fr 380px; gap: 28px; align-items: start;">
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="font-size: 13.5px; line-height: 1.55; color: #2A2A2F; text-wrap: pretty;">One function serialises the active filter set into human language, and every surface that mentions it renders that same string. It is never re-authored per screen, because the parent must recognise the same phrase in the count band, in the back band and on the saved list — that recognition is what tells them the list is intact.</div>
+          <div style="font-size: 13.5px; line-height: 1.55; color: #2A2A2F; text-wrap: pretty;">Composition: values within one facet join with <code> + </code>; facets join with <code>, </code>; facets appear in a fixed order (geography → track → size → ask signals). The count is never part of the string — the caller supplies it. If nothing is set the string is empty and the caller falls back to a total (<code>All 457 schools</code>).</div>
+          <div style="font-size: 13.5px; line-height: 1.55; color: #55555A; text-wrap: pretty;"><strong style="color: #0B0B0C;">Separator rule:</strong> <code>·</code> between the count and the string, everywhere. <span style="color: #8A8A90;">The <code>/find</code> handoff writes it as <em>“31 matches in Brooklyn + Queens”</em> and <code>/school</code> as <em>“31 matches · Brooklyn + Queens, Screened”</em> — see drift 06. The <code>·</code> form wins, because “in” only reads correctly when the string starts with a place.</span></div>
+        </div>
+        <div style="border: 1px solid #E8E8E4;">
+          <div style="padding: 9px 16px; background: #FAFAF8; border-bottom: 1px solid #E8E8E4; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">One source, three echoes</div>
+          <div style="padding: 12px 16px; border-bottom: 1px solid #F0F0EC; display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">describeFilters() →</span>
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C;">Brooklyn + Queens, Screened</span>
+          </div>
+          <div style="padding: 12px 16px; border-bottom: 1px solid #F0F0EC; display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">Count band</span>
+            <span style="font-size: 13.5px; color: #2A2A2F;"><span style="font-family: 'JetBrains Mono', monospace; font-size: 15px;">31</span> matches · Brooklyn + Queens, Screened</span>
+          </div>
+          <div style="padding: 12px 16px; border-bottom: 1px solid #F0F0EC; display: flex; flex-direction: column; gap: 4px;">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">Back band</span>
+            <span style="font-size: 13.5px; color: #1D4ED8;">‹ Back to 31 matches · Brooklyn + Queens, Screened</span>
+          </div>
+          <div style="padding: 12px 16px; display: flex; flex-direction: column; gap: 6px;">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">Criteria strip</span>
+            <div style="display: flex; flex-wrap: wrap; gap: 7px;">
+              <span style="font-size: 12.5px; padding: 4px 9px; background: #EEF2FF; border: 1px solid #C7D2FE; color: #1D4ED8;">Brooklyn + Queens</span>
+              <span style="font-size: 12.5px; padding: 4px 9px; background: #EEF2FF; border: 1px solid #C7D2FE; color: #1D4ED8;">Screened</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- disclaimers -->
+    <div style="display: flex; flex-direction: column; gap: 12px; padding-top: 6px; border-top: 1px solid #F0F0EC;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #8A8A90;">Pattern D — the standing disclaimers</div>
+      <div style="font-size: 13.5px; line-height: 1.55; color: #2A2A2F; max-width: 900px; text-wrap: pretty;">Three canonical strings, one per screen type. They are constants in the codebase, not prose a designer rewrites. Left line = provenance and what to do about it; right line = what we refuse to do.</div>
+      <div style="display: flex; flex-direction: column; border: 1px solid #E8E8E4;">
+        <div style="display: grid; grid-template-columns: 150px 1fr 1fr; gap: 16px; padding: 9px 20px; border-bottom: 1px solid #E8E8E4; background: #FAFAF8; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">
+          <span>Screen type</span><span>Left</span><span>Right</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 150px 1fr 1fr; gap: 16px; padding: 12px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #55555A; align-items: baseline;">
+          <span style="font-family: 'JetBrains Mono', monospace; color: #0B0B0C;">Result set</span>
+          <span style="line-height: 1.5;">Requirements and deadlines from DOE data · confirm at MySchools before you submit.</span>
+          <span style="line-height: 1.5;">Plus the continuation count (<code>26 more matches</code>) on the opposite side.</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 150px 1fr 1fr; gap: 16px; padding: 12px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #55555A; align-items: baseline;">
+          <span style="font-family: 'JetBrains Mono', monospace; color: #0B0B0C;">Record</span>
+          <span style="line-height: 1.5;">‹ Back to results</span>
+          <span style="line-height: 1.5;">Admit Day publishes DOE data as reported · we do not estimate admissions chances.</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 150px 1fr 1fr; gap: 16px; padding: 12px 20px; font-size: 13px; color: #55555A; align-items: baseline;">
+          <span style="font-family: 'JetBrains Mono', monospace; color: #0B0B0C;">Collection</span>
+          <span style="line-height: 1.5;">DOE-published data for the 2026–27 cycle · confirm each program on the official listing before you apply.</span>
+          <span style="line-height: 1.5;">Counts only — we don't score a list or predict an outcome.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 08 STATES ========== -->
+  <div id="s08" style="padding: 30px 36px 30px; border-bottom: 1px solid #E8E8E4; display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; align-items: baseline; gap: 14px;">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #8A8A90;">08</span>
+      <span style="font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -0.03em; color: #0B0B0C;">States</span>
+      <span style="font-size: 13px; color: #8A8A90;">The system's answer to every non-happy path. A screen doc lists only its own additions.</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; border: 1px solid #E8E8E4;">
+      <div style="display: grid; grid-template-columns: 130px 1fr; gap: 20px; padding: 9px 20px; border-bottom: 1px solid #E8E8E4; background: #FAFAF8; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">
+        <span>State</span><span>Specification</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 130px 1fr; gap: 20px; padding: 13px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-weight: 600; color: #0B0B0C;">Loading</span>
+        <span style="line-height: 1.55;">Core data is server-rendered; there is no client fetch for it. If a streaming boundary is used, hold everything already known (header, bands, title) and stream the rest. <strong>No skeleton cards. Ever.</strong> A rules-and-rows layout is mostly 1px lines and thin text, so placeholder blocks flicker into a grey lattice and then jump — it reads as breakage, and on a trust-first product a flickering page costs more than a slow one. The permitted device is a single <code>surface-2</code> band the height of the incoming block, containing only its mono eyebrow. A list that is refreshing keeps the previous rows visible rather than emptying.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 130px 1fr; gap: 20px; padding: 13px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-weight: 600; color: #0B0B0C;">Pending action</span>
+        <span style="line-height: 1.55;">Disable the control, keep its label unchanged, and put a mono status line in the nearest band. Never a spinner overlay, never a modal, never a label that changes to “Loading…”.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 130px 1fr; gap: 20px; padding: 13px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-weight: 600; color: #0B0B0C;">Empty</span>
+        <span style="line-height: 1.55;">Keep the full frame — header, rail, bands all stay. Replace only the content area with <strong>one line</strong> naming the single next action: which filter to loosen, or one accent link to the screen that fills this one. <strong>No onboarding panel, no explainer grid, no illustration, no “start somewhere” cards.</strong> A parent who lands on an empty screen needs one door, not a tour.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 130px 1fr; gap: 20px; padding: 13px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-weight: 600; color: #0B0B0C;">Not found</span>
+        <span style="line-height: 1.55;">HTTP 404, but keep the header and the back band. One centred block at 1120px: a Space Grotesk title stating plainly what is missing, one 15px <code>muted</code> line on why (retired or mistyped DBN), and exactly two controls — <code>Back to results</code> (primary) and a broad fallback search. Never a generic error page; the way back is the whole point.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 130px 1fr; gap: 20px; padding: 13px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-weight: 600; color: #0B0B0C;">Data error</span>
+        <span style="line-height: 1.55;">Render every part that is still trustworthy — header, title, provenance — and cover the rest with one honest <code>NOT REPORTED</code> line. Always surface the official outbound link. <strong>A parent must be able to leave with the DOE link even when we have failed.</strong></span>
+      </div>
+      <div style="display: grid; grid-template-columns: 130px 1fr; gap: 20px; padding: 13px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-weight: 600; color: #0B0B0C;">Optimistic writes</span>
+        <span style="line-height: 1.55;">Add, remove and reorder apply immediately and persist after; counts elsewhere on the page update in the same tick. On failure, revert and show one 13–13.5px line in a fixed slot next to the control — never a toast, which a parent reading a list will miss. Destructive actions get no confirmation dialog; hold an undo affordance in that same line slot for ~10s.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 130px 1fr; gap: 20px; padding: 13px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-weight: 600; color: #0B0B0C;">Hover</span>
+        <span style="line-height: 1.55;">Rows and rail links take <code>surface-2</code>. Buttons invert fill↔outline. Chips strengthen their border; dashed affordances go solid. Row controls darken from 1px <code>border</code> to 1px <code>muted</code>. All transitions <strong>120ms ease-out</strong>. <strong>No transforms, no lift, no shadow, no scale.</strong></span>
+      </div>
+      <div style="display: grid; grid-template-columns: 130px 1fr; gap: 20px; padding: 13px 20px; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-weight: 600; color: #0B0B0C;">Focus</span>
+        <span style="line-height: 1.55;">2px <code>accent</code> outline at 2px offset on <em>every</em> interactive element, including drag handles and icon-squares. Focus is never removed, never replaced by a background change. Reorder controls announce the new position; requirement values stay selectable text (parents copy dates).</span>
+      </div>
+    </div>
+  </div>
+  <!-- ========== 09 RESPONSIVE ========== -->
+  <div id="s09" style="padding: 30px 36px 30px; border-bottom: 1px solid #E8E8E4; display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; align-items: baseline; gap: 14px;">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #8A8A90;">09</span>
+      <span style="font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -0.03em; color: #0B0B0C;">Responsive</span>
+      <span style="font-size: 13px; color: #8A8A90;">One rule, four breakpoints. Most of the audience arrives on a phone.</span>
+    </div>
+
+    <div style="background: #FAFAF8; border: 1px solid #E8E8E4; padding: 16px 20px; display: flex; flex-direction: column; gap: 6px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">The rule</div>
+      <div style="font-size: 15px; font-weight: 600; color: #0B0B0C;">Reflow, never compress.</div>
+      <div style="font-size: 13.5px; line-height: 1.55; color: #55555A; max-width: 860px; text-wrap: pretty;">Below 1120px the layout is allowed to become a different arrangement of the same parts. It is never allowed to become a squeezed version of the desktop one. Nothing scrolls horizontally, no type is scaled by a fluid formula, no column is allowed to fall under its content's natural measure, and a table never turns into a swipe-to-see-more strip — it turns into two-line rows.</div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; border: 1px solid #E8E8E4;">
+      <div style="display: grid; grid-template-columns: 110px 1fr; gap: 20px; padding: 9px 20px; border-bottom: 1px solid #E8E8E4; background: #FAFAF8; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">
+        <span>Breakpoint</span><span>What changes</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 110px 1fr; gap: 20px; padding: 13px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C;">≤ 1120</span>
+        <span style="line-height: 1.55;">The frame goes fluid at full width; horizontal padding stays 36px. Nothing else moves.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 110px 1fr; gap: 20px; padding: 13px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C;">≤ 900</span>
+        <span style="line-height: 1.55;">Single column. A <strong>reference</strong> rail moves below the main column in its documented section order, drops <code>border-right</code> and keeps its own 1px <code>rule</code> dividers. A <strong>control</strong> rail (filters) collapses instead into a <code>Filters</code> disclosure above the content. Cell grids go <code>repeat(2, 1fr)</code> and a note cell becomes a full-width final row. Definition rows stack label over value with a 2px gap, keeping any accent left border. List rows collapse to two lines: identity + controls on line one, metadata and numbers joined by <code>·</code> on line two, indented to the name. Stat values drop one step (24 → 22px).</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 110px 1fr; gap: 20px; padding: 13px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C;">≤ 700</span>
+        <span style="line-height: 1.55;">Page title 30px. Horizontal padding 36 → 20px. Every interactive control grows to a <strong>44px minimum hit target</strong>, including reorder arrows, which stay side by side and right-aligned. Chip sets wrap to as many lines as they need.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 110px 1fr; gap: 20px; padding: 13px 20px; font-size: 13.5px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #0B0B0C;">≤ 520</span>
+        <span style="line-height: 1.55;">Page title 26px. Cell grids go <code>1fr</code> (narrow 3-up rail grids hold until ≤420). Title-band actions go full width. Band content stacks left-aligned with a 4px gap; a navigational link always stays the first line of its band. Footer disclaimers stack.</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== 10 DRIFT ========== -->
+  <div id="s10" style="padding: 30px 36px 30px; border-bottom: 1px solid #E8E8E4; display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; align-items: baseline; gap: 14px;">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #8A8A90;">10</span>
+      <span style="font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -0.03em; color: #0B0B0C;">Drift register</span>
+      <span style="font-size: 13px; color: #8A8A90;">Where the three handoffs disagree, and what this document rules.</span>
+    </div>
+    <div style="font-size: 13.5px; line-height: 1.55; color: #55555A; max-width: 900px; text-wrap: pretty;">Fifteen real conflicts across the three documents. Every one is resolved here; where a resolution changes shipped code, it is listed as a fix. The register stays in this file — it is the record of what was decided and why, so the same argument is not had twice.</div>
+
+    <div style="display: flex; flex-direction: column; border: 1px solid #E8E8E4;">
+      <div style="display: grid; grid-template-columns: 34px 150px 1fr 1fr; gap: 16px; padding: 9px 20px; border-bottom: 1px solid #E8E8E4; background: #FAFAF8; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">
+        <span>#</span><span>Subject</span><span>The disagreement</span><span>Ruling</span>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 34px 150px 1fr 1fr; gap: 16px; padding: 12px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-family: 'JetBrains Mono', monospace; color: #8A8A90;">01</span><span style="font-weight: 600; color: #0B0B0C;">Third nav item</span>
+        <span style="line-height: 1.5;"><code>/find</code> and <code>/school</code> both say <code>Readiness</code>. <code>/my-schools</code> renames it to <code>Checklist</code> and says the rename applies everywhere.</span>
+        <span style="line-height: 1.5; color: #55555A;"><strong style="color: #0B0B0C;">Checklist.</strong> The two earlier docs are stale. <em>Fix in code: rename across all screens.</em></span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 150px 1fr 1fr; gap: 16px; padding: 12px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-family: 'JetBrains Mono', monospace; color: #8A8A90;">02</span><span style="font-weight: 600; color: #0B0B0C;">Page-title size</span>
+        <span style="line-height: 1.5;"><code>/find</code> is 44px / lh 1.02. <code>/school</code> and <code>/my-schools</code> are 40px / lh 1.04. Letter-spacing agrees at −0.038em.</span>
+        <span style="line-height: 1.5; color: #55555A;"><strong style="color: #0B0B0C;">40px / 1.04.</strong> One page-title size; two out of three already use it, and a school name needs the smaller size to wrap well. <em>Fix on <code>/find</code>.</em></span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 150px 1fr 1fr; gap: 16px; padding: 12px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-family: 'JetBrains Mono', monospace; color: #8A8A90;">03</span><span style="font-weight: 600; color: #0B0B0C;">Chip geometry</span>
+        <span style="line-height: 1.5;">Three sets of numbers for “the same chip mechanic”: 13px / <code>5px 10px</code> (<code>/find</code> ask chips), 13px / <code>5px 10px</code> and 12.5px (<code>/school</code>), 12.5px / <code>5px 9px</code> in the <code>/my-schools</code> doc but <code>4px 9px</code> in its own mock.</span>
+        <span style="line-height: 1.5; color: #55555A;"><strong style="color: #0B0B0C;">Two sizes only:</strong> md 13px / <code>5px 10px</code>, sm 12.5px / <code>4px 9px</code> (bands and dense rails), plus the filter-rail size 13.5px / <code>7px 13px</code>. The <code>5px 9px</code> in prose was never built.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 150px 1fr 1fr; gap: 16px; padding: 12px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-family: 'JetBrains Mono', monospace; color: #8A8A90;">04</span><span style="font-weight: 600; color: #0B0B0C;">Eyebrow sizes</span>
+        <span style="line-height: 1.5;">Documented once as “11px, .12em” but built at 11 / 10.5 / 10px with .12em and .1em, undocumented, across all three screens.</span>
+        <span style="line-height: 1.5; color: #55555A;"><strong style="color: #0B0B0C;">Three named sizes</strong> (md / sm / xs) with fixed roles — §03. The variation was real and useful; it just wasn't written down.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 150px 1fr 1fr; gap: 16px; padding: 12px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-family: 'JetBrains Mono', monospace; color: #8A8A90;">05</span><span style="font-weight: 600; color: #0B0B0C;">What a filled button means</span>
+        <span style="line-height: 1.5;"><strong>Direct contradiction.</strong> <code>/find</code>: “in production all rows should be outline; <em>filled reflects an already-added state</em>.” <code>/school</code>: filled <code>Add to list</code> → outline <code>On your list · Remove</code> when saved.</span>
+        <span style="line-height: 1.5; color: #55555A;"><strong style="color: #0B0B0C;">Filled = action available; outline = already done.</strong> The <code>/school</code> reading wins — it has explicit copy in both states. <em>Fix the <code>/find</code> row spec.</em> This is the drift most likely to ship as a real bug.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 150px 1fr 1fr; gap: 16px; padding: 12px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-family: 'JetBrains Mono', monospace; color: #8A8A90;">06</span><span style="font-weight: 600; color: #0B0B0C;">Active-filter string</span>
+        <span style="line-height: 1.5;"><code>/find</code>: “31 matches <em>in</em> Brooklyn + Queens”. <code>/school</code>: “31 matches <em>·</em> Brooklyn + Queens, Screened”. Same string, two grammars, and no named owner.</span>
+        <span style="line-height: 1.5; color: #55555A;"><strong style="color: #0B0B0C;">One <code>describeFilters()</code>, <code>·</code> separator</strong> — §07 Pattern C. “in” breaks the moment the first facet isn't a place.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 150px 1fr 1fr; gap: 16px; padding: 12px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-family: 'JetBrains Mono', monospace; color: #8A8A90;">07</span><span style="font-weight: 600; color: #0B0B0C;">Token list completeness</span>
+        <span style="line-height: 1.5;"><code>/school</code> and <code>/my-schools</code> restate the palette but drop <code>border-strong</code>; <code>/my-schools</code> also drops the three <code>gem</code> tokens. Two raw hexes (<code>#B8B8B4</code>, <code>#3A3A3F</code>) appear in <code>/find</code> with no token at all.</span>
+        <span style="line-height: 1.5; color: #55555A;"><strong style="color: #0B0B0C;">§02 is the whole palette</strong>, including two new tokens: <code>numeral</code> and <code>chip-ink</code>. Screen docs must stop restating it — that is exactly how tokens went missing.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 150px 1fr 1fr; gap: 16px; padding: 12px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-family: 'JetBrains Mono', monospace; color: #8A8A90;">08</span><span style="font-weight: 600; color: #0B0B0C;">Spacing scale</span>
+        <span style="line-height: 1.5;">Three different “steps used” lists, sharing only about half their values: <code>/find</code> has 6/10/22/34, <code>/school</code> has 4/7/9/11/20, <code>/my-schools</code> has 2/5/24. None is a scale; each is an inventory of one mock.</span>
+        <span style="line-height: 1.5; color: #55555A;"><strong style="color: #0B0B0C;">Two scales</strong> — layout and component (§04). New layout work uses the layout scale only; component values are frozen per primitive.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 150px 1fr 1fr; gap: 16px; padding: 12px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-family: 'JetBrains Mono', monospace; color: #8A8A90;">09</span><span style="font-weight: 600; color: #0B0B0C;">Section padding</span>
+        <span style="line-height: 1.5;"><code>/school</code> standardises on <code>26px 36px 28px</code>; <code>/my-schools</code> standardises on <code>26px 36px 30px</code>; <code>/find</code> never states one and uses <code>34px 36px 26px</code> and <code>22px 36px</code>.</span>
+        <span style="line-height: 1.5; color: #55555A;"><strong style="color: #0B0B0C;"><code>26px 36px 28px</code></strong>, with <code>30px</code> bottom permitted on a column-closing section. Row padding is a primitive metric, not section padding.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 150px 1fr 1fr; gap: 16px; padding: 12px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-family: 'JetBrains Mono', monospace; color: #8A8A90;">10</span><span style="font-weight: 600; color: #0B0B0C;">Stat label metrics</span>
+        <span style="line-height: 1.5;"><code>/find</code> and <code>/school</code>: 10.5px, ls .06em. <code>/my-schools</code> breakdown cells: 11px, ls .04em — a third set of numbers for the same label.</span>
+        <span style="line-height: 1.5; color: #55555A;"><strong style="color: #0B0B0C;">10.5px / .06em everywhere</strong>, at every StatCell size. The label never scales with the value.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 150px 1fr 1fr; gap: 16px; padding: 12px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-family: 'JetBrains Mono', monospace; color: #8A8A90;">11</span><span style="font-weight: 600; color: #0B0B0C;">Stat primitive identity</span>
+        <span style="line-height: 1.5;"><code>/school</code>: “<code>StatBlock</code> and <code>StatGrid</code> — consider one component with a <code>size</code> prop.” <code>/my-schools</code>: “<code>BreakdownCells</code> — a <code>StatGrid</code> variant; consider merging with a <code>size</code> prop.” Flagged twice, decided never.</span>
+        <span style="line-height: 1.5; color: #55555A;"><strong style="color: #0B0B0C;">Merged.</strong> One <code>StatCell</code> (sizes sm/md/lg) inside one <code>StatGrid</code>. Do it before any new screen adds a fourth.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 150px 1fr 1fr; gap: 16px; padding: 12px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-family: 'JetBrains Mono', monospace; color: #8A8A90;">12</span><span style="font-weight: 600; color: #0B0B0C;">Rank numeral size</span>
+        <span style="line-height: 1.5;">The <code>/my-schools</code> doc says 16px, “18px at full width”; its own mock renders 17px at full width.</span>
+        <span style="line-height: 1.5; color: #55555A;"><strong style="color: #0B0B0C;">17px full width, 16px with the rail.</strong> Build follows the mock; the doc was wrong.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 150px 1fr 1fr; gap: 16px; padding: 12px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-family: 'JetBrains Mono', monospace; color: #8A8A90;">13</span><span style="font-weight: 600; color: #0B0B0C;">Libre Franklin weights</span>
+        <span style="line-height: 1.5;"><code>/find</code> and <code>/school</code> declare 400 / 500 / 700 and set school names at 700. <code>/my-schools</code> uses 600 for every school name without declaring it.</span>
+        <span style="line-height: 1.5; color: #55555A;"><strong style="color: #0B0B0C;">400 / 500 / 600 / 700.</strong> 700 for a result-row name, 600 in a dense ranked or card context — §03. Load all four.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 150px 1fr 1fr; gap: 16px; padding: 12px 20px; border-bottom: 1px solid #F0F0EC; font-size: 13px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-family: 'JetBrains Mono', monospace; color: #8A8A90;">14</span><span style="font-weight: 600; color: #0B0B0C;">“No skeleton cards”</span>
+        <span style="line-height: 1.5;">Stated on <code>/find</code> and <code>/school</code> with the reasoning; absent from <code>/my-schools</code>, which specifies no loading state at all.</span>
+        <span style="line-height: 1.5; color: #55555A;"><strong style="color: #0B0B0C;">System-wide rule</strong> with the reasoning attached — §08. Silence in a screen doc is not permission.</span>
+      </div>
+      <div style="display: grid; grid-template-columns: 34px 150px 1fr 1fr; gap: 16px; padding: 12px 20px; font-size: 13px; color: #2A2A2F; align-items: baseline;">
+        <span style="font-family: 'JetBrains Mono', monospace; color: #8A8A90;">15</span><span style="font-weight: 600; color: #0B0B0C;">The gem green</span>
+        <span style="line-height: 1.5;">All three docs assert “one accent, do not introduce a second” while <code>/find</code> and <code>/school</code> also carry three green <code>gem</code> tokens; <code>/my-schools</code> silently drops them. The exception is never named as one.</span>
+        <span style="line-height: 1.5; color: #55555A;"><strong style="color: #0B0B0C;">Named and bounded</strong> — a status colour for one badge, not an accent, not available to anything else (§02).</span>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 10px; align-items: baseline;">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90; white-space: nowrap;">Not drift</span>
+      <span style="font-size: 13.5px; line-height: 1.5; color: #55555A; text-wrap: pretty;">Worth stating, because they look like disagreements and aren't: the three <em>footer disclaimer</em> strings differ by design (one per screen type — §07 D); the rail sits on the left for <code>/find</code> and the right elsewhere because a control rail leads and a reference rail follows; and 316px, radius 0, no shadows, 120ms ease-out, the 2px focus ring and the <code>#1D4ED8</code> accent are stated identically in all three documents. Those are the parts of the system that held.</span>
+    </div>
+  </div>
+
+  <!-- ========== 11 HANDOFF TEMPLATE ========== -->
+  <div id="s11" style="padding: 30px 36px 34px; display: flex; flex-direction: column; gap: 16px;">
+    <div style="display: flex; align-items: baseline; gap: 14px;">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #8A8A90;">11</span>
+      <span style="font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -0.03em; color: #0B0B0C;">The screen-handoff template</span>
+      <span style="font-size: 13px; color: #8A8A90;">What a per-screen doc contains from now on — and what it must not repeat.</span>
+    </div>
+    <div style="font-size: 13.5px; line-height: 1.55; color: #2A2A2F; max-width: 900px; text-wrap: pretty;">A screen doc opens with one line — <em>“Conforms to the Admit Day design system v1.0. Deviations are listed in §7.”</em> — and then covers only what is true of this screen and no other. Target length: two to four pages. If a section could be pasted into another screen's doc unchanged, it belongs here instead.</div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #E8E8E4; border: 1px solid #E8E8E4;">
+      <div style="background: #FFFFFF; padding: 20px 22px; display: flex; flex-direction: column; gap: 12px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #0B0B0C;">Include — the eight sections</div>
+        <div style="display: flex; flex-direction: column; gap: 9px; font-size: 13.5px; line-height: 1.5; color: #2A2A2F;">
+          <span><strong>1 · Purpose.</strong> The route, who arrives and from where, and the two or three questions this screen answers. Plus what was deliberately left off it, and where that content lives instead.</span>
+          <span><strong>2 · Decisions and why.</strong> The judgement calls a reader would otherwise re-litigate, each with its reason. This is the part only a human can write, and the part that ages best.</span>
+          <span><strong>3 · Layout.</strong> Band order top to bottom, the body grid, and each section's grid template, padding and contents — screen-specific measures only. Name which rail role applies.</span>
+          <span><strong>4 · Screen-specific primitives.</strong> Anything new, with variants and geometry, plus a note on which existing primitive it is closest to and why it isn't that. New primitives are a cost; justify each.</span>
+          <span><strong>5 · States.</strong> Only additions and specialisations of §08 — the empty copy for this screen, what its optimistic write reverts to, what its not-found says.</span>
+          <span><strong>6 · Data shape.</strong> The TypeScript type this screen renders and every server-side derivation, with any invariant that must be asserted in a test.</span>
+          <span><strong>7 · Deviations.</strong> Every place this screen departs from the system, with the reason and whether it should be absorbed back into the system. Usually empty. Never silent.</span>
+          <span><strong>8 · Build order and files.</strong> What to build first and why, what blocks what, and which reference file is the approved direction versus an alternate data state.</span>
+        </div>
+      </div>
+      <div style="background: #FFFFFF; padding: 20px 22px; display: flex; flex-direction: column; gap: 12px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #0B0B0C;">Do not restate — it lives here now</div>
+        <div style="display: flex; flex-direction: column; gap: 7px; font-size: 13.5px; line-height: 1.5; color: #55555A;">
+          <span>× The colour tokens, or any hex value at all.</span>
+          <span>× The four faces and their jobs; the shared type scale. Cite an element by its name in §03 (“Eyebrow/sm”, “Stat value / lg”).</span>
+          <span>× Radius 0, no shadows, separation by 1px rules, 1120px, the spacing scales, standard section padding.</span>
+          <span>× The header, the nav, the wordmark, the 316px rail measure, the band geometry, the footer disclaimer strings.</span>
+          <span>× Chip / Button / Eyebrow / StatGrid / DefinitionRow / NotReportedLine geometry and variants.</span>
+          <span>× The missing-data rules, <code>NOT REPORTED</code> vs <code>NOT OFFERED</code>, and the required “gap in the data, not a low result” clause.</span>
+          <span>× Ask-chip behaviour and the active-filter string.</span>
+          <span>× Hover, focus, transition timing, optimistic-write behaviour, “no skeleton cards”.</span>
+          <span>× The reflow-never-compress rule and the four breakpoints.</span>
+          <span>× The product invariants. Inherited automatically; a screen doc may not weaken them, only add.</span>
+        </div>
+        <div style="border-top: 1px solid #F0F0EC; padding-top: 12px; font-size: 13.5px; line-height: 1.55; color: #2A2A2F;"><strong>Changing the system.</strong> A screen doc cannot change a system value by stating a different one — that is how these three drifted. It records the deviation in §7; the system file is then edited, its version bumped, and the drift register gains a row. One file moves.</div>
+      </div>
+    </div>
+
+    <div style="background: #FAFAF8; border: 1px solid #E8E8E4; padding: 16px 20px; display: flex; flex-direction: column; gap: 6px;">
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: #8A8A90;">For the coding agent</div>
+      <div style="font-size: 13.5px; line-height: 1.55; color: #55555A; text-wrap: pretty;">Read this file before any screen doc, and treat it as the higher authority: where a screen doc contradicts it, this file wins and the contradiction is a bug to report, not a choice to make. Never introduce a colour, radius, shadow, font, breakpoint or primitive that is not named here. Where a value is genuinely absent, stop and ask rather than inferring one from a reference file — the mocks contain placeholder data and one or two known errors, all of which are listed in §10.</div>
+    </div>
+  </div>
+
+</div>
+</div>
+</body>
+</html>
