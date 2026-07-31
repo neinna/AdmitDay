@@ -342,13 +342,6 @@ describe('Issue #15: layout.tsx wraps with PHProvider', () => {
     expect(layoutSource).toContain('</PHProvider>')
   })
 
-  it('NavBar is inside PHProvider', () => {
-    const phStart = layoutSource.indexOf('<PHProvider>')
-    const phEnd = layoutSource.indexOf('</PHProvider>')
-    const navbar = layoutSource.indexOf('<NavBar />')
-    expect(navbar).toBeGreaterThan(phStart)
-    expect(navbar).toBeLessThan(phEnd)
-  })
 })
 
 

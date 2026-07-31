@@ -1,7 +1,6 @@
 import * as Sentry from '@sentry/nextjs'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import NavBar from '@/components/NavBar'
 import PHProvider from '@/components/PosthogProvider'
 import { fontDisplay, fontWordmark, fontSans, fontMono } from '@/lib/fonts'
 import './globals.css'
@@ -29,7 +28,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={fontVariables}>
       <body className={inter.className}>
         <PHProvider>
-          <NavBar />
           {children}
         </PHProvider>
       </body>
