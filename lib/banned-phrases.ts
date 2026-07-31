@@ -29,8 +29,17 @@ export const BANNED_ADMISSIONS_ODDS_PHRASES: string[] = [
 
 // Exact, lowercase substrings that are explicitly permitted even though they
 // contain a banned phrase above (e.g. copy that explicitly disclaims doing
-// odds prediction). Empty today.
-export const ADMISSIONS_ODDS_ALLOWLIST: string[] = []
+// odds prediction).
+//
+// Reviewed exemptions only. Each entry must be copy that *refuses* to predict —
+// never copy that predicts. Adding a phrase here is a deliberate decision; if a
+// new string nearly matches an entry, write the copy to match the entry rather
+// than adding a near-duplicate.
+export const ADMISSIONS_ODDS_ALLOWLIST: string[] = [
+  // Landing page (app/page.tsx), "And what it will never do" — the product's
+  // refusal to predict, which necessarily names what it won't produce.
+  'no chance of admission. no reach, target or likely. no score or rating of any kind.',
+]
 
 /**
  * Returns every banned phrase found in `text` (case-insensitive), after
