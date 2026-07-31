@@ -27,12 +27,12 @@ export default function SiteHeader({ addedCount }: Props) {
         <Link href="/find" className="text-ink font-medium border-b-2 border-accent pb-[3px]">
           Find
         </Link>
-        <Link href="/list" className="hover:text-ink transition-colors duration-[120ms] ease-out">
+        <Link href="/my-schools" className="hover:text-ink transition-colors duration-[120ms] ease-out">
           My Schools
           {addedCount > 0 && <span className="font-mono text-accent ml-1">{addedCount}</span>}
         </Link>
         <Link
-          href="/requirements"
+          href="/checklist"
           className="hover:text-ink transition-colors duration-[120ms] ease-out"
         >
           Readiness
