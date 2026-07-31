@@ -29,10 +29,28 @@ export const MIN_SCHOOLS = 10
 /** Rendered when the DB read fails. Its presence means the page "works" but is empty. */
 export const EMPTY_STATE_MARKER = 'School data not yet loaded on the server'
 
+/**
+ * Issue #149. Three levels, not a boolean, because two different things were
+ * being conflated:
+ *
+ *   fail — a deploy regression. Someone must change code. Exits non-zero.
+ *   warn — an external condition no code change would fix (the provider is down
+ *          or out of credit, and the route handled it correctly). Visible, but
+ *          the run stays green: a recurring alert for a known billing state is
+ *          the alert noise this project keeps removing.
+ *   ok   — healthy.
+ */
+export type Severity = 'ok' | 'warn' | 'fail'
+
 export type CheckResult = {
   name: string
-  ok: boolean
+  severity: Severity
   detail: string
+}
+
+/** The run fails only on `fail`. Warnings are reported, not escalated. */
+export function exitCodeFor(results: CheckResult[]): number {
+  return results.some((r) => r.severity === 'fail') ? 1 : 0
 }
 
 /**
@@ -53,7 +71,7 @@ export function hasEmptyStateBanner(html: string): boolean {
 /** Chat is healthy if it answers or cleanly rate-limits. A 5xx is never healthy. */
 export function judgeChatResponse(status: number, body: string): CheckResult {
   if (status === 429) {
-    return { name: 'POST /api/chat', ok: true, detail: '429 rate-limited (expected under load)' }
+    return { name: 'POST /api/chat', severity: 'ok', detail: '429 rate-limited (expected under load)' }
   }
   if (status >= 500) {
     // A 503 carrying the product's own copy means the route handled an upstream
@@ -63,30 +81,32 @@ export function judgeChatResponse(status: number, body: string): CheckResult {
     const graceful = /assistant is unavailable|try again shortly/i.test(body)
     return {
       name: 'POST /api/chat',
-      ok: false,
+      // Handled outage: the route did its job, the provider is down. Warn.
+      // Unhandled 5xx: that is ours to fix. Fail.
+      severity: graceful ? 'warn' : 'fail',
       detail: graceful
         ? `HTTP ${status} — assistant unavailable, handled gracefully (upstream/provider is down, not a code fault)`
         : `HTTP ${status} — unhandled server error`,
     }
   }
   if (status !== 200) {
-    return { name: 'POST /api/chat', ok: false, detail: `HTTP ${status}` }
+    return { name: 'POST /api/chat', severity: 'fail', detail: `HTTP ${status}` }
   }
   // A 200 that leaked provider error text is a failure even though it is a 200.
   if (/usage limit|credit balance|quota|request_id|anthropic/i.test(body)) {
-    return { name: 'POST /api/chat', ok: false, detail: '200 but the body leaked provider error text' }
+    return { name: 'POST /api/chat', severity: 'fail', detail: '200 but the body leaked provider error text' }
   }
   if (body.trim().length === 0) {
-    return { name: 'POST /api/chat', ok: false, detail: '200 with an empty body' }
+    return { name: 'POST /api/chat', severity: 'fail', detail: '200 with an empty body' }
   }
-  return { name: 'POST /api/chat', ok: true, detail: `HTTP 200, ${body.length} bytes` }
+  return { name: 'POST /api/chat', severity: 'ok', detail: `HTTP 200, ${body.length} bytes` }
 }
 
 export function judgeFindPage(status: number, html: string): CheckResult[] {
   const results: CheckResult[] = []
   results.push({
     name: 'GET /find',
-    ok: status === 200,
+    severity: status === 200 ? 'ok' : 'fail',
     detail: `HTTP ${status}`,
   })
   if (status !== 200) return results
@@ -94,7 +114,7 @@ export function judgeFindPage(status: number, html: string): CheckResult[] {
   const count = countSchoolLinks(html)
   results.push({
     name: 'GET /find lists schools',
-    ok: count >= MIN_SCHOOLS,
+    severity: count >= MIN_SCHOOLS ? 'ok' : 'fail',
     detail:
       count >= MIN_SCHOOLS
         ? `${count} schools linked`
@@ -102,7 +122,7 @@ export function judgeFindPage(status: number, html: string): CheckResult[] {
   })
   results.push({
     name: 'GET /find has no empty-state banner',
-    ok: !hasEmptyStateBanner(html),
+    severity: hasEmptyStateBanner(html) ? 'fail' : 'ok',
     detail: hasEmptyStateBanner(html)
       ? `page rendered but shows "${EMPTY_STATE_MARKER}"`
       : 'no empty-state banner',
@@ -118,7 +138,11 @@ async function run(): Promise<void> {
   console.log(`Smoke testing ${base}\n`)
 
   const home = await fetch(`${base}/`, { redirect: 'follow' })
-  results.push({ name: 'GET /', ok: home.status === 200, detail: `HTTP ${home.status}` })
+  results.push({
+    name: 'GET /',
+    severity: home.status === 200 ? 'ok' : 'fail',
+    detail: `HTTP ${home.status}`,
+  })
 
   const find = await fetch(`${base}/find`, { redirect: 'follow' })
   results.push(...judgeFindPage(find.status, await find.text()))
@@ -130,16 +154,24 @@ async function run(): Promise<void> {
   })
   results.push(judgeChatResponse(chat.status, await chat.text()))
 
+  const LABEL: Record<Severity, string> = { ok: '  ok  ', warn: '  WARN', fail: '  FAIL' }
   for (const r of results) {
-    console.log(`${r.ok ? '  ok  ' : '  FAIL'}  ${r.name.padEnd(38)} ${r.detail}`)
+    console.log(`${LABEL[r.severity]}  ${r.name.padEnd(38)} ${r.detail}`)
   }
 
-  const failed = results.filter((r) => !r.ok)
+  const failed = results.filter((r) => r.severity === 'fail')
+  const warned = results.filter((r) => r.severity === 'warn')
+
+  // A run with warnings must not read like a clean run.
   if (failed.length > 0) {
-    console.error(`\n${failed.length} check(s) failed against ${base}.`)
-    process.exit(1)
+    console.error(`\n${failed.length} check(s) FAILED against ${base}.`)
+    if (warned.length > 0) console.error(`${warned.length} warning(s) alongside.`)
+  } else if (warned.length > 0) {
+    console.log(`\nPassed with ${warned.length} warning(s) against ${base} — degraded, not broken.`)
+  } else {
+    console.log(`\nAll ${results.length} checks passed.`)
   }
-  console.log(`\nAll ${results.length} checks passed.`)
+  process.exit(exitCodeFor(results))
 }
 
 if (require.main === module) {
