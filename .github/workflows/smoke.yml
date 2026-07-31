@@ -1,0 +1,36 @@
+# Production smoke tests — issue #125.
+#
+# Deliberately NOT part of the required `test` check on pull requests: it makes
+# real network calls, so wiring it into PR gating would make CI flaky and block
+# unrelated work. It runs against the deployed site instead.
+name: smoke
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # A few times a day, so a deploy that quietly breaks production is caught
+    # without anyone looking at the site.
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+
+      # Vercel deploys from main independently of Actions, so on a push we wait
+      # for the new deployment to go live before testing it. Without this we'd
+      # smoke-test the previous build and learn nothing.
+      - name: Wait for the deploy to land
+        if: github.event_name == 'push'
+        run: sleep 150
+
+      - name: Smoke test production
+        run: npm run smoke
