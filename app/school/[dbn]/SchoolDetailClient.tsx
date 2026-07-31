@@ -32,8 +32,8 @@ interface Props {
   subwayLines: string[]
   busRoutes: string[]
   notReportedTransitLabel: string | null
-  provenanceSource: string
-  provenanceCycle: string | null
+  provenanceRows: { key: string; label: string; value: string }[]
+  dataVintageNote: string | null
   sourceUrl: string
   myschoolsUrl: string
   backHref: string
@@ -58,8 +58,8 @@ export default function SchoolDetailClient({
   subwayLines,
   busRoutes,
   notReportedTransitLabel,
-  provenanceSource,
-  provenanceCycle,
+  provenanceRows,
+  dataVintageNote,
   sourceUrl,
   myschoolsUrl,
   backHref,
@@ -383,12 +383,14 @@ export default function SchoolDetailClient({
           <div className="px-[22px] min-[900px]:px-7 py-[26px] flex flex-col gap-[11px]">
             <Eyebrow>Provenance</Eyebrow>
             <div className="flex flex-col gap-[10px]">
-              <DefinitionRow labelWidth={92} label="Source" value={provenanceSource} />
-              {provenanceCycle && <DefinitionRow labelWidth={92} label="Cycle" value={provenanceCycle} />}
+              {provenanceRows.map((row) => (
+                <DefinitionRow key={row.key} labelWidth={92} label={row.label} value={row.value} />
+              ))}
             </div>
             <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[13.5px] text-accent">
               View source record ↗
             </a>
+            {dataVintageNote && <p className="text-[13px] text-faint">{dataVintageNote}</p>}
           </div>
         </div>
       </div>

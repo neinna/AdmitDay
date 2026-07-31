@@ -18,12 +18,11 @@ import {
   buildNotReportedTransitLabel,
   dedupePrograms,
   buildRequirementBlocks,
-  PROVENANCE_SOURCE,
   MYSCHOOLS_URL,
-  formatAdmissionsCycle,
   describeBackFilters,
   parseMatchedSignals,
 } from '@/lib/school-detail-utils'
+import { buildProvenanceRows, summariseDataVintage } from '@/lib/data-provenance'
 import SchoolDetailClient from './SchoolDetailClient'
 
 // Issue #116: the school detail view. Server component — loads via
@@ -81,7 +80,11 @@ export default async function SchoolDetailPage({
 
   const programs = dedupePrograms(school.programs)
   const requirementBlocks = buildRequirementBlocks(school)
-  const provenanceCycle = formatAdmissionsCycle(school.last_verified)
+  // Issue #138: provenance is derived from the sources themselves, never from
+  // the typed `last_verified` string, which claimed the current cycle for data
+  // published in 2018. See lib/data-provenance.ts.
+  const provenanceRows = buildProvenanceRows()
+  const dataVintageNote = summariseDataVintage()
 
   const alsoOnYourListIndex = schools
     .filter((s) => s.dbn !== school.dbn)
@@ -108,8 +111,8 @@ export default async function SchoolDetailPage({
         subwayLines={subwayLines}
         busRoutes={busRoutes}
         notReportedTransitLabel={notReportedTransitLabel}
-        provenanceSource={PROVENANCE_SOURCE}
-        provenanceCycle={provenanceCycle}
+        provenanceRows={provenanceRows}
+        dataVintageNote={dataVintageNote}
         sourceUrl={school.sift_url}
         myschoolsUrl={MYSCHOOLS_URL}
         backHref={backHref}
