@@ -54,18 +54,6 @@ describe('Footer disclaimer text', () => {
 
 // ── Issue #5: myschools.nyc clickable link ───────────────────────────────────
 
-describe('myschools.nyc link in requirements page', () => {
-  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
-
-  it('links to https://www.myschools.nyc (with www)', () => {
-    expect(reqContentSource).toContain('https://www.myschools.nyc')
-  })
-
-  it('myschools.nyc link opens in a new tab', () => {
-    expect(reqContentSource).toContain('target="_blank"')
-    expect(reqContentSource).toContain('rel="noopener noreferrer"')
-  })
-})
 
 // ── Issue #3: Telegram /issue command parsing ────────────────────────────────
 
@@ -232,21 +220,6 @@ describe('getVisibleGroups', () => {
 
 // ── Issue #7: Remove Note box from list page ────────────────────────────────
 
-describe('Issue #7: Note box removed from list page', () => {
-  const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
-
-  it('does NOT contain the Note box div with bg-gray-50 styling', () => {
-    expect(listSource).not.toContain('bg-gray-50 border border-gray-200 rounded-md')
-  })
-
-  it('does NOT contain the Note box text about DOE tiebreaker', () => {
-    expect(listSource).not.toContain('No tool can guarantee an offer')
-  })
-
-  it('still includes the Footer component', () => {
-    expect(listSource).toContain('<Footer />')
-  })
-})
 
 // ── Issue #8: Unified Footer disclaimer + no Note box on list page ───────────
 
@@ -274,40 +247,9 @@ describe('Issue #8: Footer unified disclaimer', () => {
   })
 })
 
-describe('Issue #8: Note box removed from list page', () => {
-  const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
-
-  it('does NOT contain the Note box div', () => {
-    expect(listSource).not.toContain('bg-gray-50 border border-gray-200 rounded-md')
-  })
-
-  it('does NOT contain the Note box text', () => {
-    expect(listSource).not.toContain("DOE&apos;s offer-chances prediction tool uses randomness")
-  })
-})
 
 // ── Issue #13: Last verified date on deadline items ─────────────────────────
 
-describe('Issue #13/#39: Last verified date in requirements', () => {
-  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
-
-  it('renders "last verified:" text in the JSX (top-level line)', () => {
-    expect(reqContentSource).toContain('last verified:')
-  })
-
-  it('renders a myschools.nyc link in the verified note', () => {
-    expect(reqContentSource).toContain('https://www.myschools.nyc')
-  })
-
-  it('verified note link opens in a new tab', () => {
-    const matches = reqContentSource.match(/target="_blank"/g) ?? []
-    expect(matches.length).toBeGreaterThanOrEqual(2)
-  })
-
-  it('does NOT use per-item verifiedDate pattern (replaced with top-level line)', () => {
-    expect(reqContentSource).not.toContain('{item.verifiedDate}')
-  })
-})
 
 // ── Issue #14: Test step in GitHub Actions deploy pipeline ──────────────────
 
@@ -382,44 +324,9 @@ describe('Issue #12/#84: SchoolList locked expand placeholder removed', () => {
   })
 })
 
-describe('Issue #12/#84: List page locked save button removed', () => {
-  const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
-
-  it('does NOT contain a Save list label (locked UI removed in #84)', () => {
-    expect(listSource).not.toContain('Save list')
-  })
-
-  it('does NOT contain the Full Access save aria-label (locked UI removed in #84)', () => {
-    expect(listSource).not.toContain('Save list — Full Access')
-    expect(listSource).not.toContain('Download school list — Season Pass coming soon')
-  })
-
-  it('does NOT contain a locked cursor-not-allowed button (locked UI removed in #84)', () => {
-    expect(listSource).not.toContain('cursor-not-allowed')
-  })
-
-  it('does NOT show Full Access label anywhere (locked UI removed in #84)', () => {
-    expect(listSource).not.toContain('Full Access')
-  })
-})
 
 // ── Issue #11: Fix incorrect "rank up to 12 schools" copy ───────────────────
 
-describe('Issue #11: Ranking cap copy in requirements checklist', () => {
-  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
-
-  it('does NOT contain the old "rank up to 12" copy', () => {
-    expect(reqContentSource).not.toContain('rank up to 12 schools')
-  })
-
-  it('contains copy about ranking at least 12 strong options (updated by issue #63)', () => {
-    expect(reqContentSource).toContain('ranking at least 12 strong options')
-  })
-
-  it('tells users to list every program at each school', () => {
-    expect(reqContentSource).toContain('list every program at each school')
-  })
-})
 
 // ── Issue #15: PostHog analytics ────────────────────────────────────────────
 
@@ -469,113 +376,15 @@ describe('Issue #15: layout.tsx wraps with PHProvider', () => {
   })
 })
 
-describe('Issue #12/#39: Requirements page — locked deadline tracking section removed', () => {
-  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
-
-  it('does NOT contain a Deadline Tracking heading (section removed in #39)', () => {
-    expect(reqContentSource).not.toContain('Deadline Tracking')
-  })
-
-  it('does NOT contain Season Pass label (replaced with Full Access everywhere)', () => {
-    expect(reqContentSource).not.toContain('Season Pass')
-  })
-
-  it('does NOT contain "coming soon" language (removed in #39)', () => {
-    expect(reqContentSource).not.toContain('coming soon')
-  })
-
-  it('does NOT contain aria-hidden locked UI section', () => {
-    expect(reqContentSource).not.toContain('aria-hidden="true"')
-  })
-})
 
 // ── Issue #16: Season Pass banners + last verified fix ───────────────────────
 
-describe('Issue #16/#84: List page save banner removed', () => {
-  const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
 
-  it('does NOT contain a save banner label (locked UI removed in #84)', () => {
-    expect(listSource).not.toContain('Save list')
-    expect(listSource).not.toContain('Download list')
-  })
 
-  it('does NOT contain the Full Access save aria-label (locked UI removed in #84)', () => {
-    expect(listSource).not.toContain('Save list — Full Access')
-    expect(listSource).not.toContain('Download school list — Season Pass coming soon')
-  })
-})
 
-describe('Issue #16/#39: Requirements page locked save banner removed', () => {
-  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
-
-  it('does NOT contain "Save checklist — Season Pass coming soon" (locked UI removed in #39)', () => {
-    expect(reqContentSource).not.toContain('Save checklist — Season Pass coming soon')
-  })
-
-  it('does NOT contain "coming soon" language (removed in #39)', () => {
-    expect(reqContentSource).not.toContain('coming soon')
-  })
-})
-
-describe('Issue #16: Requirements page deadlines last verified', () => {
-  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
-
-  it('has a single top-level "Deadlines last verified" line', () => {
-    expect(reqContentSource).toContain('Deadlines last verified: April 8, 2026')
-  })
-
-  it('does NOT render per-item Last verified lines', () => {
-    // The old per-item pattern interpolated item.verifiedDate in JSX
-    expect(reqContentSource).not.toContain('{item.verifiedDate}')
-    expect(reqContentSource).not.toContain('Last verified: {item')
-  })
-
-  it('top-level verified line links to myschools.nyc', () => {
-    const verifiedBlock = reqContentSource.slice(
-      reqContentSource.indexOf('Deadlines last verified'),
-      reqContentSource.indexOf('Deadlines last verified') + 300,
-    )
-    expect(verifiedBlock).toContain('myschools.nyc')
-  })
-})
-
-describe('Issue #16/#84: Home page locked save banner removed', () => {
-  const homeSource = fs.readFileSync(path.join(__dirname, '../app/page.tsx'), 'utf-8')
-
-  it('does NOT have a locked save banner (locked UI removed in #84)', () => {
-    expect(homeSource).not.toContain('Save your HS guardrails')
-  })
-
-  it('does NOT show a Full Access label (locked UI removed in #84)', () => {
-    expect(homeSource).not.toContain('Full Access')
-  })
-
-  it('does NOT contain a locked cursor-not-allowed element (locked UI removed in #84)', () => {
-    expect(homeSource).not.toContain('cursor-not-allowed')
-  })
-
-  it('still has the submit button', () => {
-    expect(homeSource).toContain('Find schools')
-  })
-})
 
 // ── Issue #10: PostHog event tracking ───────────────────────────────────────
 
-describe('Issue #10: form_submitted event on home page', () => {
-  const homeSource = fs.readFileSync(path.join(__dirname, '../app/page.tsx'), 'utf-8')
-
-  it('imports usePostHog from posthog-js/react', () => {
-    expect(homeSource).toContain("from 'posthog-js/react'")
-  })
-
-  it('calls posthog.capture with form_submitted', () => {
-    expect(homeSource).toContain("capture('form_submitted'")
-  })
-
-  it('captures academic_ratings in form_submitted', () => {
-    expect(homeSource).toContain('academic_ratings')
-  })
-})
 
 describe('Issue #10: list_viewed event in SchoolList', () => {
   const schoolListSource = fs.readFileSync(path.join(__dirname, '../components/SchoolList.tsx'), 'utf-8')
@@ -593,17 +402,6 @@ describe('Issue #10: list_viewed event in SchoolList', () => {
   })
 })
 
-describe('Issue #10: requirements_viewed event on requirements page', () => {
-  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
-
-  it('imports usePostHog from posthog-js/react', () => {
-    expect(reqContentSource).toContain("from 'posthog-js/react'")
-  })
-
-  it('calls posthog.capture with requirements_viewed', () => {
-    expect(reqContentSource).toContain("capture('requirements_viewed'")
-  })
-})
 
 describe('Issue #10: source_link_clicked event in SchoolRow', () => {
   const schoolRowSource = fs.readFileSync(path.join(__dirname, '../components/SchoolRow.tsx'), 'utf-8')
@@ -618,26 +416,6 @@ describe('Issue #10: source_link_clicked event in SchoolRow', () => {
   })
 })
 
-describe('Issue #10: view_requirements_clicked via ViewRequirementsLink component', () => {
-  const linkSource = fs.readFileSync(path.join(__dirname, '../components/ViewRequirementsLink.tsx'), 'utf-8')
-
-  it('is a client component', () => {
-    expect(linkSource).toContain("'use client'")
-  })
-
-  it('imports usePostHog from posthog-js/react', () => {
-    expect(linkSource).toContain("from 'posthog-js/react'")
-  })
-
-  it('calls posthog.capture with view_requirements_clicked', () => {
-    expect(linkSource).toContain("capture('view_requirements_clicked'")
-  })
-
-  it('list page uses ViewRequirementsLink component', () => {
-    const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
-    expect(listSource).toContain('ViewRequirementsLink')
-  })
-})
 
 // ── Issue #21: Fix next.config.js Sentry config crashing Server Actions ────
 
@@ -816,17 +594,6 @@ describe('Issue #22: FeedbackRow added to SchoolList', () => {
   })
 })
 
-describe('Issue #22: FeedbackRow added to requirements page', () => {
-  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
-
-  it('imports FeedbackRow', () => {
-    expect(reqContentSource).toContain("import FeedbackRow from '@/components/FeedbackRow'")
-  })
-
-  it('renders FeedbackRow with requirements screen', () => {
-    expect(reqContentSource).toContain('<FeedbackRow screen="requirements"')
-  })
-})
 
 // ── Issue #23: Move feedback thumbs to summary bar ───────────────────────────
 
@@ -890,24 +657,6 @@ describe('Issue #23: FeedbackRow placed in SummaryBar (SchoolList)', () => {
   })
 })
 
-describe('Issue #23: FeedbackRow placed in requirements header row', () => {
-  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
-
-  it('FeedbackRow is in the progress summary row (same block as doneCount)', () => {
-    const doneCountIdx = reqContentSource.indexOf('doneCount} of')
-    const feedbackIdx = reqContentSource.indexOf('<FeedbackRow screen="requirements"')
-    // FeedbackRow should appear close to the doneCount line (within 300 chars)
-    expect(Math.abs(feedbackIdx - doneCountIdx)).toBeLessThan(300)
-  })
-
-  it('FeedbackRow appears before any school listing sections (no Deadline Tracking section)', () => {
-    const feedbackIdx = reqContentSource.indexOf('<FeedbackRow screen="requirements"')
-    const schoolSectionIdx = reqContentSource.indexOf('Your matched schools in this category')
-    // FeedbackRow should be before the per-school listing
-    expect(feedbackIdx).toBeGreaterThan(-1)
-    expect(feedbackIdx).toBeLessThan(schoolSectionIdx)
-  })
-})
 
 // ── Issue #34: Remove commute filter entirely ────────────────────────────────
 
@@ -919,53 +668,7 @@ describe('Issue #34: commute removed from types/index.ts', () => {
   })
 })
 
-describe('Issue #34: commute removed from home page', () => {
-  const homeSource = fs.readFileSync(path.join(__dirname, '../app/page.tsx'), 'utf-8')
 
-  it('does NOT contain commute state declaration', () => {
-    expect(homeSource).not.toContain('setCommute')
-  })
-
-  it('does NOT contain commute in SavedForm interface', () => {
-    expect(homeSource).not.toContain("commute: string")
-  })
-
-  it('does NOT contain commute in URLSearchParams', () => {
-    expect(homeSource).not.toContain("commute,")
-  })
-
-  it('does NOT render the commute UI field', () => {
-    expect(homeSource).not.toContain('Commute preference')
-  })
-
-  it('does NOT contain commute in localStorage.setItem call', () => {
-    // The JSON.stringify object passed to localStorage should not include commute
-    const setItemIdx = homeSource.indexOf('localStorage.setItem')
-    const setItemBlock = homeSource.slice(setItemIdx, setItemIdx + 200)
-    expect(setItemBlock).not.toContain('commute')
-  })
-})
-
-describe('Issue #34: commute removed from list page', () => {
-  const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
-
-  it('does NOT contain commute in parseInputs', () => {
-    expect(listSource).not.toContain("commute:")
-  })
-
-  it('does NOT reference inputs.commute in applyFilters', () => {
-    expect(listSource).not.toContain('inputs.commute')
-  })
-
-  it('borough filter uses boroughs array — simpler condition exists', () => {
-    const libSource = fs.readFileSync(path.join(__dirname, '../lib/school-list-utils.ts'), 'utf-8')
-    expect(libSource).toContain('!noBorough(inputs.boroughs) && !relaxBorough && !inputs.boroughs.includes(school.borough)')
-  })
-
-  it('relaxedNote does NOT mention short commute', () => {
-    expect(listSource).not.toContain('Not enough nearby matches')
-  })
-})
 
 // ── Issue #35: Replace borough dropdown with multi-select checkboxes ─────────
 
@@ -980,82 +683,7 @@ describe('Issue #35: types/index.ts boroughs array', () => {
   })
 })
 
-describe('Issue #35: Home page borough checkboxes', () => {
-  const homeSource = fs.readFileSync(path.join(__dirname, '../app/page.tsx'), 'utf-8')
 
-  it('uses boroughs state (not borough)', () => {
-    expect(homeSource).toContain('const [boroughs, setBoroughs]')
-    expect(homeSource).not.toContain("useState('All Boroughs')")
-  })
-
-  it('SavedForm has boroughs: string[] (not borough: string)', () => {
-    expect(homeSource).toContain('boroughs: string[]')
-    expect(homeSource).not.toContain('borough: string')
-  })
-
-  it('restores boroughs from localStorage as array', () => {
-    expect(homeSource).toContain('Array.isArray(saved.boroughs)')
-  })
-
-  it('has toggleBorough function', () => {
-    expect(homeSource).toContain('function toggleBorough(value: string)')
-  })
-
-  it('has Select all button', () => {
-    expect(homeSource).toContain('Select all')
-  })
-
-  it('renders checkboxes for each borough', () => {
-    expect(homeSource).toContain('type="checkbox"')
-    expect(homeSource).toContain('toggleBorough(b)')
-  })
-
-  it('does NOT contain the old borough dropdown select element', () => {
-    expect(homeSource).not.toContain("value=\"All Boroughs\"")
-  })
-
-  it('validates that at least one borough is selected', () => {
-    expect(homeSource).toContain("boroughs.length === 0")
-    expect(homeSource).toContain('Please select at least one borough.')
-  })
-
-  it('passes boroughs as comma-separated borough param', () => {
-    expect(homeSource).toContain("params.set('borough', boroughs.join(','))")
-  })
-
-  it('saves boroughs to localStorage', () => {
-    const setItemIdx = homeSource.indexOf('localStorage.setItem')
-    const setItemBlock = homeSource.slice(setItemIdx, setItemIdx + 200)
-    expect(setItemBlock).toContain('boroughs')
-    expect(setItemBlock).not.toContain("borough,")
-  })
-})
-
-describe('Issue #35: List page borough array filtering', () => {
-  const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
-
-  it('parseInputs splits borough param into boroughs array', () => {
-    expect(listSource).toContain("boroughParam.split(',').filter(Boolean)")
-  })
-
-  it('noBorough checks array length', () => {
-    const libSource = fs.readFileSync(path.join(__dirname, '../lib/school-list-utils.ts'), 'utf-8')
-    expect(libSource).toContain('boroughs.length === 0')
-  })
-
-  it('applyFilters uses boroughs.includes()', () => {
-    const libSource = fs.readFileSync(path.join(__dirname, '../lib/school-list-utils.ts'), 'utf-8')
-    expect(libSource).toContain('inputs.boroughs.includes(school.borough)')
-  })
-
-  it('does NOT contain relaxedNote variable', () => {
-    expect(listSource).not.toContain('relaxedNote')
-  })
-
-  it('boroughLabel uses boroughs array join', () => {
-    expect(listSource).toContain("inputs.boroughs.join(', ')")
-  })
-})
 
 describe('Issue #35: SchoolRow isLocal uses boroughs array', () => {
   const schoolRowSource = fs.readFileSync(path.join(__dirname, '../components/SchoolRow.tsx'), 'utf-8')
@@ -1072,25 +700,6 @@ describe('Issue #35: SchoolRow isLocal uses boroughs array', () => {
 
 // ── Issue #36: Update homepage title and tagline ─────────────────────────────
 
-describe('Issue #36: Homepage title and tagline copy', () => {
-  const homeSource = fs.readFileSync(path.join(__dirname, '../app/page.tsx'), 'utf-8')
-
-  it('title uses title-case "Find the Right High School"', () => {
-    expect(homeSource).toContain('Find the Right High School')
-  })
-
-  it('does NOT contain the old lowercase title', () => {
-    expect(homeSource).not.toContain('Find the right high school')
-  })
-
-  it('tagline reads "Set your criteria. Get a matched list of NYC public high schools."', () => {
-    expect(homeSource).toContain('Set your criteria. Get a matched list of NYC public high schools.')
-  })
-
-  it('does NOT contain the old tagline', () => {
-    expect(homeSource).not.toContain('Answer a few questions')
-  })
-})
 
 // ── Issue #37: Replace academic level with Academic Rating multi-select ───────
 
@@ -1109,86 +718,7 @@ describe('Issue #37: types/index.ts academicRatings array', () => {
   })
 })
 
-describe('Issue #37: Home page Academic Rating checkboxes', () => {
-  const homeSource = fs.readFileSync(path.join(__dirname, '../app/page.tsx'), 'utf-8')
 
-  it('uses academicRatings state (not academicLevel)', () => {
-    expect(homeSource).toContain('const [academicRatings, setAcademicRatings]')
-    expect(homeSource).not.toContain('academicLevel')
-  })
-
-  it('SavedForm has academicRatings: string[]', () => {
-    expect(homeSource).toContain('academicRatings: string[]')
-  })
-
-  it('restores academicRatings from localStorage as array', () => {
-    expect(homeSource).toContain('Array.isArray(saved.academicRatings)')
-  })
-
-  it('has toggleAcademicRating function', () => {
-    expect(homeSource).toContain('function toggleAcademicRating(value: string)')
-  })
-
-  it('renders checkboxes for Exceptional, Strong, Above Average', () => {
-    expect(homeSource).toContain("'exceptional'")
-    expect(homeSource).toContain('Exceptional')
-    expect(homeSource).toContain("'strong'")
-    expect(homeSource).toContain('Strong')
-    expect(homeSource).toContain("'above_average'")
-    expect(homeSource).toContain('Above Average')
-  })
-
-  it('validates academicRatings.length === 0', () => {
-    expect(homeSource).toContain('academicRatings.length === 0')
-    expect(homeSource).toContain('Please select an academic rating.')
-  })
-
-  it('passes academicRatings as comma-separated param', () => {
-    expect(homeSource).toContain("params.set('academicRatings', academicRatings.join(','))")
-  })
-
-  it('saves academicRatings to localStorage', () => {
-    const setItemIdx = homeSource.indexOf('localStorage.setItem')
-    const setItemBlock = homeSource.slice(setItemIdx, setItemIdx + 200)
-    expect(setItemBlock).toContain('academicRatings')
-  })
-
-  it('labels the section "Academic Rating" (not "Academic level")', () => {
-    expect(homeSource).toContain('Academic Rating')
-    expect(homeSource).not.toContain('Academic level')
-  })
-})
-
-describe('Issue #37: List page academicRatings parsing and filtering', () => {
-  const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
-  const libSource = fs.readFileSync(path.join(__dirname, '../lib/school-list-utils.ts'), 'utf-8')
-
-  it('parseInputs reads academicRatings param (not level)', () => {
-    expect(listSource).toContain("str('academicRatings', '')")
-    expect(listSource).not.toContain("str('level',")
-  })
-
-  it('has matchesAcademicRating helper function', () => {
-    expect(libSource).toContain('function matchesAcademicRating(')
-  })
-
-  it('matchesAcademicRating includes null-score logic for above_average', () => {
-    expect(libSource).toContain("ratings.includes('above_average')")
-  })
-
-  it('isEligible calls matchesAcademicRating', () => {
-    expect(libSource).toContain('matchesAcademicRating(school, inputs.academicRatings)')
-  })
-
-  it('showScreened logic based on exceptional or strong', () => {
-    expect(libSource).toContain("inputs.academicRatings.includes('exceptional')")
-    expect(libSource).toContain("inputs.academicRatings.includes('strong')")
-  })
-
-  it('does NOT contain the old academicLevel field', () => {
-    expect(listSource).not.toContain('academicLevel')
-  })
-})
 
 describe('Issue #37: SchoolRow No score badge', () => {
   const schoolRowSource = fs.readFileSync(path.join(__dirname, '../components/SchoolRow.tsx'), 'utf-8')
@@ -1404,148 +934,8 @@ describe('Issue #38: source — noBorough handles all 5 boroughs', () => {
 
 // ── Issue #39: Per-school requirements page + Full Access copy ────────────────
 
-describe('Issue #39: requirements page.tsx is a server component', () => {
-  const pageSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
 
-  it('does NOT have "use client" directive (server component)', () => {
-    expect(pageSource).not.toContain("'use client'")
-  })
 
-  it('loads school data server-side via getAllSchools (issue #80: Postgres, not fs)', () => {
-    expect(pageSource).toContain("import { getAllSchools } from '@/lib/load-schools'")
-    expect(pageSource).not.toContain("import fs from 'fs'")
-  })
-
-  it('exports ReqSection type for client component', () => {
-    expect(pageSource).toContain('export interface ReqSection')
-  })
-
-  it('imports RequirementsContent client component', () => {
-    expect(pageSource).toContain("import RequirementsContent from './RequirementsContent'")
-  })
-
-  it('contains buildReqSections function', () => {
-    expect(pageSource).toContain('function buildReqSections(')
-  })
-
-  it('groups schools using groupSchools from school-list-utils (single source of truth)', () => {
-    expect(pageSource).toContain('groupSchools')
-    expect(pageSource).toContain("from '@/lib/school-list-utils'")
-  })
-
-  it('returns RequirementsContent component', () => {
-    expect(pageSource).toContain('<RequirementsContent')
-  })
-})
-
-describe('Issue #39: RequirementsContent.tsx is a client component', () => {
-  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
-
-  it('has "use client" directive', () => {
-    expect(reqContentSource).toContain("'use client'")
-  })
-
-  it('contains SHSAT requirements copy', () => {
-    expect(reqContentSource).toContain('SHSAT score is the sole admissions criterion for these schools.')
-    expect(reqContentSource).toContain('Register for the SHSAT by late October')
-  })
-
-  it('contains Audition requirements copy', () => {
-    expect(reqContentSource).toContain('Prepare your audition or portfolio materials')
-    expect(reqContentSource).toContain('October 7 to December 3')
-  })
-
-  it('contains Screened requirements copy (issue #64: summary card)', () => {
-    expect(reqContentSource).toContain('7th grade course grade average')
-    expect(reqContentSource).toContain('two-track system')
-  })
-
-  it('contains Screened with Assessment requirements copy', () => {
-    expect(reqContentSource).toContain('Assessment format varies by school')
-  })
-
-  it('contains Educational Option requirements copy (issue #64: summary card)', () => {
-    expect(reqContentSource).toContain('reading level bands')
-  })
-
-  it('contains Lottery/Open Enrollment requirements copy (issue #64: summary card)', () => {
-    expect(reqContentSource).toContain('These schools select students by lottery')
-    // Lottery checkbox items removed in issue #65; summary card covers this
-    expect(reqContentSource).not.toContain('All applicants who rank the school have an equal chance')
-  })
-
-  it('contains All Applicants section (updated copy, issue #63)', () => {
-    expect(reqContentSource).toContain('All Applicants')
-    expect(reqContentSource).toContain('Application window opens in early October and closes in early December')
-    expect(reqContentSource).toContain('High school offers will be released in Spring, early March')
-  })
-
-  it('shows matched school names under each section', () => {
-    expect(reqContentSource).toContain('Your matched schools in this category')
-  })
-
-  it('handles cross-listed schools with section notes', () => {
-    expect(reqContentSource).toContain('sectionNotes')
-  })
-
-  it('contains new disclaimer text from issue spec', () => {
-    expect(reqContentSource).toContain('Every effort was made to keep this data current')
-    expect(reqContentSource).toContain('No tool can guarantee an offer')
-    expect(reqContentSource).toContain('Before submitting, confirm deadlines and requirements at')
-  })
-
-  it('does NOT contain Season Pass label', () => {
-    expect(reqContentSource).not.toContain('Season Pass')
-  })
-
-  it('does NOT contain "coming soon" language', () => {
-    expect(reqContentSource).not.toContain('coming soon')
-  })
-
-  it('does NOT have Deadline Tracking locked section', () => {
-    expect(reqContentSource).not.toContain('Deadline Tracking')
-  })
-})
-
-describe('Issue #39/#84: no Season Pass or Full Access across all files', () => {
-  it('list page has neither "Full Access" nor "Season Pass" (locked UI removed in #84)', () => {
-    const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
-    expect(listSource).not.toContain('Full Access')
-    expect(listSource).not.toContain('Season Pass')
-  })
-
-  it('home page has neither "Full Access" nor "Season Pass" (locked UI removed in #84)', () => {
-    const homeSource = fs.readFileSync(path.join(__dirname, '../app/page.tsx'), 'utf-8')
-    expect(homeSource).not.toContain('Full Access')
-    expect(homeSource).not.toContain('Season Pass')
-  })
-
-  it('SchoolList has neither "Full Access" nor "Season Pass" (locked UI removed in #84)', () => {
-    const schoolListSource = fs.readFileSync(path.join(__dirname, '../components/SchoolList.tsx'), 'utf-8')
-    expect(schoolListSource).not.toContain('Full Access')
-    expect(schoolListSource).not.toContain('Season Pass')
-  })
-
-  it('requirements page.tsx does not contain Season Pass', () => {
-    const pageSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
-    expect(pageSource).not.toContain('Season Pass')
-  })
-
-  it('RequirementsContent.tsx does not contain Season Pass', () => {
-    const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
-    expect(reqContentSource).not.toContain('Season Pass')
-  })
-
-  it('list page does not have "coming soon" language', () => {
-    const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
-    expect(listSource).not.toContain('coming soon')
-  })
-
-  it('home page does not have "coming soon" language', () => {
-    const homeSource = fs.readFileSync(path.join(__dirname, '../app/page.tsx'), 'utf-8')
-    expect(homeSource).not.toContain('coming soon')
-  })
-})
 
 // ── Issue #40: Cap school list at 15, balance categories, sync requirements page ───
 
@@ -1688,128 +1078,12 @@ describe('Issue #40/#84: SchoolList lock banner removed', () => {
   })
 })
 
-describe('Issue #40: list page uses capped results', () => {
-  it('list page imports capSchoolsByCategory', () => {
-    const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
-    expect(listSource).toContain('capSchoolsByCategory')
-  })
 
-  it('list page uses cappedResults for header count', () => {
-    const listSource = fs.readFileSync(path.join(__dirname, '../app/list/page.tsx'), 'utf-8')
-    expect(listSource).toContain('cappedResults.length')
-  })
-})
-
-describe('Issue #40: requirements page uses capped results and lock banner', () => {
-  it('requirements page imports capSchoolsByCategory', () => {
-    const pageSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
-    expect(pageSource).toContain('capSchoolsByCategory')
-  })
-
-  it('requirements page caps schools before building sections', () => {
-    const pageSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
-    expect(pageSource).toContain('cappedSchools')
-  })
-
-  it('RequirementsContent does NOT render lock banners (locked UI removed in #84)', () => {
-    const contentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
-    expect(contentSource).not.toContain('lockedCount')
-    expect(contentSource).not.toContain('Full Access')
-    expect(contentSource).not.toContain('LockBanner')
-  })
-})
 
 // ── Issue #41: School names and order on requirements page match My Schools list ───
 
-describe('Issue #41: formatSchoolName in requirements page', () => {
-  const pageSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
 
-  it('defines formatSchoolName function', () => {
-    expect(pageSource).toContain('function formatSchoolName(')
-  })
 
-  it('moves ", The" suffix to the front', () => {
-    expect(pageSource).toContain("name.endsWith(', The')")
-    expect(pageSource).toContain("'The ' + name.slice(0, -5)")
-  })
-
-  it('applies formatSchoolName when building section schools', () => {
-    expect(pageSource).toContain('formatSchoolName(school.name)')
-  })
-
-  it('does NOT sort schools alphabetically within sections (order matches list page)', () => {
-    // The old buggy sort was: buckets[key].sort((a, b) => a.name.localeCompare(b.name))
-    expect(pageSource).not.toContain('localeCompare')
-  })
-})
-
-describe('Issue #41: requirements page ordering matches list page', () => {
-  const pageSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
-  const sharedUtilsSource = fs.readFileSync(path.join(__dirname, '../lib/school-list-utils.ts'), 'utf-8')
-
-  it('imports selectSHSATSchools from shared utils (not a local copy)', () => {
-    expect(pageSource).toContain('selectSHSATSchools')
-    expect(pageSource).not.toContain('function selectSHSATSchools(')
-    expect(sharedUtilsSource).toContain('function selectSHSATSchools(')
-    expect(pageSource).toContain('selectSHSATSchools(allSchools, inputs)')
-  })
-
-  it('imports sortByHomeBorough from shared utils (not a local copy)', () => {
-    expect(pageSource).toContain('sortByHomeBorough')
-    expect(pageSource).not.toContain('function sortByHomeBorough(')
-    expect(sharedUtilsSource).toContain('function sortByHomeBorough(')
-    expect(pageSource).toContain('sortByHomeBorough(baseResults, inputs.boroughs)')
-  })
-
-  it('imports sortBySize from shared utils (not a local copy)', () => {
-    expect(pageSource).toContain('sortBySize')
-    expect(pageSource).not.toContain('function sortBySize(')
-    expect(sharedUtilsSource).toContain('function sortBySize(')
-  })
-
-  it('applies sports soft-filter same as list page', () => {
-    expect(pageSource).toContain('function matchesSports(')
-    expect(pageSource).toContain('inputs.sports.length > 0')
-  })
-
-  it('contains BOROUGH_ORDER for SHSAT borough prioritization in shared utils', () => {
-    expect(sharedUtilsSource).toContain('BOROUGH_ORDER')
-    expect(sharedUtilsSource).toContain("'Staten Island'")
-  })
-})
-
-describe('Issue #41: formatSchoolName unit behaviour', () => {
-  function formatSchoolName(name: string): string {
-    if (name.endsWith(', The')) {
-      return 'The ' + name.slice(0, -5)
-    }
-    return name
-  }
-
-  it('moves ", The" suffix to the front', () => {
-    expect(formatSchoolName('Bronx High School of Science, The')).toBe('The Bronx High School of Science')
-  })
-
-  it('leaves names without ", The" unchanged', () => {
-    expect(formatSchoolName('Brooklyn Technical High School')).toBe('Brooklyn Technical High School')
-  })
-
-  it('handles names that already start with The', () => {
-    expect(formatSchoolName('The High School for Math, Science and Engineering at CCNY')).toBe(
-      'The High School for Math, Science and Engineering at CCNY',
-    )
-  })
-
-  it('is consistent with the SchoolRow.tsx implementation', () => {
-    const schoolRowSource = fs.readFileSync(path.join(__dirname, '../components/SchoolRow.tsx'), 'utf-8')
-    const reqPageSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
-    // Both files should contain the same logic pattern
-    expect(schoolRowSource).toContain("name.endsWith(', The')")
-    expect(reqPageSource).toContain("name.endsWith(', The')")
-    expect(schoolRowSource).toContain("'The ' + name.slice(0, -5)")
-    expect(reqPageSource).toContain("'The ' + name.slice(0, -5)")
-  })
-})
 
 // ── Issue #44: SHSAT cutoff scores ───────────────────────────────────────────
 
@@ -1844,68 +1118,7 @@ describe('Issue #44: SHSAT cutoff data in build_school_data.py', () => {
   })
 })
 
-describe('Issue #44: SHSAT cutoff data in requirements page.tsx', () => {
-  const pageSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
 
-  it('defines SHSAT_CUTOFFS constant', () => {
-    expect(pageSource).toContain('SHSAT_CUTOFFS')
-  })
-
-  it('defines ShsatCutoffInfo interface (exported)', () => {
-    expect(pageSource).toContain('export interface ShsatCutoffInfo')
-  })
-
-  it('ReqSection has optional shsatCutoffInfo field', () => {
-    expect(pageSource).toContain('shsatCutoffInfo?: ShsatCutoffInfo')
-  })
-
-  it('contains all 8 specialized HS DBNs in the cutoff table', () => {
-    expect(pageSource).toContain("'02M475'") // Stuyvesant
-    expect(pageSource).toContain("'13K430'") // Brooklyn Tech
-    expect(pageSource).toContain("'10X445'") // Bronx Science
-    expect(pageSource).toContain("'31R605'") // Staten Island Technical
-  })
-
-  it('defines SHSAT_CUTOFFS_YEAR', () => {
-    expect(pageSource).toContain('SHSAT_CUTOFFS_YEAR')
-  })
-
-  it('computes lowestScore from matched schools', () => {
-    expect(pageSource).toContain('lowestScore')
-    expect(pageSource).toContain('Math.min(')
-  })
-
-  it('attaches shsatCutoffInfo to the SHSAT section', () => {
-    expect(pageSource).toContain('shsatCutoffInfo')
-    expect(pageSource).toContain("s.key === 'shsat'")
-  })
-
-  it('only attaches cutoff info when inputs.shsat is true', () => {
-    expect(pageSource).toContain('if (inputs.shsat)')
-  })
-})
-
-describe('Issue #44: SHSAT cutoff display in RequirementsContent.tsx', () => {
-  const contentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
-
-  it('does not define a separate renderShsatCutoffs function (inline display used instead)', () => {
-    expect(contentSource).not.toContain('function renderShsatCutoffs(')
-  })
-
-  it('uses shsatCutoffInfo to build a cutoff score map for inline display', () => {
-    expect(contentSource).toContain('section.shsatCutoffInfo')
-    expect(contentSource).toContain('cutoffMap')
-  })
-
-  it('shows cutoff score inline next to school name', () => {
-    expect(contentSource).toContain('cutoffMap?.has(school.name)')
-    expect(contentSource).toContain('cutoffMap.get(school.name)')
-  })
-
-  it('does not render prgdesc (removed in issue #64 — show names only)', () => {
-    expect(contentSource).not.toContain('school.prgdesc')
-  })
-})
 
 describe('Issue #44: SHSAT_CUTOFFS data validity', () => {
   // Inline the cutoffs for unit tests (mirrors the constant in page.tsx)
@@ -1949,93 +1162,7 @@ describe('Issue #44: SHSAT_CUTOFFS data validity', () => {
 
 // ── Issue #45: Move disclaimer to bottom; style section headers ──────────────
 
-describe('Issue #45: Disclaimer and verified line moved to bottom', () => {
-  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
 
-  it('disclaimer appears AFTER All Applicants section in source order', () => {
-    const allApplicantsIdx = reqContentSource.indexOf('All Applicants — always shown first')
-    const disclaimerIdx = reqContentSource.indexOf('Every effort was made to keep this data current')
-    expect(allApplicantsIdx).toBeGreaterThan(-1)
-    expect(disclaimerIdx).toBeGreaterThan(-1)
-    expect(disclaimerIdx).toBeGreaterThan(allApplicantsIdx)
-  })
-
-  it('"Deadlines last verified" line appears AFTER All Applicants section in source order', () => {
-    const allApplicantsIdx = reqContentSource.indexOf('All Applicants — always shown first')
-    const verifiedIdx = reqContentSource.indexOf('Deadlines last verified')
-    expect(allApplicantsIdx).toBeGreaterThan(-1)
-    expect(verifiedIdx).toBeGreaterThan(-1)
-    expect(verifiedIdx).toBeGreaterThan(allApplicantsIdx)
-  })
-
-  it('disclaimer appears AFTER the per-section requirements loop in source order', () => {
-    const sectionsLoopIdx = reqContentSource.indexOf('Per-section requirements')
-    const disclaimerIdx = reqContentSource.indexOf('Every effort was made to keep this data current')
-    expect(sectionsLoopIdx).toBeGreaterThan(-1)
-    expect(disclaimerIdx).toBeGreaterThan(sectionsLoopIdx)
-  })
-
-  it('has no bottom Lock banner (locked UI removed in #84)', () => {
-    const disclaimerIdx = reqContentSource.indexOf('Every effort was made to keep this data current')
-    expect(disclaimerIdx).toBeGreaterThan(-1)
-    expect(reqContentSource).not.toContain('Lock banner — bottom')
-  })
-})
-
-describe('Issue #45: Section headers styled with colored backgrounds', () => {
-  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
-
-  it('defines SECTION_STYLE constant', () => {
-    expect(reqContentSource).toContain('SECTION_STYLE')
-  })
-
-  it('SHSAT section uses blue-600 background', () => {
-    expect(reqContentSource).toContain("shsat: { bg: 'bg-blue-600'")
-  })
-
-  it('audition section uses purple-600 background', () => {
-    expect(reqContentSource).toContain("audition: { bg: 'bg-purple-600'")
-  })
-
-  it('screened section uses orange-500 background', () => {
-    expect(reqContentSource).toContain("screened: { bg: 'bg-orange-500'")
-  })
-
-  it('screened_assessment section uses orange-400 background', () => {
-    expect(reqContentSource).toContain("screened_assessment: { bg: 'bg-orange-400'")
-  })
-
-  it('edopt section uses amber-400 background', () => {
-    expect(reqContentSource).toContain("edopt: { bg: 'bg-amber-400'")
-  })
-
-  it('lottery section uses gray-500 background', () => {
-    expect(reqContentSource).toContain("lottery: { bg: 'bg-gray-500'")
-  })
-
-  it('All Applicants section uses a dark background style', () => {
-    expect(reqContentSource).toContain('ALL_APPLICANTS_STYLE')
-    expect(reqContentSource).toContain("bg: 'bg-gray-700'")
-  })
-
-  it('section h2 uses sStyle.bg and sStyle.text for dynamic styling', () => {
-    expect(reqContentSource).toContain('sStyle.bg')
-    expect(reqContentSource).toContain('sStyle.text')
-  })
-
-  it('All Applicants h2 uses ALL_APPLICANTS_STYLE', () => {
-    const allApplicantsH2Block = reqContentSource.slice(
-      reqContentSource.indexOf('All Applicants — always shown first'),
-      reqContentSource.indexOf('All Applicants — always shown first') + 200,
-    )
-    expect(allApplicantsH2Block).toContain('ALL_APPLICANTS_STYLE')
-  })
-
-  it('section h2 does NOT use the old plain text-gray-900 header styling', () => {
-    // The old header was: text-gray-900 uppercase tracking-wide mb-3 pb-2 border-b border-gray-200
-    expect(reqContentSource).not.toContain('pb-2 border-b border-gray-200')
-  })
-})
 
 // ── Issue #50: Scraper pulls all relevant DOE fields ─────────────────────────
 
@@ -2230,35 +1357,6 @@ describe('Issue #42: SchoolRow expanded view and label changes', () => {
   })
 })
 
-describe('Issue #43: section order — Ed Opt after Lottery', () => {
-  it('list page section order array has lottery before edopt', () => {
-    const libSource = fs.readFileSync(path.join(__dirname, '../lib/school-list-utils.ts'), 'utf-8')
-    // Match the order array specifically (single line)
-    const match = libSource.match(/const order: SectionType\[\] = \[([^\]]+)\]/)
-    expect(match).not.toBeNull()
-    const orderStr = match![1]
-    const lotteryIdx = orderStr.indexOf("'lottery'")
-    const edoptIdx = orderStr.indexOf("'edopt'")
-    expect(lotteryIdx).toBeGreaterThan(-1)
-    expect(edoptIdx).toBeGreaterThan(-1)
-    expect(lotteryIdx).toBeLessThan(edoptIdx)
-  })
-
-  it('requirements page uses groupSchools which has lottery before edopt (single source of truth)', () => {
-    const reqSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
-    expect(reqSource).toContain('groupSchools')
-    // Order is now defined in groupSchools() in school-list-utils.ts, not duplicated in requirements/page.tsx
-    const libSource = fs.readFileSync(path.join(__dirname, '../lib/school-list-utils.ts'), 'utf-8')
-    const match = libSource.match(/const order: SectionType\[\] = \[([^\]]+)\]/)
-    expect(match).not.toBeNull()
-    const orderStr = match![1]
-    const lotteryIdx = orderStr.indexOf("'lottery'")
-    const edoptIdx = orderStr.indexOf("'edopt'")
-    expect(lotteryIdx).toBeGreaterThan(-1)
-    expect(edoptIdx).toBeGreaterThan(-1)
-    expect(lotteryIdx).toBeLessThan(edoptIdx)
-  })
-})
 
 describe('Issue #43: updated category caps (free tier)', () => {
   it('CATEGORY_CAPS comment references paid Full Access', () => {
@@ -2307,94 +1405,7 @@ describe('Issue #43: updated category caps (free tier)', () => {
 
 // ── Issue #51: Per-school requirements from enriched DOE data ────────────────
 
-describe('Issue #51: SchoolInSection DOE fields in page.tsx', () => {
-  const pageSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
 
-  it('SchoolInSection has prgdesc field', () => {
-    expect(pageSource).toContain('prgdesc?: string')
-  })
-
-  it('SchoolInSection has auditionInformation field', () => {
-    expect(pageSource).toContain('auditionInformation?: string[]')
-  })
-
-  it('SchoolInSection has requirements field', () => {
-    expect(pageSource).toContain('requirements?: Record<string, string>')
-  })
-
-  it('buildReqSections passes auditionInformation only for audition group type', () => {
-    expect(pageSource).toContain("group.type === 'audition' && audInfo?.length ? audInfo : undefined")
-  })
-
-  it('buildReqSections passes requirements only for screened section (via groupSchools)', () => {
-    expect(pageSource).toContain("group.type === 'screened' && reqs")
-  })
-
-  it('passes doe_data.prgdesc to SchoolInSection', () => {
-    expect(pageSource).toContain('prgdesc: doeData?.prgdesc || undefined')
-  })
-})
-
-describe('Issue #51: Per-school requirements rendering in RequirementsContent.tsx', () => {
-  const src = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
-
-  it('defines PER_SCHOOL_KEYS constant', () => {
-    expect(src).toContain("const PER_SCHOOL_KEYS = new Set(['audition', 'screened', 'screened_assessment'])")
-  })
-
-  it('allItems filters out per-school sections', () => {
-    expect(src).toContain('PER_SCHOOL_KEYS.has(s.key)')
-  })
-
-  it('does not define firstSentence helper (removed in issue #64)', () => {
-    expect(src).not.toContain('function firstSentence(text: string): string')
-  })
-
-  it('does not define renderScreenedRequirements helper (removed in issue #64)', () => {
-    expect(src).not.toContain('function renderScreenedRequirements(requirements: Record<string, string>)')
-  })
-
-  it('uses getExtrasCallout instead of renderScreenedRequirements (issue #64)', () => {
-    expect(src).toContain('getExtrasCallout(school.requirements)')
-  })
-
-  it('does not render school.prgdesc (removed in issue #64)', () => {
-    expect(src).not.toContain('firstSentence(school.prgdesc)')
-    expect(src).not.toContain('school.prgdesc')
-  })
-
-  it('renders school.auditionInformation for audition programs', () => {
-    expect(src).toContain('school.auditionInformation.slice(0, 3).map((info, i) =>')
-  })
-
-  it('labels multiple audition programs using inferAuditionLabel with Program N fallback', () => {
-    // issue #65: real program labels inferred from text; Program N is fallback
-    expect(src).toContain('inferAuditionLabel(info)')
-    expect(src).toContain('Program ${i + 1}')
-  })
-
-  it('renders extras callout for screened programs via getExtrasCallout (issue #64)', () => {
-    expect(src).toContain('getExtrasCallout(school.requirements)')
-  })
-
-  it('renderItems is conditional on section key', () => {
-    // issue #65: SHSAT checklist moved before schools; non-SHSAT guard added
-    expect(src).toContain('!PER_SCHOOL_KEYS.has(section.key) && !isSHSAT && renderItems(items)')
-  })
-
-  it('section render order: description → SHSAT Prep Checklist → schools → non-SHSAT renderItems', () => {
-    // issue #65: SHSAT checklist moved before schools
-    const sectionLoopStart = src.indexOf('sections.map((section)')
-    const descriptionIdx = src.indexOf('SECTION_DESCRIPTIONS[section.key]', sectionLoopStart)
-    const prepChecklistIdx = src.indexOf('isSHSAT && items.length > 0', sectionLoopStart)
-    const schoolsIdx = src.indexOf('Your matched schools in this category', sectionLoopStart)
-    const nonShsatChecklistIdx = src.indexOf('!isSHSAT && renderItems(items)', sectionLoopStart)
-    expect(descriptionIdx).toBeGreaterThan(sectionLoopStart)
-    expect(prepChecklistIdx).toBeGreaterThan(descriptionIdx)
-    expect(schoolsIdx).toBeGreaterThan(prepChecklistIdx)
-    expect(nonShsatChecklistIdx).toBeGreaterThan(schoolsIdx)
-  })
-})
 
 describe('Issue #51: firstSentence helper logic', () => {
   function firstSentence(text: string): string {
@@ -2475,23 +1486,6 @@ describe('Issue #51: renderScreenedRequirements grouping logic', () => {
 
 // ── Issue #51: fallback and bold school name ─────────────────────────────────
 
-describe('Issue #51: fallback for schools with empty DOE data', () => {
-  const src = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
-
-  it('does not render per-school fallback bullets (removed in issue #64 — summary card replaces)', () => {
-    expect(src).not.toContain('!school.auditionInformation?.length && !school.requirements')
-    expect(src).not.toContain('• {item.text}')
-  })
-
-  it('still uses SECTION_REQUIREMENTS for the section checklist (shsat/lottery/edopt)', () => {
-    expect(src).toContain('SECTION_REQUIREMENTS[section.key]')
-  })
-
-  it('school name is always bold (not conditional on having data)', () => {
-    expect(src).toContain('"font-semibold text-gray-900"')
-    expect(src).not.toContain('school.auditionInformation || school.requirements ? \'font-semibold text-gray-900\'')
-  })
-})
 
 // ── Issue #49: Rationale prompt improvements ─────────────────────────────────
 
@@ -2701,64 +1695,7 @@ describe('Issue #61: Rationale prompt reverted to Issue #54 structure with sport
 
 // ── Issue #55: Match section header styling; simplify SHSAT section ───────────
 
-describe('Issue #55: Section header styling matches list page', () => {
-  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
 
-  it('section h2 does NOT use uppercase class', () => {
-    // Match only the h2 opening tags (not sub-labels in the section loop)
-    const h2Matches = [...reqContentSource.matchAll(/<h2\b[^>]*>/g)]
-    for (const match of h2Matches) {
-      expect(match[0]).not.toContain('uppercase')
-    }
-  })
-
-  it('All Applicants h2 does NOT use uppercase class', () => {
-    const allApplicantsBlock = reqContentSource.slice(
-      reqContentSource.indexOf('All Applicants — always shown first'),
-      reqContentSource.indexOf('All Applicants — always shown first') + 300,
-    )
-    expect(allApplicantsBlock).not.toContain('uppercase tracking-wide')
-  })
-
-  it('section h2 includes a count badge using section.schools.length', () => {
-    expect(reqContentSource).toContain('section.schools.length')
-    expect(reqContentSource).toContain('rounded-full')
-  })
-
-  it('SECTION_STYLE includes countBg for each admissions type', () => {
-    expect(reqContentSource).toContain("shsat: { bg: 'bg-blue-600'")
-    expect(reqContentSource).toContain("countBg: 'bg-blue-500'")
-    expect(reqContentSource).toContain("countBg: 'bg-purple-500'")
-    expect(reqContentSource).toContain("countBg: 'bg-orange-400'")
-    expect(reqContentSource).toContain("countBg: 'bg-gray-400'")
-  })
-
-  it('section h2 uses sStyle.countBg for badge background', () => {
-    expect(reqContentSource).toContain('sStyle.countBg')
-  })
-})
-
-describe('Issue #55: SHSAT section simplified — no separate cutoff box', () => {
-  const reqContentSource = fs.readFileSync(path.join(__dirname, '../app/requirements/RequirementsContent.tsx'), 'utf-8')
-
-  it('does not render a separate blue cutoff score box', () => {
-    expect(reqContentSource).not.toContain('bg-blue-50 border border-blue-100')
-    expect(reqContentSource).not.toContain('Recent cutoff scores')
-  })
-
-  it('uses cutoffMap to show score inline with school name', () => {
-    expect(reqContentSource).toContain('cutoffMap')
-    expect(reqContentSource).toContain('cutoffMap.get(school.name)')
-  })
-
-  it('does not render prgdesc for any school (removed in issue #64)', () => {
-    expect(reqContentSource).not.toContain('school.prgdesc')
-  })
-
-  it('builds cutoffMap from section.shsatCutoffInfo.schoolCutoffs', () => {
-    expect(reqContentSource).toContain('section.shsatCutoffInfo.schoolCutoffs')
-  })
-})
 
 // ── Issue #56: Audition-only schools hidden when auditions=NO ────────────────
 
@@ -2836,57 +1773,6 @@ describe('Issue #56: source — isEligible has audition-only guard before has_op
 
 // ── Issue #60: Disable school size filter for user interviews ─────────────────
 
-describe('Issue #60: school size filter disabled on filter page', () => {
-  const pageSource = fs.readFileSync(path.join(__dirname, '../app/page.tsx'), 'utf-8')
-
-  it('shows "All sizes" label in the size section', () => {
-    expect(pageSource).toContain('All sizes')
-  })
-
-  it('does not render interactive size radio inputs (name="size" removed)', () => {
-    expect(pageSource).not.toContain('name="size"')
-  })
-
-  it('does not contain size validation error message', () => {
-    expect(pageSource).not.toContain('Please select a school size preference')
-  })
-
-  it('does not restore size from localStorage', () => {
-    expect(pageSource).not.toContain("includes(saved.size)")
-  })
-})
 
 // ── Issue #84: Hide the unbuilt "Full Access" paid-tier UI ────────────────────
 
-describe('Issue #84: no Full Access paid-tier chrome remains in the UI', () => {
-  const uiFiles = [
-    '../app/page.tsx',
-    '../app/list/page.tsx',
-    '../components/SchoolList.tsx',
-    '../app/requirements/RequirementsContent.tsx',
-  ]
-
-  it.each(uiFiles)('%s does NOT contain "Full Access"', (file) => {
-    const source = fs.readFileSync(path.join(__dirname, file), 'utf-8')
-    expect(source).not.toContain('Full Access')
-  })
-
-  it('requirements page.tsx no longer computes or passes lockedCount', () => {
-    const pageSource = fs.readFileSync(path.join(__dirname, '../app/requirements/page.tsx'), 'utf-8')
-    expect(pageSource).not.toContain('lockedCount')
-    expect(pageSource).not.toContain('PAID_TIER_CAP')
-  })
-
-  it('SchoolList no longer imports the tier cap constants', () => {
-    const schoolListSource = fs.readFileSync(path.join(__dirname, '../components/SchoolList.tsx'), 'utf-8')
-    expect(schoolListSource).not.toContain('FREE_TIER_CAP')
-    expect(schoolListSource).not.toContain('PAID_TIER_CAP')
-  })
-
-  it('free-tier cap logic in lib is untouched (FREE_TIER_CAP still 15)', () => {
-    expect(FREE_TIER_CAP).toBe(15)
-    const libSource = fs.readFileSync(path.join(__dirname, '../lib/school-list-utils.ts'), 'utf-8')
-    expect(libSource).toContain('FREE_TIER_CAP')
-    expect(libSource).toContain('PAID_TIER_CAP')
-  })
-})

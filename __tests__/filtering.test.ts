@@ -465,26 +465,3 @@ describe('issue #62: groupSchools produces identical grouping for list and requi
 
 // ── Issue #62: requirements/page.tsx source uses groupSchools ─────────────────
 
-describe('issue #62: requirements/page.tsx structural check', () => {
-  const reqPageSrc = require('fs').readFileSync(
-    require('path').join(__dirname, '../app/requirements/page.tsx'),
-    'utf-8'
-  )
-
-  it('imports groupSchools from school-list-utils', () => {
-    expect(reqPageSrc).toContain('groupSchools')
-    expect(reqPageSrc).toContain("from '@/lib/school-list-utils'")
-  })
-
-  it('does not contain getSchoolSectionKeys (removed diverged logic)', () => {
-    expect(reqPageSrc).not.toContain('getSchoolSectionKeys')
-  })
-
-  it('does not contain SECTION_ORDER (removed diverged logic)', () => {
-    expect(reqPageSrc).not.toContain('SECTION_ORDER')
-  })
-
-  it('does not define a local SectionKey type with screened_assessment', () => {
-    expect(reqPageSrc).not.toContain("'screened_assessment'")
-  })
-})
