@@ -31,12 +31,6 @@ export default function SiteHeader({ addedCount }: Props) {
           My Schools
           {addedCount > 0 && <span className="font-mono text-accent ml-1">{addedCount}</span>}
         </Link>
-        <Link
-          href="/checklist"
-          className="hover:text-ink transition-colors duration-[120ms] ease-out"
-        >
-          Readiness
-        </Link>
       </nav>
     </header>
   )

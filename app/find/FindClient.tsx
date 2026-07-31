@@ -219,15 +219,9 @@ export default function FindClient({ schools, initialFilters }: Props) {
         </div>
         <nav className="flex items-center gap-[28px] text-[14.5px] text-muted">
           <span className="text-ink font-medium border-b-2 border-accent pb-[3px]">Find</span>
-          <Link href="/list" className="hover:text-ink transition-colors duration-[120ms] ease-out">
+          <Link href="/my-schools" className="hover:text-ink transition-colors duration-[120ms] ease-out">
             My Schools
             {addedCount > 0 && <span className="font-mono text-accent ml-1">{addedCount}</span>}
-          </Link>
-          <Link
-            href="/requirements"
-            className="hover:text-ink transition-colors duration-[120ms] ease-out"
-          >
-            Readiness
           </Link>
         </nav>
       </header>
