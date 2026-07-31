@@ -11,3 +11,4 @@
 - `LESSONS.md` is coordinator-owned runtime state — read it for context, but never commit it (use `git add -A -- ':(exclude)LESSONS.md'`).
 - Stay strictly within the scope of the issue you were given; an independent reviewer rejects scope creep.
 - **Issue sequencing:** the coordinator picks up `agent-ok` issues in **ascending issue-number order** (file them in the order they should be built). An issue whose body contains a line `Blocked by #N` is skipped while issue #N is still open.
+- **Design lives in `design/`.** `design/DESIGN-SYSTEM.html` is the canonical source for colour, type, geometry, layout, primitives, states and the product's visual invariants — read it before building any UI. The per-screen files (`find-screen`, `school-detail`, `saved-list`, `landing`, each with a `-handoff`) are *deltas* on top of it, not restatements. Never hardcode a hex value or type size that the system already defines; use the Tailwind tokens.
