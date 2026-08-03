@@ -60,7 +60,7 @@ AdmitDay is built through a self-hosted coding-agent pipeline, designed to be a 
 4. The coordinator opens a PR. Low-risk, reviewer-approved changes are **auto-merged** (squash) once the required `test` check passes; anything touching the database, secrets, or infrastructure is escalated to a human instead of auto-merging.
 5. Branch protection makes the PR the only path to `main` — no direct pushes, no force-pushes.
 
-Progress is reported over Telegram. Guardrails — branch protection, secret scanning + push protection, and a markdown-allowlist CI guard — keep the autonomy safe by structure.
+Every outcome is recorded on the issue itself — labels and an explanatory comment — so the state of the queue is always readable from GitHub rather than a separate notification channel. Guardrails — branch protection, secret scanning + push protection, a markdown-allowlist CI guard, product rules encoded as tests, and production smoke tests that check the deployed site rather than the code — keep the autonomy safe by structure.
 
 ## Lessons Learned Building This
 
