@@ -14,7 +14,12 @@ import { searchSchools } from "@/lib/rag";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { classifyProviderError } from "@/lib/provider-error";
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+let anthropicClient: Anthropic | null = null;
+
+function getAnthropicClient(): Anthropic {
+  anthropicClient ??= new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  return anthropicClient;
+}
 
 export async function POST(request: NextRequest) {
   const rl = checkRateLimit(request);
@@ -45,7 +50,7 @@ export async function POST(request: NextRequest) {
       .join("\n\n");
 
     // Step 3: Send to Claude with the retrieved context
-    const message = await client.messages.create({
+    const message = await getAnthropicClient().messages.create({
       model: "claude-sonnet-5",
       max_tokens: 600,
       system:

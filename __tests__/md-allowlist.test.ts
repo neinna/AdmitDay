@@ -3,12 +3,12 @@ import { execSync } from 'child_process'
 // ── Public-repo privacy guard ────────────────────────────────────────────────
 // This repo is PUBLIC. Planning/strategy/PRD docs must never be committed here
 // (a strategy PRD leaked for months before being purged from history — see the
-// md-privacy-guard change). Only the two markdown files below may be tracked.
+// md-privacy-guard change). Only the markdown files below may be tracked.
 //
 // To intentionally add another markdown file, add its exact repo-relative path
 // to ALLOWED in the SAME pull request — that makes the decision explicit and
 // reviewable rather than accidental.
-const ALLOWED = ['README.md', 'CLAUDE.md']
+const ALLOWED = ['AGENTS.md', 'CLAUDE.md', 'README.md', 'docs/agent-pipeline.md']
 
 describe('markdown allowlist (public-repo privacy guard)', () => {
   it('only the allowlisted markdown files are tracked in the repo', () => {
