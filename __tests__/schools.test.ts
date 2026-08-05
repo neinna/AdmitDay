@@ -87,7 +87,7 @@ describe('parseIssueCommand', () => {
 // The coordinator no longer deploys from the VPS (Vercel deploys from main).
 // It runs the agent on a branch, verifies objectively, and opens a PR for
 // human review. These tests pin that contract so a regression can't quietly
-// reintroduce self-merge-to-main or VPS deploy steps.
+// reintroduce self-merge-to-main or app deploy steps.
 
 describe('agent-coordinator.sh PR flow', () => {
   const coordinatorSource = fs.readFileSync(path.join(__dirname, '../agent-coordinator.sh'), 'utf-8')
@@ -98,12 +98,12 @@ describe('agent-coordinator.sh PR flow', () => {
     expect(coordinatorSource).toContain('TRIGGER_LABEL="agent-ok"')
   })
 
-  it('does NOT reference pm2 (VPS deploy retired; Vercel deploys from main)', () => {
-    expect(coordinatorSource).not.toMatch(/pm2/)
+  it('does NOT manage the app with pm2 (Vercel deploys the app from main)', () => {
+    expect(coordinatorSource).not.toMatch(/pm2\s+(start|restart|reload|delete)\s+(hs-navigator|admitday|next|npm)/)
   })
 
   it('never merges or pushes to main — it opens a PR for review instead', () => {
-    expect(coordinatorSource).not.toMatch(/git merge/)
+    expect(coordinatorSource).not.toMatch(/git merge(\s|$)/)
     expect(coordinatorSource).not.toMatch(/git push origin main\b/)
   })
 
@@ -164,6 +164,31 @@ describe('agent-coordinator.sh PR flow', () => {
     expect(coordinatorSource).toContain('RUN_METADATA_DIR="/home/agent/agent-run-metadata"')
     expect(coordinatorSource).toContain('LF_METADATA_DIR="$RUN_METADATA_DIR"')
     expect(coordinatorSource).toContain('metadata_file')
+  })
+
+  it('uses the dedicated agent observability venv for Langfuse emission when present', () => {
+    expect(coordinatorSource).toContain('LF_TRACE_PYTHON="${LF_TRACE_PYTHON:-/home/agent/.venvs/agent-observability/bin/python}"')
+    expect(coordinatorSource).toContain('timeout 30 "$LF_TRACE_PYTHON" "$LF_TRACE_SCRIPT"')
+  })
+
+  it('self-updates from origin/main only while idle on main', () => {
+    expect(coordinatorSource).toContain('SELF_UPDATE_INTERVAL_SECONDS="${SELF_UPDATE_INTERVAL_SECONDS:-300}"')
+    expect(coordinatorSource).toContain('self_update_from_main()')
+    expect(coordinatorSource).toContain('git fetch --quiet origin main')
+    expect(coordinatorSource).toContain('git pull --ff-only --quiet origin main')
+    expect(coordinatorSource).toContain('pm2 restart agent-coordinator --update-env')
+    expect(coordinatorSource).toContain('if [ "$BRANCH" != "main" ]; then')
+    expect(coordinatorSource).toContain('git status --porcelain --untracked-files=no')
+    expect(coordinatorSource).toContain('maybe_self_update_or_exit')
+  })
+
+  it('treats provider or billing outages as provider-unavailable, not failed implementation', () => {
+    expect(coordinatorSource).toContain('claude_provider_unavailable()')
+    expect(coordinatorSource).toContain('credit balance|usage limit|rate limit|overloaded|temporarily unavailable|api_error')
+    expect(coordinatorSource).toContain('OUTCOME="provider-unavailable"')
+    expect(coordinatorSource).toContain('github_label "$ISSUE_NUMBER" "$TRIGGER_LABEL"')
+    expect(coordinatorSource).toContain('return 75')
+    expect(coordinatorSource).toContain('Provider halt: sleeping 10 minutes before retrying.')
   })
 
   it('records the baseline fields needed before model routing', () => {
