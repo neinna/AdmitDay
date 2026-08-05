@@ -12,6 +12,11 @@
 
 # Load credentials
 source /home/agent/.env.agents
+
+# The Langfuse SDK reads these from the environment, so they must survive into
+# the trace script's process whether or not .env.agents used `export`. Values
+# are never logged, never passed as arguments, and never written to the repo.
+export LANGFUSE_PUBLIC_KEY LANGFUSE_SECRET_KEY LANGFUSE_HOST
 ANTHROPIC_API_KEY=$(grep ANTHROPIC_API_KEY /home/agent/app/.env.local | cut -d '=' -f2 | tr -d '"' | tr -d "'")
 
 APP_DIR="/home/agent/app"
@@ -20,9 +25,165 @@ OFFSET_FILE="/home/agent/.tg_offset"
 LESSONS_FILE="/home/agent/app/LESSONS.md"
 TRIGGER_LABEL="agent-ok"
 CLAUDE_TIMEOUT=1800
+LF_TRACE_SCRIPT="${APP_DIR}/scripts/langfuse_trace.py"
+RUN_METADATA_DIR="/home/agent/agent-run-metadata"
+LF_RUN_FILE=""
 
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
+
+# --- Langfuse instrumentation -------------------------------------------------
+# Observability only. These helpers must never change what the coordinator does,
+# so they touch no shared state, always return 0, and send diagnostics to
+# $LOG_FILE rather than stdout (review_change's stdout is its return value).
+# If Langfuse is unconfigured, unreachable, or the script is missing, a run
+# proceeds exactly as it did before this was added.
+
+lf_now_ns() {
+  python3 -c 'import time; print(time.time_ns())' 2>/dev/null || echo ""
+}
+
+# lf_record NAME START_NS END_NS OK CLAUDE_JSON ATTEMPT [STATUS]
+#   OK:           1, 0, or "" when the notion of pass/fail does not apply
+#   CLAUDE_JSON:  a claude --output-format json file, or "" for a non-LLM phase
+#   STATUS:       optional small enum, e.g. passed, failed, skipped-test-failed
+# Appends one JSON line per phase to this run's buffer — one line per model when
+# a single claude call billed more than one, so per-model spend stays exact.
+# Only names, numbers and timings are written here. No prompts, no diffs, no
+# agent output: what is not extracted below cannot leave the VPS.
+lf_record() {
+  [ -n "$LF_RUN_FILE" ] || return 0
+  LF_NAME="$1" LF_START="$2" LF_END="$3" LF_OK="$4" LF_JSON="$5" LF_ATTEMPT="$6" \
+  LF_STATUS="$7" \
+  python3 << 'PYEOF' >> "$LF_RUN_FILE" 2>> "$LOG_FILE"
+import json, os
+
+def num(key):
+    v = os.environ.get(key, "")
+    return int(v) if v.isdigit() else None
+
+base = {"name": os.environ["LF_NAME"]}
+for field, key in (("start_ns", "LF_START"), ("end_ns", "LF_END"),
+                   ("attempt", "LF_ATTEMPT")):
+    value = num(key)
+    if value is not None:
+        base[field] = value
+if os.environ.get("LF_OK") in ("0", "1"):
+    base["ok"] = os.environ["LF_OK"] == "1"
+if os.environ.get("LF_STATUS"):
+    base["status"] = os.environ["LF_STATUS"]
+
+rows = []
+path = os.environ.get("LF_JSON") or ""
+if path and os.path.exists(path):
+    try:
+        d = json.load(open(path))
+    except Exception:
+        d = {}
+    # Newer claude CLIs report per-model usage; older ones only report totals.
+    for model, u in (d.get("modelUsage") or {}).items():
+        row = dict(base, model=model,
+                   input_tokens=u.get("inputTokens"),
+                   output_tokens=u.get("outputTokens"),
+                   cache_read_tokens=u.get("cacheReadInputTokens"),
+                   cache_creation_tokens=u.get("cacheCreationInputTokens"),
+                   cost_usd=u.get("costUSD"))
+        rows.append(row)
+    if not rows and d:
+        u = d.get("usage") or {}
+        rows.append(dict(base, model=d.get("model") or "unknown",
+                         input_tokens=u.get("input_tokens"),
+                         output_tokens=u.get("output_tokens"),
+                         cache_read_tokens=u.get("cache_read_input_tokens"),
+                         cache_creation_tokens=u.get("cache_creation_input_tokens"),
+                         cost_usd=d.get("total_cost_usd")))
+
+for row in (rows or [base]):
+    print(json.dumps({k: v for k, v in row.items() if v is not None}))
+PYEOF
+  return 0
+}
+
+# lf_emit ISSUE TITLE BRANCH OUTCOME ATTEMPTS LABEL START_NS END_NS TEST BUILD REVIEWER PR
+# Assembles this run's buffered phases into one payload and hands it to the only
+# script that talks to Langfuse. Hard-timed and swallowed: a hung or dead
+# Langfuse costs the loop at most 30 seconds and nothing else. The same
+# sanitized payload is also written under RUN_METADATA_DIR for baseline analysis.
+lf_emit() {
+  local RUN_FILE="$LF_RUN_FILE"
+  LF_RUN_FILE=""
+  [ -n "$RUN_FILE" ] || return 0
+  if [ ! -f "$LF_TRACE_SCRIPT" ]; then
+    log "Langfuse: ${LF_TRACE_SCRIPT} not found, skipping trace for #${1}"
+    rm -f "$RUN_FILE"
+    return 0
+  fi
+
+  LF_ISSUE="$1" LF_TITLE="$2" LF_BRANCH="$3" LF_OUTCOME="$4" LF_ATTEMPTS="$5" \
+  LF_LABEL="$6" LF_TSTART="$7" LF_TEND="$8" LF_SPANS="$RUN_FILE" \
+  LF_TEST_RESULT="$9" LF_BUILD_RESULT="${10}" LF_REVIEWER_RESULT="${11}" \
+  LF_PR_OUTCOME="${12}" LF_METADATA_DIR="$RUN_METADATA_DIR" \
+  GITHUB_REPO="$GITHUB_REPO" \
+  python3 << 'PYEOF' 2>> "$LOG_FILE" | timeout 30 python3 "$LF_TRACE_SCRIPT" 2>> "$LOG_FILE"
+import json, os
+
+spans = []
+try:
+    with open(os.environ["LF_SPANS"]) as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                spans.append(json.loads(line))
+            except Exception:
+                pass
+except Exception:
+    pass
+
+def num(key):
+    v = os.environ.get(key, "")
+    return int(v) if v.isdigit() else None
+
+trace = {
+    "issue_number": num("LF_ISSUE"),
+    "issue_title": os.environ.get("LF_TITLE") or None,
+    "branch": os.environ.get("LF_BRANCH") or None,
+    "repo": os.environ.get("GITHUB_REPO") or None,
+    "outcome": os.environ.get("LF_OUTCOME") or None,
+    "attempts": num("LF_ATTEMPTS"),
+    "github_label": os.environ.get("LF_LABEL") or None,
+    "test_result": os.environ.get("LF_TEST_RESULT") or None,
+    "build_result": os.environ.get("LF_BUILD_RESULT") or None,
+    "reviewer_result": os.environ.get("LF_REVIEWER_RESULT") or None,
+    "pr_outcome": os.environ.get("LF_PR_OUTCOME") or None,
+    "start_ns": num("LF_TSTART"),
+    "end_ns": num("LF_TEND"),
+}
+payload = {"trace": {k: v for k, v in trace.items() if v is not None},
+           "spans": spans}
+
+metadata_dir = os.environ.get("LF_METADATA_DIR") or ""
+if metadata_dir:
+    try:
+        os.makedirs(metadata_dir, exist_ok=True)
+        issue = payload["trace"].get("issue_number") or "unknown"
+        started = payload["trace"].get("start_ns") or "unknown"
+        path = os.path.join(metadata_dir, f"issue-{issue}-{started}.json")
+        tmp = path + ".tmp"
+        payload["trace"]["metadata_file"] = path
+        with open(tmp, "w") as fh:
+            json.dump(payload, fh, indent=2, sort_keys=True)
+            fh.write("\n")
+        os.replace(tmp, path)
+    except Exception:
+        pass
+
+print(json.dumps(payload))
+PYEOF
+  rm -f "$RUN_FILE"
+  return 0
 }
 
 telegram() {
@@ -165,15 +326,29 @@ except Exception:
 # the build runs (webpack treats failed cache writes as non-fatal warnings).
 verify_app() {
   local OUT="$1" RC=0
+  local T0 T1
+  TEST_RESULT="not-run"
+  BUILD_RESULT="not-run"
   rm -rf "$APP_DIR/.next"
+  T0=$(lf_now_ns)
   (cd "$APP_DIR" && npm test) > "$OUT" 2>&1 || RC=1
+  T1=$(lf_now_ns)
+  TEST_RESULT="$([ $RC -eq 0 ] && echo passed || echo failed)"
+  lf_record "test" "$T0" "$T1" "$([ $RC -eq 0 ] && echo 1 || echo 0)" "" "" "$TEST_RESULT"
   if [ $RC -eq 0 ]; then
+    T0=$(lf_now_ns)
     ( while true; do rm -rf "$APP_DIR/.next/cache" 2>/dev/null; sleep 10; done ) &
     local PRUNE_PID=$!
     (cd "$APP_DIR" && npm run build) >> "$OUT" 2>&1 || RC=1
     kill "$PRUNE_PID" 2>/dev/null
     wait "$PRUNE_PID" 2>/dev/null
     rm -rf "$APP_DIR/.next/cache"
+    T1=$(lf_now_ns)
+    BUILD_RESULT="$([ $RC -eq 0 ] && echo passed || echo failed)"
+    lf_record "build" "$T0" "$T1" "$([ $RC -eq 0 ] && echo 1 || echo 0)" "" "" "$BUILD_RESULT"
+  else
+    BUILD_RESULT="skipped-test-failed"
+    lf_record "build" "" "" "0" "" "" "$BUILD_RESULT"
   fi
   return $RC
 }
@@ -214,18 +389,36 @@ VERDICT: REJECT - <one-line reason>
 Then, ONLY if the diff touches the database/connection layer, migrations, seeding, environment/secrets handling, or deploy/infra config (regardless of the verdict above), add exactly one more line:
 RISK: LIVE-VERIFY-NEEDED"
 
+  # No log() calls in this function: its stdout is the review text.
+  local T0 T1
+  T0=$(lf_now_ns)
   run_claude "$REVIEW_OUT" "" "Read,Glob,Grep"
   local RC=$?
+  T1=$(lf_now_ns)
   local REVIEW_TEXT
   REVIEW_TEXT=$(claude_json_field "$REVIEW_OUT" "result")
+  local REVIEW_STATUS="unavailable"
+  local REVIEW_OK=0
+  if [ $RC -eq 0 ] && [ -n "$REVIEW_TEXT" ]; then
+    if echo "$REVIEW_TEXT" | grep -q "VERDICT: APPROVE"; then
+      REVIEW_STATUS="approved"
+      REVIEW_OK=1
+    else
+      REVIEW_STATUS="rejected"
+    fi
+  fi
+  lf_record "review" "$T0" "$T1" "$REVIEW_OK" "$REVIEW_OUT" "" "$REVIEW_STATUS"
   rm -f "$REVIEW_OUT"
   echo "$REVIEW_TEXT"
   if [ $RC -ne 0 ] || [ -z "$REVIEW_TEXT" ]; then
+    REVIEWER_RESULT="unavailable"
     return 2
   fi
   if echo "$REVIEW_TEXT" | grep -q "VERDICT: APPROVE"; then
+    REVIEWER_RESULT="approved"
     return 0
   fi
+  REVIEWER_RESULT="rejected"
   return 1
 }
 
@@ -259,8 +452,12 @@ Write the complete new content of LESSONS.md and nothing else (no fences, no com
 - Deduplicate: never repeat an existing lesson in different words.
 - Hard cap 30 lines total: if adding would exceed it, drop the least useful existing line."
 
+  local T0 T1
+  T0=$(lf_now_ns)
   run_claude "$RETRO_OUT" "" "Read"
   local RC=$?
+  T1=$(lf_now_ns)
+  lf_record "retrospective" "$T0" "$T1" "$([ $RC -eq 0 ] && echo 1 || echo 0)" "$RETRO_OUT" ""
   if [ $RC -eq 0 ]; then
     local NEW_LESSONS
     NEW_LESSONS=$(claude_json_field "$RETRO_OUT" "result" | head -30)
@@ -391,6 +588,8 @@ for u in data.get('result', []):
 
 run_agent() {
   local ISSUE_NUMBER=$1
+  local RUN_START
+  RUN_START=$(lf_now_ns)
 
   # Fetch full issue (title + body with newlines preserved) and its comments
   local ISSUE_FILE="/tmp/issue-${ISSUE_NUMBER}.json"
@@ -420,6 +619,11 @@ except Exception:
   local CLAUDE_OUT="/tmp/claude-issue-${ISSUE_NUMBER}.json"
   local VERIFY_OUT="/tmp/verify-issue-${ISSUE_NUMBER}.log"
 
+  # Open this run's phase buffer. Everything lf_record writes from here until
+  # lf_emit belongs to this issue's trace.
+  LF_RUN_FILE="/tmp/lf-run-${ISSUE_NUMBER}.jsonl"
+  : > "$LF_RUN_FILE" 2>/dev/null || LF_RUN_FILE=""
+
   log "Starting issue #${ISSUE_NUMBER}: ${ISSUE_TITLE}"
   telegram "Starting issue #${ISSUE_NUMBER}: ${ISSUE_TITLE}"
 
@@ -427,7 +631,7 @@ except Exception:
   github_remove_label "$ISSUE_NUMBER" "$TRIGGER_LABEL"
   github_label "$ISSUE_NUMBER" "in-progress"
 
-  cd "$APP_DIR" || { log "FATAL: cannot cd to $APP_DIR"; return; }
+  cd "$APP_DIR" || { log "FATAL: cannot cd to $APP_DIR"; LF_RUN_FILE=""; return; }
   git checkout main >> "$LOG_FILE" 2>&1 && git pull origin main >> "$LOG_FILE" 2>&1
   git branch -D "$BRANCH" 2>/dev/null
   git checkout -b "$BRANCH" >> "$LOG_FILE" 2>&1
@@ -461,16 +665,29 @@ Instructions:
 - End with a short summary of what you changed and why (it becomes the pull request description)."
 
   local ATTEMPT=1
+  local ATTEMPTS_USED=0
   local SESSION_ID=""
   local SUCCESS=0
   local FAIL_REASON=""
   local REVIEW_TEXT=""
   local PROMPT="$BRIEF"
+  local OUTCOME="failed"
+  local GH_LABEL=""
+  local TEST_RESULT="not-run"
+  local BUILD_RESULT="not-run"
+  local REVIEWER_RESULT="not-run"
+  local PR_OUTCOME="not-run"
 
   while [ $ATTEMPT -le 2 ]; do
     log "Issue #${ISSUE_NUMBER}: agent attempt ${ATTEMPT}"
+    ATTEMPTS_USED=$ATTEMPT
+    local T0 T1
+    T0=$(lf_now_ns)
     run_claude "$CLAUDE_OUT" "$([ $ATTEMPT -gt 1 ] && echo "$SESSION_ID")"
     local RC=$?
+    T1=$(lf_now_ns)
+    lf_record "implement" "$T0" "$T1" "$([ $RC -eq 0 ] && echo 1 || echo 0)" \
+      "$CLAUDE_OUT" "$ATTEMPT"
     if [ $RC -eq 124 ]; then
       log "Issue #${ISSUE_NUMBER}: claude timed out on attempt ${ATTEMPT}"
       telegram "Timeout: agent hit the 30min limit on issue #${ISSUE_NUMBER} (attempt ${ATTEMPT})"
@@ -536,12 +753,17 @@ Diagnose why this failed before changing anything else. Then fix it, re-run npm 
     SUMMARY=$(claude_json_field "$CLAUDE_OUT" "result")
     [ -z "$SUMMARY" ] && SUMMARY="(agent produced no summary)"
 
+    local T0 T1
+    T0=$(lf_now_ns)
     git push origin "$BRANCH" >> "$LOG_FILE" 2>&1
     local PR_BODY="${SUMMARY}
 
 Closes #${ISSUE_NUMBER}"
     local PR_URL
     PR_URL=$(github_open_pr "$BRANCH" "$COMMIT_TITLE" "$PR_BODY")
+    T1=$(lf_now_ns)
+    PR_OUTCOME="$([ -n "$PR_URL" ] && echo opened || echo creation-failed)"
+    lf_record "pr" "$T0" "$T1" "$([ -n "$PR_URL" ] && echo 1 || echo 0)" "" "" "$PR_OUTCOME"
 
     if [ -n "$PR_URL" ]; then
       if echo "$REVIEW_TEXT" | grep -q "RISK: LIVE-VERIFY-NEEDED" || [ "$REVIEW_RC" -eq 2 ]; then
@@ -551,11 +773,13 @@ Closes #${ISSUE_NUMBER}"
         # case of "can't truly verify" and must never auto-merge unattended.
         local ESCALATION_REASON="flagged it as touching the database/connection layer, migrations, seeding, environment/secrets, or deploy/infra config (RISK: LIVE-VERIFY-NEEDED)"
         [ "$REVIEW_RC" -eq 2 ] && ESCALATION_REASON="was unavailable, so this diff was never independently reviewed"
+        [ "$REVIEW_RC" -ne 2 ] && REVIEWER_RESULT="approved-live-verify-needed"
         github_comment "$ISSUE_NUMBER" "Agent opened a pull request for this issue: ${PR_URL}
 
 Tests and build verified green by the coordinator. The independent reviewer ${ESCALATION_REASON}. Auto-merge was NOT enabled — please verify before merging."
         github_label "$ISSUE_NUMBER" "needs-review"
         github_remove_label "$ISSUE_NUMBER" "in-progress"
+        OUTCOME="needs-review"; GH_LABEL="needs-review"; PR_OUTCOME="opened-escalated"
         log "Issue #${ISSUE_NUMBER}: PR opened at ${PR_URL}, escalated (${ESCALATION_REASON}), auto-merge NOT enabled"
         telegram "PR ready for issue #${ISSUE_NUMBER} but ESCALATED for human review: ${ISSUE_TITLE} — ${PR_URL}"
       else
@@ -563,11 +787,13 @@ Tests and build verified green by the coordinator. The independent reviewer ${ES
         local PR_NODE_ID
         PR_NODE_ID=$(github_get_pr_node_id "$PR_NUMBER")
         if [ -n "$PR_NODE_ID" ] && github_enable_automerge "$PR_NODE_ID"; then
+          PR_OUTCOME="opened-auto-merge-enabled"
           log "Issue #${ISSUE_NUMBER}: auto-merge enabled on PR ${PR_URL}"
           github_comment "$ISSUE_NUMBER" "Agent opened a pull request for this issue: ${PR_URL}
 
 Tests and build verified green by the coordinator, and an independent reviewer approved the diff. Auto-merge has been enabled — GitHub will merge it once the required checks pass."
         else
+          PR_OUTCOME="opened-auto-merge-failed"
           log "Issue #${ISSUE_NUMBER}: failed to enable auto-merge on PR ${PR_URL}"
           github_comment "$ISSUE_NUMBER" "Agent opened a pull request for this issue: ${PR_URL}
 
@@ -575,10 +801,13 @@ Tests and build verified green by the coordinator, and an independent reviewer a
         fi
         github_label "$ISSUE_NUMBER" "pr-open"
         github_remove_label "$ISSUE_NUMBER" "in-progress"
+        OUTCOME="success"; GH_LABEL="pr-open"
         log "Issue #${ISSUE_NUMBER}: PR opened at ${PR_URL}"
         telegram "PR ready for issue #${ISSUE_NUMBER}: ${ISSUE_TITLE} — ${PR_URL}"
       fi
     else
+      OUTCOME="needs-review"; GH_LABEL="needs-review"
+      PR_OUTCOME="creation-failed"
       github_label "$ISSUE_NUMBER" "needs-review"
       github_remove_label "$ISSUE_NUMBER" "in-progress"
       log "Issue #${ISSUE_NUMBER}: branch pushed but PR creation failed"
@@ -603,6 +832,10 @@ ${FAIL_OUTPUT}
 \`\`\`
 
 </details>"
+    # The agent failed; GitHub gets needs-review so a human picks it up. The
+    # trace records both facts rather than collapsing them into one.
+    OUTCOME="failed"; GH_LABEL="needs-review"
+    PR_OUTCOME="not-attempted"
     github_label "$ISSUE_NUMBER" "needs-review"
     github_remove_label "$ISSUE_NUMBER" "in-progress"
     cd "$APP_DIR"
@@ -612,6 +845,11 @@ ${FAIL_OUTPUT}
     telegram "Failed after 2 attempts: issue #${ISSUE_NUMBER}: ${ISSUE_TITLE} — labeled needs-review, branch deleted"
     run_retrospective "$ISSUE_NUMBER" "$ISSUE_TITLE" "FAILURE — 2 attempts exhausted (verification or review failed)" "$TASK_DIFF"
   fi
+
+  # One trace per issue, written after the run has fully finished either way.
+  lf_emit "$ISSUE_NUMBER" "$ISSUE_TITLE" "$BRANCH" "$OUTCOME" "$ATTEMPTS_USED" \
+    "$GH_LABEL" "$RUN_START" "$(lf_now_ns)" "$TEST_RESULT" "$BUILD_RESULT" \
+    "$REVIEWER_RESULT" "$PR_OUTCOME"
 
   rm -f "$CLAUDE_OUT" "$VERIFY_OUT"
 }

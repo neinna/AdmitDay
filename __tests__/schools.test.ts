@@ -91,6 +91,8 @@ describe('parseIssueCommand', () => {
 
 describe('agent-coordinator.sh PR flow', () => {
   const coordinatorSource = fs.readFileSync(path.join(__dirname, '../agent-coordinator.sh'), 'utf-8')
+  const langfuseTraceSource = fs.readFileSync(path.join(__dirname, '../scripts/langfuse_trace.py'), 'utf-8')
+  const envAgentsExampleSource = fs.readFileSync(path.join(__dirname, '../.env.agents.example'), 'utf-8')
 
   it('uses the "agent-ok" trigger label (nothing runs unless deliberately labeled)', () => {
     expect(coordinatorSource).toContain('TRIGGER_LABEL="agent-ok"')
@@ -156,6 +158,31 @@ describe('agent-coordinator.sh PR flow', () => {
     expect(successBranch).not.toBeNull()
     const body = successBranch![1]
     expect(body).toMatch(/REVIEW_RC.*-eq 2/)
+  })
+
+  it('writes a sanitized run metadata artifact for every Langfuse trace', () => {
+    expect(coordinatorSource).toContain('RUN_METADATA_DIR="/home/agent/agent-run-metadata"')
+    expect(coordinatorSource).toContain('LF_METADATA_DIR="$RUN_METADATA_DIR"')
+    expect(coordinatorSource).toContain('metadata_file')
+  })
+
+  it('records the baseline fields needed before model routing', () => {
+    for (const field of ['test_result', 'build_result', 'reviewer_result', 'pr_outcome']) {
+      expect(coordinatorSource).toContain(field)
+      expect(langfuseTraceSource).toContain(`"${field}"`)
+    }
+  })
+
+  it('keeps private task context out of Langfuse payloads', () => {
+    expect(langfuseTraceSource).toContain('No prompt text, no diffs, no file contents')
+    expect(langfuseTraceSource).not.toContain('"issue_body"')
+    expect(langfuseTraceSource).not.toContain('"prompt"')
+    expect(langfuseTraceSource).not.toContain('"diff"')
+  })
+
+  it('documents self-hosted Langfuse as the default VPS baseline', () => {
+    expect(envAgentsExampleSource).toContain('Langfuse is self-hosted on the same VPS')
+    expect(envAgentsExampleSource).toContain('LANGFUSE_HOST=http://127.0.0.1:3000')
   })
 })
 
@@ -1743,4 +1770,3 @@ describe('Issue #56: source — isEligible has audition-only guard before has_op
 
 
 // ── Issue #84: Hide the unbuilt "Full Access" paid-tier UI ────────────────────
-
