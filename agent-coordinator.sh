@@ -392,6 +392,32 @@ except Exception:
 "
 }
 
+claude_provider_unavailable() {
+  # claude_provider_unavailable FILE
+  # Returns 0 when the claude JSON result represents provider/billing/rate-limit
+  # unavailability rather than agent implementation failure.
+  python3 - "$1" << 'PYEOF'
+import json
+import re
+import sys
+
+try:
+    data = json.load(open(sys.argv[1]))
+except Exception:
+    sys.exit(1)
+
+text = " ".join(str(data.get(k, "")) for k in ("result", "terminal_reason", "error", "message"))
+providerish = re.search(
+    r"credit balance|usage limit|rate limit|overloaded|temporarily unavailable|api_error",
+    text,
+    re.I,
+)
+status = data.get("api_error_status")
+is_api_error = data.get("is_error") is True and (status is not None or data.get("terminal_reason") == "api_error")
+sys.exit(0 if is_api_error and providerish else 1)
+PYEOF
+}
+
 # Coordinator-owned verification: the ONLY success signal.
 # This VPS has <600MB free disk and Next's webpack filesystem cache alone is
 # ~400MB, so: wipe .next before building and keep pruning .next/cache while
@@ -768,6 +794,21 @@ Instructions:
     fi
     [ -z "$SESSION_ID" ] && SESSION_ID=$(claude_json_field "$CLAUDE_OUT" "session_id")
 
+    if [ $RC -ne 0 ] && claude_provider_unavailable "$CLAUDE_OUT"; then
+      OUTCOME="provider-unavailable"; GH_LABEL="$TRIGGER_LABEL"; PR_OUTCOME="not-attempted"
+      log "Issue #${ISSUE_NUMBER}: provider unavailable (billing, rate limit, or API outage). Work was never attempted; restoring the issue to the queue."
+      github_label "$ISSUE_NUMBER" "$TRIGGER_LABEL"
+      github_remove_label "$ISSUE_NUMBER" "in-progress"
+      cd "$APP_DIR"
+      git checkout main >> "$LOG_FILE" 2>&1
+      git branch -D "$BRANCH" 2>/dev/null
+      lf_emit "$ISSUE_NUMBER" "$ISSUE_TITLE" "$BRANCH" "$OUTCOME" "$ATTEMPTS_USED" \
+        "$GH_LABEL" "$RUN_START" "$(lf_now_ns)" "$TEST_RESULT" "$BUILD_RESULT" \
+        "$REVIEWER_RESULT" "$PR_OUTCOME"
+      rm -f "$CLAUDE_OUT" "$VERIFY_OUT"
+      return 75
+    fi
+
     FAIL_REASON=""
     # Objective verification by the coordinator — the only success signal.
     if [ $RC -eq 0 ] && verify_app "$VERIFY_OUT"; then
@@ -961,9 +1002,21 @@ except Exception:
     pass
 ")
 
+  BILLING_HALT=0
   for NUMBER in $ISSUE_NUMBERS; do
     run_agent "$NUMBER"
+    RUN_AGENT_RC=$?
+    if [ "$RUN_AGENT_RC" -eq 75 ]; then
+      BILLING_HALT=1
+      log "Provider halt: leaving the rest of the queue untouched. Re-checking later."
+      break
+    fi
   done
 
-  sleep 60
+  if [ "$BILLING_HALT" -eq 1 ]; then
+    log "Provider halt: sleeping 10 minutes before retrying."
+    sleep 600
+  else
+    sleep 60
+  fi
 done

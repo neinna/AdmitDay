@@ -182,6 +182,15 @@ describe('agent-coordinator.sh PR flow', () => {
     expect(coordinatorSource).toContain('maybe_self_update_or_exit')
   })
 
+  it('treats provider or billing outages as provider-unavailable, not failed implementation', () => {
+    expect(coordinatorSource).toContain('claude_provider_unavailable()')
+    expect(coordinatorSource).toContain('credit balance|usage limit|rate limit|overloaded|temporarily unavailable|api_error')
+    expect(coordinatorSource).toContain('OUTCOME="provider-unavailable"')
+    expect(coordinatorSource).toContain('github_label "$ISSUE_NUMBER" "$TRIGGER_LABEL"')
+    expect(coordinatorSource).toContain('return 75')
+    expect(coordinatorSource).toContain('Provider halt: sleeping 10 minutes before retrying.')
+  })
+
   it('records the baseline fields needed before model routing', () => {
     for (const field of ['test_result', 'build_result', 'reviewer_result', 'pr_outcome']) {
       expect(coordinatorSource).toContain(field)
