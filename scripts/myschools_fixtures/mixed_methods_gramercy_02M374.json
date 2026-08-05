@@ -1,0 +1,668 @@
+{
+  "id": 93437,
+  "name": "Gramercy Arts High School (02M374)",
+  "school": {
+    "name": "GRAMERCY ARTS HIGH SCHOOL (02M374)",
+    "dbn": "02M374",
+    "accessibility": "Partially Accessible",
+    "magnet": false,
+    "school_year": "2025-26 School Year",
+    "district": {
+      "id": 73,
+      "borough": "Manhattan",
+      "code": "02",
+      "name": "DISTRICT 02",
+      "name_en": "DISTRICT 02",
+      "name_ar": null,
+      "name_bn": null,
+      "name_zh_hant": null,
+      "name_zh_hans": null,
+      "name_sq": null,
+      "name_fr": null,
+      "name_ht": null,
+      "name_ko": null,
+      "name_ru": null,
+      "name_es": null,
+      "name_ur": null,
+      "name_uk": null,
+      "name_uz": null,
+      "is_under_represented": false,
+      "is_in_person": true
+    },
+    "school_type": {
+      "id": 9,
+      "name": "PUBLIC"
+    },
+    "address": {
+      "id": 87695,
+      "address_1": "40 Irving Place",
+      "address_2": "",
+      "street_number": "40",
+      "street_name": "Irving Place",
+      "city": "Manhattan",
+      "sublocality": null,
+      "state": "NY",
+      "zip_code": "10003",
+      "country": "US",
+      "primary": false,
+      "latitude": "40.735326",
+      "longitude": "-73.987089",
+      "xcoord": null,
+      "ycoord": null,
+      "source": "('Geosupport API',)",
+      "needs_geocoding": false,
+      "last_geocoded": "2025-09-30T13:45:50.022438-04:00",
+      "gis_location": "SRID=4326;POINT (-73.987089 40.735326)",
+      "created_at": "2025-09-19T17:54:43.187672-04:00",
+      "updated_at": "2025-09-30T13:45:50.022438-04:00"
+    },
+    "full_address": "40 Irving Place, Manhattan, NY 10003",
+    "directory_school_ids": [
+      93437
+    ],
+    "accessibility_more_info": null
+  },
+  "programs": [
+    {
+      "id": 123732,
+      "directory_school_id": 93437,
+      "program": {
+        "code": "M66I",
+        "name": "Capstone Scholars",
+        "admission_process": "High School",
+        "is_shs": false,
+        "is_lg": false,
+        "is_gt": false,
+        "is_ms": false,
+        "is_pk": false,
+        "is_3k": false,
+        "is_el": false,
+        "is_hs": true,
+        "enable_waitlist_on_parent_portal": false
+      },
+      "name": "Capstone Scholars (M66I)",
+      "interest_areas": [
+        {
+          "name": "Performing Arts/Visual Art & Design"
+        }
+      ],
+      "admissions_method": {
+        "name": "Screened With Assessment",
+        "description": "Students are admitted based on a school-based assessment, and in some cases also their course grades.",
+        "name_en": "Screened With Assessment",
+        "loo_contents": []
+      },
+      "description": "Our rigorous Capstone Scholars program provides a supportive academic experience designed to prepare students for college and career success. Students gain early access to AP classes starting as early as 9th grade, personalized 1:1 advising, and comprehensive SAT prep. They receive dedicated support throughout the college application process and can earn early college credits. Career exploration includes internships, mentored opportunities, and work-based learning. Scholars also choose between creative tracks in Visual Arts or Theater Arts, fostering both academic excellence and artistic growth.",
+      "eligibility_description": "",
+      "demand_last_year": {
+        "general_education": {
+          "applications_per_seat": 1,
+          "seats": 20,
+          "applicants": 20,
+          "seats_description": "",
+          "all_seats_filled": false
+        },
+        "students_with_disabilities": {
+          "applications_per_seat": 0,
+          "seats": 6,
+          "applicants": 2,
+          "all_seats_filled": true,
+          "is_swd": false
+        },
+        "specialized_education": {
+          "applications_per_seat": null,
+          "seats": null,
+          "applicants": null,
+          "all_seats_filled": false
+        }
+      },
+      "selection_criteria": [
+        {
+          "name": "Average Course Grades - 75%",
+          "order": 1
+        },
+        {
+          "name": "Essay - 25%",
+          "order": 2
+        }
+      ],
+      "audition_information": [],
+      "audition_schedule": [],
+      "selection_criteria_note": "",
+      "seats_10th_available": false,
+      "seats_10th_number": 0,
+      "seats_description": "",
+      "testing_not_registered": false,
+      "program_priority_groups": [
+        {
+          "id": 567166,
+          "order": 1,
+          "name": "New York City residents",
+          "ge_priority_group_description": "There were about 20 applicants in this group and all received offers last year.",
+          "swd_priority_group_description": "There were fewer than 10 applicants in this group and all received offers last year."
+        }
+      ],
+      "diversity_in_admission_1": "",
+      "diversity_in_admission_2": "",
+      "lowest_priority": "",
+      "preference": "",
+      "start_date": null,
+      "end_date": null,
+      "start_time": "",
+      "end_time": "",
+      "provider_website": null,
+      "provider_email": null,
+      "provider_phone_number": null,
+      "operating_weekdays": null,
+      "site_contact_name": null,
+      "site_contact_email": null,
+      "site_contact_phone_number": null,
+      "portfolio_id": null,
+      "grades_description": "",
+      "other_features": [],
+      "languages_spoken_by_providers": []
+    },
+    {
+      "id": 123729,
+      "directory_school_id": 93437,
+      "program": {
+        "code": "M66B",
+        "name": "Theater Arts",
+        "admission_process": "High School",
+        "is_shs": false,
+        "is_lg": false,
+        "is_gt": false,
+        "is_ms": false,
+        "is_pk": false,
+        "is_3k": false,
+        "is_el": false,
+        "is_hs": true,
+        "enable_waitlist_on_parent_portal": false
+      },
+      "name": "Theater Arts (M66B)",
+      "interest_areas": [
+        {
+          "name": "Performing Arts"
+        }
+      ],
+      "admissions_method": {
+        "name": "Audition",
+        "description": "Students are ranked by the school based on their auditions. Offers are made in priority group and rank order.",
+        "name_en": "Audition",
+        "loo_contents": []
+      },
+      "description": "Our Theater Arts program invites students to experience the magic of the stage through collaborative projects, improvisation, and original ethno-drama creation. They develop performance skills, theatrical vocabulary, and directing techniques while exploring character development, script analysis, and vocal ensemble singing. Students gain practical experience in acting, directing, and technical theater, with opportunities to be cast or work behind the scenes in our Fall Play and Spring Musical. Industry insights and audition preparation prepare students for future success in theater arts. All of this is in addition to the rigorous academic preparation, four years of support around college and career readiness, and valuable internships and work-based learning opportunities.",
+      "eligibility_description": "",
+      "demand_last_year": {
+        "general_education": {
+          "applications_per_seat": 1,
+          "seats": 43,
+          "applicants": 31,
+          "seats_description": "",
+          "all_seats_filled": false
+        },
+        "students_with_disabilities": {
+          "applications_per_seat": 0,
+          "seats": 12,
+          "applicants": 1,
+          "all_seats_filled": false,
+          "is_swd": false
+        },
+        "specialized_education": {
+          "applications_per_seat": null,
+          "seats": null,
+          "applicants": null,
+          "all_seats_filled": false
+        }
+      },
+      "selection_criteria": [],
+      "audition_information": [],
+      "audition_schedule": [],
+      "selection_criteria_note": "",
+      "seats_10th_available": true,
+      "seats_10th_number": 5,
+      "seats_description": "",
+      "testing_not_registered": false,
+      "program_priority_groups": [
+        {
+          "id": 567165,
+          "order": 1,
+          "name": "New York City residents",
+          "ge_priority_group_description": "There were about 30 applicants in this group and about 30 received offers last year.",
+          "swd_priority_group_description": "There were fewer than 10 applicants in this group and none received offers last year."
+        }
+      ],
+      "diversity_in_admission_1": "",
+      "diversity_in_admission_2": "",
+      "lowest_priority": "",
+      "preference": "",
+      "start_date": null,
+      "end_date": null,
+      "start_time": "",
+      "end_time": "",
+      "provider_website": null,
+      "provider_email": null,
+      "provider_phone_number": null,
+      "operating_weekdays": null,
+      "site_contact_name": null,
+      "site_contact_email": null,
+      "site_contact_phone_number": null,
+      "portfolio_id": null,
+      "grades_description": "",
+      "other_features": [],
+      "languages_spoken_by_providers": []
+    },
+    {
+      "id": 123726,
+      "directory_school_id": 93437,
+      "program": {
+        "code": "M66A",
+        "name": "Visual Arts",
+        "admission_process": "High School",
+        "is_shs": false,
+        "is_lg": false,
+        "is_gt": false,
+        "is_ms": false,
+        "is_pk": false,
+        "is_3k": false,
+        "is_el": false,
+        "is_hs": true,
+        "enable_waitlist_on_parent_portal": false
+      },
+      "name": "Visual Arts (M66A)",
+      "interest_areas": [
+        {
+          "name": "Computer Science & Technology"
+        },
+        {
+          "name": "Visual Art & Design"
+        }
+      ],
+      "admissions_method": {
+        "name": "Audition",
+        "description": "Students are ranked by the school based on their auditions. Offers are made in priority group and rank order.",
+        "name_en": "Audition",
+        "loo_contents": []
+      },
+      "description": "Our Visual Arts and Design program immerses students in both traditional and digital media, including charcoal, watercolor, and Adobe Creative Suite, while integrating design techniques used in professional spaces. Students build physical and digital portfolios mastering key concepts like typography, composition, and branding, with real-world applications in advertising and marketing. They develop critical thinking, creative problem-solving, and professional skills essential for careers in graphic design, illustration, and branding. This program also offers valuable work-based learning opportunities in these dynamic industries. All of this is in addition to rigorous academics, college and career readiness support, and internships.",
+      "eligibility_description": "",
+      "demand_last_year": {
+        "general_education": {
+          "applications_per_seat": 1,
+          "seats": 65,
+          "applicants": 51,
+          "seats_description": "",
+          "all_seats_filled": false
+        },
+        "students_with_disabilities": {
+          "applications_per_seat": 1,
+          "seats": 19,
+          "applicants": 15,
+          "all_seats_filled": true,
+          "is_swd": false
+        },
+        "specialized_education": {
+          "applications_per_seat": null,
+          "seats": null,
+          "applicants": null,
+          "all_seats_filled": false
+        }
+      },
+      "selection_criteria": [],
+      "audition_information": [],
+      "audition_schedule": [],
+      "selection_criteria_note": "",
+      "seats_10th_available": true,
+      "seats_10th_number": 0,
+      "seats_description": "",
+      "testing_not_registered": false,
+      "program_priority_groups": [
+        {
+          "id": 567164,
+          "order": 1,
+          "name": "New York City residents",
+          "ge_priority_group_description": "There were about 50 applicants in this group and about 40 received offers last year.",
+          "swd_priority_group_description": "There were about 20 applicants in this group and about 10 received offers last year."
+        }
+      ],
+      "diversity_in_admission_1": "",
+      "diversity_in_admission_2": "",
+      "lowest_priority": "",
+      "preference": "",
+      "start_date": null,
+      "end_date": null,
+      "start_time": "",
+      "end_time": "",
+      "provider_website": null,
+      "provider_email": null,
+      "provider_phone_number": null,
+      "operating_weekdays": null,
+      "site_contact_name": null,
+      "site_contact_email": null,
+      "site_contact_phone_number": null,
+      "portfolio_id": null,
+      "grades_description": "",
+      "other_features": [],
+      "languages_spoken_by_providers": []
+    }
+  ],
+  "overview": "Our arts-themed college preparatory high school is where creativity and academic rigor come together to prepare students for success. Our dynamic curriculum encourages students to explore a wide range of artistic and intellectual disciplines. Students develop critical thinking and communication skills by investigating real-world issues, crafting well-supported arguments, and presenting their ideas with confidence. They engage deeply with both nonfiction and creative storytelling, gaining hands-on experience in visual arts, digital design, & performance, while building impressive portfolios that showcase their talents.\nStudents and families can choose from three admissions options: Visual Arts, Theater Arts, and Capstone, allowing them to tailor their educational experience to their passions and goals. Beyond the classroom, our supportive advisory program & comprehensive secondary school experience help students navigate their academic and personal growth. We provide individualized support throughout the college application process, guiding each student and family to find the best fit and successfully transition to higher education. Students also benefit from work-based learning, career-connected learning, and exploration opportunities that prepare them for future careers in the arts and beyond. We offer exciting experiences such as internships, a Fall Play, and a Spring Musical, allowing students to apply their skills in real-world settings & showcase their creativity. Our annual lower house trips include a retreat to Fairview Lake, fostering community and reflection, & a cultural exploration of museums in Washington, D.C. Join us to unlock your creativity, develop essential skills, and become part of a vibrant community dedicated to artistic & academic excellence.",
+  "grades_description": "9 to 12",
+  "academic_opportunities": [
+    {
+      "name": "10% of students scoring 1300+ on their SATs",
+      "order": 1
+    },
+    {
+      "name": "12+ AP classes to challenge students and strengthen college applications",
+      "order": 2
+    },
+    {
+      "name": "Comprehensive college support with personalized counseling and application guidance to ensure every student\u0080\u0099s success",
+      "order": 3
+    },
+    {
+      "name": "Collaborative partnerships with businesses and colleges to provide students with hands-on experience and networking opportunities",
+      "order": 4
+    },
+    {
+      "name": "Career-connected learning opportunities including internships, mentorships, and real-world projects to prepare students for the workforce",
+      "order": 5
+    }
+  ],
+  "admissions_open": false,
+  "waitlist_open": false,
+  "results_enabled": true,
+  "admission_process": "HS",
+  "ell_programs": [],
+  "language_classes": [
+    {
+      "name": "Spanish"
+    }
+  ],
+  "advanced_placement_courses": [
+    {
+      "name": "Algebra II (Advanced Math)"
+    },
+    {
+      "name": "AP African American Studies"
+    },
+    {
+      "name": "AP Art History"
+    },
+    {
+      "name": "AP Biology"
+    },
+    {
+      "name": "AP Calculus AB"
+    },
+    {
+      "name": "AP English Language and Composition"
+    },
+    {
+      "name": "AP Environmental Science"
+    },
+    {
+      "name": "AP Psychology"
+    },
+    {
+      "name": "AP Seminar"
+    },
+    {
+      "name": "AP Statistics"
+    },
+    {
+      "name": "AP United States Government and Politics"
+    },
+    {
+      "name": "AP United States History"
+    },
+    {
+      "name": "AP World History: Modern"
+    },
+    {
+      "name": "Arts (Advanced Placement)"
+    },
+    {
+      "name": "Chemistry (Advanced Science)"
+    },
+    {
+      "name": "Physics (Advanced Science)"
+    },
+    {
+      "name": "World Languages (Advanced World Languages)"
+    }
+  ],
+  "art_courses": [
+    {
+      "name": "Chorus/Singing"
+    },
+    {
+      "name": "Traditional and Studio Art"
+    },
+    {
+      "name": "Digital Media Arts"
+    },
+    {
+      "name": "Design and Applied Arts"
+    },
+    {
+      "name": "Art History"
+    },
+    {
+      "name": "Theater Production"
+    },
+    {
+      "name": "Theater Making/Performance"
+    },
+    {
+      "name": "Theater Literacy"
+    },
+    {
+      "name": "General Theater"
+    }
+  ],
+  "diploma_endorsements": [
+    {
+      "name": "Arts"
+    }
+  ],
+  "other_features": [
+    {
+      "name": "10th Grade Seats Available"
+    },
+    {
+      "name": "College Courses Offered"
+    },
+    {
+      "name": "College Courses onsite"
+    },
+    {
+      "name": "College Trips"
+    },
+    {
+      "name": "Community Service Expected"
+    },
+    {
+      "name": "Computer Science Coursework"
+    },
+    {
+      "name": "Financial Literacy Coursework"
+    },
+    {
+      "name": "FutureReadyNYC School"
+    },
+    {
+      "name": "Health Center"
+    },
+    {
+      "name": "Internships"
+    },
+    {
+      "name": "Online Grading System"
+    },
+    {
+      "name": "Paid Apprenticeships"
+    },
+    {
+      "name": "Paid Internships"
+    },
+    {
+      "name": "Program(s) with 1 GE Applicant Per Seat"
+    },
+    {
+      "name": "Program(s) with 1 SWD Applicant Per Seat"
+    },
+    {
+      "name": "Summer Bridge"
+    }
+  ],
+  "affiliated_schools": [],
+  "instruction_and_performance_rating": {
+    "label": "Good",
+    "score": 3
+  },
+  "safety_and_school_climate_rating": {
+    "label": "Fair",
+    "score": 2
+  },
+  "relationships_with_families_rating": {
+    "label": "Good",
+    "score": 3
+  },
+  "performance_labels": {
+    "instruction_and_performance_label": "Instruction and Performance",
+    "safety_and_school_climate_label": "Safety and School Climate",
+    "relationships_with_families_label": "Relationships with Families",
+    "school_quality_snapshot_html": "<a target=\"_blank\" rel=\"noopener\" href=\"https://tools.nycenet.edu/snapshot/0/02M374/HS/?utm_source=myschools.nyc&utm_medium=DOE_App_referral&utm_campaign=MySchools\">See the School Quality Snapshot</a>."
+  },
+  "stat_graduation": 98,
+  "stat_enroll_college_career": 79,
+  "stat_attendance": null,
+  "stat_safety": 93,
+  "stat_variety": 84,
+  "subway": "4, 5, 6, L, N, Q, R to 14th St-Union Square",
+  "subway_line": [
+    {
+      "name": "4",
+      "color": "#00933C"
+    },
+    {
+      "name": "5",
+      "color": "#00933C"
+    },
+    {
+      "name": "6",
+      "color": "#00933C"
+    },
+    {
+      "name": "L",
+      "color": "#A7A9AC"
+    },
+    {
+      "name": "N",
+      "color": "#FCCC0A"
+    },
+    {
+      "name": "Q",
+      "color": "#FCCC0A"
+    },
+    {
+      "name": "R",
+      "color": "#FCCC0A"
+    },
+    {
+      "name": "W",
+      "color": "#FCCC0A"
+    }
+  ],
+  "bus": "BM1, BM2, BM3, BM4, BxM10, BxM6, BxM7, BxM8, BxM9, M1, M101, M102, M103, M14A-SBS, M14D-SBS, M15, M15-SBS, M2, M23-SBS, M3, M34-SBS, M34A-SBS, M55, M8, M9, QM21, QM63, QM64, QM68, SIM10, SIM11, SIM1C, SIM3, SIM31, SIM33, SIM33C, SIM3C, SIM4C, SIM6, SIM7, SIM9, X27, X28, X37, X38",
+  "shared_space": true,
+  "building_code": "M460",
+  "email": "BFaughnan@gramercyhs.org",
+  "telephone": "212-253-7076",
+  "independent_website": "https://www.gramercyhs.org/",
+  "secondary_website": "https://tools.nycenet.edu/snapshot/0/02M374/HS/?utm_source=myschools.nyc&utm_medium=DOE_App_referral&utm_campaign=MySchools",
+  "start_time": "8:20am",
+  "end_time": "2:40pm",
+  "uniform": false,
+  "open_house_information": "",
+  "bap_url": "https://nycdoe.sharepoint.com/:w:/s/BAP/ERxY8nzMbvBCmpehbTYuvwwBAWjFCZHNXflvWb-qkCDLBQ",
+  "total_enrollment": "483",
+  "enrollment_range": "0-499",
+  "eligibility": [
+    {
+      "name": "10th Grade Seats Available",
+      "name_en": "10th Grade Seats Available"
+    }
+  ],
+  "activities": [],
+  "sports_boys": [
+    {
+      "name": "Baseball"
+    },
+    {
+      "name": "Basketball"
+    },
+    {
+      "name": "Handball"
+    },
+    {
+      "name": "Soccer"
+    },
+    {
+      "name": "Volleyball"
+    }
+  ],
+  "sports_girls": [
+    {
+      "name": "Basketball"
+    },
+    {
+      "name": "Soccer"
+    },
+    {
+      "name": "Softball"
+    },
+    {
+      "name": "Volleyball"
+    }
+  ],
+  "sports_coed": [],
+  "school_sports": [
+    {
+      "name": "Basketball"
+    },
+    {
+      "name": "Fitness"
+    },
+    {
+      "name": "Volleyball"
+    },
+    {
+      "name": "Yoga"
+    }
+  ],
+  "sports_description": "Basketball, Fitness, Volleyball, Yoga",
+  "meals": [],
+  "electives_description": "",
+  "activities_description": "Spring Musical, Fall Play, Equity Team, Student Government, Art Laboratory, Newspaper, Anime, Gender Sexuality Alliance (GSA), Cleary Gottlieb, Career Day, Yearbook, Community Service, Camping @ Manice Education Center, Internships, Work based learning, Mock Trial, Ambassadors Program",
+  "contact_name": "",
+  "stat_core_courses": null,
+  "stat_state_ela": null,
+  "stat_state_math": null,
+  "frequently_attended_hs": [],
+  "diversity_in_admissions": "",
+  "stat_parents_satisfaction": null,
+  "virtual_learning": "",
+  "co_located_schools": [],
+  "classification": [],
+  "class_program_ratio": [],
+  "bridge": [],
+  "assessment_type": [],
+  "distance": null,
+  "switches": {
+    "show_GE_SWD_toggle_on_application_program_admissions": true,
+    "show_GE_SWD_toggle_on_public_program_admissions": true
+  }
+}
