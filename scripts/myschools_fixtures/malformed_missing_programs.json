@@ -1,0 +1,275 @@
+{
+  "id": 88733,
+  "name": "Malformed Fixture School (99X999)",
+  "school": {
+    "name": "47 THE AMERICAN SIGN LANGUAGE AND ENGLISH SECONDARY SCHOOL (02M047)",
+    "dbn": "99X999",
+    "accessibility": "Fully Accessible",
+    "magnet": false,
+    "school_year": "2025-26 School Year",
+    "district": {
+      "id": 73,
+      "borough": "Manhattan",
+      "code": "02",
+      "name": "DISTRICT 02",
+      "name_en": "DISTRICT 02",
+      "name_ar": null,
+      "name_bn": null,
+      "name_zh_hant": null,
+      "name_zh_hans": null,
+      "name_sq": null,
+      "name_fr": null,
+      "name_ht": null,
+      "name_ko": null,
+      "name_ru": null,
+      "name_es": null,
+      "name_ur": null,
+      "name_uk": null,
+      "name_uz": null,
+      "is_under_represented": false,
+      "is_in_person": true
+    },
+    "school_type": {
+      "id": 9,
+      "name": "PUBLIC"
+    },
+    "address": {
+      "id": 82496,
+      "address_1": "223 East 23 Street",
+      "address_2": "",
+      "street_number": "223",
+      "street_name": "East 23 Street",
+      "city": "Manhattan",
+      "sublocality": null,
+      "state": "NY",
+      "zip_code": "10010",
+      "country": "US",
+      "primary": false,
+      "latitude": "40.738482",
+      "longitude": "-73.981358",
+      "xcoord": null,
+      "ycoord": null,
+      "source": "('Geosupport API',)",
+      "needs_geocoding": false,
+      "last_geocoded": "2025-09-30T13:45:44.327311-04:00",
+      "gis_location": "SRID=4326;POINT (-73.981358 40.738482)",
+      "created_at": "2025-09-19T17:43:40.078930-04:00",
+      "updated_at": "2025-09-30T13:45:44.327311-04:00"
+    },
+    "full_address": "223 East 23 Street, Manhattan, NY 10010",
+    "directory_school_ids": [
+      88733
+    ],
+    "accessibility_more_info": null
+  },
+  "overview": "At \"47\" the American Sign Language and English High School, we believe that all students have the right to learn in an inclusive, academically rigorous environment. Our graduates emerge proficient in American Sign Language (ASL). Our small school community nurtures responsible citizens of the world, addressing all aspects of young adult development by providing the necessary individual supports for our students to be college and career ready.",
+  "grades_description": "9 to 12",
+  "academic_opportunities": [],
+  "admissions_open": false,
+  "waitlist_open": false,
+  "results_enabled": true,
+  "admission_process": "HS",
+  "ell_programs": [],
+  "language_classes": [
+    {
+      "name": "American Sign Language"
+    }
+  ],
+  "advanced_placement_courses": [
+    {
+      "name": "Algebra II (Advanced Math)"
+    },
+    {
+      "name": "AP Biology"
+    },
+    {
+      "name": "AP Calculus AB"
+    },
+    {
+      "name": "AP English Language and Composition"
+    },
+    {
+      "name": "AP English Literature and Composition"
+    },
+    {
+      "name": "AP Human Geography"
+    },
+    {
+      "name": "AP Psychology"
+    },
+    {
+      "name": "AP Statistics"
+    },
+    {
+      "name": "AP United States History"
+    },
+    {
+      "name": "AP World History: Modern"
+    },
+    {
+      "name": "Physics (Advanced Science)"
+    },
+    {
+      "name": "World Languages (Advanced World Languages)"
+    }
+  ],
+  "art_courses": [
+    {
+      "name": "Traditional and Studio Art"
+    }
+  ],
+  "diploma_endorsements": [],
+  "other_features": [
+    {
+      "name": "10th Grade Seats Available"
+    },
+    {
+      "name": "College Courses Offered"
+    },
+    {
+      "name": "College Trips"
+    },
+    {
+      "name": "Community School"
+    },
+    {
+      "name": "Internships Available"
+    },
+    {
+      "name": "Online Grading System"
+    },
+    {
+      "name": "Orientation"
+    },
+    {
+      "name": "Program(s) with 1 GE Applicant Per Seat"
+    },
+    {
+      "name": "Student Parent Orientation"
+    },
+    {
+      "name": "Summer Orientation"
+    }
+  ],
+  "affiliated_schools": [],
+  "instruction_and_performance_rating": {
+    "label": "Excellent",
+    "score": 4
+  },
+  "safety_and_school_climate_rating": {
+    "label": "Fair",
+    "score": 2
+  },
+  "relationships_with_families_rating": {
+    "label": "Excellent",
+    "score": 4
+  },
+  "performance_labels": {
+    "instruction_and_performance_label": "Instruction and Performance",
+    "safety_and_school_climate_label": "Safety and School Climate",
+    "relationships_with_families_label": "Relationships with Families",
+    "school_quality_snapshot_html": "<a target=\"_blank\" rel=\"noopener\" href=\"https://tools.nycenet.edu/snapshot/0/02M047/HS/?utm_source=myschools.nyc&utm_medium=DOE_App_referral&utm_campaign=MySchools\">See the School Quality Snapshot</a>."
+  },
+  "stat_graduation": 100,
+  "stat_enroll_college_career": 83,
+  "stat_attendance": null,
+  "stat_safety": 89,
+  "stat_variety": 64,
+  "subway": "6 to 23rd St; L to 3rd Av",
+  "subway_line": [
+    {
+      "name": "6",
+      "color": "#00933C"
+    },
+    {
+      "name": "L",
+      "color": "#A7A9AC"
+    },
+    {
+      "name": "R",
+      "color": "#FCCC0A"
+    },
+    {
+      "name": "W",
+      "color": "#FCCC0A"
+    }
+  ],
+  "bus": "BM1, BM2, BM3, BM4, BxM1, BxM10, BxM11, BxM18, BxM3, BxM4, BxM6, BxM7, BxM8, BxM9, M1, M101, M102, M103, M14A-SBS, M14D-SBS, M15, M15-SBS, M2, M23-SBS, M3, M34-SBS, M34A-SBS, M55, M9, QM21, QM63, QM64, QM68, SIM10, SIM11, SIM1C, SIM3, SIM31, SIM33C, SIM3C, SIM4C, SIM6, X27, X28, X37, X38",
+  "shared_space": true,
+  "building_code": "M047",
+  "email": "wshama@schools.nyc.gov",
+  "telephone": "917-326-6668",
+  "independent_website": "https://www.47aslhs.net/",
+  "secondary_website": "https://tools.nycenet.edu/snapshot/0/02M047/HS/?utm_source=myschools.nyc&utm_medium=DOE_App_referral&utm_campaign=MySchools",
+  "start_time": "08:25am",
+  "end_time": "02:45pm",
+  "uniform": false,
+  "open_house_information": "",
+  "bap_url": "https://nycdoe.sharepoint.com/:w:/s/BAP/Efc3Gdn6whBNigKZR4Ydre8BSyAE96jcoWJnQeIPzPi1bg",
+  "total_enrollment": "222",
+  "enrollment_range": "0-499",
+  "eligibility": [
+    {
+      "name": "10th Grade Seats Available",
+      "name_en": "10th Grade Seats Available"
+    }
+  ],
+  "activities": [],
+  "sports_boys": [
+    {
+      "name": "Basketball"
+    },
+    {
+      "name": "Outdoor Track"
+    },
+    {
+      "name": "Soccer"
+    }
+  ],
+  "sports_girls": [
+    {
+      "name": "Outdoor Track"
+    },
+    {
+      "name": "Volleyball"
+    }
+  ],
+  "sports_coed": [
+    {
+      "name": "Stunt"
+    }
+  ],
+  "school_sports": [
+    {
+      "name": "Cheerleading"
+    },
+    {
+      "name": "Fitness"
+    },
+    {
+      "name": "Soccer"
+    }
+  ],
+  "sports_description": "Cheerleading, Fitness, Soccer",
+  "meals": [],
+  "electives_description": "",
+  "activities_description": "Anime, Boardgames, Crochet, Dungeons and Dragons, Fashion, Fitness,Gender Sexuality Alliance (GSA), Literary Magazine, National Honor Society, Performing Arts, Student Equity,  and Student Government",
+  "contact_name": "",
+  "stat_core_courses": null,
+  "stat_state_ela": null,
+  "stat_state_math": null,
+  "frequently_attended_hs": [],
+  "diversity_in_admissions": "",
+  "stat_parents_satisfaction": null,
+  "virtual_learning": "",
+  "co_located_schools": [],
+  "classification": [],
+  "class_program_ratio": [],
+  "bridge": [],
+  "assessment_type": [],
+  "distance": null,
+  "switches": {
+    "show_GE_SWD_toggle_on_application_program_admissions": true,
+    "show_GE_SWD_toggle_on_public_program_admissions": true
+  }
+}

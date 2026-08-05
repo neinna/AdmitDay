@@ -1,0 +1,896 @@
+{
+  "id": 86492,
+  "name": "Fiorello H. LaGuardia High School of Music & Art and Performing Arts (03M485)",
+  "school": {
+    "name": "FIORELLO H. LAGUARDIA HIGH SCHOOL OF MUSIC & ART AND PERFORMING ARTS (03M485)",
+    "dbn": "03M485",
+    "accessibility": "Fully Accessible",
+    "magnet": false,
+    "school_year": "2025-26 School Year",
+    "district": {
+      "id": 74,
+      "borough": "Manhattan",
+      "code": "03",
+      "name": "DISTRICT 03",
+      "name_en": "DISTRICT 03",
+      "name_ar": null,
+      "name_bn": null,
+      "name_zh_hant": null,
+      "name_zh_hans": null,
+      "name_sq": null,
+      "name_fr": null,
+      "name_ht": null,
+      "name_ko": null,
+      "name_ru": null,
+      "name_es": null,
+      "name_ur": null,
+      "name_uk": null,
+      "name_uz": null,
+      "is_under_represented": true,
+      "is_in_person": true
+    },
+    "school_type": {
+      "id": 9,
+      "name": "PUBLIC"
+    },
+    "address": {
+      "id": 80690,
+      "address_1": "100 Amsterdam Avenue",
+      "address_2": "",
+      "street_number": "100",
+      "street_name": "Amsterdam Avenue",
+      "city": "Manhattan",
+      "sublocality": null,
+      "state": "NY",
+      "zip_code": "10023",
+      "country": "US",
+      "primary": false,
+      "latitude": "40.774203",
+      "longitude": "-73.985977",
+      "xcoord": null,
+      "ycoord": null,
+      "source": "('Geosupport API',)",
+      "needs_geocoding": false,
+      "last_geocoded": "2025-09-19T17:40:52.403239-04:00",
+      "gis_location": "SRID=4326;POINT (-73.98597700000001 40.774203)",
+      "created_at": "2025-09-19T17:40:52.400235-04:00",
+      "updated_at": "2025-09-19T17:40:52.403239-04:00"
+    },
+    "full_address": "100 Amsterdam Avenue, Manhattan, NY 10023",
+    "directory_school_ids": [
+      86492
+    ],
+    "accessibility_more_info": null
+  },
+  "programs": [
+    {
+      "id": 123790,
+      "directory_school_id": 86492,
+      "program": {
+        "code": "M80K",
+        "name": "Dance",
+        "admission_process": "LaGuardia",
+        "is_shs": false,
+        "is_lg": true,
+        "is_gt": false,
+        "is_ms": false,
+        "is_pk": false,
+        "is_3k": false,
+        "is_el": false,
+        "is_hs": false,
+        "enable_waitlist_on_parent_portal": false
+      },
+      "name": "Dance (M80K)",
+      "interest_areas": [
+        {
+          "name": "Performing Arts"
+        }
+      ],
+      "admissions_method": {
+        "name": "Audition",
+        "description": "Students are ranked by the school based on their auditions. Offers are made in priority group and rank order.",
+        "name_en": "Audition",
+        "loo_contents": []
+      },
+      "description": "Dancers receive four years of challenging conservatory-style training in ballet and modern dance through block programming. Supplementary courses include: anatomy, dance history, choreography, theater dance (tap and jazz), career management, repertory, and professional skills.",
+      "eligibility_description": "",
+      "demand_last_year": {
+        "general_education": {
+          "applications_per_seat": null,
+          "seats": null,
+          "applicants": null,
+          "seats_description": "",
+          "all_seats_filled": false
+        },
+        "students_with_disabilities": {
+          "applications_per_seat": null,
+          "seats": null,
+          "applicants": null,
+          "all_seats_filled": false,
+          "is_swd": false
+        },
+        "specialized_education": {
+          "applications_per_seat": 19,
+          "seats": 85,
+          "applicants": 1585,
+          "all_seats_filled": true
+        }
+      },
+      "selection_criteria": [],
+      "audition_information": [],
+      "audition_schedule": [],
+      "selection_criteria_note": "",
+      "seats_10th_available": true,
+      "seats_10th_number": null,
+      "seats_description": "",
+      "testing_not_registered": false,
+      "program_priority_groups": [],
+      "diversity_in_admission_1": "",
+      "diversity_in_admission_2": "",
+      "lowest_priority": "",
+      "preference": "",
+      "start_date": null,
+      "end_date": null,
+      "start_time": "",
+      "end_time": "",
+      "provider_website": "",
+      "provider_email": "",
+      "provider_phone_number": "",
+      "operating_weekdays": "",
+      "site_contact_name": "",
+      "site_contact_email": "",
+      "site_contact_phone_number": "",
+      "portfolio_id": "",
+      "grades_description": "",
+      "other_features": [],
+      "languages_spoken_by_providers": []
+    },
+    {
+      "id": 123797,
+      "directory_school_id": 86492,
+      "program": {
+        "code": "M80N",
+        "name": "Drama",
+        "admission_process": "LaGuardia",
+        "is_shs": false,
+        "is_lg": true,
+        "is_gt": false,
+        "is_ms": false,
+        "is_pk": false,
+        "is_3k": false,
+        "is_el": false,
+        "is_hs": false,
+        "enable_waitlist_on_parent_portal": false
+      },
+      "name": "Drama (M80N)",
+      "interest_areas": [
+        {
+          "name": "Performing Arts"
+        }
+      ],
+      "admissions_method": {
+        "name": "Audition",
+        "description": "Students are ranked by the school based on their auditions. Offers are made in priority group and rank order.",
+        "name_en": "Audition",
+        "loo_contents": []
+      },
+      "description": "The Drama program focuses on acting preparation through block-programmed courses in acting (Meisner and Stanislavsky method), voice and diction, physical techniques, theater history, musical theater, acting on film, career management, and script analysis. Students have numerous opportunities to perform in professional theater spaces throughout their four years, culminating in our Senior Drama Festival.",
+      "eligibility_description": "",
+      "demand_last_year": {
+        "general_education": {
+          "applications_per_seat": null,
+          "seats": null,
+          "applicants": null,
+          "seats_description": "",
+          "all_seats_filled": false
+        },
+        "students_with_disabilities": {
+          "applications_per_seat": null,
+          "seats": null,
+          "applicants": null,
+          "all_seats_filled": false,
+          "is_swd": false
+        },
+        "specialized_education": {
+          "applications_per_seat": 21,
+          "seats": 87,
+          "applicants": 1852,
+          "all_seats_filled": true
+        }
+      },
+      "selection_criteria": [],
+      "audition_information": [],
+      "audition_schedule": [],
+      "selection_criteria_note": "",
+      "seats_10th_available": true,
+      "seats_10th_number": null,
+      "seats_description": "",
+      "testing_not_registered": false,
+      "program_priority_groups": [],
+      "diversity_in_admission_1": "",
+      "diversity_in_admission_2": "",
+      "lowest_priority": "",
+      "preference": "",
+      "start_date": null,
+      "end_date": null,
+      "start_time": "",
+      "end_time": "",
+      "provider_website": "",
+      "provider_email": "",
+      "provider_phone_number": "",
+      "operating_weekdays": "",
+      "site_contact_name": "",
+      "site_contact_email": "",
+      "site_contact_phone_number": "",
+      "portfolio_id": "",
+      "grades_description": "",
+      "other_features": [],
+      "languages_spoken_by_providers": []
+    },
+    {
+      "id": 123787,
+      "directory_school_id": 86492,
+      "program": {
+        "code": "M80J",
+        "name": "Fine Arts",
+        "admission_process": "LaGuardia",
+        "is_shs": false,
+        "is_lg": true,
+        "is_gt": false,
+        "is_ms": false,
+        "is_pk": false,
+        "is_3k": false,
+        "is_el": false,
+        "is_hs": false,
+        "enable_waitlist_on_parent_portal": false
+      },
+      "name": "Fine Arts (M80J)",
+      "interest_areas": [
+        {
+          "name": "Visual Art & Design"
+        }
+      ],
+      "admissions_method": {
+        "name": "Audition",
+        "description": "Students are ranked by the school based on their auditions. Offers are made in priority group and rank order.",
+        "name_en": "Audition",
+        "loo_contents": []
+      },
+      "description": "The first two years comprise of training in traditional skills and disciplines, which include drawing, painting in water-based media, graphic design, and painting in oils and acrylics. After taking the core art courses, students take advanced courses in the subjects listed and with other elective offerings such as architecture, art history, ceramics, computer graphics, digital media, fashion illustration, mural painting, photography, print making, and sculpture.",
+      "eligibility_description": "",
+      "demand_last_year": {
+        "general_education": {
+          "applications_per_seat": null,
+          "seats": null,
+          "applicants": null,
+          "seats_description": "",
+          "all_seats_filled": false
+        },
+        "students_with_disabilities": {
+          "applications_per_seat": null,
+          "seats": null,
+          "applicants": null,
+          "all_seats_filled": false,
+          "is_swd": false
+        },
+        "specialized_education": {
+          "applications_per_seat": 10,
+          "seats": 279,
+          "applicants": 2928,
+          "all_seats_filled": true
+        }
+      },
+      "selection_criteria": [],
+      "audition_information": [],
+      "audition_schedule": [],
+      "selection_criteria_note": "",
+      "seats_10th_available": true,
+      "seats_10th_number": null,
+      "seats_description": "",
+      "testing_not_registered": false,
+      "program_priority_groups": [],
+      "diversity_in_admission_1": "",
+      "diversity_in_admission_2": "",
+      "lowest_priority": "",
+      "preference": "",
+      "start_date": null,
+      "end_date": null,
+      "start_time": "",
+      "end_time": "",
+      "provider_website": "",
+      "provider_email": "",
+      "provider_phone_number": "",
+      "operating_weekdays": "",
+      "site_contact_name": "",
+      "site_contact_email": "",
+      "site_contact_phone_number": "",
+      "portfolio_id": "",
+      "grades_description": "",
+      "other_features": [],
+      "languages_spoken_by_providers": []
+    },
+    {
+      "id": 123792,
+      "directory_school_id": 86492,
+      "program": {
+        "code": "M80L",
+        "name": "Instrumental Music",
+        "admission_process": "LaGuardia",
+        "is_shs": false,
+        "is_lg": true,
+        "is_gt": false,
+        "is_ms": false,
+        "is_pk": false,
+        "is_3k": false,
+        "is_el": false,
+        "is_hs": false,
+        "enable_waitlist_on_parent_portal": false
+      },
+      "name": "Instrumental Music (M80L)",
+      "interest_areas": [
+        {
+          "name": "Performing Arts"
+        }
+      ],
+      "admissions_method": {
+        "name": "Audition",
+        "description": "Students are ranked by the school based on their auditions. Offers are made in priority group and rank order.",
+        "name_en": "Audition",
+        "loo_contents": []
+      },
+      "description": "Participants study sight singing, music theory, and music history. This studio's performing groups include four symphony orchestras, two concert bands, two jazz bands, and two musical pit orchestras. Participants also have the opportunity to compose, conduct, and perform original repertoire and utilize a state-of-the-art SoundLab recording studio.",
+      "eligibility_description": "",
+      "demand_last_year": {
+        "general_education": {
+          "applications_per_seat": null,
+          "seats": null,
+          "applicants": null,
+          "seats_description": "",
+          "all_seats_filled": false
+        },
+        "students_with_disabilities": {
+          "applications_per_seat": null,
+          "seats": null,
+          "applicants": null,
+          "all_seats_filled": false,
+          "is_swd": false
+        },
+        "specialized_education": {
+          "applications_per_seat": 6,
+          "seats": 217,
+          "applicants": 1296,
+          "all_seats_filled": true
+        }
+      },
+      "selection_criteria": [],
+      "audition_information": [],
+      "audition_schedule": [],
+      "selection_criteria_note": "",
+      "seats_10th_available": true,
+      "seats_10th_number": null,
+      "seats_description": "",
+      "testing_not_registered": false,
+      "program_priority_groups": [],
+      "diversity_in_admission_1": "",
+      "diversity_in_admission_2": "",
+      "lowest_priority": "",
+      "preference": "",
+      "start_date": null,
+      "end_date": null,
+      "start_time": "",
+      "end_time": "",
+      "provider_website": "",
+      "provider_email": "",
+      "provider_phone_number": "",
+      "operating_weekdays": "",
+      "site_contact_name": "",
+      "site_contact_email": "",
+      "site_contact_phone_number": "",
+      "portfolio_id": "",
+      "grades_description": "",
+      "other_features": [],
+      "languages_spoken_by_providers": []
+    },
+    {
+      "id": 123800,
+      "directory_school_id": 86492,
+      "program": {
+        "code": "M80P",
+        "name": "Technical Theater",
+        "admission_process": "LaGuardia",
+        "is_shs": false,
+        "is_lg": true,
+        "is_gt": false,
+        "is_ms": false,
+        "is_pk": false,
+        "is_3k": false,
+        "is_el": false,
+        "is_hs": false,
+        "enable_waitlist_on_parent_portal": false
+      },
+      "name": "Technical Theater (M80P)",
+      "interest_areas": [
+        {
+          "name": "Performing Arts"
+        }
+      ],
+      "admissions_method": {
+        "name": "Audition",
+        "description": "Students are ranked by the school based on their auditions. Offers are made in priority group and rank order.",
+        "name_en": "Audition",
+        "loo_contents": []
+      },
+      "description": "In block programs, students receive practical training in scenic carpentry, electrics, lighting technology, costume construction, sound properties, stage management, technical drawing (AutoCAD and Autodesk 3DS Max), welding, career management, and design. Students participate in both the production and performance aspects for the various school events. Students may earn transferable college credit through SUNY Potsdam.",
+      "eligibility_description": "",
+      "demand_last_year": {
+        "general_education": {
+          "applications_per_seat": null,
+          "seats": null,
+          "applicants": null,
+          "seats_description": "",
+          "all_seats_filled": false
+        },
+        "students_with_disabilities": {
+          "applications_per_seat": null,
+          "seats": null,
+          "applicants": null,
+          "all_seats_filled": false,
+          "is_swd": false
+        },
+        "specialized_education": {
+          "applications_per_seat": 14,
+          "seats": 66,
+          "applicants": 954,
+          "all_seats_filled": true
+        }
+      },
+      "selection_criteria": [],
+      "audition_information": [],
+      "audition_schedule": [],
+      "selection_criteria_note": "",
+      "seats_10th_available": true,
+      "seats_10th_number": null,
+      "seats_description": "",
+      "testing_not_registered": false,
+      "program_priority_groups": [],
+      "diversity_in_admission_1": "",
+      "diversity_in_admission_2": "",
+      "lowest_priority": "",
+      "preference": "",
+      "start_date": null,
+      "end_date": null,
+      "start_time": "",
+      "end_time": "",
+      "provider_website": "",
+      "provider_email": "",
+      "provider_phone_number": "",
+      "operating_weekdays": "",
+      "site_contact_name": "",
+      "site_contact_email": "",
+      "site_contact_phone_number": "",
+      "portfolio_id": "",
+      "grades_description": "",
+      "other_features": [],
+      "languages_spoken_by_providers": []
+    },
+    {
+      "id": 123794,
+      "directory_school_id": 86492,
+      "program": {
+        "code": "M80M",
+        "name": "Vocal Music",
+        "admission_process": "LaGuardia",
+        "is_shs": false,
+        "is_lg": true,
+        "is_gt": false,
+        "is_ms": false,
+        "is_pk": false,
+        "is_3k": false,
+        "is_el": false,
+        "is_hs": false,
+        "enable_waitlist_on_parent_portal": false
+      },
+      "name": "Vocal Music (M80M)",
+      "interest_areas": [
+        {
+          "name": "Performing Arts"
+        }
+      ],
+      "admissions_method": {
+        "name": "Audition",
+        "description": "Students are ranked by the school based on their auditions. Offers are made in priority group and rank order.",
+        "name_en": "Audition",
+        "loo_contents": []
+      },
+      "description": "Participants study sight singing, music theory, and music history. Students receive training in Italian, German, and French vocal literature. This studio's performing groups include Elementary, Mixed, Girls, Women's, and Senior Choruses; Gospel Choir; and Show Choir. In addition there is an annual full-scale opera production. Music electives include chamber music, guitar, music technology, piano, and songwriting.",
+      "eligibility_description": "",
+      "demand_last_year": {
+        "general_education": {
+          "applications_per_seat": null,
+          "seats": null,
+          "applicants": null,
+          "seats_description": "",
+          "all_seats_filled": false
+        },
+        "students_with_disabilities": {
+          "applications_per_seat": null,
+          "seats": null,
+          "applicants": null,
+          "all_seats_filled": false,
+          "is_swd": false
+        },
+        "specialized_education": {
+          "applications_per_seat": 8,
+          "seats": 201,
+          "applicants": 1706,
+          "all_seats_filled": true
+        }
+      },
+      "selection_criteria": [],
+      "audition_information": [],
+      "audition_schedule": [],
+      "selection_criteria_note": "",
+      "seats_10th_available": true,
+      "seats_10th_number": null,
+      "seats_description": "",
+      "testing_not_registered": false,
+      "program_priority_groups": [],
+      "diversity_in_admission_1": "",
+      "diversity_in_admission_2": "",
+      "lowest_priority": "",
+      "preference": "",
+      "start_date": null,
+      "end_date": null,
+      "start_time": "",
+      "end_time": "",
+      "provider_website": "",
+      "provider_email": "",
+      "provider_phone_number": "",
+      "operating_weekdays": "",
+      "site_contact_name": "",
+      "site_contact_email": "",
+      "site_contact_phone_number": "",
+      "portfolio_id": "",
+      "grades_description": "",
+      "other_features": [],
+      "languages_spoken_by_providers": []
+    }
+  ],
+  "overview": "Our students complete two parallel paths of study: conservatory-level pre-professional training in the arts and college-preparatory academics; all students are equipped with post-secondary planning skills. Our alumni are creative thinkers, confident collaborators, culturally engaged innovators, and open-minded citizens. They distinguish themselves in virtually every field of endeavor. LaGuardia Arts is a large, NYC Specialized High School and the only Specialized High School that admits students based on a competitive audition and not the Specialized High School Admissions Test (SHSAT.)",
+  "grades_description": "9 to 12",
+  "academic_opportunities": [],
+  "admissions_open": false,
+  "waitlist_open": false,
+  "results_enabled": false,
+  "admission_process": "LG",
+  "ell_programs": [],
+  "language_classes": [],
+  "advanced_placement_courses": [
+    {
+      "name": "Algebra II (Advanced Math)"
+    },
+    {
+      "name": "AP Biology"
+    },
+    {
+      "name": "AP Calculus AB"
+    },
+    {
+      "name": "AP Calculus BC"
+    },
+    {
+      "name": "AP Chemistry"
+    },
+    {
+      "name": "AP Chinese Language and Culture"
+    },
+    {
+      "name": "AP Comparative Government and Politics"
+    },
+    {
+      "name": "AP Computer Science Principles"
+    },
+    {
+      "name": "AP English Language and Composition"
+    },
+    {
+      "name": "AP English Literature and Composition"
+    },
+    {
+      "name": "AP Environmental Science"
+    },
+    {
+      "name": "AP French Language and Culture"
+    },
+    {
+      "name": "AP Italian Language and Culture"
+    },
+    {
+      "name": "AP Japanese Language and Culture"
+    },
+    {
+      "name": "AP Physics 1"
+    },
+    {
+      "name": "AP Psychology"
+    },
+    {
+      "name": "AP Spanish Language and Culture"
+    },
+    {
+      "name": "AP Statistics"
+    },
+    {
+      "name": "AP United States Government and Politics"
+    },
+    {
+      "name": "AP United States History"
+    },
+    {
+      "name": "AP World History: Modern"
+    },
+    {
+      "name": "Calculus (Advanced Math)"
+    },
+    {
+      "name": "Chemistry (Advanced Science)"
+    },
+    {
+      "name": "Physics (Advanced Science)"
+    },
+    {
+      "name": "World Languages (Advanced World Languages)"
+    }
+  ],
+  "art_courses": [
+    {
+      "name": "Traditional and Studio Art"
+    },
+    {
+      "name": "Digital Media Arts"
+    },
+    {
+      "name": "Design and Applied Arts"
+    },
+    {
+      "name": "Art History"
+    },
+    {
+      "name": "Theater Production"
+    },
+    {
+      "name": "Theater Making/Performance"
+    },
+    {
+      "name": "Theater Literacy"
+    },
+    {
+      "name": "Theater Design"
+    },
+    {
+      "name": "General Theater"
+    },
+    {
+      "name": "Orchestra/Strings"
+    },
+    {
+      "name": "Music Industry & Contemporary Music"
+    },
+    {
+      "name": "Exploring Music"
+    },
+    {
+      "name": "Chorus/Singing"
+    },
+    {
+      "name": "Dance Techniques and Performance"
+    },
+    {
+      "name": "Dance Foundations and History"
+    },
+    {
+      "name": "Dance Careers and Production"
+    },
+    {
+      "name": "Choreographic Practices"
+    }
+  ],
+  "diploma_endorsements": [],
+  "other_features": [
+    {
+      "name": "10th Grade Seats Available"
+    },
+    {
+      "name": "Career and Technical Education (CTE)"
+    },
+    {
+      "name": "Computer Science Coursework"
+    },
+    {
+      "name": "Expert College and Career Advisor On Staff"
+    },
+    {
+      "name": "Financial Literacy Coursework"
+    },
+    {
+      "name": "Online Grading System"
+    }
+  ],
+  "affiliated_schools": [],
+  "instruction_and_performance_rating": {
+    "label": "Excellent",
+    "score": 4
+  },
+  "safety_and_school_climate_rating": {
+    "label": "Good",
+    "score": 3
+  },
+  "relationships_with_families_rating": {
+    "label": "Fair",
+    "score": 2
+  },
+  "performance_labels": {
+    "instruction_and_performance_label": "Instruction and Performance",
+    "safety_and_school_climate_label": "Safety and School Climate",
+    "relationships_with_families_label": "Relationships with Families",
+    "school_quality_snapshot_html": "<a target=\"_blank\" rel=\"noopener\" href=\"https://tools.nycenet.edu/snapshot/0/03M485/HS/?utm_source=myschools.nyc&utm_medium=DOE_App_referral&utm_campaign=MySchools\">See the School Quality Snapshot</a>."
+  },
+  "stat_graduation": 98,
+  "stat_enroll_college_career": 82,
+  "stat_attendance": null,
+  "stat_safety": 91,
+  "stat_variety": 92,
+  "subway": "",
+  "subway_line": [
+    {
+      "name": "1",
+      "color": "#EE352E"
+    },
+    {
+      "name": "2",
+      "color": "#EE352E"
+    },
+    {
+      "name": "3",
+      "color": "#EE352E"
+    },
+    {
+      "name": "A",
+      "color": "#0039A6"
+    },
+    {
+      "name": "B",
+      "color": "#FF6319"
+    },
+    {
+      "name": "C",
+      "color": "#0039A6"
+    },
+    {
+      "name": "D",
+      "color": "#FF6319"
+    }
+  ],
+  "bus": "",
+  "shared_space": false,
+  "building_code": "M485",
+  "email": "admissions@laguardiahs.org",
+  "telephone": "212-496-0700",
+  "independent_website": "https://www.laguardiahs.org/",
+  "secondary_website": "https://tools.nycenet.edu/snapshot/0/03M485/HS/?utm_source=myschools.nyc&utm_medium=DOE_App_referral&utm_campaign=MySchools",
+  "start_time": "08:00am",
+  "end_time": "03:35pm",
+  "uniform": false,
+  "open_house_information": "",
+  "bap_url": "https://nycdoe.sharepoint.com/:w:/s/BAP/EUK_AyOEEsFCrcponBYEmhkB7rEKTt38JfnZrbS1Yld9Iw",
+  "total_enrollment": "2717",
+  "enrollment_range": "2,000+",
+  "eligibility": [
+    {
+      "name": "10th Grade Seats Available",
+      "name_en": "10th Grade Seats Available"
+    }
+  ],
+  "activities": [],
+  "sports_boys": [
+    {
+      "name": "Baseball"
+    },
+    {
+      "name": "Basketball"
+    },
+    {
+      "name": "Cross Country"
+    },
+    {
+      "name": "Fencing"
+    },
+    {
+      "name": "Gymnastics"
+    },
+    {
+      "name": "Indoor Track"
+    },
+    {
+      "name": "Outdoor Track"
+    },
+    {
+      "name": "Soccer"
+    },
+    {
+      "name": "Volleyball"
+    }
+  ],
+  "sports_girls": [
+    {
+      "name": "Basketball"
+    },
+    {
+      "name": "Bowling"
+    },
+    {
+      "name": "Cross Country"
+    },
+    {
+      "name": "Fencing"
+    },
+    {
+      "name": "Handball"
+    },
+    {
+      "name": "Indoor Track"
+    },
+    {
+      "name": "Outdoor Track"
+    },
+    {
+      "name": "Soccer"
+    },
+    {
+      "name": "Softball"
+    },
+    {
+      "name": "Swimming"
+    },
+    {
+      "name": "Volleyball"
+    }
+  ],
+  "sports_coed": [],
+  "school_sports": [
+    {
+      "name": "Cheerleading"
+    },
+    {
+      "name": "Dance"
+    },
+    {
+      "name": "Step"
+    },
+    {
+      "name": "Ultimate Frisbee"
+    }
+  ],
+  "sports_description": "Cheerleading, Dance, Step, Ultimate Frisbee",
+  "meals": [],
+  "electives_description": "",
+  "activities_description": "Clubs are student-generated at the beginning of each school year.  The 2023-20234 club offerings include: A-List Step Team,  Aro-spec,  Art for the Heart,  Black Student Union,  Ceramics,  Character Creation, Chinese Student Association,  Choral Intertwine,  Christian Students Association,  Cosplay,  Debate,  DECA, Disney VoluntEARS Mentoring Program,  Fashion,  Green Team,  ,Gender Sexuality Alliance (GSA), Italian Culture , Japanese , Jazz Vocal , Jewish Student Union, Key Club, Latinos Unidos, Math Empowerment , Mock Trial, Model United Nations , Neuroscience , Red Cross, Slavic , South Asian Association, Stock Market Analysis , Students for Planned Parenthood,  UNICEF,  and Unity Dance Crew.",
+  "contact_name": "",
+  "stat_core_courses": null,
+  "stat_state_ela": null,
+  "stat_state_math": null,
+  "frequently_attended_hs": [],
+  "diversity_in_admissions": "",
+  "stat_parents_satisfaction": null,
+  "virtual_learning": "",
+  "co_located_schools": [],
+  "classification": [],
+  "class_program_ratio": [],
+  "bridge": [],
+  "assessment_type": [],
+  "distance": null,
+  "switches": {
+    "show_GE_SWD_toggle_on_application_program_admissions": true,
+    "show_GE_SWD_toggle_on_public_program_admissions": true
+  }
+}
