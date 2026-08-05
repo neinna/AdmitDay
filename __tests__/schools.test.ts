@@ -180,9 +180,9 @@ describe('agent-coordinator.sh PR flow', () => {
     expect(langfuseTraceSource).not.toContain('"diff"')
   })
 
-  it('documents self-hosted Langfuse as the default VPS baseline', () => {
-    expect(envAgentsExampleSource).toContain('Langfuse is self-hosted on the same VPS')
-    expect(envAgentsExampleSource).toContain('LANGFUSE_HOST=http://127.0.0.1:3000')
+  it('documents Langfuse Cloud as the configured VPS baseline', () => {
+    expect(envAgentsExampleSource).toContain('Keys come from your Langfuse Cloud project')
+    expect(envAgentsExampleSource).toContain('LANGFUSE_HOST=https://cloud.langfuse.com')
   })
 })
 
