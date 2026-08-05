@@ -26,6 +26,7 @@ LESSONS_FILE="/home/agent/app/LESSONS.md"
 TRIGGER_LABEL="agent-ok"
 CLAUDE_TIMEOUT=1800
 LF_TRACE_SCRIPT="${APP_DIR}/scripts/langfuse_trace.py"
+LF_TRACE_PYTHON="${LF_TRACE_PYTHON:-/home/agent/.venvs/agent-observability/bin/python}"
 RUN_METADATA_DIR="/home/agent/agent-run-metadata"
 LF_RUN_FILE=""
 
@@ -119,13 +120,16 @@ lf_emit() {
     rm -f "$RUN_FILE"
     return 0
   fi
+  if [ ! -x "$LF_TRACE_PYTHON" ]; then
+    LF_TRACE_PYTHON="python3"
+  fi
 
   LF_ISSUE="$1" LF_TITLE="$2" LF_BRANCH="$3" LF_OUTCOME="$4" LF_ATTEMPTS="$5" \
   LF_LABEL="$6" LF_TSTART="$7" LF_TEND="$8" LF_SPANS="$RUN_FILE" \
   LF_TEST_RESULT="$9" LF_BUILD_RESULT="${10}" LF_REVIEWER_RESULT="${11}" \
   LF_PR_OUTCOME="${12}" LF_METADATA_DIR="$RUN_METADATA_DIR" \
   GITHUB_REPO="$GITHUB_REPO" \
-  python3 << 'PYEOF' 2>> "$LOG_FILE" | timeout 30 python3 "$LF_TRACE_SCRIPT" 2>> "$LOG_FILE"
+  python3 << 'PYEOF' 2>> "$LOG_FILE" | timeout 30 "$LF_TRACE_PYTHON" "$LF_TRACE_SCRIPT" 2>> "$LOG_FILE"
 import json, os
 
 spans = []

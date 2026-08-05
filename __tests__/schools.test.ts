@@ -166,6 +166,11 @@ describe('agent-coordinator.sh PR flow', () => {
     expect(coordinatorSource).toContain('metadata_file')
   })
 
+  it('uses the dedicated agent observability venv for Langfuse emission when present', () => {
+    expect(coordinatorSource).toContain('LF_TRACE_PYTHON="${LF_TRACE_PYTHON:-/home/agent/.venvs/agent-observability/bin/python}"')
+    expect(coordinatorSource).toContain('timeout 30 "$LF_TRACE_PYTHON" "$LF_TRACE_SCRIPT"')
+  })
+
   it('records the baseline fields needed before model routing', () => {
     for (const field of ['test_result', 'build_result', 'reviewer_result', 'pr_outcome']) {
       expect(coordinatorSource).toContain(field)
