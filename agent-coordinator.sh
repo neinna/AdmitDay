@@ -29,9 +29,77 @@ LF_TRACE_SCRIPT="${APP_DIR}/scripts/langfuse_trace.py"
 LF_TRACE_PYTHON="${LF_TRACE_PYTHON:-/home/agent/.venvs/agent-observability/bin/python}"
 RUN_METADATA_DIR="/home/agent/agent-run-metadata"
 LF_RUN_FILE=""
+SELF_UPDATE_INTERVAL_SECONDS="${SELF_UPDATE_INTERVAL_SECONDS:-300}"
+SELF_UPDATE_STAMP="/tmp/agent-coordinator-self-update.last"
+SELF_UPDATE_LOCK="/tmp/agent-coordinator-self-update.lock"
 
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
+}
+
+self_update_from_main() {
+  local NOW LAST
+  NOW=$(date +%s)
+  LAST=$(cat "$SELF_UPDATE_STAMP" 2>/dev/null || echo 0)
+  if [ $((NOW - LAST)) -lt "$SELF_UPDATE_INTERVAL_SECONDS" ]; then
+    return 0
+  fi
+  echo "$NOW" > "$SELF_UPDATE_STAMP" 2>/dev/null || true
+
+  (
+    flock -n 9 || exit 0
+    cd "$APP_DIR" || exit 0
+
+    local BRANCH
+    BRANCH=$(git branch --show-current 2>/dev/null || echo "")
+    if [ "$BRANCH" != "main" ]; then
+      log "Self-update: on ${BRANCH:-unknown}, skipping until coordinator is idle on main"
+      exit 0
+    fi
+
+    if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+      log "Self-update: tracked local changes present, skipping pull"
+      exit 0
+    fi
+
+    if ! git fetch --quiet origin main >> "$LOG_FILE" 2>&1; then
+      log "Self-update: fetch failed"
+      exit 0
+    fi
+
+    local LOCAL_SHA REMOTE_SHA BASE_SHA
+    LOCAL_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
+    REMOTE_SHA=$(git rev-parse origin/main 2>/dev/null || echo "")
+    [ -n "$LOCAL_SHA" ] && [ "$LOCAL_SHA" = "$REMOTE_SHA" ] && exit 0
+
+    BASE_SHA=$(git merge-base HEAD origin/main 2>/dev/null || echo "")
+    if [ "$BASE_SHA" != "$LOCAL_SHA" ]; then
+      log "Self-update: local main diverged from origin/main, skipping pull"
+      exit 0
+    fi
+
+    log "Self-update: fast-forwarding main from ${LOCAL_SHA:0:7} to ${REMOTE_SHA:0:7}"
+    if ! git pull --ff-only --quiet origin main >> "$LOG_FILE" 2>&1; then
+      log "Self-update: fast-forward pull failed"
+      exit 0
+    fi
+
+    log "Self-update: pulled latest main, restarting coordinator under PM2"
+    (sleep 1; pm2 restart agent-coordinator --update-env >> "$LOG_FILE" 2>&1) &
+    exit 42
+  ) 9>"$SELF_UPDATE_LOCK"
+
+  local UPDATE_RC=$?
+  [ "$UPDATE_RC" -eq 42 ] && return 42
+  return 0
+}
+
+maybe_self_update_or_exit() {
+  self_update_from_main
+  local UPDATE_RC=$?
+  if [ "$UPDATE_RC" -eq 42 ]; then
+    exit 0
+  fi
 }
 
 # --- Langfuse instrumentation -------------------------------------------------
@@ -859,6 +927,7 @@ ${FAIL_OUTPUT}
 }
 
 log "Coordinator started"
+maybe_self_update_or_exit
 
 # Write a notify helper the inner agent can call to send Telegram updates
 cat > /home/agent/notify.sh << 'NOTIFY'
@@ -874,6 +943,7 @@ chmod +x /home/agent/notify.sh
 telegram "Coordinator started, watching for ${TRIGGER_LABEL} issues (PR flow — never pushes to main). Commands: /issue <title>, /goal <goal>"
 
 while true; do
+  maybe_self_update_or_exit
   handle_telegram_commands
 
   ISSUE_NUMBERS=$(curl -sL \
