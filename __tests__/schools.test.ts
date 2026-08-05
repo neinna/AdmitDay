@@ -191,6 +191,31 @@ describe('agent-coordinator.sh PR flow', () => {
     expect(coordinatorSource).toContain('Provider halt: sleeping 10 minutes before retrying.')
   })
 
+  it('keeps Claude API but caps cost and chooses models per coordinator phase', () => {
+    for (const setting of [
+      'CLAUDE_IMPLEMENT_MODEL="${CLAUDE_IMPLEMENT_MODEL:-sonnet}"',
+      'CLAUDE_REVIEW_MODEL="${CLAUDE_REVIEW_MODEL:-sonnet}"',
+      'CLAUDE_PLANNER_MODEL="${CLAUDE_PLANNER_MODEL:-sonnet}"',
+      'CLAUDE_RETRO_MODEL="${CLAUDE_RETRO_MODEL:-sonnet}"',
+      'CLAUDE_IMPLEMENT_MAX_USD="${CLAUDE_IMPLEMENT_MAX_USD:-2.00}"',
+      'CLAUDE_REVIEW_MAX_USD="${CLAUDE_REVIEW_MAX_USD:-0.75}"',
+      'CLAUDE_PLANNER_MAX_USD="${CLAUDE_PLANNER_MAX_USD:-0.50}"',
+      'CLAUDE_RETRO_MAX_USD="${CLAUDE_RETRO_MAX_USD:-0.25}"',
+      '--model "$MODEL"',
+      '--max-budget-usd "$MAX_BUDGET_USD"',
+      '< /dev/null',
+    ]) {
+      expect(coordinatorSource).toContain(setting)
+    }
+
+    expect(coordinatorSource).toContain('"$CLAUDE_REVIEW_MODEL" "$CLAUDE_REVIEW_MAX_USD"')
+    expect(coordinatorSource).toContain('"$CLAUDE_RETRO_MODEL" "$CLAUDE_RETRO_MAX_USD"')
+    expect(coordinatorSource).toContain('"$CLAUDE_PLANNER_MODEL" "$CLAUDE_PLANNER_MAX_USD"')
+    expect(coordinatorSource).toContain('"$CLAUDE_IMPLEMENT_MODEL" "$CLAUDE_IMPLEMENT_MAX_USD"')
+    expect(envAgentsExampleSource).toContain('CLAUDE_IMPLEMENT_MAX_USD=2.00')
+    expect(envAgentsExampleSource).toContain('Max budgets cap each individual')
+  })
+
   it('records the baseline fields needed before model routing', () => {
     for (const field of ['test_result', 'build_result', 'reviewer_result', 'pr_outcome']) {
       expect(coordinatorSource).toContain(field)

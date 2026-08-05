@@ -25,6 +25,14 @@ OFFSET_FILE="/home/agent/.tg_offset"
 LESSONS_FILE="/home/agent/app/LESSONS.md"
 TRIGGER_LABEL="agent-ok"
 CLAUDE_TIMEOUT=1800
+CLAUDE_IMPLEMENT_MODEL="${CLAUDE_IMPLEMENT_MODEL:-sonnet}"
+CLAUDE_REVIEW_MODEL="${CLAUDE_REVIEW_MODEL:-sonnet}"
+CLAUDE_PLANNER_MODEL="${CLAUDE_PLANNER_MODEL:-sonnet}"
+CLAUDE_RETRO_MODEL="${CLAUDE_RETRO_MODEL:-sonnet}"
+CLAUDE_IMPLEMENT_MAX_USD="${CLAUDE_IMPLEMENT_MAX_USD:-2.00}"
+CLAUDE_REVIEW_MAX_USD="${CLAUDE_REVIEW_MAX_USD:-0.75}"
+CLAUDE_PLANNER_MAX_USD="${CLAUDE_PLANNER_MAX_USD:-0.50}"
+CLAUDE_RETRO_MAX_USD="${CLAUDE_RETRO_MAX_USD:-0.25}"
 LF_TRACE_SCRIPT="${APP_DIR}/scripts/langfuse_trace.py"
 LF_TRACE_PYTHON="${LF_TRACE_PYTHON:-/home/agent/.venvs/agent-observability/bin/python}"
 RUN_METADATA_DIR="/home/agent/agent-run-metadata"
@@ -350,21 +358,36 @@ except Exception:
 }
 
 # Run one claude agent call with timeout, capturing the JSON result.
-# Reads the prompt from $PROMPT. run_claude OUT_FILE [RESUME_ID] [TOOLS]
+# Reads the prompt from $PROMPT.
+# run_claude OUT_FILE [RESUME_ID] [TOOLS] [MODEL] [MAX_BUDGET_USD]
 # Returns: 0 on success, 124 on timeout, 1 on any other error.
 run_claude() {
   local OUT_FILE="$1"
   local RESUME_ID="$2"
   local TOOLS="${3:-Bash,Read,Write,Edit,Glob,Grep}"
+  local MODEL="${4:-}"
+  local MAX_BUDGET_USD="${5:-}"
   local RESUME_ARGS=()
+  local MODEL_ARGS=()
+  local BUDGET_ARGS=()
   if [ -n "$RESUME_ID" ]; then
     RESUME_ARGS=(--resume "$RESUME_ID")
   fi
+  if [ -n "$MODEL" ]; then
+    MODEL_ARGS=(--model "$MODEL")
+  fi
+  if [ -n "$MAX_BUDGET_USD" ]; then
+    BUDGET_ARGS=(--max-budget-usd "$MAX_BUDGET_USD")
+  fi
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] Claude call: model=${MODEL:-default} max_budget_usd=${MAX_BUDGET_USD:-none} tools=${TOOLS}" >> "$LOG_FILE"
   ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" timeout "$CLAUDE_TIMEOUT" claude \
     -p "$PROMPT" \
     --output-format json \
     --allowedTools "$TOOLS" \
+    "${MODEL_ARGS[@]}" \
+    "${BUDGET_ARGS[@]}" \
     "${RESUME_ARGS[@]}" \
+    < /dev/null \
     > "$OUT_FILE" 2>> "$LOG_FILE"
   local RC=$?
   if [ $RC -eq 124 ]; then
@@ -490,7 +513,7 @@ RISK: LIVE-VERIFY-NEEDED"
   # No log() calls in this function: its stdout is the review text.
   local T0 T1
   T0=$(lf_now_ns)
-  run_claude "$REVIEW_OUT" "" "Read,Glob,Grep"
+  run_claude "$REVIEW_OUT" "" "Read,Glob,Grep" "$CLAUDE_REVIEW_MODEL" "$CLAUDE_REVIEW_MAX_USD"
   local RC=$?
   T1=$(lf_now_ns)
   local REVIEW_TEXT
@@ -552,7 +575,7 @@ Write the complete new content of LESSONS.md and nothing else (no fences, no com
 
   local T0 T1
   T0=$(lf_now_ns)
-  run_claude "$RETRO_OUT" "" "Read"
+  run_claude "$RETRO_OUT" "" "Read" "$CLAUDE_RETRO_MODEL" "$CLAUDE_RETRO_MAX_USD"
   local RC=$?
   T1=$(lf_now_ns)
   lf_record "retrospective" "$T0" "$T1" "$([ $RC -eq 0 ] && echo 1 || echo 0)" "$RETRO_OUT" ""
@@ -585,7 +608,7 @@ Output ONLY a JSON object, no markdown fences, in exactly this shape:
 {\"issues\": [{\"title\": \"...\", \"body\": \"...\"}]}
 Each body: what to change, where (file paths), and acceptance criteria."
 
-  run_claude "$PLAN_OUT" "" "Read,Glob,Grep"
+  run_claude "$PLAN_OUT" "" "Read,Glob,Grep" "$CLAUDE_PLANNER_MODEL" "$CLAUDE_PLANNER_MAX_USD"
   local RC=$?
   if [ $RC -ne 0 ]; then
     telegram "Planner failed for goal: ${GOAL}"
@@ -781,7 +804,8 @@ Instructions:
     ATTEMPTS_USED=$ATTEMPT
     local T0 T1
     T0=$(lf_now_ns)
-    run_claude "$CLAUDE_OUT" "$([ $ATTEMPT -gt 1 ] && echo "$SESSION_ID")"
+    run_claude "$CLAUDE_OUT" "$([ $ATTEMPT -gt 1 ] && echo "$SESSION_ID")" \
+      "Bash,Read,Write,Edit,Glob,Grep" "$CLAUDE_IMPLEMENT_MODEL" "$CLAUDE_IMPLEMENT_MAX_USD"
     local RC=$?
     T1=$(lf_now_ns)
     lf_record "implement" "$T0" "$T1" "$([ $RC -eq 0 ] && echo 1 || echo 0)" \
