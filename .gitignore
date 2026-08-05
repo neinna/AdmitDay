@@ -18,12 +18,17 @@
 # env files — never commit
 .env
 .env.local
+# agent coordinator credentials (GitHub, Telegram, Langfuse) — .example only
+.env.agents
 .env.development.local
 .env.test.local
 .env.production.local
 
 # vercel
 .vercel
+
+# python
+__pycache__/
 
 # typescript
 *.tsbuildinfo
@@ -62,3 +67,4 @@ planning-docs/
 
 # Finder duplicate files
 * copy*
+.env*.local

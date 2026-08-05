@@ -102,7 +102,7 @@ If any of these fail, escalate the task to a stronger model or a human review pa
 
 ## Planned Observability
 
-The next instrumentation step is Langfuse, self-hosted on the VPS:
+The next instrumentation step is Langfuse Cloud, with keys stored on the VPS:
 
 - Log every agent run.
 - Capture model, provider, latency, tokens, cost, issue number, branch, verification result, reviewer verdict, and final PR result.
