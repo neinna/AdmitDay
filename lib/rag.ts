@@ -180,14 +180,23 @@ function applyDeterministicFilters(
 // Search: embed query, find top matches, deduplicate by school
 // ---------------------------------------------------------------------------
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+let openaiClient: OpenAI | null = null;
+
+function getOpenAIClient(): OpenAI {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error("OPENAI_API_KEY is required for RAG search");
+  }
+
+  openaiClient ??= new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  return openaiClient;
+}
 
 export async function searchSchools(
   query: string,
   topK: number = 5
 ): Promise<SearchResult[]> {
   // Embed the user's query
-  const response = await openai.embeddings.create({
+  const response = await getOpenAIClient().embeddings.create({
     model: "text-embedding-3-small",
     input: query,
   });

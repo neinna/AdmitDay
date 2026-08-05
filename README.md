@@ -1,76 +1,77 @@
 # AdmitDay
 
-AI-powered NYC public high school admissions navigator. Helps families build a personalized school list from 700+ programs across 400+ schools, based on what actually matters to them.
+AI-powered NYC public high school admissions navigator. AdmitDay helps families turn a scattered admissions process into a grounded, personalized school list.
 
-## Problem
+- Live app: https://www.admitday.com
+- Chat search: https://www.admitday.com/chat
+- Unified finder in progress: `/find` and `/school/[dbn]`
 
-Every year, roughly 75,000 NYC families navigate high school admissions. The information exists (NYC DOE website, School Information Finder, NYC_SIFT), but it's scattered, hard to filter, and impossible to personalize. Parents end up relying on Facebook groups, word of mouth, and spreadsheets. AdmitDay turns that mess into one trustworthy, personalized tool.
+## Why This Exists
 
-## How It Works
+Every year, roughly 75,000 NYC families navigate high school admissions. The information exists across DOE pages, School Information Finder, NYC-SIFT, school sites, Facebook groups, and spreadsheets, but it is hard to filter and harder to personalize.
 
-Two discovery surfaces today (unifying them into a single flow is the next build — see below):
+AdmitDay is built around a simple product bet: parents do not need more raw information. They need to know which schools are plausible, why they match, and what to do next.
 
-1. **Structured filters** (https://www.admitday.com). Deterministic matching on borough, size, admissions track, and interests. Filter-then-generate: match on structured fields in code, then Claude writes a personalized rationale for each school.
-2. **RAG-powered chat** (https://www.admitday.com/chat). Ask in plain language ("which Brooklyn schools have strong CS and soccer?"). The system extracts exact signals from the question (borough, sport, interest), hard-filters the candidate pool, then semantic-ranks within it (**hybrid search**), and generates a grounded answer citing only the schools it found.
+## What It Does
 
-The filter page and the chat page are still two separate, linked surfaces that don't share state. `/find` + `/school/[dbn]` (see below) are the unified replacement — hard rail filters plus an ask box that re-ranks without ever removing a school, then a detail view per school — but they're reachable only by direct URL for now; they don't yet replace `/list`, `/requirements`, or `/chat` on the live site.
+- Builds a school list from 700+ programs across 400+ NYC public high schools.
+- Applies deterministic filters for facts that should never be guessed, including borough, admissions track, size, requirements, activities, and programs.
+- Uses RAG-powered chat for plain-language questions like "which Brooklyn schools have strong CS and soccer?"
+- Generates grounded rationales only from retrieved school data.
+- Keeps DOE-reported facts separate from model-generated interpretation.
+
+## Product Shape
+
+AdmitDay currently has two live discovery surfaces:
+
+1. **Structured filters:** users narrow schools by concrete constraints, then get personalized rationale text.
+2. **RAG chat:** users ask in natural language; the system extracts exact signals, hard-filters the candidate pool, semantic-ranks within it, and cites only the schools it found.
+
+The next product surface is a unified `/find` flow: hard rail filters plus an ask box that re-ranks without removing schools, linked to `/school/[dbn]` detail pages. These routes exist but do not yet replace the older live `/list`, `/requirements`, and `/chat` flows.
 
 ## Architecture
 
-- **Frontend:** Next.js 14 (App Router), Tailwind CSS.
-- **Design system:** a token layer + nine primitives (`Chip`, `SegmentedControl`, `Button`, `StatBlock`, `SchoolRow`, `Eyebrow`, `DefinitionRow`, `NotReportedLine`, `StatGrid`) in `components/ui/`, consumed by the rebuilt `/find` (rail + ask band + ranked results, matching `design/find-screen.html`) and `/school/[dbn]` (matching `design/school-detail.html`). Named color tokens and four `next/font/google` families (Space Grotesk, Newsreader, Libre Franklin, JetBrains Mono) live in `tailwind.config.ts` / `lib/fonts.ts`. `/find`'s rail filters (borough, admissions track, size) are a hard floor and round-trip through the URL (`app/find/page.tsx`'s `searchParams`); the ask box's extracted signals (`lib/query-filters.ts`) only re-rank the same result set (`lib/soft-match.ts`) and are individually removable as chips without another model call.
-- **School detail (`/school/[dbn]`):** a server component that renders only DOE-published values — no computed scores, ratings, or admissions-odds language anywhere. `lib/school-detail-utils.ts` shapes the raw `School` record into the stat grid, activity chip groups, transit chips, and requirement blocks; a stat or activity group with no data is omitted entirely (never shown as zero or a dash), and its absence is stated once in words — "NOT REPORTED" for a DOE data gap (missing stats, missing subway/bus) versus "NOT OFFERED" for a fact about the school (no PSAL teams, no AP courses). `matchedSignals` (which ask-derived chips to accent) arrives from `/find` as a query param; the detail page never calls the LLM. An unknown or retired DBN renders `app/school/[dbn]/not-found.tsx` with a real HTTP 404. Add/Remove is optimistic against the same `localStorage` key (`ADDED_SCHOOLS_KEY` in `lib/school-list-utils.ts`) `/find` uses, so the header's My Schools count stays in sync between the two screens.
-- **Generation:** Claude **Sonnet 5** (Anthropic), grounded prompts to prevent hallucination.
-- **Retrieval (RAG):** built from scratch — OpenAI `text-embedding-3-small` (1536-dim), semantic chunking (identity / academics / activities per school), hybrid deterministic-plus-semantic search, grounded chat API route.
-- **Data:** 457 NYC public high schools in Vercel Postgres (`dbn TEXT PRIMARY KEY, data JSONB`), read through a cached loader (`lib/load-schools.ts` → `getAllSchools()`) that degrades gracefully to an empty-state banner on any DB error. Refresh the data with `npm run refresh:data` (see below); the JSON files it produces are gitignored and never ship in the repo.
-- **Cost protection:** per-IP rate limiting on the LLM routes (`/api/chat`, `/api/rationale`); returns 429 under abuse.
-- **Observability:** Sentry (errors), PostHog (analytics).
-- **Deployment:** Vercel — production auto-deploys from `main`; GitHub Actions CI runs the Jest suite as a required check on every PR.
+- **Frontend:** Next.js 14 App Router and Tailwind CSS.
+- **Design system:** token layer plus reusable UI primitives in `components/ui/`.
+- **Data:** 457 NYC public high schools in Vercel Postgres, keyed by `dbn`.
+- **Retrieval:** OpenAI `text-embedding-3-small`, semantic chunking by identity, academics, and activities, plus deterministic filtering.
+- **Generation:** Claude Sonnet 5 through grounded prompts.
+- **Cost protection:** per-IP rate limiting on LLM routes.
+- **Observability:** Sentry for errors and PostHog for analytics.
+- **Deployment:** Vercel from `main`; GitHub Actions runs Jest on pushes and PRs.
 
-## Refreshing School Data
+## Data Quality
 
-Data currency is the app's core differentiator, so refreshing it for a new admissions cycle is meant to be routine, not archaeology. One command runs the full pipeline in order and validates the result before writing anything:
+Data currency is the core differentiator. One command runs the refresh pipeline:
 
 ```bash
 npm run refresh:data
 ```
 
-This runs `scripts/refresh-data.ts`, which does, in order:
+The pipeline runs `build_school_data.py`, validates counts and required fields, writes the validated JSON, seeds Postgres with `scripts/seed-schools.ts`, and rebuilds embeddings with `scripts/embed-schools.ts`. It refuses to write if the scrape looks structurally wrong, such as a large school-count drop, duplicate DBNs, or missing required fields.
 
-1. **Scrape** current DOE / NYC-SIFT data: `python3 build_school_data.py` → writes `schools.json` at the repo root.
-2. **Validate** the scrape (`lib/validate-school-data.ts`) before anything is written to `data/`. It fails loudly — refuses to write and exits non-zero — if:
-   - the school count falls outside the expected range (~457 ± 10%),
-   - the count drops more than ~10% versus the previously-seeded `data/schools.json`,
-   - any record is missing a required field (`dbn`, `name`, or `borough`), or
-   - any `dbn` value is duplicated.
-   It also prints a human-readable summary: schools before/after, added dbns, removed dbns, and any records that failed validation.
-3. **Write** the validated data to `data/schools.json`.
-4. **Seed Postgres**: `npx ts-node scripts/seed-schools.ts` — upserts every record into the `schools` table, keyed by `dbn`.
-5. **Re-embed**: `npx ts-node scripts/embed-schools.ts` — rebuilds `data/school-embeddings.json` for RAG retrieval.
+## Evals And Guardrails
 
-Steps 4 and 5 need `POSTGRES_URL` and `OPENAI_API_KEY` in `.env.local`. This is a manual, on-demand command today — no scheduling (cron/CI) is wired up.
+AdmitDay uses product rules and tests to keep the AI parts bounded:
 
-## How AdmitDay gets built — the autonomous coding agent
+- Deterministic filters live in code, not in the LLM.
+- The school detail page renders only DOE-published values.
+- Missing data is never shown as zero.
+- Admissions-odds language is banned.
+- Golden evals check factual accuracy, decision quality, output format, and completeness.
+- Smoke tests check the deployed site, not just local code.
 
-AdmitDay is built through a self-hosted coding-agent pipeline, designed to be a repeatable platform for this and future apps:
+Key lessons from building the retrieval layer:
 
-1. File a GitHub issue and label it `agent-ok`.
-2. A coordinator (`agent-coordinator.sh`, on a VPS) picks it up, runs Claude Code on a fresh task branch, and **objectively verifies** the result with `npm test` + `npm run build`.
-3. An independent reviewer pass — a second, read-only Claude — checks the diff against the issue and rejects scope creep.
-4. The coordinator opens a PR. Low-risk, reviewer-approved changes are **auto-merged** (squash) once the required `test` check passes; anything touching the database, secrets, or infrastructure is escalated to a human instead of auto-merging.
-5. Branch protection makes the PR the only path to `main` — no direct pushes, no force-pushes.
+- Semantic chunking beats one giant chunk per school.
+- Hybrid deterministic-plus-semantic search beats pure semantic search for compound queries.
+- Evals caught real production bugs, including hallucinated data, domain misclassification, and chunk dilution.
 
-Every outcome is recorded on the issue itself — labels and an explanatory comment — so the state of the queue is always readable from GitHub rather than a separate notification channel. Guardrails — branch protection, secret scanning + push protection, a markdown-allowlist CI guard, product rules encoded as tests, and production smoke tests that check the deployed site rather than the code — keep the autonomy safe by structure.
+## Agentic Build System
 
-## Lessons Learned Building This
+AdmitDay is also a testbed for a guarded autonomous coding workflow. A coordinator on a DigitalOcean VPS picks up GitHub issues labeled `agent-ok`, loads shared rules from `AGENTS.md`, runs Claude Code on task branches, verifies with tests and build checks, asks a second model to review the diff, and opens PRs back on GitHub.
 
-**Semantic chunking matters.** Naive single-chunk-per-school embeddings caused chunk dilution: a 3,900-character school description produces an embedding that matches no single query well. Splitting into identity, academics, and activities chunks for schools with descriptions longer than 800 chars (e.g., Brooklyn Tech went from 1 chunk to 3) improved retrieval scores significantly.
-
-**Evals catch real bugs.** Built golden datasets and scored on a 4-dimension rubric (factual accuracy, decision quality, output format, completeness). Found data hallucination, domain misclassification, and chunk dilution in production, and wrote prompt fixes for all three.
-
-**Code for rules, LLM for reasoning.** Important, deterministic filters (borough, admissions track) should never go through an LLM. Deterministic matching happens in code; Claude handles the nuanced generation and conversational retrieval.
-
-**Hybrid search beats pure semantic for compound queries.** A query like "CS + soccer + Brooklyn" gets blended into one average vector, so no single chunk matches all signals well. The fix (now shipped): extract deterministic filters — borough, sport, interest — from the question, hard-filter the candidate set, then semantic-rank within it.
+The full operator workflow, including who uses it, where it runs, session discipline, compact task briefs, cost gates, Langfuse observability, and future model routing, lives in [docs/agent-pipeline.md](docs/agent-pipeline.md).
 
 ## Running Locally
 
@@ -79,10 +80,10 @@ git clone https://github.com/neinna/AdmitDay.git
 cd AdmitDay
 npm install
 cp .env.local.example .env.local
-# Add ANTHROPIC_API_KEY, OPENAI_API_KEY, and the Postgres connection vars to .env.local
+# Add ANTHROPIC_API_KEY, OPENAI_API_KEY, and Postgres vars to .env.local
 npm run dev
 ```
 
 ## Status
 
-Live in production at https://www.admitday.com. Recent cycle: fixed the production school list (Postgres data layer), shipped hybrid chat search, moved both LLM routes to Claude Sonnet 5, added rate limiting, and brought the autonomous agent pipeline (with guarded auto-merge) online. Five moderated user sessions with NYC parents. Active development toward the October application window.
+Live in production at https://www.admitday.com. Recent work shipped the Postgres data layer, hybrid chat search, Claude Sonnet 5 routing for LLM calls, per-IP rate limiting, and the guarded autonomous agent pipeline. Five moderated user sessions with NYC parents are complete; active development is focused on the October application window.
