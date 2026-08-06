@@ -818,10 +818,15 @@ Instructions:
     fi
     [ -z "$SESSION_ID" ] && SESSION_ID=$(claude_json_field "$CLAUDE_OUT" "session_id")
 
+    if [ $RC -eq 0 ]; then
+      github_remove_label "$ISSUE_NUMBER" "blocked-provider"
+    fi
+
     if [ $RC -ne 0 ] && claude_provider_unavailable "$CLAUDE_OUT"; then
       OUTCOME="provider-unavailable"; GH_LABEL="$TRIGGER_LABEL"; PR_OUTCOME="not-attempted"
       log "Issue #${ISSUE_NUMBER}: provider unavailable (billing, rate limit, or API outage). Work was never attempted; restoring the issue to the queue."
       github_label "$ISSUE_NUMBER" "$TRIGGER_LABEL"
+      github_label "$ISSUE_NUMBER" "blocked-provider"
       github_remove_label "$ISSUE_NUMBER" "in-progress"
       cd "$APP_DIR"
       git checkout main >> "$LOG_FILE" 2>&1
