@@ -2,6 +2,12 @@
 
 These are the shared rules for any coding agent working in this repo: Claude Code, Codex, open-weight model runners, or future orchestrator workers. Agent-specific adapters should load this file rather than duplicating rules.
 
+## Source Of Truth
+
+- Treat GitHub `main` as the live code truth. Local checkouts are caches and may be stale after agent-built PRs; refresh from GitHub before making or reviewing code claims.
+- Treat Notion as the live roadmap and task truth. Private or local planning docs are caches unless explicitly refreshed from Notion.
+- When local files, GitHub, and Notion disagree, state the conflict and prefer GitHub for code state and Notion for roadmap and task state.
+
 ## Core Rules
 
 - **Never modify `data/schools.json`.** It is curated source data.
