@@ -58,8 +58,10 @@ describe('MySchools program pipeline', () => {
   })
 
   it('runs refresh PR creation from the VPS without GitHub app secrets', () => {
-    expect(vpsRefreshSource).toContain('APP_ENV_FILE="${APP_ENV_FILE:-/root/.env.local}"')
+    expect(vpsRefreshSource).toContain('APP_ENV_FILE="${APP_ENV_FILE:-$APP_DIR/.env.local}"')
+    expect(vpsRefreshSource).toContain('ROOT_ENV_FILE="${ROOT_ENV_FILE:-/root/.env.local}"')
     expect(vpsRefreshSource).toContain('AGENT_ENV_FILE="${AGENT_ENV_FILE:-/root/.env.agents}"')
+    expect(vpsRefreshSource).toContain('load_env_file "$APP_ENV_FILE"\nload_env_file "$ROOT_ENV_FILE"\nload_env_file "$AGENT_ENV_FILE"')
     expect(vpsRefreshSource).toContain('require_env OPENAI_API_KEY')
     expect(vpsRefreshSource).toContain('ADMITDAY_SKIP_POSTGRES_SEED=1 npm run refresh:data')
     expect(vpsRefreshSource).toContain('git add schools.json data/school-embeddings.json')

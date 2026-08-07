@@ -6,7 +6,8 @@ set -euo pipefail
 
 MODE="${1:-pr}"
 APP_DIR="${APP_DIR:-/root/app}"
-APP_ENV_FILE="${APP_ENV_FILE:-/root/.env.local}"
+APP_ENV_FILE="${APP_ENV_FILE:-$APP_DIR/.env.local}"
+ROOT_ENV_FILE="${ROOT_ENV_FILE:-/root/.env.local}"
 AGENT_ENV_FILE="${AGENT_ENV_FILE:-/root/.env.agents}"
 BRANCH="${DATA_REFRESH_BRANCH:-data/weekly-refresh}"
 REPO="${GITHUB_REPO:-neinna/AdmitDay}"
@@ -96,6 +97,7 @@ apply_merged_data() {
 }
 
 load_env_file "$APP_ENV_FILE"
+load_env_file "$ROOT_ENV_FILE"
 load_env_file "$AGENT_ENV_FILE"
 
 case "$MODE" in
