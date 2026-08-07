@@ -17,6 +17,7 @@ import {
 } from '@/lib/school-list-utils'
 import { extractFilters, QueryFilters, appliedSignals, removeSignal } from '@/lib/query-filters'
 import { getUnmetCriteria } from '@/lib/soft-match'
+import { buildFindRowSummary } from '@/lib/school-detail-utils'
 import { Chip, Button, SchoolRow } from '@/components/ui'
 import FindRail from './FindRail'
 
@@ -39,13 +40,6 @@ function toggleValue(list: string[], value: string): string[] {
 function formatSchoolName(name: string): string {
   if (name.endsWith(', The')) return 'The ' + name.slice(0, -5)
   return name
-}
-
-function truncate(text: string, maxLen: number): string {
-  if (text.length <= maxLen) return text
-  const cut = text.slice(0, maxLen)
-  const lastSpace = cut.lastIndexOf(' ')
-  return `${cut.slice(0, lastSpace > 0 ? lastSpace : maxLen)}…`
 }
 
 interface Props {
@@ -382,7 +376,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
                     }
                     isHiddenGem={school.flags.is_hidden_gem}
                     metadata={`${neighborhood} · ${tracks} · ${students} students`}
-                    rationale={truncate(school.doe_data?.overview ?? '', 140)}
+                    rationale={buildFindRowSummary(school)}
                     statValue={
                       school.applicants_per_seat != null ? school.applicants_per_seat.toFixed(1) : '—'
                     }
