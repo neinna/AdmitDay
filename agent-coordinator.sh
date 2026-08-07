@@ -1024,9 +1024,9 @@ while true; do
 import json, sys
 try:
     issues = json.load(sys.stdin)
-    for i in issues:
-        if 'pull_request' not in i:
-            print(i['number'])
+    numbers = [i['number'] for i in issues if 'pull_request' not in i]
+    for n in sorted(numbers):
+        print(n)
 except Exception:
     pass
 ")
