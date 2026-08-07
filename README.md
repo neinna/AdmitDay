@@ -56,13 +56,13 @@ Source roles:
 - NYC Open Data dataset `uq7m-95z8` provides older DOE directory fields. Its rows are from the 2018-era / 2019 DOE High School Directory and should be treated as historical where MySchools has fresher fields.
 - MySchools provides current per-school/per-program admissions records. Program data includes names, codes, admissions methods, seats/demand, requirements text, eligibility/priority text, source URL, and fetch timestamp.
 
-Scheduled refresh runs from the VPS, where the env files already live. `scripts/vps-data-refresh.sh pr` sources `/root/app/.env.local`, then the root-owned secret files `/root/.env.local` and `/root/.env.agents`, runs the validated refresh with Postgres seeding disabled, rebuilds embeddings, pushes a `data/weekly-refresh` branch, dispatches CI, and opens or updates a PR with the tracked data artifacts. After that PR merges, `scripts/vps-data-refresh.sh apply` pulls `main` on the VPS and seeds Postgres from the merged `schools.json`. This keeps `OPENAI_API_KEY` and `POSTGRES_URL` out of GitHub repository secrets while preserving a reviewed data-artifact path.
+Scheduled refresh runs from the VPS, where the env files already live. `scripts/vps-data-refresh.sh pr` sources `/root/app/.env.local`, then the root-owned secret files `/root/.env.local` and `/root/.env.agents`, runs the validated refresh with Postgres seeding disabled, rebuilds embeddings, pushes a `data/weekly-refresh` branch, dispatches CI, and opens or updates a PR with the tracked data artifacts. `scripts/vps-data-refresh.sh merge` is the data refresh runner's publication gate: it merges only when the generated PR changes exactly `schools.json` and `data/school-embeddings.json`, and the GitHub CI `test` check is green. `scripts/vps-data-refresh.sh apply` then pulls `main` on the VPS and seeds Postgres from the merged `schools.json`. This keeps `OPENAI_API_KEY` and `POSTGRES_URL` out of GitHub repository secrets while preserving an auditable data-artifact path without making routine refreshes a human review task.
 
 Example VPS cron entries:
 
 ```cron
 0 9 * * 1 cd /root/app && ./scripts/vps-data-refresh.sh pr
-30 9 * * * cd /root/app && ./scripts/vps-data-refresh.sh apply
+30 9 * * 1 cd /root/app && ./scripts/vps-data-refresh.sh merge && ./scripts/vps-data-refresh.sh apply
 ```
 
 ## Evals And Guardrails

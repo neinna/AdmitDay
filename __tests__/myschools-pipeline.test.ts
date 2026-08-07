@@ -69,6 +69,14 @@ describe('MySchools program pipeline', () => {
     expect(vpsRefreshSource).toContain('gh pr create')
   })
 
+  it('lets the VPS runner merge only validated data refresh PRs', () => {
+    expect(vpsRefreshSource).toContain('merge_refresh_pr')
+    expect(vpsRefreshSource).toContain('assert_refresh_pr_files')
+    expect(vpsRefreshSource).toContain('assert_refresh_ci_green')
+    expect(vpsRefreshSource).toContain('EXPECTED_DATA_FILES="data/school-embeddings.json\nschools.json"')
+    expect(vpsRefreshSource).toContain('gh pr merge "$BRANCH"')
+  })
+
   it('seeds Postgres from the VPS after refreshed tracked data lands on main', () => {
     expect(vpsRefreshSource).toContain('apply_merged_data')
     expect(vpsRefreshSource).toContain('require_env POSTGRES_URL')

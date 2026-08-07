@@ -11,6 +11,8 @@ ROOT_ENV_FILE="${ROOT_ENV_FILE:-/root/.env.local}"
 AGENT_ENV_FILE="${AGENT_ENV_FILE:-/root/.env.agents}"
 BRANCH="${DATA_REFRESH_BRANCH:-data/weekly-refresh}"
 REPO="${GITHUB_REPO:-neinna/AdmitDay}"
+EXPECTED_DATA_FILES="data/school-embeddings.json
+schools.json"
 
 load_env_file() {
   local file="$1"
@@ -30,6 +32,13 @@ require_env() {
   fi
 }
 
+require_gh_token() {
+  if [ -z "${GH_TOKEN:-}" ] && [ -n "${GITHUB_TOKEN:-}" ]; then
+    export GH_TOKEN="$GITHUB_TOKEN"
+  fi
+  require_env GH_TOKEN
+}
+
 prepare_checkout() {
   cd "$APP_DIR"
   git fetch origin main
@@ -44,11 +53,7 @@ install_dependencies() {
 
 open_refresh_pr() {
   require_env OPENAI_API_KEY
-
-  if [ -z "${GH_TOKEN:-}" ] && [ -n "${GITHUB_TOKEN:-}" ]; then
-    export GH_TOKEN="$GITHUB_TOKEN"
-  fi
-  require_env GH_TOKEN
+  require_gh_token
 
   prepare_checkout
   git switch -C "$BRANCH" origin/main
@@ -76,7 +81,7 @@ This run used the validated refresh pipeline:
 - rebuild RAG embeddings
 - skip production Postgres seeding until merge
 
-Merge this PR to publish matching tracked RAG artifacts through the normal Vercel deployment. Run `scripts/vps-data-refresh.sh apply` on the VPS after merge to seed Postgres from the merged `schools.json`.
+This PR is intended to be merged by the VPS data refresh runner, not by a human. Run `scripts/vps-data-refresh.sh merge` after CI passes; it only merges when the changed files are the expected data artifacts and the GitHub CI test is green. Then run `scripts/vps-data-refresh.sh apply` to seed Postgres from the merged `schools.json`.
 PR_BODY
 )"
 
@@ -85,6 +90,38 @@ PR_BODY
   else
     gh pr create --repo "$REPO" --base main --head "$BRANCH" --title "data: refresh school program data" --body "$body"
   fi
+}
+
+assert_refresh_pr_files() {
+  require_gh_token
+
+  local files
+  files="$(gh pr diff "$BRANCH" --repo "$REPO" --name-only | sort)"
+
+  if [ "$files" != "$EXPECTED_DATA_FILES" ]; then
+    echo "Refusing to merge data refresh PR with unexpected files:" >&2
+    echo "$files" >&2
+    exit 1
+  fi
+}
+
+assert_refresh_ci_green() {
+  require_gh_token
+
+  local passing_tests
+  passing_tests="$(gh pr view "$BRANCH" --repo "$REPO" --json statusCheckRollup --jq '[.statusCheckRollup[] | select((.name // .context) == "test") | select(((.status // "") == "COMPLETED" and (.conclusion // "") == "SUCCESS") or ((.state // "") == "SUCCESS"))] | length')"
+
+  if [ "$passing_tests" != "1" ]; then
+    echo "Refusing to merge data refresh PR before the GitHub CI test is green." >&2
+    exit 1
+  fi
+}
+
+merge_refresh_pr() {
+  assert_refresh_pr_files
+  assert_refresh_ci_green
+
+  gh pr merge "$BRANCH" --repo "$REPO" --squash --delete-branch --subject "data: refresh school program data"
 }
 
 apply_merged_data() {
@@ -104,11 +141,14 @@ case "$MODE" in
   pr)
     open_refresh_pr
     ;;
+  merge)
+    merge_refresh_pr
+    ;;
   apply)
     apply_merged_data
     ;;
   *)
-    echo "Usage: $0 [pr|apply]" >&2
+    echo "Usage: $0 [pr|merge|apply]" >&2
     exit 2
     ;;
 esac
