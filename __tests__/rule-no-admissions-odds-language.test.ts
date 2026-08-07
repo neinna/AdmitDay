@@ -50,7 +50,7 @@ const USER_FACING_FILES = [path.join(ROOT, 'app'), path.join(ROOT, 'components')
 // would coach the model into producing odds language even if no component
 // literally contains the string.
 const PROMPT_FILES = [
-  path.join(ROOT, 'app/api/chat/route.ts'),
+  path.join(ROOT, 'app/api/find/ask/route.ts'),
   path.join(ROOT, 'app/api/rationale/route.ts'),
 ]
 

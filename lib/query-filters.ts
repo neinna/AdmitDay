@@ -151,7 +151,7 @@ export function appliedSignals(filters: QueryFilters): AppliedSignal[] {
 /**
  * Removes a single signal from a previously-extracted QueryFilters. Pure and
  * deterministic — callers use this for chip removal so re-ranking never
- * triggers another /api/chat (LLM) call.
+ * triggers another /api/find/ask (LLM) call.
  */
 export function removeSignal(
   filters: QueryFilters,

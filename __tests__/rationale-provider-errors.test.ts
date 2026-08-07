@@ -1,9 +1,9 @@
 /**
  * __tests__/rationale-provider-errors.test.ts
  *
- * Issue #128: /api/rationale has the same shape as /api/chat (an
+ * Issue #128: /api/rationale has the same shape as /api/find/ask (an
  * unwrapped Anthropic call whose failures were returned to the client
- * verbatim). Same mocking approach as chat-provider-errors.test.ts —
+ * verbatim). Same mocking approach as find-ask-provider-errors.test.ts —
  * mock the provider call to fail each way, assert only plain-language
  * responses ever reach the client.
  */

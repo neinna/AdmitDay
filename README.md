@@ -16,7 +16,7 @@ AdmitDay is built around a simple product bet: parents do not need more raw info
 
 - Builds a school list from 700+ programs across 400+ NYC public high schools.
 - Applies deterministic filters for facts that should never be guessed, including borough, admissions track, size, requirements, activities, and programs.
-- Uses RAG-powered chat for plain-language questions like "which Brooklyn schools have strong CS and soccer?"
+- Uses a RAG-powered ask box for plain-language questions like "which Brooklyn schools have strong CS and soccer?"
 - Generates grounded rationales only from retrieved school data.
 - Keeps DOE-reported facts separate from model-generated interpretation.
 
@@ -25,8 +25,9 @@ AdmitDay is built around a simple product bet: parents do not need more raw info
 AdmitDay currently has one live discovery surface:
 
 1. **Unified `/find`:** users narrow schools by hard rail filters, then use the ask box for plain-language criteria that re-rank or annotate results without silently removing schools. Rows link to `/school/[dbn]` detail pages.
+2. **RAG ask box:** users ask in natural language; the system extracts exact signals, hard-filters the candidate pool, semantic-ranks within it, and cites only the schools it found via `/api/find/ask`.
 
-The older standalone `/chat` product surface is decommissioned. Some internal route names still mention chat while the `/find` ask API is being renamed, but `/find` is the live product surface.
+The older standalone `/chat` product surface is decommissioned; `/find` is the live product surface.
 
 ## Architecture
 
