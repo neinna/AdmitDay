@@ -5,6 +5,9 @@ import { School, SectionGroup, SectionType, UserInputs } from '@/types'
 // list and the header count stays in sync between them.
 export const ADDED_SCHOOLS_KEY = 'admitday_find_added_schools'
 
+// Initial /find page load shows 30 rows so the list reads as a full picture,
+// not a teaser; PAGE_SIZE is the increment each "N more matches" click adds.
+export const INITIAL_COUNT = 30
 export const PAGE_SIZE = 15
 export const FREE_TIER_CAP = 15
 export const PAID_TIER_CAP = 30
