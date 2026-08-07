@@ -279,7 +279,7 @@ describe('removeSignal + rankBySoftMatch — chip removal re-ranks without calli
     expect(softMatchSrc).not.toMatch(/fetch\(/)
   })
 
-  it("FindClient only calls /api/chat from handleAskSubmit, not from the chip-removal handler", () => {
+  it("FindClient only calls /api/find/ask from handleAskSubmit, not from the chip-removal handler", () => {
     const src = fs.readFileSync(path.join(__dirname, '../app/find/FindClient.tsx'), 'utf-8')
     const removeChipBody = src.slice(src.indexOf('function removeChip'), src.indexOf('async function handleAskSubmit'))
     expect(removeChipBody).not.toMatch(/fetch\(/)

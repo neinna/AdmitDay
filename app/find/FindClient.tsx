@@ -168,7 +168,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
     setAskSources([])
 
     try {
-      const res = await fetch('/api/chat', {
+      const res = await fetch('/api/find/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: trimmed }),
