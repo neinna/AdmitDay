@@ -61,8 +61,8 @@ Scheduled refresh runs from the VPS, where the app secrets already live. `script
 Example VPS cron entries:
 
 ```cron
-0 9 * * 1 cd /home/agent/app && ./scripts/vps-data-refresh.sh pr
-30 9 * * * cd /home/agent/app && ./scripts/vps-data-refresh.sh apply
+0 9 * * 1 cd /root/app && ./scripts/vps-data-refresh.sh pr
+30 9 * * * cd /root/app && ./scripts/vps-data-refresh.sh apply
 ```
 
 ## Evals And Guardrails

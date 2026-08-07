@@ -5,9 +5,9 @@ set -euo pipefail
 # and must not be run in GitHub Actions with app secrets duplicated there.
 
 MODE="${1:-pr}"
-APP_DIR="${APP_DIR:-/home/agent/app}"
-APP_ENV_FILE="${APP_ENV_FILE:-$APP_DIR/.env.local}"
-AGENT_ENV_FILE="${AGENT_ENV_FILE:-/home/agent/.env.agents}"
+APP_DIR="${APP_DIR:-/root/app}"
+APP_ENV_FILE="${APP_ENV_FILE:-/root/.env.local}"
+AGENT_ENV_FILE="${AGENT_ENV_FILE:-/root/.env.agents}"
 BRANCH="${DATA_REFRESH_BRANCH:-data/weekly-refresh}"
 REPO="${GITHUB_REPO:-neinna/AdmitDay}"
 
