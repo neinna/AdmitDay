@@ -7,6 +7,7 @@ import { School } from '@/types'
 import {
   FindFilters,
   EMPTY_FIND_FILTERS,
+  INITIAL_COUNT,
   PAGE_SIZE,
   ADDED_SCHOOLS_KEY,
   applyFindFilters,
@@ -53,7 +54,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
 
   const [filters, setFilters] = useState<FindFilters>(initialFilters)
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT)
 
   const [askText, setAskText] = useState('')
   const [askFilters, setAskFilters] = useState<QueryFilters | null>(null)
@@ -84,7 +85,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
   }, [])
 
   useEffect(() => {
-    setVisibleCount(PAGE_SIZE)
+    setVisibleCount(INITIAL_COUNT)
   }, [filters])
 
   const trackOptions = useMemo(
