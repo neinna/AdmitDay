@@ -1,26 +1,34 @@
 #!/usr/bin/env python3
 """
 AdmitDay - School Data Builder
-Pulls all NYC public high schools from NYC-SIFT and the DOE HS Directory.
+Pulls all NYC public high schools from NYC-SIFT, the DOE HS Directory, and
+current per-program admissions data from MySchools.
 Run this on your VPS: python3 build_school_data.py
 Outputs: schools.json (used directly by the app)
 
 Sources:
   - NYC-SIFT: https://nycsift.com (aggregates DOE data, public domain)
   - DOE HS Directory: https://data.cityofnewyork.us (NYC Open Data, public domain)
+  - MySchools: https://www.myschools.nyc (current public program pages)
 
 Both are public domain / open data. Safe to use with attribution.
 """
 
 import requests
 import json
+import os
 import time
 import re
 from bs4 import BeautifulSoup
+from pathlib import Path
+
+from scripts.scrape_myschools import MySchoolsError, scrape_school_programs
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; AdmitDay/1.0; research tool)"
 }
+MYSCHOOLS_CACHE_DIR = Path("scripts") / ".myschools_cache"
+ALLOW_MYSCHOOLS_FALLBACK = os.environ.get("ADMITDAY_ALLOW_MYSCHOOLS_FALLBACK") == "1"
 
 # Minimum SHSAT score that received a specialized high school offer.
 # Source: NYC DOE "Specialized High School Offers" press release, 2024 admissions cycle.
@@ -141,6 +149,54 @@ def classify_admissions(text):
     return None
 
 
+def normalize_myschools_admissions_method(text):
+    if not text:
+        return None
+
+    normalized = classify_admissions(text)
+    if normalized:
+        return normalized
+
+    lower = text.lower().strip()
+    if "screened with assessment" in lower or "screened with assessments" in lower:
+        return "Screened with Assessment"
+    if "screened" in lower:
+        return "Screened"
+    if "audition" in lower:
+        return "Audition"
+    if "open" in lower or "unscreened" in lower:
+        return "Open"
+    return text.strip()
+
+
+def fetch_myschools_program_detail(dbn):
+    programs = [p.to_dict() for p in scrape_school_programs(dbn, cache_dir=MYSCHOOLS_CACHE_DIR)]
+    enriched = []
+    admissions_types = []
+
+    for program in programs:
+        method = normalize_myschools_admissions_method(program.get("admissions_method"))
+        if method and method not in admissions_types:
+            admissions_types.append(method)
+
+        # Compatibility fields for UI/utilities that still read the old
+        # NYC-SIFT-shaped rows while carrying the richer MySchools payload.
+        if "program" not in program:
+            program["program"] = program.get("program_name")
+        if method:
+            program["admissions_type"] = method
+        raw_method = program.get("admissions_method")
+        if raw_method and "raw_method" not in program:
+            program["raw_method"] = raw_method
+
+        enriched.append(program)
+
+    if len(enriched) == 0:
+        raise MySchoolsError(f"{dbn} returned no MySchools programs")
+
+    return admissions_types, enriched
+
+
 def fetch_school_detail(dbn, sift_url):
     """
     NYC-SIFT uses div.NYCSF_twocolumn pairs for program data.
@@ -192,7 +248,13 @@ def build_school_json(sift_schools, doe_by_dbn):
             size = "medium"
 
         print(f"  [{i+1}/{len(sift_schools)}] {school['name'][:50]}")
-        admissions_types, programs = fetch_school_detail(dbn, school["sift_url"])
+        try:
+            admissions_types, programs = fetch_myschools_program_detail(dbn)
+        except MySchoolsError as e:
+            if not ALLOW_MYSCHOOLS_FALLBACK:
+                raise
+            print(f"    MySchools failed for {dbn}, falling back to NYC-SIFT detail: {e}")
+            admissions_types, programs = fetch_school_detail(dbn, school["sift_url"])
         time.sleep(0.3)
 
         has_shsat = "SHSAT" in admissions_types
@@ -358,7 +420,7 @@ if __name__ == "__main__":
     schools = build_school_json(sift_schools, doe_by_dbn)
     validate(schools)
 
-    output_path = "schools.json"
+    output_path = os.environ.get("ADMITDAY_SCHOOLS_OUTPUT", "schools.json")
     with open(output_path, "w") as f:
         json.dump(schools, f, indent=2)
 

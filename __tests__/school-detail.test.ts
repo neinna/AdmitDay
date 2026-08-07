@@ -467,6 +467,36 @@ describe('dedupePrograms', () => {
     expect(dedupePrograms(programs)).toEqual([{ name: 'SHSAT', method: 'SHSAT' }])
   })
 
+  it('preserves distinct MySchools program names and codes', () => {
+    const programs = [
+      {
+        program_name: 'Dance',
+        program_code: 'M80K',
+        admissions_type: 'Audition',
+        provenance: {
+          source: 'MySchools',
+          url: 'https://www.myschools.nyc/en/api/v2/schools/process/1/03M485/',
+          fetched_at: '2026-08-07T00:00:00+00:00',
+        },
+      },
+      {
+        program_name: 'Drama',
+        program_code: 'M80N',
+        admissions_type: 'Audition',
+        provenance: {
+          source: 'MySchools',
+          url: 'https://www.myschools.nyc/en/api/v2/schools/process/1/03M485/',
+          fetched_at: '2026-08-07T00:00:00+00:00',
+        },
+      },
+    ] as unknown as School['programs']
+
+    expect(dedupePrograms(programs)).toEqual([
+      { name: 'Dance', method: 'Audition', code: 'M80K' },
+      { name: 'Drama', method: 'Audition', code: 'M80N' },
+    ])
+  })
+
   it('returns [] for an empty/undefined programs array', () => {
     expect(dedupePrograms([])).toEqual([])
     expect(dedupePrograms(undefined as unknown as School['programs'])).toEqual([])

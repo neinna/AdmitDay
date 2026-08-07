@@ -10,8 +10,9 @@
  * - Schools with total chunk text <= 800 chars: one "full" chunk.
  * - Schools with total chunk text > 800 chars: split into up to 3 chunks:
  *     1. "identity" — name, borough, size, students, admissions, flags, interests, stats
- *     2. "academics" — overview, academic opportunities, AP courses, program description
- *     3. "activities" — extracurriculars, sports, additional info
+ *     2. "programs" — current MySchools program names, codes, methods, seats, requirements
+ *     3. "academics" — overview, academic opportunities, AP courses, program description
+ *     4. "activities" — extracurriculars, sports, additional info
  *   Each chunk is prefixed with a short identity line so it can stand alone.
  *   Chunks are only created if they have content beyond the prefix.
  *
@@ -48,6 +49,27 @@ interface SchoolFlags {
   has_ib: boolean;
 }
 
+interface SchoolProgram {
+  program?: string;
+  admissions_type?: string;
+  raw_method?: string;
+  program_name?: string;
+  program_code?: string;
+  admissions_method?: string;
+  admissions_method_description?: string;
+  grade_span?: string;
+  description?: string;
+  seats?: Record<string, unknown>;
+  eligibility?: Record<string, unknown>;
+  requirements?: Record<string, unknown>;
+  provenance?: {
+    source?: string;
+    url?: string;
+    fetched_at?: string;
+    admissions_cycle?: string;
+  };
+}
+
 interface DoeData {
   overview: string;
   language: string;
@@ -81,6 +103,7 @@ interface School {
   academic_score_pct: number;
   survey_score_pct: number | null;
   admissions_types: string[];
+  programs: SchoolProgram[];
   flags: SchoolFlags;
   doe_data: DoeData;
   sift_url: string;
@@ -92,7 +115,7 @@ export interface SchoolEmbedding {
   dbn: string;
   name: string;
   borough: string;
-  chunkType: "full" | "identity" | "academics" | "activities";
+  chunkType: ChunkType;
   chunk: string;
   embedding: number[];
   metadata: {
@@ -102,9 +125,32 @@ export interface SchoolEmbedding {
     academic_score_pct: number;
     neighborhood: string;
     admissions_types: string[];
+    program_codes: string[];
     interests: string[];
     flags: SchoolFlags;
   };
+}
+
+type ChunkType = "full" | "identity" | "programs" | "academics" | "activities";
+
+function isPresent(value: unknown): boolean {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "string") return value.trim().length > 0;
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === "object") return Object.keys(value as Record<string, unknown>).length > 0;
+  return true;
+}
+
+function stringifyValue(value: unknown): string {
+  if (!isPresent(value)) return "";
+  if (Array.isArray(value)) return value.map(stringifyValue).filter(Boolean).join("; ");
+  if (typeof value === "object") {
+    return Object.entries(value as Record<string, unknown>)
+      .filter(([, v]) => isPresent(v))
+      .map(([k, v]) => `${k.replace(/_/g, " ")}: ${stringifyValue(v)}`)
+      .join("; ");
+  }
+  return String(value);
 }
 
 // ---------------------------------------------------------------------------
@@ -173,6 +219,55 @@ function buildIdentityParts(school: School): string[] {
 }
 
 /**
+ * Programs chunk: current MySchools per-program admissions data.
+ */
+function buildProgramParts(school: School): string[] {
+  const parts: string[] = [];
+
+  for (const program of school.programs ?? []) {
+    const name = program.program_name || program.program || program.raw_method || program.admissions_type;
+    const method = program.admissions_type || program.admissions_method;
+    if (!name && !method) continue;
+
+    const headerParts = [
+      name ? `Program: ${name}` : "Program",
+      program.program_code ? `code ${program.program_code}` : "",
+      method ? `admissions method ${method}` : "",
+      program.grade_span ? `grades ${program.grade_span}` : "",
+    ].filter(Boolean);
+    const lines = [headerParts.join("; ") + "."];
+
+    if (program.description) lines.push(`Description: ${program.description}`);
+    if (program.admissions_method_description) {
+      lines.push(`Admissions method details: ${program.admissions_method_description}`);
+    }
+
+    const seats = stringifyValue(program.seats);
+    if (seats) lines.push(`Seats and demand: ${seats}`);
+
+    const requirements = stringifyValue(program.requirements);
+    if (requirements) lines.push(`Requirements: ${requirements}`);
+
+    const eligibility = stringifyValue(program.eligibility);
+    if (eligibility) lines.push(`Eligibility and priority: ${eligibility}`);
+
+    if (program.provenance?.source || program.provenance?.url || program.provenance?.fetched_at) {
+      const provenance = [
+        program.provenance.source,
+        program.provenance.url,
+        program.provenance.fetched_at ? `fetched ${program.provenance.fetched_at}` : "",
+        program.provenance.admissions_cycle,
+      ].filter(Boolean);
+      parts.push(`${lines.join(" ")} Source: ${provenance.join("; ")}.`);
+    } else {
+      parts.push(lines.join(" "));
+    }
+  }
+
+  return parts;
+}
+
+/**
  * Academics chunk: overview, academic opportunities, AP courses, program description.
  */
 function buildAcademicsParts(school: School): string[] {
@@ -214,17 +309,18 @@ function buildActivitiesParts(school: School): string[] {
 // ---------------------------------------------------------------------------
 
 interface ChunkResult {
-  chunkType: "full" | "identity" | "academics" | "activities";
+  chunkType: ChunkType;
   chunk: string;
 }
 
 function schoolToChunks(school: School): ChunkResult[] {
   // Build the full text first to check length
   const identityParts = buildIdentityParts(school);
+  const programParts = buildProgramParts(school);
   const academicsParts = buildAcademicsParts(school);
   const activitiesParts = buildActivitiesParts(school);
 
-  const allParts = [...identityParts, ...academicsParts, ...activitiesParts];
+  const allParts = [...identityParts, ...programParts, ...academicsParts, ...activitiesParts];
   const fullText = allParts.join("\n");
 
   // Small school: one chunk
@@ -241,6 +337,14 @@ function schoolToChunks(school: School): ChunkResult[] {
     chunkType: "identity",
     chunk: identityParts.join("\n"),
   });
+
+  // Programs chunk: only if MySchools per-program content exists
+  if (programParts.length > 0) {
+    chunks.push({
+      chunkType: "programs",
+      chunk: prefix + "\n" + programParts.join("\n"),
+    });
+  }
 
   // Academics chunk: only if there's content
   if (academicsParts.length > 0) {
@@ -291,7 +395,7 @@ async function main() {
   // Convert to chunks (one or more per school)
   const allChunkData: {
     school: School;
-    chunkType: "full" | "identity" | "academics" | "activities";
+    chunkType: ChunkType;
     chunk: string;
   }[] = [];
 
@@ -352,6 +456,7 @@ async function main() {
       academic_score_pct: c.school.academic_score_pct,
       neighborhood: c.school.doe_data.neighborhood,
       admissions_types: c.school.admissions_types,
+      program_codes: (c.school.programs ?? []).map((p) => p.program_code).filter((code): code is string => Boolean(code)),
       interests: c.school.doe_data.interests,
       flags: c.school.flags,
     },

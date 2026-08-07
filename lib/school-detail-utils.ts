@@ -329,25 +329,28 @@ export function buildNotReportedTransitLabel(missingModes: string[]): string | n
 export interface ProgramRow {
   name: string
   method: string
+  code?: string
 }
 
 /**
- * The scraped `programs` array has no distinct per-major name (only an
- * admissions_type + a raw_method string like "Screened"), and some schools
- * repeat the identical pair many times. Collapse exact duplicates so the
- * section reads as a list of distinct pathways rather than a repeated row.
+ * MySchools rows have distinct program names/codes. Older NYC-SIFT-shaped
+ * rows only had an admissions_type + raw_method string and sometimes repeated
+ * the identical pair many times. Collapse exact duplicates while preserving
+ * distinct MySchools programs.
  */
 export function dedupePrograms(programs: School['programs']): ProgramRow[] {
   const seen = new Set<string>()
   const rows: ProgramRow[] = []
   for (const p of programs ?? []) {
-    const rawMethod = (p as { raw_method?: string }).raw_method
-    const name = rawMethod || p.admissions_type
-    const method = p.admissions_type
-    const key = `${name}||${method}`
+    const rawMethod = p.raw_method
+    const name = p.program_name || p.program || rawMethod || p.admissions_type || ''
+    const method = p.admissions_type || p.admissions_method || ''
+    const code = p.program_code
+    if (!name && !method) continue
+    const key = `${code || name}||${method}`
     if (seen.has(key)) continue
     seen.add(key)
-    rows.push({ name, method })
+    rows.push(code ? { name, method, code } : { name, method })
   }
   return rows
 }
