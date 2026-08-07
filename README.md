@@ -3,8 +3,7 @@
 AI-powered NYC public high school admissions navigator. AdmitDay helps families turn a scattered admissions process into a grounded, personalized school list.
 
 - Live app: https://www.admitday.com
-- Chat search: https://www.admitday.com/chat
-- Unified finder in progress: `/find` and `/school/[dbn]`
+- Unified finder: `/find` and `/school/[dbn]`
 
 ## Why This Exists
 
@@ -16,18 +15,16 @@ AdmitDay is built around a simple product bet: parents do not need more raw info
 
 - Builds a school list from 700+ programs across 400+ NYC public high schools.
 - Applies deterministic filters for facts that should never be guessed, including borough, admissions track, size, requirements, activities, and programs.
-- Uses RAG-powered chat for plain-language questions like "which Brooklyn schools have strong CS and soccer?"
+- Uses a RAG-powered ask box for plain-language questions like "which Brooklyn schools have strong CS and soccer?"
 - Generates grounded rationales only from retrieved school data.
 - Keeps DOE-reported facts separate from model-generated interpretation.
 
 ## Product Shape
 
-AdmitDay currently has two live discovery surfaces:
+`/find` is the live discovery surface: hard rail filters plus an ask box that re-ranks without removing schools, linked to `/school/[dbn]` detail pages.
 
 1. **Structured filters:** users narrow schools by concrete constraints, then get personalized rationale text.
-2. **RAG chat:** users ask in natural language; the system extracts exact signals, hard-filters the candidate pool, semantic-ranks within it, and cites only the schools it found.
-
-The next product surface is a unified `/find` flow: hard rail filters plus an ask box that re-ranks without removing schools, linked to `/school/[dbn]` detail pages. These routes exist but do not yet replace the older live `/list`, `/requirements`, and `/chat` flows.
+2. **RAG ask box:** users ask in natural language; the system extracts exact signals, hard-filters the candidate pool, semantic-ranks within it, and cites only the schools it found via `/api/find/ask`.
 
 ## Architecture
 

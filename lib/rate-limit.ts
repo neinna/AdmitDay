@@ -2,7 +2,7 @@
  * lib/rate-limit.ts
  *
  * In-memory, per-IP fixed-window rate limiter for the unauthenticated
- * LLM-backed API routes (/api/chat, /api/rationale).
+ * LLM-backed API routes (/api/find/ask, /api/rationale).
  *
  * NOTE: This is a deliberate stopgap. Vercel lambdas do not share memory,
  * so the limit is per-instance rather than global — it caps runaway loops

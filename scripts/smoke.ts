@@ -71,7 +71,7 @@ export function hasEmptyStateBanner(html: string): boolean {
 /** Chat is healthy if it answers or cleanly rate-limits. A 5xx is never healthy. */
 export function judgeChatResponse(status: number, body: string): CheckResult {
   if (status === 429) {
-    return { name: 'POST /api/chat', severity: 'ok', detail: '429 rate-limited (expected under load)' }
+    return { name: 'POST /api/find/ask', severity: 'ok', detail: '429 rate-limited (expected under load)' }
   }
   if (status >= 500) {
     // A 503 carrying the product's own copy means the route handled an upstream
@@ -80,7 +80,7 @@ export function judgeChatResponse(status: number, body: string): CheckResult {
     // remedy is completely different.
     const graceful = /assistant is unavailable|try again shortly/i.test(body)
     return {
-      name: 'POST /api/chat',
+      name: 'POST /api/find/ask',
       // Handled outage: the route did its job, the provider is down. Warn.
       // Unhandled 5xx: that is ours to fix. Fail.
       severity: graceful ? 'warn' : 'fail',
@@ -90,16 +90,16 @@ export function judgeChatResponse(status: number, body: string): CheckResult {
     }
   }
   if (status !== 200) {
-    return { name: 'POST /api/chat', severity: 'fail', detail: `HTTP ${status}` }
+    return { name: 'POST /api/find/ask', severity: 'fail', detail: `HTTP ${status}` }
   }
   // A 200 that leaked provider error text is a failure even though it is a 200.
   if (/usage limit|credit balance|quota|request_id|anthropic/i.test(body)) {
-    return { name: 'POST /api/chat', severity: 'fail', detail: '200 but the body leaked provider error text' }
+    return { name: 'POST /api/find/ask', severity: 'fail', detail: '200 but the body leaked provider error text' }
   }
   if (body.trim().length === 0) {
-    return { name: 'POST /api/chat', severity: 'fail', detail: '200 with an empty body' }
+    return { name: 'POST /api/find/ask', severity: 'fail', detail: '200 with an empty body' }
   }
-  return { name: 'POST /api/chat', severity: 'ok', detail: `HTTP 200, ${body.length} bytes` }
+  return { name: 'POST /api/find/ask', severity: 'ok', detail: `HTTP 200, ${body.length} bytes` }
 }
 
 export function judgeFindPage(status: number, html: string): CheckResult[] {
@@ -147,7 +147,7 @@ async function run(): Promise<void> {
   const find = await fetch(`${base}/find`, { redirect: 'follow' })
   results.push(...judgeFindPage(find.status, await find.text()))
 
-  const chat = await fetch(`${base}/api/chat`, {
+  const chat = await fetch(`${base}/api/find/ask`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ question: 'Which Brooklyn schools have a strong music program?' }),

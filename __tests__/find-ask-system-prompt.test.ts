@@ -1,8 +1,8 @@
 import * as fs from 'fs'
 import * as path from 'path'
 
-describe('Chat API system prompt (issue #69)', () => {
-  const routePath = path.join(__dirname, '../app/api/chat/route.ts')
+describe('/find ask API system prompt (issue #69)', () => {
+  const routePath = path.join(__dirname, '../app/api/find/ask/route.ts')
   let src: string
 
   beforeAll(() => {
