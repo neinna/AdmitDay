@@ -375,11 +375,8 @@ export default function FindClient({ schools, initialFilters }: Props) {
                   <SchoolRow
                     key={school.dbn}
                     rowNumber={i + 1}
-                    name={
-                      <Link href={detailHref} className="hover:underline underline-offset-2">
-                        {formatSchoolName(school.name)}
-                      </Link>
-                    }
+                    name={formatSchoolName(school.name)}
+                    href={detailHref}
                     isHiddenGem={school.flags.is_hidden_gem}
                     metadata={`${neighborhood} · ${tracks} · ${students} students`}
                     rationale={truncate(school.doe_data?.overview ?? '', 140)}

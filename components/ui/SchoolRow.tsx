@@ -1,8 +1,10 @@
 import { ReactNode } from 'react'
+import Link from 'next/link'
 
 interface Props {
   rowNumber: number
   name: ReactNode
+  href: string
   isHiddenGem?: boolean
   metadata: string
   rationale: string
@@ -14,6 +16,7 @@ interface Props {
 export default function SchoolRow({
   rowNumber,
   name,
+  href,
   isHiddenGem = false,
   metadata,
   rationale,
@@ -23,8 +26,14 @@ export default function SchoolRow({
 }: Props) {
   return (
     <div
-      className="grid grid-cols-1 min-[900px]:grid-cols-[34px_1fr_128px_96px] gap-4 items-start px-9 py-[22px] border-b border-rule-light hover:bg-surface-2 transition-colors duration-[120ms] ease-out"
+      className="relative grid grid-cols-1 min-[900px]:grid-cols-[34px_1fr_128px_96px] gap-4 items-start px-9 py-[22px] border-b border-rule-light hover:bg-surface-2 transition-colors duration-[120ms] ease-out"
     >
+      <Link
+        href={href}
+        aria-label={typeof name === 'string' ? name : undefined}
+        className="absolute inset-0 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      />
+
       <div className="hidden min-[900px]:block font-mono text-[13px] text-row-index pt-[5px]">
         {String(rowNumber).padStart(2, '0')}
       </div>
@@ -49,7 +58,7 @@ export default function SchoolRow({
         <div className="font-mono text-[11.5px] tracking-[0.06em] uppercase text-faint">{statLabel}</div>
       </div>
 
-      <div className="order-3 min-[900px]:order-none max-[899px]:w-full">{action}</div>
+      <div className="relative z-10 order-3 min-[900px]:order-none max-[899px]:w-full">{action}</div>
     </div>
   )
 }
