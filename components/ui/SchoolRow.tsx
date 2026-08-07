@@ -39,9 +39,11 @@ export default function SchoolRow({
           )}
         </div>
         <div className="font-sans text-[13.5px] text-faint">{metadata}</div>
-        <div className="font-sans text-[14.5px] leading-[1.5] text-ink-2 max-w-[430px]" style={{ textWrap: 'pretty' }}>
-          {rationale}
-        </div>
+        {rationale && (
+          <div className="font-sans text-[14.5px] leading-[1.5] text-ink-2 max-w-[430px]" style={{ textWrap: 'pretty' }}>
+            {rationale}
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-[3px] order-2 min-[900px]:order-none">
