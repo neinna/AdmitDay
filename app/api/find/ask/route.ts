@@ -1,7 +1,7 @@
 /**
- * app/api/chat/route.ts
+ * app/api/find/ask/route.ts
  *
- * RAG-powered chat endpoint for AdmitDay.
+ * RAG-powered ask endpoint for the /find page.
  * Takes a user question, retrieves the most relevant schools
  * from the vector store, and passes them to Claude to generate
  * a grounded answer.

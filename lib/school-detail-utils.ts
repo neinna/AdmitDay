@@ -231,6 +231,57 @@ export function getMissingActivityLabels(school: School): string[] {
   return ACTIVITY_GROUP_DEFS.filter((g) => g.get(school).length === 0).map((g) => g.missingLabel)
 }
 
+// ── Find-row facts (/find) ───────────────────────────────────────────────────
+
+// The /find row rationale line used to be doe_data.overview — DOE marketing
+// prose truncated at 140 characters — identical regardless of what the parent
+// filtered for (issue #164). These are the published facts that most affect a
+// fit decision without repeating what the row's metadata line already shows
+// (neighborhood, admissions track, enrollment): the academic score the
+// filter itself ranks by (issue #161 — parents asked for the number, not
+// just a word), the two outcome rates DOE reports for nearly every school,
+// and how many AP courses it offers. Same omit-don't-zero-fill rule as
+// buildStatCells, and the same `pct` formatting school-detail's "Academic
+// score" stat cell uses, so the figure reads identically on both screens.
+const FIND_ROW_RATE_FACTS: {
+  key: string
+  get: (school: School) => number | null | undefined
+  format: (value: number) => string
+}[] = [
+  {
+    key: 'academicScore',
+    get: (s) => s.academic_score_pct,
+    format: (v) => `${pct(v)} academic score`,
+  },
+  {
+    key: 'graduationRate',
+    get: (s) => s.doe_data?.graduation_rate,
+    format: (v) => `${ratePct(v)} graduation rate`,
+  },
+  {
+    key: 'collegeCareerRate',
+    get: (s) => s.doe_data?.college_career_rate,
+    format: (v) => `${ratePct(v)} college & career rate`,
+  },
+]
+
+/** Only the facts DOE actually published for this school, in fixed order. A school missing most of them yields a short (or empty) list, never a zero-filled one. */
+export function buildFindRowFacts(school: School): string[] {
+  const facts = FIND_ROW_RATE_FACTS.filter((f) => isPresent(f.get(school))).map((f) =>
+    f.format(f.get(school) as number)
+  )
+
+  const apCount = parseCommaList(school.doe_data?.advancedplacement_courses).length
+  if (apCount > 0) facts.push(`${apCount} AP course${apCount === 1 ? '' : 's'}`)
+
+  return facts
+}
+
+/** The /find row's replacement for the truncated DOE overview: structured facts on one line, or '' when DOE published none of them. */
+export function buildFindRowSummary(school: School): string {
+  return buildFindRowFacts(school).join(' · ')
+}
+
 /**
  * The "NOT OFFERED" sentence — a fact about the school (it doesn't run these),
  * not a DOE reporting gap, so it reads "no X" rather than "not published".
