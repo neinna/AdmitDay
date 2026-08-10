@@ -8,18 +8,22 @@
  *   2. Validate the scrape (lib/validate-school-data.ts) -- fails loudly and
  *      exits without writing anything if the result looks broken.
  *   3. Write data/schools.json from the validated scrape.
- *   4. Reseed the Postgres `schools` table (scripts/seed-schools.ts).
- *   5. Re-embed school data (scripts/embed-schools.ts).
+ *   4. Re-embed school data (scripts/embed-schools.ts).
+ *   5. Reseed the Postgres `schools` table (scripts/seed-schools.ts).
  *
  * Run:
  *   npm run refresh:data
  *
- * Requires POSTGRES_URL and OPENAI_API_KEY in .env.local (steps 4 and 5 read
- * them the same way scripts/seed-schools.ts and scripts/embed-schools.ts
- * already do).
+ * Requires OPENAI_API_KEY for embeddings. Also requires POSTGRES_URL unless
+ * ADMITDAY_SKIP_POSTGRES_SEED=1 is set.
+ *
+ * Set ADMITDAY_SKIP_POSTGRES_SEED=1 to generate/validate/re-embed artifacts
+ * without changing the production database. The scheduled data-refresh PR
+ * uses that mode; the merge-to-main apply workflow performs the DB seed.
  */
 
 import fs from 'fs'
+import os from 'os'
 import path from 'path'
 import { spawnSync } from 'child_process'
 import { validateSchoolData, RawSchoolRecord } from '../lib/validate-school-data'
@@ -33,9 +37,9 @@ function readJsonArray(filePath: string): unknown[] | null {
   return Array.isArray(parsed) ? parsed : null
 }
 
-function run(command: string, args: string[]): void {
+function run(command: string, args: string[], env?: Record<string, string>): void {
   console.log(`\n$ ${command} ${args.join(' ')}`)
-  const result = spawnSync(command, args, { stdio: 'inherit' })
+  const result = spawnSync(command, args, { stdio: 'inherit', env: { ...process.env, ...env } })
   if (result.error) {
     throw result.error
   }
@@ -70,16 +74,24 @@ async function main(): Promise<void> {
   // present, otherwise whatever schools.json already has.
   const previousSchools = readJsonArray(DATA_SCHOOLS_PATH) ?? readJsonArray(ROOT_SCHOOLS_PATH)
 
-  // 1. Scrape.
-  run('python3', ['build_school_data.py'])
+  const scrapeTmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'admitday-refresh-'))
+  const scrapedPath = path.join(scrapeTmpDir, 'schools.json')
 
-  const scraped = readJsonArray(ROOT_SCHOOLS_PATH)
+  // 1. Scrape to a temp file so validation failure cannot overwrite the
+  // previous known-good root schools.json.
+  run('python3', ['build_school_data.py'], {
+    ADMITDAY_SCHOOLS_OUTPUT: scrapedPath,
+  })
+
+  const scraped = readJsonArray(scrapedPath)
   if (!scraped) {
-    throw new Error(`${ROOT_SCHOOLS_PATH} was not produced by the scrape (or is not a JSON array).`)
+    throw new Error(`${scrapedPath} was not produced by the scrape (or is not a JSON array).`)
   }
 
   // 2. Validate.
-  const result = validateSchoolData(scraped as RawSchoolRecord[], previousSchools)
+  const result = validateSchoolData(scraped as RawSchoolRecord[], previousSchools, {
+    requireMySchoolsPrograms: true,
+  })
   printSummary(result.previousCount, result.schoolCount, result.added, result.removed, result.invalidRecords)
 
   if (!result.valid) {
@@ -89,21 +101,16 @@ async function main(): Promise<void> {
   }
   console.log('\nValidation passed.')
 
-  // 3. Write data/schools.json.
+  // 3. Write both school data snapshots from the validated temp scrape.
+  fs.writeFileSync(ROOT_SCHOOLS_PATH, JSON.stringify(scraped, null, 2))
+  console.log(`Wrote ${ROOT_SCHOOLS_PATH}`)
   fs.mkdirSync(path.dirname(DATA_SCHOOLS_PATH), { recursive: true })
   fs.writeFileSync(DATA_SCHOOLS_PATH, JSON.stringify(scraped, null, 2))
   console.log(`Wrote ${DATA_SCHOOLS_PATH}`)
+  fs.rmSync(scrapeTmpDir, { recursive: true, force: true })
 
-  // 4. Reseed Postgres.
-  run('npx', [
-    'ts-node',
-    '--compiler-options',
-    '{"module":"commonjs","moduleResolution":"node"}',
-    '--transpile-only',
-    'scripts/seed-schools.ts',
-  ])
-
-  // 5. Re-embed.
+  // 4. Re-embed first so a provider/key failure cannot update Postgres while
+  // leaving RAG on the previous data snapshot.
   run('npx', [
     'ts-node',
     '--compiler-options',
@@ -111,6 +118,19 @@ async function main(): Promise<void> {
     '--transpile-only',
     'scripts/embed-schools.ts',
   ])
+
+  // 5. Reseed Postgres unless this run is only preparing a reviewable data PR.
+  if (process.env.ADMITDAY_SKIP_POSTGRES_SEED === '1') {
+    console.log('\nSkipping Postgres seed because ADMITDAY_SKIP_POSTGRES_SEED=1.')
+  } else {
+    run('npx', [
+      'ts-node',
+      '--compiler-options',
+      '{"module":"commonjs","moduleResolution":"node"}',
+      '--transpile-only',
+      'scripts/seed-schools.ts',
+    ])
+  }
 
   console.log('\nData refresh complete.')
 }

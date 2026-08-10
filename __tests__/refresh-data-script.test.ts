@@ -21,6 +21,15 @@ describe('scripts/refresh-data.ts', () => {
     expect(validateIdx).toBeLessThan(writeIdx)
   })
 
+  it('scrapes to a temporary output before replacing root schools.json', () => {
+    expect(scriptSource).toContain('mkdtempSync')
+    expect(scriptSource).toContain('ADMITDAY_SCHOOLS_OUTPUT')
+    const scrapeIdx = scriptSource.indexOf("run('python3', ['build_school_data.py']")
+    const rootWriteIdx = scriptSource.indexOf('writeFileSync(ROOT_SCHOOLS_PATH')
+    expect(scrapeIdx).toBeGreaterThan(-1)
+    expect(rootWriteIdx).toBeGreaterThan(scrapeIdx)
+  })
+
   it('exits non-zero and skips the write when validation fails', () => {
     const failIdx = scriptSource.indexOf('if (!result.valid)')
     const exitIdx = scriptSource.indexOf('process.exit(1)', failIdx)
@@ -30,14 +39,19 @@ describe('scripts/refresh-data.ts', () => {
     expect(exitIdx).toBeLessThan(writeIdx)
   })
 
-  it('runs seed before embed, both after the write', () => {
+  it('runs embed before seed, both after the write', () => {
     // lastIndexOf: both filenames are also named in the file's header comment,
     // so anchor on their occurrence inside the actual run(...) calls below it.
     const writeIdx = scriptSource.indexOf('writeFileSync(DATA_SCHOOLS_PATH')
     const seedIdx = scriptSource.lastIndexOf('scripts/seed-schools.ts')
     const embedIdx = scriptSource.lastIndexOf('scripts/embed-schools.ts')
-    expect(writeIdx).toBeLessThan(seedIdx)
-    expect(seedIdx).toBeLessThan(embedIdx)
+    expect(writeIdx).toBeLessThan(embedIdx)
+    expect(embedIdx).toBeLessThan(seedIdx)
+  })
+
+  it('can skip Postgres seeding when generating a reviewed data-refresh PR', () => {
+    expect(scriptSource).toContain('ADMITDAY_SKIP_POSTGRES_SEED')
+    expect(scriptSource).toContain('Skipping Postgres seed')
   })
 
   it('prints a before/after/added/removed/failed-validation summary', () => {

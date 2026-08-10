@@ -2,7 +2,8 @@
  * seed-schools.ts
  *
  * Seeds the Vercel Postgres (Neon) `schools` table from local scraped data.
- * Reads data/schools.json and upserts every record keyed by DBN, so the
+ * Reads data/schools.json, falling back to root schools.json in clean CI
+ * checkouts, and upserts every record keyed by DBN, so the
  * production /list and /requirements pages can load school data from the
  * database instead of the gitignored JSON file.
  *
@@ -29,9 +30,11 @@ interface School {
 
 async function main() {
   // Load schools
-  const schoolsPath = path.resolve(process.cwd(), "data", "schools.json");
+  const dataSchoolsPath = path.resolve(process.cwd(), "data", "schools.json");
+  const rootSchoolsPath = path.resolve(process.cwd(), "schools.json");
+  const schoolsPath = fs.existsSync(dataSchoolsPath) ? dataSchoolsPath : rootSchoolsPath;
   if (!fs.existsSync(schoolsPath)) {
-    console.error("data/schools.json not found.");
+    console.error("No school data found. Expected data/schools.json or schools.json.");
     process.exit(1);
   }
 

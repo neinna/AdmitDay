@@ -2,8 +2,16 @@
 
 These are the shared rules for any coding agent working in this repo: Claude Code, Codex, open-weight model runners, or future orchestrator workers. Agent-specific adapters should load this file rather than duplicating rules.
 
+## Source Of Truth
+
+- Treat GitHub `main` as the live code truth. Local checkouts are caches and may be stale after agent-built PRs; refresh from GitHub before making or reviewing code claims.
+- Treat Notion as the live roadmap and task truth. Private or local planning docs are caches unless explicitly refreshed from Notion.
+- When local files, GitHub, and Notion disagree, state the conflict and prefer GitHub for code state and Notion for roadmap and task state.
+
 ## Core Rules
 
+- Treat GitHub `main` as the live code source of truth, Notion as the live roadmap/task source of truth, and local checkouts or local docs as caches unless explicitly refreshed from their source.
+- If GitHub, Notion, and local files disagree, state the conflict. Prefer GitHub for code state and Notion for roadmap/task state.
 - **Never modify `data/schools.json`.** It is curated source data.
 - Filtering logic lives in `lib/school-list-utils.ts` — look there first for anything about school list filtering.
 - Tests live in `__tests__/`. **Add** new test files or cases; never overwrite or delete existing tests.
@@ -14,7 +22,6 @@ These are the shared rules for any coding agent working in this repo: Claude Cod
 - The product name in UI copy is **"AdmitDay"**.
 - If a change alters user-facing behavior, the data model, or the architecture, update `README.md` in the same PR so the README never drifts from reality.
 - Never push, never merge, never switch branches unless the active orchestrator or human operator explicitly assigns that responsibility.
-- `LESSONS.md` is coordinator-owned runtime state — read it for context, but never commit it.
 - Stay strictly within the scope of the issue you were given; an independent reviewer rejects scope creep.
 
 ## Issue Sequencing

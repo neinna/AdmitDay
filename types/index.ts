@@ -37,8 +37,27 @@ export interface DoeData {
 }
 
 export interface SchoolProgram {
-  program: string
-  admissions_type: string
+  // Compatibility fields from the older NYC-SIFT-shaped program rows.
+  program?: string
+  admissions_type?: string
+  raw_method?: string
+
+  // Current MySchools per-program fields.
+  program_name?: string
+  program_code?: string
+  admissions_method?: string
+  admissions_method_description?: string
+  grade_span?: string
+  description?: string
+  seats?: Record<string, unknown>
+  eligibility?: Record<string, unknown>
+  requirements?: Record<string, unknown>
+  provenance?: {
+    source: 'MySchools' | string
+    url: string
+    fetched_at: string
+    admissions_cycle?: string
+  }
 }
 
 export interface School {

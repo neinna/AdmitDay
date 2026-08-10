@@ -38,6 +38,8 @@ export interface ValidateOptions {
   countTolerance?: number
   /** Max fraction (0-1) the count may drop versus the previous file. Defaults to MAX_DROP_VS_PREVIOUS. */
   maxDropRatio?: number
+  /** Require current MySchools per-program records with provenance. Defaults to false for small unit fixtures. */
+  requireMySchoolsPrograms?: boolean
 }
 
 export const EXPECTED_SCHOOL_COUNT = 457
@@ -46,6 +48,50 @@ export const MAX_DROP_VS_PREVIOUS = 0.1
 
 function asTrimmedString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : ''
+}
+
+function hasEmptyString(value: unknown): boolean {
+  if (typeof value === 'string') return value.trim() === ''
+  if (Array.isArray(value)) return value.some(hasEmptyString)
+  if (value && typeof value === 'object') {
+    return Object.values(value as Record<string, unknown>).some(hasEmptyString)
+  }
+  return false
+}
+
+function validateMySchoolsPrograms(record: RawSchoolRecord): string[] {
+  const reasons: string[] = []
+  const programs = record.programs
+
+  if (!Array.isArray(programs) || programs.length === 0) {
+    reasons.push('missing MySchools programs')
+    return reasons
+  }
+
+  const seenProgramKeys = new Set<string>()
+  programs.forEach((program, programIndex) => {
+    const p = (program ?? {}) as Record<string, unknown>
+    const name = asTrimmedString(p.program_name) || asTrimmedString(p.program)
+    const code = asTrimmedString(p.program_code)
+    const provenance = (p.provenance ?? {}) as Record<string, unknown>
+    const provenanceSource = asTrimmedString(provenance.source)
+    const provenanceUrl = asTrimmedString(provenance.url)
+    const fetchedAt = asTrimmedString(provenance.fetched_at)
+
+    if (!name) reasons.push(`program[${programIndex}] missing program name`)
+    if (hasEmptyString(p)) reasons.push(`program[${programIndex}] contains empty string; omit missing fields instead`)
+    if (provenanceSource !== 'MySchools') reasons.push(`program[${programIndex}] missing MySchools provenance source`)
+    if (!provenanceUrl) reasons.push(`program[${programIndex}] missing provenance url`)
+    if (!fetchedAt) reasons.push(`program[${programIndex}] missing provenance fetched_at`)
+
+    const key = code || name
+    if (key) {
+      if (seenProgramKeys.has(key)) reasons.push(`duplicate program key: ${key}`)
+      seenProgramKeys.add(key)
+    }
+  })
+
+  return reasons
 }
 
 /**
@@ -90,6 +136,9 @@ export function validateSchoolData(
     if (!name) reasons.push('missing name')
     if (!borough) reasons.push('missing borough')
     if (dbn && seenDbns.has(dbn)) reasons.push(`duplicate dbn: ${dbn}`)
+    if (options?.requireMySchoolsPrograms) {
+      reasons.push(...validateMySchoolsPrograms(r))
+    }
 
     if (dbn) {
       seenDbns.add(dbn)
