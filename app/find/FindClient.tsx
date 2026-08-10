@@ -7,6 +7,7 @@ import { School } from '@/types'
 import {
   FindFilters,
   EMPTY_FIND_FILTERS,
+  INITIAL_COUNT,
   PAGE_SIZE,
   ADDED_SCHOOLS_KEY,
   applyFindFilters,
@@ -17,6 +18,7 @@ import {
 } from '@/lib/school-list-utils'
 import { extractFilters, QueryFilters, appliedSignals, removeSignal } from '@/lib/query-filters'
 import { getUnmetCriteria } from '@/lib/soft-match'
+import { buildFindRowSummary } from '@/lib/school-detail-utils'
 import { Chip, Button, SchoolRow } from '@/components/ui'
 import FindRail from './FindRail'
 
@@ -41,13 +43,6 @@ function formatSchoolName(name: string): string {
   return name
 }
 
-function truncate(text: string, maxLen: number): string {
-  if (text.length <= maxLen) return text
-  const cut = text.slice(0, maxLen)
-  const lastSpace = cut.lastIndexOf(' ')
-  return `${cut.slice(0, lastSpace > 0 ? lastSpace : maxLen)}…`
-}
-
 interface Props {
   schools: School[]
   initialFilters: FindFilters
@@ -59,7 +54,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
 
   const [filters, setFilters] = useState<FindFilters>(initialFilters)
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT)
 
   const [askText, setAskText] = useState('')
   const [askFilters, setAskFilters] = useState<QueryFilters | null>(null)
@@ -90,7 +85,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
   }, [])
 
   useEffect(() => {
-    setVisibleCount(PAGE_SIZE)
+    setVisibleCount(INITIAL_COUNT)
   }, [filters])
 
   const trackOptions = useMemo(
@@ -173,7 +168,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
     setAskSources([])
 
     try {
-      const res = await fetch('/api/chat', {
+      const res = await fetch('/api/find/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: trimmed }),
@@ -375,14 +370,11 @@ export default function FindClient({ schools, initialFilters }: Props) {
                   <SchoolRow
                     key={school.dbn}
                     rowNumber={i + 1}
-                    name={
-                      <Link href={detailHref} className="hover:underline underline-offset-2">
-                        {formatSchoolName(school.name)}
-                      </Link>
-                    }
+                    name={formatSchoolName(school.name)}
+                    href={detailHref}
                     isHiddenGem={school.flags.is_hidden_gem}
                     metadata={`${neighborhood} · ${tracks} · ${students} students`}
-                    rationale={truncate(school.doe_data?.overview ?? '', 140)}
+                    rationale={buildFindRowSummary(school)}
                     statValue={
                       school.applicants_per_seat != null ? school.applicants_per_seat.toFixed(1) : '—'
                     }

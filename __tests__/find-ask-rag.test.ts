@@ -14,14 +14,18 @@ describe('/find ask box wired to conversational RAG (issue #110)', () => {
     expect(src).toContain('getUnmetCriteria')
   })
 
-  it('POSTs the question to the existing /api/chat route', () => {
-    expect(src).toContain("'/api/chat'")
+  it('POSTs the question to the /find-named ask route (issue #170)', () => {
+    expect(src).toContain("'/api/find/ask'")
     expect(src).toContain("method: 'POST'")
     expect(src).toMatch(/JSON\.stringify\(\s*\{\s*question/)
   })
 
-  it('does not introduce a new LLM/RAG route', () => {
-    expect(src).not.toMatch(/fetch\(\s*['"]\/api\/(?!chat)/)
+  it('no longer calls the legacy /api/chat route', () => {
+    expect(src).not.toContain("'/api/chat'")
+  })
+
+  it('does not introduce another LLM/RAG route', () => {
+    expect(src).not.toMatch(/fetch\(\s*['"]\/api\/(?!find\/ask)/)
   })
 
   it('tracks loading state for the grounded answer', () => {
