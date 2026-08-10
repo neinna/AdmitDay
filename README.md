@@ -24,7 +24,7 @@ AdmitDay is built around a simple product bet: parents do not need more raw info
 
 The live AdmitDay discovery surface is `/find`: hard rail filters plus an ask box that re-ranks without removing schools, linked to `/school/[dbn]` detail pages and `/my-schools` saved lists.
 
-The old `/chat` page is not the product surface. Some implementation names still refer to chat, including the legacy ask-box API path; that cleanup is tracked in GitHub issue #170.
+The ask box is served by `/api/find/ask`: it extracts exact signals, hard-filters the candidate pool, semantic-ranks within it, and cites only the schools it found. The old `/chat` surface and its legacy API path have been retired.
 
 ## Architecture
 
