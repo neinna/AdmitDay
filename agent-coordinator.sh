@@ -37,6 +37,8 @@ LF_RUN_FILE=""
 SELF_UPDATE_INTERVAL_SECONDS="${SELF_UPDATE_INTERVAL_SECONDS:-300}"
 SELF_UPDATE_STAMP="/tmp/agent-coordinator-self-update.last"
 SELF_UPDATE_LOCK="/tmp/agent-coordinator-self-update.lock"
+RECONCILE_INTERVAL_SECONDS="${RECONCILE_INTERVAL_SECONDS:-1800}"
+RECONCILE_STAMP="/tmp/agent-coordinator-reconcile.last"
 
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
@@ -375,6 +377,121 @@ try:
 except Exception:
     sys.exit(1)
 "
+}
+
+# reconcile_open_prs: the pipeline is entirely event-driven (issue labeled,
+# branch pushed, PR opened, check completed) and event-driven systems drop
+# events — e.g. a GitHub Actions outage that leaves a PR with no "test" check
+# run at all, which branch protection then blocks on forever even though
+# nothing is wrong with the code. This periodic sweep compares intended state
+# (should be progressing toward merge) to actual state and corrects it,
+# instead of waiting for an event that already failed to fire.
+#
+# Only touches PRs whose head branch matches the "task-<issue>-" prefix this
+# coordinator generates in run_agent — never a PR opened by a human or by
+# another tool. Never merges, never pushes to main: update-branch only
+# re-triggers CI and fast-forwards the PR branch onto main (which can let an
+# auto-merge-enabled PR merge once CI passes — that is the intended
+# self-healing behavior, not a side effect to guard against).
+reconcile_open_prs() {
+  local RUN_START T0 T1
+  RUN_START=$(lf_now_ns)
+  LF_RUN_FILE="/tmp/lf-run-reconcile.jsonl"
+  : > "$LF_RUN_FILE" 2>/dev/null || LF_RUN_FILE=""
+
+  local QUALIFYING
+  QUALIFYING=$(gh_api GET "/pulls?state=open&per_page=100" | python3 -c "
+import json, re, sys
+try:
+    prs = json.load(sys.stdin)
+except Exception:
+    prs = []
+for pr in prs:
+    ref = (pr.get('head') or {}).get('ref') or ''
+    if re.match(r'^task-[0-9]+-', ref):
+        print(f\"{pr.get('number')}\t{ref}\")
+" 2>>"$LOG_FILE")
+
+  T0=$(lf_now_ns)
+  local NUM REF
+  while IFS=$'\t' read -r NUM REF; do
+    [ -z "$NUM" ] && continue
+    local ISSUE_NUM
+    ISSUE_NUM=$(echo "$REF" | python3 -c "
+import re, sys
+m = re.match(r'^task-([0-9]+)-', sys.stdin.read())
+print(m.group(1) if m else '')
+" 2>>"$LOG_FILE")
+    [ -z "$ISSUE_NUM" ] && continue
+
+    local PR_DETAIL MERGEABLE MERGEABLE_STATE SHA
+    PR_DETAIL=$(gh_api GET "/pulls/${NUM}")
+    MERGEABLE=$(echo "$PR_DETAIL" | python3 -c "
+import json, sys
+try:
+    v = json.load(sys.stdin).get('mergeable')
+except Exception:
+    v = None
+print('true' if v is True else ('false' if v is False else 'unknown'))
+" 2>>"$LOG_FILE")
+    MERGEABLE_STATE=$(echo "$PR_DETAIL" | python3 -c "
+import json, sys
+try:
+    print(json.load(sys.stdin).get('mergeable_state') or '')
+except Exception:
+    print('')
+" 2>>"$LOG_FILE")
+    SHA=$(echo "$PR_DETAIL" | python3 -c "
+import json, sys
+try:
+    print((json.load(sys.stdin).get('head') or {}).get('sha') or '')
+except Exception:
+    print('')
+" 2>>"$LOG_FILE")
+
+    # Real merge conflict (GraphQL's mergeable enum would report CONFLICTING
+    # here; REST's equivalent is mergeable_state=dirty with mergeable=false).
+    # Cannot be auto-resolved — escalate instead of touching the branch.
+    if [ "$MERGEABLE_STATE" = "dirty" ] && [ "$MERGEABLE" = "false" ]; then
+      log "Reconcile: PR #${NUM} (${REF}) has a real merge conflict, escalating issue #${ISSUE_NUM}"
+      github_label "$ISSUE_NUM" "needs-review"
+      github_comment "$ISSUE_NUM" "Reconciliation swept PR #${NUM} (branch \`${REF}\`) and found a real merge conflict with main that cannot be auto-resolved. Please resolve manually."
+      continue
+    fi
+
+    local HAS_TEST_CHECK="0"
+    if [ -n "$SHA" ]; then
+      HAS_TEST_CHECK=$(gh_api GET "/commits/${SHA}/check-runs" | python3 -c "
+import json, sys
+try:
+    runs = (json.load(sys.stdin).get('check_runs')) or []
+    print('1' if any(r.get('name') == 'test' for r in runs) else '0')
+except Exception:
+    print('0')
+" 2>>"$LOG_FILE")
+    fi
+
+    if [ "$HAS_TEST_CHECK" != "1" ] || [ "$MERGEABLE_STATE" = "behind" ]; then
+      log "Reconcile: re-triggering CI for PR #${NUM} (${REF}) via update-branch (test_check_present=${HAS_TEST_CHECK} mergeable_state=${MERGEABLE_STATE})"
+      gh_api PUT "/pulls/${NUM}/update-branch" > /dev/null
+    fi
+  done <<< "$QUALIFYING"
+  T1=$(lf_now_ns)
+  lf_record "reconcile" "$T0" "$T1" "1" "" "" "swept"
+
+  lf_emit "" "reconcile-open-prs" "" "swept" "" "" "$RUN_START" "$(lf_now_ns)" "" "" "" ""
+  return 0
+}
+
+maybe_reconcile_open_prs() {
+  local NOW LAST
+  NOW=$(date +%s)
+  LAST=$(cat "$RECONCILE_STAMP" 2>/dev/null || echo 0)
+  if [ $((NOW - LAST)) -lt "$RECONCILE_INTERVAL_SECONDS" ]; then
+    return 0
+  fi
+  echo "$NOW" > "$RECONCILE_STAMP" 2>/dev/null || true
+  reconcile_open_prs || log "Reconcile: pass errored, continuing"
 }
 
 # Run one claude agent call with timeout, capturing the JSON result.
@@ -983,6 +1100,7 @@ telegram "Coordinator started, watching for ${TRIGGER_LABEL} issues (PR flow —
 
 while true; do
   maybe_self_update_or_exit
+  maybe_reconcile_open_prs
   handle_telegram_commands
 
   ISSUE_NUMBERS=$(curl -sL \

@@ -233,6 +233,70 @@ describe('agent-coordinator.sh PR flow', () => {
   })
 })
 
+// ── Issue #187: Coordinator should reconcile its own stuck PRs ──────────────
+// The pipeline is event-driven and events get dropped (e.g. the 2026-08-06
+// GitHub Actions outage that left PRs #165/#167 with no "test" check run at
+// all, permanently blocked by branch protection for four days). These tests
+// pin the periodic reconciliation sweep: it only ever touches PRs this
+// coordinator itself opened, it re-triggers CI rather than merging, and it
+// escalates real conflicts instead of trying to auto-resolve them.
+
+describe('agent-coordinator.sh reconcile_open_prs', () => {
+  const coordinatorSource = fs.readFileSync(path.join(__dirname, '../agent-coordinator.sh'), 'utf-8')
+  const reconcileFn = coordinatorSource.match(/reconcile_open_prs\(\) \{[\s\S]*?\n\}\n/)
+
+  it('defines reconcile_open_prs and runs it from the main loop, throttled independently of the self-update pass', () => {
+    expect(reconcileFn).not.toBeNull()
+    expect(coordinatorSource).toContain('maybe_reconcile_open_prs')
+    // Wired in alongside maybe_self_update_or_exit, not on every 60s tick
+    expect(coordinatorSource).toMatch(/maybe_self_update_or_exit\n\s*maybe_reconcile_open_prs\n/)
+    expect(coordinatorSource).toContain('RECONCILE_INTERVAL_SECONDS="${RECONCILE_INTERVAL_SECONDS:-1800}"')
+  })
+
+  it('only touches PRs carrying this coordinator\'s own task-<issue>- branch prefix', () => {
+    const body = reconcileFn![0]
+    expect(body).toMatch(/re\.match\(r'\^task-\[0-9\]\+-', ref\)/)
+  })
+
+  it('re-triggers CI / brings the branch current via update-branch when the test check is missing or the branch is behind', () => {
+    const body = reconcileFn![0]
+    expect(body).toContain('/pulls/${NUM}/update-branch')
+    expect(body).toMatch(/HAS_TEST_CHECK.*!=.*1.*MERGEABLE_STATE.*=.*behind/)
+    expect(body).toContain('check-runs')
+  })
+
+  it('escalates a real merge conflict with needs-review instead of trying to resolve it', () => {
+    const body = reconcileFn![0]
+    expect(body).toMatch(/MERGEABLE_STATE.*=.*dirty/)
+    expect(body).toContain('github_label "$ISSUE_NUM" "needs-review"')
+    expect(body).toContain('github_comment')
+    expect(body).toMatch(/merge conflict/)
+  })
+
+  it('never merges and never pushes to main from within reconciliation', () => {
+    const body = reconcileFn![0]
+    expect(body).not.toMatch(/git merge(\s|$)/)
+    expect(body).not.toMatch(/git push origin main\b/)
+    expect(body).not.toContain('gh_api PUT "/pulls/${NUM}/merge"')
+    expect(body).not.toContain('"/merge"')
+  })
+
+  it('does not use Telegram for escalation — needs-review label plus an issue comment only', () => {
+    const body = reconcileFn![0]
+    expect(body).not.toContain('telegram ')
+    expect(body).not.toContain('telegram"')
+  })
+
+  it('emits a reconcile span via lf_record, consistent with the other phases', () => {
+    const body = reconcileFn![0]
+    expect(body).toContain('lf_record "reconcile"')
+  })
+
+  it('never lets a reconciliation failure kill the main loop', () => {
+    expect(coordinatorSource).toContain('reconcile_open_prs || log')
+  })
+})
+
 // ── Issue #2: Pagination — getVisibleGroups ──────────────────────────────────
 
 function makeGroup(type: string, count: number, startIndex: number): SectionGroup {
