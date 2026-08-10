@@ -98,6 +98,77 @@ describe('validateSchoolData', () => {
     expect(result.removed).toEqual([previous[4].dbn])
   })
 
+  it('requires MySchools program provenance when the refresh pipeline asks for it', () => {
+    const schools = makeValidSchools(1) as any[]
+    schools[0].programs = [
+      {
+        program_name: 'Dance',
+        program_code: 'M80K',
+        admissions_type: 'Audition',
+        provenance: {
+          source: 'MySchools',
+          url: 'https://www.myschools.nyc/en/api/v2/schools/process/1/03M485/',
+          fetched_at: '2026-08-07T00:00:00+00:00',
+        },
+      },
+    ]
+
+    const result = validateSchoolData(schools, null, {
+      expectedCount: 1,
+      countTolerance: 0,
+      requireMySchoolsPrograms: true,
+    })
+
+    expect(result.valid).toBe(true)
+  })
+
+  it('rejects empty or legacy-only program rows when MySchools programs are required', () => {
+    const schools = makeValidSchools(1) as any[]
+    schools[0].programs = [{ admissions_type: 'Audition', raw_method: 'Audition' }]
+
+    const result = validateSchoolData(schools, null, {
+      expectedCount: 1,
+      countTolerance: 0,
+      requireMySchoolsPrograms: true,
+    })
+
+    expect(result.valid).toBe(false)
+    expect(result.invalidRecords[0].reasons).toEqual(
+      expect.arrayContaining([
+        'program[0] missing MySchools provenance source',
+        'program[0] missing provenance url',
+        'program[0] missing provenance fetched_at',
+      ])
+    )
+  })
+
+  it('rejects empty strings inside MySchools program rows because absent fields should be omitted', () => {
+    const schools = makeValidSchools(1) as any[]
+    schools[0].programs = [
+      {
+        program_name: 'Dance',
+        program_code: '',
+        admissions_type: 'Audition',
+        provenance: {
+          source: 'MySchools',
+          url: 'https://www.myschools.nyc/en/api/v2/schools/process/1/03M485/',
+          fetched_at: '2026-08-07T00:00:00+00:00',
+        },
+      },
+    ]
+
+    const result = validateSchoolData(schools, null, {
+      expectedCount: 1,
+      countTolerance: 0,
+      requireMySchoolsPrograms: true,
+    })
+
+    expect(result.valid).toBe(false)
+    expect(result.invalidRecords[0].reasons).toContain(
+      'program[0] contains empty string; omit missing fields instead'
+    )
+  })
+
   it('default EXPECTED_SCHOOL_COUNT reflects today\'s known-good baseline (~457)', () => {
     expect(EXPECTED_SCHOOL_COUNT).toBe(457)
   })

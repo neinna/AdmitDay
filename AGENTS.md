@@ -4,6 +4,8 @@ These are the shared rules for any coding agent working in this repo: Claude Cod
 
 ## Core Rules
 
+- Treat GitHub `main` as the live code source of truth, Notion as the live roadmap/task source of truth, and local checkouts or local docs as caches unless explicitly refreshed from their source.
+- If GitHub, Notion, and local files disagree, state the conflict. Prefer GitHub for code state and Notion for roadmap/task state.
 - **Never modify `data/schools.json`.** It is curated source data.
 - Filtering logic lives in `lib/school-list-utils.ts` — look there first for anything about school list filtering.
 - Tests live in `__tests__/`. **Add** new test files or cases; never overwrite or delete existing tests.

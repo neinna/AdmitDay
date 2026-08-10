@@ -29,6 +29,7 @@
 
 # python
 __pycache__/
+scripts/.myschools_cache/
 
 # typescript
 *.tsbuildinfo
