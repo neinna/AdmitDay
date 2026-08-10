@@ -7,6 +7,7 @@ import { School } from '@/types'
 import {
   FindFilters,
   EMPTY_FIND_FILTERS,
+  INITIAL_COUNT,
   PAGE_SIZE,
   ADDED_SCHOOLS_KEY,
   applyFindFilters,
@@ -53,7 +54,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
 
   const [filters, setFilters] = useState<FindFilters>(initialFilters)
   const [filtersOpen, setFiltersOpen] = useState(false)
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT)
 
   const [askText, setAskText] = useState('')
   const [askFilters, setAskFilters] = useState<QueryFilters | null>(null)
@@ -84,7 +85,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
   }, [])
 
   useEffect(() => {
-    setVisibleCount(PAGE_SIZE)
+    setVisibleCount(INITIAL_COUNT)
   }, [filters])
 
   const trackOptions = useMemo(
@@ -167,7 +168,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
     setAskSources([])
 
     try {
-      const res = await fetch('/api/chat', {
+      const res = await fetch('/api/find/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ question: trimmed }),
@@ -369,11 +370,8 @@ export default function FindClient({ schools, initialFilters }: Props) {
                   <SchoolRow
                     key={school.dbn}
                     rowNumber={i + 1}
-                    name={
-                      <Link href={detailHref} className="hover:underline underline-offset-2">
-                        {formatSchoolName(school.name)}
-                      </Link>
-                    }
+                    name={formatSchoolName(school.name)}
+                    href={detailHref}
                     isHiddenGem={school.flags.is_hidden_gem}
                     metadata={`${neighborhood} · ${tracks} · ${students} students`}
                     rationale={buildFindRowSummary(school)}

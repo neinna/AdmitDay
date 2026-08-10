@@ -3,8 +3,8 @@
 AI-powered NYC public high school admissions navigator. AdmitDay helps families turn a scattered admissions process into a grounded, personalized school list.
 
 - Live app: https://www.admitday.com
-- Chat search: https://www.admitday.com/chat
-- Unified finder in progress: `/find` and `/school/[dbn]`
+- Find schools: https://www.admitday.com/find
+- School details: `/school/[dbn]`
 
 ## Why This Exists
 
@@ -16,25 +16,25 @@ AdmitDay is built around a simple product bet: parents do not need more raw info
 
 - Builds a school list from 700+ programs across 400+ NYC public high schools.
 - Applies deterministic filters for facts that should never be guessed, including borough, admissions track, size, requirements, activities, and programs.
-- Uses RAG-powered chat for plain-language questions like "which Brooklyn schools have strong CS and soccer?"
+- Uses a RAG-powered ask box for plain-language questions like "which Brooklyn schools have strong CS and soccer?"
 - Generates grounded rationales only from retrieved school data.
 - Keeps DOE-reported facts separate from model-generated interpretation.
 
 ## Product Shape
 
-AdmitDay currently has two live discovery surfaces:
+AdmitDay currently has one live discovery surface:
 
-1. **Structured filters:** users narrow schools by concrete constraints, then get personalized rationale text.
-2. **RAG chat:** users ask in natural language; the system extracts exact signals, hard-filters the candidate pool, semantic-ranks within it, and cites only the schools it found.
+1. **Unified `/find`:** users narrow schools by hard rail filters, then use the ask box for plain-language criteria that re-rank or annotate results without silently removing schools. Rows link to `/school/[dbn]` detail pages.
+2. **RAG ask box:** users ask in natural language; the system extracts exact signals, hard-filters the candidate pool, semantic-ranks within it, and cites only the schools it found via `/api/find/ask`.
 
-The next product surface is a unified `/find` flow: hard rail filters plus an ask box that re-ranks without removing schools, linked to `/school/[dbn]` detail pages. These routes exist but do not yet replace the older live `/list`, `/requirements`, and `/chat` flows.
+The older standalone `/chat` product surface is decommissioned; `/find` is the live product surface.
 
 ## Architecture
 
 - **Frontend:** Next.js 14 App Router and Tailwind CSS.
 - **Design system:** token layer plus reusable UI primitives in `components/ui/`.
 - **Data:** 457 NYC public high schools in Vercel Postgres, keyed by `dbn`.
-- **Retrieval:** OpenAI `text-embedding-3-small`, semantic chunking by identity, academics, and activities, plus deterministic filtering.
+- **Retrieval:** OpenAI `text-embedding-3-small`, semantic chunking by identity, current MySchools programs, academics, and activities, plus deterministic filtering.
 - **Generation:** Claude Sonnet 5 through grounded prompts.
 - **Cost protection:** per-IP rate limiting on LLM routes.
 - **Observability:** Sentry for errors and PostHog for analytics.
@@ -48,7 +48,22 @@ Data currency is the core differentiator. One command runs the refresh pipeline:
 npm run refresh:data
 ```
 
-The pipeline runs `build_school_data.py`, validates counts and required fields, writes the validated JSON, seeds Postgres with `scripts/seed-schools.ts`, and rebuilds embeddings with `scripts/embed-schools.ts`. It refuses to write if the scrape looks structurally wrong, such as a large school-count drop, duplicate DBNs, or missing required fields.
+The pipeline runs `build_school_data.py`, validates counts and required fields, writes the validated JSON, rebuilds embeddings with `scripts/embed-schools.ts`, and then seeds Postgres with `scripts/seed-schools.ts`. Embeddings run before the DB update so a provider/key failure cannot leave `/find` data ahead of RAG. It refuses to write if the scrape looks structurally wrong, such as a large school-count drop, duplicate DBNs, missing required fields, or missing MySchools program provenance.
+
+Source roles:
+
+- NYC-SIFT provides the school list and school-level selectivity signals.
+- NYC Open Data dataset `uq7m-95z8` provides older DOE directory fields. Its rows are from the 2018-era / 2019 DOE High School Directory and should be treated as historical where MySchools has fresher fields.
+- MySchools provides current per-school/per-program admissions records. Program data includes names, codes, admissions methods, seats/demand, requirements text, eligibility/priority text, source URL, and fetch timestamp.
+
+Scheduled refresh runs from the VPS, where the env files already live. `scripts/vps-data-refresh.sh pr` sources `/root/app/.env.local`, then the root-owned secret files `/root/.env.local` and `/root/.env.agents`, runs the validated refresh with Postgres seeding disabled, rebuilds embeddings, pushes a `data/weekly-refresh` branch, dispatches CI, and opens or updates a PR with the tracked data artifacts. `scripts/vps-data-refresh.sh merge` is the data refresh runner's publication gate: it merges only when the generated PR changes exactly `schools.json` and `data/school-embeddings.json`, and the GitHub CI `test` check is green. `scripts/vps-data-refresh.sh apply` then pulls `main` on the VPS and seeds Postgres from the merged `schools.json`. This keeps `OPENAI_API_KEY` and `POSTGRES_URL` out of GitHub repository secrets while preserving an auditable data-artifact path without making routine refreshes a human review task.
+
+Example VPS cron entries:
+
+```cron
+0 9 * * 1 cd /root/app && ./scripts/vps-data-refresh.sh pr
+30 9 * * 1 cd /root/app && ./scripts/vps-data-refresh.sh merge && ./scripts/vps-data-refresh.sh apply
+```
 
 ## Evals And Guardrails
 

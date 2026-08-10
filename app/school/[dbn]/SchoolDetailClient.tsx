@@ -192,7 +192,10 @@ export default function SchoolDetailClient({
                       i < visiblePrograms.length - 1 ? 'border-b border-rule-light' : ''
                     }`}
                   >
-                    <span className="text-[15px] font-medium text-ink">{p.name}</span>
+                    <span className="text-[15px] font-medium text-ink">
+                      {p.name}
+                      {p.code && <span className="ml-2 font-mono text-[12px] text-faint">{p.code}</span>}
+                    </span>
                     <span className="text-[13.5px] text-muted">{p.method}</span>
                   </div>
                 ))}

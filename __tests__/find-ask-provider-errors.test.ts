@@ -1,8 +1,9 @@
 /**
- * __tests__/chat-provider-errors.test.ts
+ * __tests__/find-ask-provider-errors.test.ts
  *
- * Issue #128: a real visitor hit /api/chat in production and got a raw
- * 400 with vendor error text ("You have reached your specified API
+ * Issue #128: a real visitor hit the /find ask endpoint (then
+ * /api/chat, now /api/find/ask — issue #170) in production and got a
+ * raw 400 with vendor error text ("You have reached your specified API
  * usage limits. You will regain access on 2026-08-01 at 00:00 UTC.").
  * These tests mock the Anthropic call to fail in each of the ways a
  * provider can fail, and assert the client only ever sees one of the
@@ -37,7 +38,7 @@ jest.mock('@/lib/rag', () => ({
   ]),
 }))
 
-import { POST } from '@/app/api/chat/route'
+import { POST } from '@/app/api/find/ask/route'
 
 const FORBIDDEN_SUBSTRINGS = [
   'usage limit',
@@ -48,7 +49,7 @@ const FORBIDDEN_SUBSTRINGS = [
   'anthropic',
 ]
 
-function fakeChatRequest(question: string, ip: string): NextRequest {
+function fakeAskRequest(question: string, ip: string): NextRequest {
   return {
     headers: {
       get: (name: string) => (name.toLowerCase() === 'x-forwarded-for' ? ip : null),
@@ -62,7 +63,7 @@ beforeEach(() => {
   mockCaptureException.mockReset()
 })
 
-describe('/api/chat provider failure handling (issue #128)', () => {
+describe('/api/find/ask provider failure handling (issue #128)', () => {
   it('returns a plain-language unavailable response for a usage-limit error, and logs the real error to Sentry', async () => {
     const upstreamError = new Error(
       '400 {"type":"error","error":{"type":"invalid_request_error","message":"You have reached your specified API usage limits. You will regain access on 2026-08-01 at 00:00 UTC."}}, "request_id": "req_abc123"'
@@ -70,7 +71,7 @@ describe('/api/chat provider failure handling (issue #128)', () => {
     ;(upstreamError as unknown as { status: number }).status = 400
     mockCreate.mockRejectedValue(upstreamError)
 
-    const res = await POST(fakeChatRequest('Which schools have strong STEM?', '10.0.0.1'))
+    const res = await POST(fakeAskRequest('Which schools have strong STEM?', '10.0.0.1'))
     expect(res.status).toBe(503)
 
     const bodyText = await res.text()
@@ -89,7 +90,7 @@ describe('/api/chat provider failure handling (issue #128)', () => {
     ;(upstreamError as unknown as { status: number }).status = 529
     mockCreate.mockRejectedValue(upstreamError)
 
-    const res = await POST(fakeChatRequest('Which schools have strong STEM?', '10.0.0.2'))
+    const res = await POST(fakeAskRequest('Which schools have strong STEM?', '10.0.0.2'))
     expect(res.status).toBe(503)
     const body = await res.json()
     const serialized = JSON.stringify(body).toLowerCase()
@@ -103,7 +104,7 @@ describe('/api/chat provider failure handling (issue #128)', () => {
     ;(upstreamError as unknown as { status: number }).status = 429
     mockCreate.mockRejectedValue(upstreamError)
 
-    const res = await POST(fakeChatRequest('Which schools have strong STEM?', '10.0.0.3'))
+    const res = await POST(fakeAskRequest('Which schools have strong STEM?', '10.0.0.3'))
     expect(res.status).toBe(429)
     const body = await res.json()
     expect(body.error).toBe(
@@ -115,7 +116,7 @@ describe('/api/chat provider failure handling (issue #128)', () => {
     const upstreamError = new Error('something exploded')
     mockCreate.mockRejectedValue(upstreamError)
 
-    const res = await POST(fakeChatRequest('Which schools have strong STEM?', '10.0.0.4'))
+    const res = await POST(fakeAskRequest('Which schools have strong STEM?', '10.0.0.4'))
     expect(res.status).toBe(500)
     const body = await res.json()
     const serialized = JSON.stringify(body).toLowerCase()
@@ -130,7 +131,7 @@ describe('/api/chat provider failure handling (issue #128)', () => {
       content: [{ type: 'text', text: 'Test High School is a great fit.' }],
     })
 
-    const res = await POST(fakeChatRequest('Which schools have strong STEM?', '10.0.0.5'))
+    const res = await POST(fakeAskRequest('Which schools have strong STEM?', '10.0.0.5'))
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.answer).toBe('Test High School is a great fit.')

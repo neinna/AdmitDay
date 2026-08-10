@@ -22,17 +22,14 @@ ANTHROPIC_API_KEY=$(grep ANTHROPIC_API_KEY /home/agent/app/.env.local | cut -d '
 APP_DIR="/home/agent/app"
 LOG_FILE="/home/agent/agent-coordinator.log"
 OFFSET_FILE="/home/agent/.tg_offset"
-LESSONS_FILE="/home/agent/app/LESSONS.md"
 TRIGGER_LABEL="agent-ok"
 CLAUDE_TIMEOUT=1800
 CLAUDE_IMPLEMENT_MODEL="${CLAUDE_IMPLEMENT_MODEL:-sonnet}"
 CLAUDE_REVIEW_MODEL="${CLAUDE_REVIEW_MODEL:-sonnet}"
 CLAUDE_PLANNER_MODEL="${CLAUDE_PLANNER_MODEL:-sonnet}"
-CLAUDE_RETRO_MODEL="${CLAUDE_RETRO_MODEL:-sonnet}"
 CLAUDE_IMPLEMENT_MAX_USD="${CLAUDE_IMPLEMENT_MAX_USD:-2.00}"
 CLAUDE_REVIEW_MAX_USD="${CLAUDE_REVIEW_MAX_USD:-0.75}"
 CLAUDE_PLANNER_MAX_USD="${CLAUDE_PLANNER_MAX_USD:-0.50}"
-CLAUDE_RETRO_MAX_USD="${CLAUDE_RETRO_MAX_USD:-0.25}"
 LF_TRACE_SCRIPT="${APP_DIR}/scripts/langfuse_trace.py"
 LF_TRACE_PYTHON="${LF_TRACE_PYTHON:-/home/agent/.venvs/agent-observability/bin/python}"
 RUN_METADATA_DIR="/home/agent/agent-run-metadata"
@@ -40,6 +37,8 @@ LF_RUN_FILE=""
 SELF_UPDATE_INTERVAL_SECONDS="${SELF_UPDATE_INTERVAL_SECONDS:-300}"
 SELF_UPDATE_STAMP="/tmp/agent-coordinator-self-update.last"
 SELF_UPDATE_LOCK="/tmp/agent-coordinator-self-update.lock"
+RECONCILE_INTERVAL_SECONDS="${RECONCILE_INTERVAL_SECONDS:-1800}"
+RECONCILE_STAMP="/tmp/agent-coordinator-reconcile.last"
 
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
@@ -302,6 +301,29 @@ github_remove_label() {
   gh_api DELETE "/issues/$1/labels/$2" > /dev/null
 }
 
+blocking_issue_number() {
+  # blocking_issue_number ISSUE_BODY -> echoes the first still-open "Blocked by
+  # #N" dependency found in the body (AGENTS.md: "An issue whose body contains
+  # a line `Blocked by #N` is skipped while issue #N is still open"), or
+  # nothing if there is no such line or every referenced issue is closed.
+  # Supports multiple "Blocked by #N" lines; checked in order, first open wins.
+  local BODY="$1" NUM STATE
+  for NUM in $(printf '%s\n' "$BODY" | grep -oE '^Blocked by #[0-9]+\r?$' | grep -oE '[0-9]+'); do
+    STATE=$(gh_api GET "/issues/$NUM" | python3 -c "
+import json,sys
+try:
+    print(json.load(sys.stdin).get('state','') or '')
+except Exception:
+    pass
+")
+    if [ "$STATE" = "open" ]; then
+      echo "$NUM"
+      return 0
+    fi
+  done
+  return 1
+}
+
 github_comment() {
   local BODY
   BODY=$(printf '%s' "$2" | json_escape)
@@ -355,6 +377,121 @@ try:
 except Exception:
     sys.exit(1)
 "
+}
+
+# reconcile_open_prs: the pipeline is entirely event-driven (issue labeled,
+# branch pushed, PR opened, check completed) and event-driven systems drop
+# events — e.g. a GitHub Actions outage that leaves a PR with no "test" check
+# run at all, which branch protection then blocks on forever even though
+# nothing is wrong with the code. This periodic sweep compares intended state
+# (should be progressing toward merge) to actual state and corrects it,
+# instead of waiting for an event that already failed to fire.
+#
+# Only touches PRs whose head branch matches the "task-<issue>-" prefix this
+# coordinator generates in run_agent — never a PR opened by a human or by
+# another tool. Never merges, never pushes to main: update-branch only
+# re-triggers CI and fast-forwards the PR branch onto main (which can let an
+# auto-merge-enabled PR merge once CI passes — that is the intended
+# self-healing behavior, not a side effect to guard against).
+reconcile_open_prs() {
+  local RUN_START T0 T1
+  RUN_START=$(lf_now_ns)
+  LF_RUN_FILE="/tmp/lf-run-reconcile.jsonl"
+  : > "$LF_RUN_FILE" 2>/dev/null || LF_RUN_FILE=""
+
+  local QUALIFYING
+  QUALIFYING=$(gh_api GET "/pulls?state=open&per_page=100" | python3 -c "
+import json, re, sys
+try:
+    prs = json.load(sys.stdin)
+except Exception:
+    prs = []
+for pr in prs:
+    ref = (pr.get('head') or {}).get('ref') or ''
+    if re.match(r'^task-[0-9]+-', ref):
+        print(f\"{pr.get('number')}\t{ref}\")
+" 2>>"$LOG_FILE")
+
+  T0=$(lf_now_ns)
+  local NUM REF
+  while IFS=$'\t' read -r NUM REF; do
+    [ -z "$NUM" ] && continue
+    local ISSUE_NUM
+    ISSUE_NUM=$(echo "$REF" | python3 -c "
+import re, sys
+m = re.match(r'^task-([0-9]+)-', sys.stdin.read())
+print(m.group(1) if m else '')
+" 2>>"$LOG_FILE")
+    [ -z "$ISSUE_NUM" ] && continue
+
+    local PR_DETAIL MERGEABLE MERGEABLE_STATE SHA
+    PR_DETAIL=$(gh_api GET "/pulls/${NUM}")
+    MERGEABLE=$(echo "$PR_DETAIL" | python3 -c "
+import json, sys
+try:
+    v = json.load(sys.stdin).get('mergeable')
+except Exception:
+    v = None
+print('true' if v is True else ('false' if v is False else 'unknown'))
+" 2>>"$LOG_FILE")
+    MERGEABLE_STATE=$(echo "$PR_DETAIL" | python3 -c "
+import json, sys
+try:
+    print(json.load(sys.stdin).get('mergeable_state') or '')
+except Exception:
+    print('')
+" 2>>"$LOG_FILE")
+    SHA=$(echo "$PR_DETAIL" | python3 -c "
+import json, sys
+try:
+    print((json.load(sys.stdin).get('head') or {}).get('sha') or '')
+except Exception:
+    print('')
+" 2>>"$LOG_FILE")
+
+    # Real merge conflict (GraphQL's mergeable enum would report CONFLICTING
+    # here; REST's equivalent is mergeable_state=dirty with mergeable=false).
+    # Cannot be auto-resolved — escalate instead of touching the branch.
+    if [ "$MERGEABLE_STATE" = "dirty" ] && [ "$MERGEABLE" = "false" ]; then
+      log "Reconcile: PR #${NUM} (${REF}) has a real merge conflict, escalating issue #${ISSUE_NUM}"
+      github_label "$ISSUE_NUM" "needs-review"
+      github_comment "$ISSUE_NUM" "Reconciliation swept PR #${NUM} (branch \`${REF}\`) and found a real merge conflict with main that cannot be auto-resolved. Please resolve manually."
+      continue
+    fi
+
+    local HAS_TEST_CHECK="0"
+    if [ -n "$SHA" ]; then
+      HAS_TEST_CHECK=$(gh_api GET "/commits/${SHA}/check-runs" | python3 -c "
+import json, sys
+try:
+    runs = (json.load(sys.stdin).get('check_runs')) or []
+    print('1' if any(r.get('name') == 'test' for r in runs) else '0')
+except Exception:
+    print('0')
+" 2>>"$LOG_FILE")
+    fi
+
+    if [ "$HAS_TEST_CHECK" != "1" ] || [ "$MERGEABLE_STATE" = "behind" ]; then
+      log "Reconcile: re-triggering CI for PR #${NUM} (${REF}) via update-branch (test_check_present=${HAS_TEST_CHECK} mergeable_state=${MERGEABLE_STATE})"
+      gh_api PUT "/pulls/${NUM}/update-branch" > /dev/null
+    fi
+  done <<< "$QUALIFYING"
+  T1=$(lf_now_ns)
+  lf_record "reconcile" "$T0" "$T1" "1" "" "" "swept"
+
+  lf_emit "" "reconcile-open-prs" "" "swept" "" "" "$RUN_START" "$(lf_now_ns)" "" "" "" ""
+  return 0
+}
+
+maybe_reconcile_open_prs() {
+  local NOW LAST
+  NOW=$(date +%s)
+  LAST=$(cat "$RECONCILE_STAMP" 2>/dev/null || echo 0)
+  if [ $((NOW - LAST)) -lt "$RECONCILE_INTERVAL_SECONDS" ]; then
+    return 0
+  fi
+  echo "$NOW" > "$RECONCILE_STAMP" 2>/dev/null || true
+  reconcile_open_prs || log "Reconcile: pass errored, continuing"
 }
 
 # Run one claude agent call with timeout, capturing the JSON result.
@@ -543,55 +680,6 @@ RISK: LIVE-VERIFY-NEEDED"
   return 1
 }
 
-# Learning loop: after every completed task, distill 0-2 durable lessons into
-# LESSONS.md (deduped, hard cap 30 lines). Never fatal.
-run_retrospective() {
-  local ISSUE_NUMBER="$1" ISSUE_TITLE="$2" OUTCOME="$3" DIFF="$4"
-  local RETRO_OUT="/tmp/retro-issue-${ISSUE_NUMBER}.json"
-  local CURRENT_LESSONS="(file does not exist yet)"
-  [ -s "$LESSONS_FILE" ] && CURRENT_LESSONS=$(cat "$LESSONS_FILE")
-
-  local PROMPT="You maintain LESSONS.md, a list of durable lessons for an autonomous coding agent working on the AdmitDay Next.js app.
-
-A task just completed.
-Issue #${ISSUE_NUMBER}: ${ISSUE_TITLE}
-Outcome: ${OUTCOME}
-
-Diff (may be truncated):
-\`\`\`diff
-$(printf '%s' "$DIFF" | head -c 20000)
-\`\`\`
-
-Current LESSONS.md:
----
-${CURRENT_LESSONS}
----
-
-Write the complete new content of LESSONS.md and nothing else (no fences, no commentary):
-- Add 0-2 new lessons ONLY if this task taught something durable and reusable (a repo quirk, a recurring failure mode, a technique that worked). If nothing durable was learned, output the current content unchanged.
-- One lesson per line, as '- <lesson>'. A single '# Lessons' header line is allowed.
-- Deduplicate: never repeat an existing lesson in different words.
-- Hard cap 30 lines total: if adding would exceed it, drop the least useful existing line."
-
-  local T0 T1
-  T0=$(lf_now_ns)
-  run_claude "$RETRO_OUT" "" "Read" "$CLAUDE_RETRO_MODEL" "$CLAUDE_RETRO_MAX_USD"
-  local RC=$?
-  T1=$(lf_now_ns)
-  lf_record "retrospective" "$T0" "$T1" "$([ $RC -eq 0 ] && echo 1 || echo 0)" "$RETRO_OUT" ""
-  if [ $RC -eq 0 ]; then
-    local NEW_LESSONS
-    NEW_LESSONS=$(claude_json_field "$RETRO_OUT" "result" | head -30)
-    if [ -n "$NEW_LESSONS" ]; then
-      printf '%s\n' "$NEW_LESSONS" > "$LESSONS_FILE"
-      log "Retrospective for #${ISSUE_NUMBER} updated LESSONS.md ($(wc -l < "$LESSONS_FILE") lines)"
-    fi
-  else
-    log "Retrospective for #${ISSUE_NUMBER} failed (non-fatal)"
-  fi
-  rm -f "$RETRO_OUT"
-}
-
 # Planner: break a Telegram /goal into <=5 small issues labeled agent-ok.
 # The planner claude call is READ-ONLY; the coordinator creates the issues.
 plan_goal() {
@@ -718,6 +806,24 @@ run_agent() {
   local ISSUE_TITLE ISSUE_BODY ISSUE_COMMENTS
   ISSUE_TITLE=$(python3 -c "import json; print(json.load(open('$ISSUE_FILE')).get('title',''))")
   ISSUE_BODY=$(python3 -c "import json; print(json.load(open('$ISSUE_FILE')).get('body') or '(no body)')")
+  rm -f "$ISSUE_FILE"
+
+  if [ -z "$ISSUE_TITLE" ]; then
+    log "Could not fetch issue #${ISSUE_NUMBER}, skipping"
+    return
+  fi
+
+  # Dependency gate: skip this loop, untouched, while a "Blocked by #N" issue
+  # is still open. Checked before the trigger label is ever touched, so a
+  # blocked issue stays exactly as it was (still "agent-ok") and becomes
+  # eligible again on a later poll once its blocker closes.
+  local BLOCKER
+  BLOCKER=$(blocking_issue_number "$ISSUE_BODY")
+  if [ -n "$BLOCKER" ]; then
+    log "Issue #${ISSUE_NUMBER}: skipping this loop, blocked by open issue #${BLOCKER}"
+    return
+  fi
+
   ISSUE_COMMENTS=$(gh_api GET "/issues/${ISSUE_NUMBER}/comments" | python3 -c "
 import json,sys
 try:
@@ -727,12 +833,6 @@ try:
 except Exception:
     print('(no comments)')
 ")
-  rm -f "$ISSUE_FILE"
-
-  if [ -z "$ISSUE_TITLE" ]; then
-    log "Could not fetch issue #${ISSUE_NUMBER}, skipping"
-    return
-  fi
 
   local SAFE_TITLE=$(echo "$ISSUE_TITLE" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | tr -dc 'a-z0-9-' | cut -c1-30)
   local BRANCH="task-${ISSUE_NUMBER}-${SAFE_TITLE}"
@@ -758,14 +858,6 @@ except Exception:
   git checkout -b "$BRANCH" >> "$LOG_FILE" 2>&1
   rm -f "$CLAUDE_OUT" "$VERIFY_OUT"
 
-  local LESSONS_SECTION=""
-  if [ -s "$LESSONS_FILE" ]; then
-    LESSONS_SECTION="
-Lessons learned from previous tasks on this repo (follow them):
-$(cat "$LESSONS_FILE")
-"
-  fi
-
   local BRIEF="You are fixing a GitHub issue in the AdmitDay Next.js app.
 
 Issue #${ISSUE_NUMBER}: ${ISSUE_TITLE}
@@ -774,13 +866,13 @@ ${ISSUE_BODY}
 
 Issue comments:
 ${ISSUE_COMMENTS}
-${LESSONS_SECTION}
+
 Instructions:
-- Work in /home/agent/app on branch ${BRANCH} (already checked out). If /home/agent/app/CLAUDE.md exists, read it first and follow its house rules.
+- Work in /home/agent/app on branch ${BRANCH} (already checked out). Read /home/agent/app/AGENTS.md first and follow its house rules.
 - Fix the issue. Stay strictly within its scope — an independent reviewer will reject scope creep. Add tests for your change in __tests__/ (add, don't overwrite existing tests).
 - Run 'cd /home/agent/app && npm test' and 'cd /home/agent/app && npm run build' and iterate until both are green.
-- Commit your work: cd /home/agent/app && git add -A -- ':(exclude)LESSONS.md' && git commit -m \"${COMMIT_TITLE}\"
-- Never modify data/schools.json. Never commit LESSONS.md.
+- Commit your work: cd /home/agent/app && git add -A && git commit -m \"${COMMIT_TITLE}\"
+- Never modify data/schools.json.
 - Never push, never merge, never switch branches.
 - You can send the owner a short progress update with: /home/agent/notify.sh \"message\"
 - End with a short summary of what you changed and why (it becomes the pull request description)."
@@ -842,9 +934,9 @@ Instructions:
     # Objective verification by the coordinator — the only success signal.
     if [ $RC -eq 0 ] && verify_app "$VERIFY_OUT"; then
       cd "$APP_DIR"
-      # Fallback: commit anything the agent left uncommitted (except LESSONS.md)
-      if [ -n "$(git status --porcelain -- ':(exclude)LESSONS.md')" ]; then
-        git add -A -- ':(exclude)LESSONS.md' && git commit -m "$COMMIT_TITLE" >> "$LOG_FILE" 2>&1
+      # Fallback: commit anything the agent left uncommitted
+      if [ -n "$(git status --porcelain)" ]; then
+        git add -A && git commit -m "$COMMIT_TITLE" >> "$LOG_FILE" 2>&1
       fi
       if [ -n "$(git log origin/main..HEAD --oneline)" ]; then
         # Independent reviewer pass (fresh context, issue + diff only)
@@ -864,7 +956,7 @@ Address the reviewer's objections. Diagnose what is wrong before changing anythi
           break
         fi
       else
-        FAIL_REASON="Verification passed but no changes were committed on the branch. You must actually implement and commit the fix with: git add -A -- ':(exclude)LESSONS.md' && git commit -m \"${COMMIT_TITLE}\""
+        FAIL_REASON="Verification passed but no changes were committed on the branch. You must actually implement and commit the fix with: git add -A && git commit -m \"${COMMIT_TITLE}\""
         log "Issue #${ISSUE_NUMBER}: verification passed but no changes were committed"
       fi
     else
@@ -885,10 +977,6 @@ Diagnose why this failed before changing anything else. Then fix it, re-run npm 
     fi
     ATTEMPT=$((ATTEMPT + 1))
   done
-
-  # Capture the diff for the retrospective before any branch cleanup
-  local TASK_DIFF
-  TASK_DIFF=$(cd "$APP_DIR" && git diff origin/main...HEAD | head -c 20000)
 
   if [ $SUCCESS -eq 1 ]; then
     local SUMMARY
@@ -956,7 +1044,6 @@ Tests and build verified green by the coordinator, and an independent reviewer a
       telegram "Issue #${ISSUE_NUMBER}: branch ${BRANCH} pushed but PR creation FAILED — needs manual attention"
     fi
     git checkout main >> "$LOG_FILE" 2>&1
-    run_retrospective "$ISSUE_NUMBER" "$ISSUE_TITLE" "SUCCESS — PR opened after ${ATTEMPT} attempt(s)" "$TASK_DIFF"
   else
     local FAIL_OUTPUT
     FAIL_OUTPUT=$(tail -100 "$VERIFY_OUT" 2>/dev/null)
@@ -985,7 +1072,6 @@ ${FAIL_OUTPUT}
     git branch -D "$BRANCH" 2>/dev/null
     log "Issue #${ISSUE_NUMBER}: failed after 2 attempts, labeled needs-review"
     telegram "Failed after 2 attempts: issue #${ISSUE_NUMBER}: ${ISSUE_TITLE} — labeled needs-review, branch deleted"
-    run_retrospective "$ISSUE_NUMBER" "$ISSUE_TITLE" "FAILURE — 2 attempts exhausted (verification or review failed)" "$TASK_DIFF"
   fi
 
   # One trace per issue, written after the run has fully finished either way.
@@ -1014,6 +1100,7 @@ telegram "Coordinator started, watching for ${TRIGGER_LABEL} issues (PR flow —
 
 while true; do
   maybe_self_update_or_exit
+  maybe_reconcile_open_prs
   handle_telegram_commands
 
   ISSUE_NUMBERS=$(curl -sL \
@@ -1024,9 +1111,9 @@ while true; do
 import json, sys
 try:
     issues = json.load(sys.stdin)
-    for i in issues:
-        if 'pull_request' not in i:
-            print(i['number'])
+    numbers = [i['number'] for i in issues if 'pull_request' not in i]
+    for n in sorted(numbers):
+        print(n)
 except Exception:
     pass
 ")
