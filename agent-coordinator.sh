@@ -302,6 +302,29 @@ github_remove_label() {
   gh_api DELETE "/issues/$1/labels/$2" > /dev/null
 }
 
+blocking_issue_number() {
+  # blocking_issue_number ISSUE_BODY -> echoes the first still-open "Blocked by
+  # #N" dependency found in the body (AGENTS.md: "An issue whose body contains
+  # a line `Blocked by #N` is skipped while issue #N is still open"), or
+  # nothing if there is no such line or every referenced issue is closed.
+  # Supports multiple "Blocked by #N" lines; checked in order, first open wins.
+  local BODY="$1" NUM STATE
+  for NUM in $(printf '%s\n' "$BODY" | grep -oE '^Blocked by #[0-9]+\r?$' | grep -oE '[0-9]+'); do
+    STATE=$(gh_api GET "/issues/$NUM" | python3 -c "
+import json,sys
+try:
+    print(json.load(sys.stdin).get('state','') or '')
+except Exception:
+    pass
+")
+    if [ "$STATE" = "open" ]; then
+      echo "$NUM"
+      return 0
+    fi
+  done
+  return 1
+}
+
 github_comment() {
   local BODY
   BODY=$(printf '%s' "$2" | json_escape)
@@ -718,6 +741,24 @@ run_agent() {
   local ISSUE_TITLE ISSUE_BODY ISSUE_COMMENTS
   ISSUE_TITLE=$(python3 -c "import json; print(json.load(open('$ISSUE_FILE')).get('title',''))")
   ISSUE_BODY=$(python3 -c "import json; print(json.load(open('$ISSUE_FILE')).get('body') or '(no body)')")
+  rm -f "$ISSUE_FILE"
+
+  if [ -z "$ISSUE_TITLE" ]; then
+    log "Could not fetch issue #${ISSUE_NUMBER}, skipping"
+    return
+  fi
+
+  # Dependency gate: skip this loop, untouched, while a "Blocked by #N" issue
+  # is still open. Checked before the trigger label is ever touched, so a
+  # blocked issue stays exactly as it was (still "agent-ok") and becomes
+  # eligible again on a later poll once its blocker closes.
+  local BLOCKER
+  BLOCKER=$(blocking_issue_number "$ISSUE_BODY")
+  if [ -n "$BLOCKER" ]; then
+    log "Issue #${ISSUE_NUMBER}: skipping this loop, blocked by open issue #${BLOCKER}"
+    return
+  fi
+
   ISSUE_COMMENTS=$(gh_api GET "/issues/${ISSUE_NUMBER}/comments" | python3 -c "
 import json,sys
 try:
@@ -727,12 +768,6 @@ try:
 except Exception:
     print('(no comments)')
 ")
-  rm -f "$ISSUE_FILE"
-
-  if [ -z "$ISSUE_TITLE" ]; then
-    log "Could not fetch issue #${ISSUE_NUMBER}, skipping"
-    return
-  fi
 
   local SAFE_TITLE=$(echo "$ISSUE_TITLE" | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | tr -dc 'a-z0-9-' | cut -c1-30)
   local BRANCH="task-${ISSUE_NUMBER}-${SAFE_TITLE}"
@@ -1024,9 +1059,9 @@ while true; do
 import json, sys
 try:
     issues = json.load(sys.stdin)
-    for i in issues:
-        if 'pull_request' not in i:
-            print(i['number'])
+    numbers = [i['number'] for i in issues if 'pull_request' not in i]
+    for n in sorted(numbers):
+        print(n)
 except Exception:
     pass
 ")
