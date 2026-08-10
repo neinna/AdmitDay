@@ -243,6 +243,7 @@ def emit(raw):
         trace_name=TRACE_NAME,
         metadata=metadata,
         tags=tags,
+        user_id="coding-agent",
         # One session per issue, so a re-run of the same issue lines up next to
         # its earlier attempts instead of scattering across the trace list.
         session_id="issue-%s" % issue_number if issue_number is not None else None,

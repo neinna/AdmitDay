@@ -578,6 +578,31 @@ sys.exit(0 if is_api_error and providerish else 1)
 PYEOF
 }
 
+claude_budget_exhausted() {
+  # claude_budget_exhausted FILE
+  # Returns 0 when the claude JSON result represents the coordinator's own
+  # per-call --max-budget-usd cap firing. That is a controlled stop, not a
+  # provider outage and not proof the implementation was bad.
+  python3 - "$1" << 'PYEOF'
+import json
+import re
+import sys
+
+try:
+    data = json.load(open(sys.argv[1]))
+except Exception:
+    sys.exit(1)
+
+text = " ".join(str(data.get(k, "")) for k in ("result", "terminal_reason", "error", "message"))
+budgetish = re.search(
+    r"--max-budget-usd|max(?:imum)? budget|budget[^.]{0,80}(exceed|exhaust|limit|cap)|spend limit|cost cap",
+    text,
+    re.I,
+)
+sys.exit(0 if data.get("is_error") is True and budgetish else 1)
+PYEOF
+}
+
 # Coordinator-owned verification: the ONLY success signal.
 # This VPS has <600MB free disk and Next's webpack filesystem cache alone is
 # ~400MB, so: wipe .next before building and keep pruning .next/cache while
@@ -928,6 +953,24 @@ Instructions:
         "$REVIEWER_RESULT" "$PR_OUTCOME"
       rm -f "$CLAUDE_OUT" "$VERIFY_OUT"
       return 75
+    fi
+
+    if [ $RC -ne 0 ] && claude_budget_exhausted "$CLAUDE_OUT"; then
+      OUTCOME="budget-exhausted"; GH_LABEL="needs-review"; PR_OUTCOME="not-attempted"
+      log "Issue #${ISSUE_NUMBER}: Claude hit the coordinator max budget (${CLAUDE_IMPLEMENT_MAX_USD} USD) on attempt ${ATTEMPT}; labeling needs-review instead of retrying."
+      github_comment "$ISSUE_NUMBER" "Agent stopped because the coordinator's Claude per-call budget cap was reached on attempt ${ATTEMPT}.
+
+This is a controlled cost stop, not a verified implementation failure. The issue is labeled needs-review so a human can either narrow the scope, raise the cap for this issue, or run it manually."
+      github_label "$ISSUE_NUMBER" "needs-review"
+      github_remove_label "$ISSUE_NUMBER" "in-progress"
+      cd "$APP_DIR"
+      git checkout main >> "$LOG_FILE" 2>&1
+      git branch -D "$BRANCH" 2>/dev/null
+      lf_emit "$ISSUE_NUMBER" "$ISSUE_TITLE" "$BRANCH" "$OUTCOME" "$ATTEMPTS_USED" \
+        "$GH_LABEL" "$RUN_START" "$(lf_now_ns)" "$TEST_RESULT" "$BUILD_RESULT" \
+        "$REVIEWER_RESULT" "$PR_OUTCOME"
+      rm -f "$CLAUDE_OUT" "$VERIFY_OUT"
+      return 0
     fi
 
     FAIL_REASON=""

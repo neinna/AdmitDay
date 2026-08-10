@@ -191,6 +191,15 @@ describe('agent-coordinator.sh PR flow', () => {
     expect(coordinatorSource).toContain('Provider halt: sleeping 10 minutes before retrying.')
   })
 
+  it('treats Claude max-budget hits as budget-exhausted, not provider outage or implementation failure', () => {
+    expect(coordinatorSource).toContain('claude_budget_exhausted()')
+    expect(coordinatorSource).toContain('--max-budget-usd|max(?:imum)? budget')
+    expect(coordinatorSource).toContain('OUTCOME="budget-exhausted"')
+    expect(coordinatorSource).toContain('This is a controlled cost stop')
+    expect(coordinatorSource).toContain('GH_LABEL="needs-review"')
+    expect(coordinatorSource).toContain('return 0')
+  })
+
   it('keeps Claude API but caps cost and chooses models per coordinator phase', () => {
     for (const setting of [
       'CLAUDE_IMPLEMENT_MODEL="${CLAUDE_IMPLEMENT_MODEL:-sonnet}"',
@@ -218,6 +227,10 @@ describe('agent-coordinator.sh PR flow', () => {
       expect(coordinatorSource).toContain(field)
       expect(langfuseTraceSource).toContain(`"${field}"`)
     }
+  })
+
+  it('attributes Langfuse dashboard user consumption to the coding agent', () => {
+    expect(langfuseTraceSource).toContain('user_id="coding-agent"')
   })
 
   it('keeps private task context out of Langfuse payloads', () => {
