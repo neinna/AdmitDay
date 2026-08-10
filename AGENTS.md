@@ -16,7 +16,6 @@ These are the shared rules for any coding agent working in this repo: Claude Cod
 - The product name in UI copy is **"AdmitDay"**.
 - If a change alters user-facing behavior, the data model, or the architecture, update `README.md` in the same PR so the README never drifts from reality.
 - Never push, never merge, never switch branches unless the active orchestrator or human operator explicitly assigns that responsibility.
-- `LESSONS.md` is coordinator-owned runtime state — read it for context, but never commit it.
 - Stay strictly within the scope of the issue you were given; an independent reviewer rejects scope creep.
 
 ## Issue Sequencing
