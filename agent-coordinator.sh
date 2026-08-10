@@ -22,17 +22,14 @@ ANTHROPIC_API_KEY=$(grep ANTHROPIC_API_KEY /home/agent/app/.env.local | cut -d '
 APP_DIR="/home/agent/app"
 LOG_FILE="/home/agent/agent-coordinator.log"
 OFFSET_FILE="/home/agent/.tg_offset"
-LESSONS_FILE="/home/agent/app/LESSONS.md"
 TRIGGER_LABEL="agent-ok"
 CLAUDE_TIMEOUT=1800
 CLAUDE_IMPLEMENT_MODEL="${CLAUDE_IMPLEMENT_MODEL:-sonnet}"
 CLAUDE_REVIEW_MODEL="${CLAUDE_REVIEW_MODEL:-sonnet}"
 CLAUDE_PLANNER_MODEL="${CLAUDE_PLANNER_MODEL:-sonnet}"
-CLAUDE_RETRO_MODEL="${CLAUDE_RETRO_MODEL:-sonnet}"
 CLAUDE_IMPLEMENT_MAX_USD="${CLAUDE_IMPLEMENT_MAX_USD:-2.00}"
 CLAUDE_REVIEW_MAX_USD="${CLAUDE_REVIEW_MAX_USD:-0.75}"
 CLAUDE_PLANNER_MAX_USD="${CLAUDE_PLANNER_MAX_USD:-0.50}"
-CLAUDE_RETRO_MAX_USD="${CLAUDE_RETRO_MAX_USD:-0.25}"
 LF_TRACE_SCRIPT="${APP_DIR}/scripts/langfuse_trace.py"
 LF_TRACE_PYTHON="${LF_TRACE_PYTHON:-/home/agent/.venvs/agent-observability/bin/python}"
 RUN_METADATA_DIR="/home/agent/agent-run-metadata"
@@ -566,55 +563,6 @@ RISK: LIVE-VERIFY-NEEDED"
   return 1
 }
 
-# Learning loop: after every completed task, distill 0-2 durable lessons into
-# LESSONS.md (deduped, hard cap 30 lines). Never fatal.
-run_retrospective() {
-  local ISSUE_NUMBER="$1" ISSUE_TITLE="$2" OUTCOME="$3" DIFF="$4"
-  local RETRO_OUT="/tmp/retro-issue-${ISSUE_NUMBER}.json"
-  local CURRENT_LESSONS="(file does not exist yet)"
-  [ -s "$LESSONS_FILE" ] && CURRENT_LESSONS=$(cat "$LESSONS_FILE")
-
-  local PROMPT="You maintain LESSONS.md, a list of durable lessons for an autonomous coding agent working on the AdmitDay Next.js app.
-
-A task just completed.
-Issue #${ISSUE_NUMBER}: ${ISSUE_TITLE}
-Outcome: ${OUTCOME}
-
-Diff (may be truncated):
-\`\`\`diff
-$(printf '%s' "$DIFF" | head -c 20000)
-\`\`\`
-
-Current LESSONS.md:
----
-${CURRENT_LESSONS}
----
-
-Write the complete new content of LESSONS.md and nothing else (no fences, no commentary):
-- Add 0-2 new lessons ONLY if this task taught something durable and reusable (a repo quirk, a recurring failure mode, a technique that worked). If nothing durable was learned, output the current content unchanged.
-- One lesson per line, as '- <lesson>'. A single '# Lessons' header line is allowed.
-- Deduplicate: never repeat an existing lesson in different words.
-- Hard cap 30 lines total: if adding would exceed it, drop the least useful existing line."
-
-  local T0 T1
-  T0=$(lf_now_ns)
-  run_claude "$RETRO_OUT" "" "Read" "$CLAUDE_RETRO_MODEL" "$CLAUDE_RETRO_MAX_USD"
-  local RC=$?
-  T1=$(lf_now_ns)
-  lf_record "retrospective" "$T0" "$T1" "$([ $RC -eq 0 ] && echo 1 || echo 0)" "$RETRO_OUT" ""
-  if [ $RC -eq 0 ]; then
-    local NEW_LESSONS
-    NEW_LESSONS=$(claude_json_field "$RETRO_OUT" "result" | head -30)
-    if [ -n "$NEW_LESSONS" ]; then
-      printf '%s\n' "$NEW_LESSONS" > "$LESSONS_FILE"
-      log "Retrospective for #${ISSUE_NUMBER} updated LESSONS.md ($(wc -l < "$LESSONS_FILE") lines)"
-    fi
-  else
-    log "Retrospective for #${ISSUE_NUMBER} failed (non-fatal)"
-  fi
-  rm -f "$RETRO_OUT"
-}
-
 # Planner: break a Telegram /goal into <=5 small issues labeled agent-ok.
 # The planner claude call is READ-ONLY; the coordinator creates the issues.
 plan_goal() {
@@ -793,14 +741,6 @@ except Exception:
   git checkout -b "$BRANCH" >> "$LOG_FILE" 2>&1
   rm -f "$CLAUDE_OUT" "$VERIFY_OUT"
 
-  local LESSONS_SECTION=""
-  if [ -s "$LESSONS_FILE" ]; then
-    LESSONS_SECTION="
-Lessons learned from previous tasks on this repo (follow them):
-$(cat "$LESSONS_FILE")
-"
-  fi
-
   local BRIEF="You are fixing a GitHub issue in the AdmitDay Next.js app.
 
 Issue #${ISSUE_NUMBER}: ${ISSUE_TITLE}
@@ -809,13 +749,13 @@ ${ISSUE_BODY}
 
 Issue comments:
 ${ISSUE_COMMENTS}
-${LESSONS_SECTION}
+
 Instructions:
-- Work in /home/agent/app on branch ${BRANCH} (already checked out). If /home/agent/app/CLAUDE.md exists, read it first and follow its house rules.
+- Work in /home/agent/app on branch ${BRANCH} (already checked out). Read /home/agent/app/AGENTS.md first and follow its house rules.
 - Fix the issue. Stay strictly within its scope — an independent reviewer will reject scope creep. Add tests for your change in __tests__/ (add, don't overwrite existing tests).
 - Run 'cd /home/agent/app && npm test' and 'cd /home/agent/app && npm run build' and iterate until both are green.
-- Commit your work: cd /home/agent/app && git add -A -- ':(exclude)LESSONS.md' && git commit -m \"${COMMIT_TITLE}\"
-- Never modify data/schools.json. Never commit LESSONS.md.
+- Commit your work: cd /home/agent/app && git add -A && git commit -m \"${COMMIT_TITLE}\"
+- Never modify data/schools.json.
 - Never push, never merge, never switch branches.
 - You can send the owner a short progress update with: /home/agent/notify.sh \"message\"
 - End with a short summary of what you changed and why (it becomes the pull request description)."
@@ -877,9 +817,9 @@ Instructions:
     # Objective verification by the coordinator — the only success signal.
     if [ $RC -eq 0 ] && verify_app "$VERIFY_OUT"; then
       cd "$APP_DIR"
-      # Fallback: commit anything the agent left uncommitted (except LESSONS.md)
-      if [ -n "$(git status --porcelain -- ':(exclude)LESSONS.md')" ]; then
-        git add -A -- ':(exclude)LESSONS.md' && git commit -m "$COMMIT_TITLE" >> "$LOG_FILE" 2>&1
+      # Fallback: commit anything the agent left uncommitted
+      if [ -n "$(git status --porcelain)" ]; then
+        git add -A && git commit -m "$COMMIT_TITLE" >> "$LOG_FILE" 2>&1
       fi
       if [ -n "$(git log origin/main..HEAD --oneline)" ]; then
         # Independent reviewer pass (fresh context, issue + diff only)
@@ -899,7 +839,7 @@ Address the reviewer's objections. Diagnose what is wrong before changing anythi
           break
         fi
       else
-        FAIL_REASON="Verification passed but no changes were committed on the branch. You must actually implement and commit the fix with: git add -A -- ':(exclude)LESSONS.md' && git commit -m \"${COMMIT_TITLE}\""
+        FAIL_REASON="Verification passed but no changes were committed on the branch. You must actually implement and commit the fix with: git add -A && git commit -m \"${COMMIT_TITLE}\""
         log "Issue #${ISSUE_NUMBER}: verification passed but no changes were committed"
       fi
     else
@@ -920,10 +860,6 @@ Diagnose why this failed before changing anything else. Then fix it, re-run npm 
     fi
     ATTEMPT=$((ATTEMPT + 1))
   done
-
-  # Capture the diff for the retrospective before any branch cleanup
-  local TASK_DIFF
-  TASK_DIFF=$(cd "$APP_DIR" && git diff origin/main...HEAD | head -c 20000)
 
   if [ $SUCCESS -eq 1 ]; then
     local SUMMARY
@@ -991,7 +927,6 @@ Tests and build verified green by the coordinator, and an independent reviewer a
       telegram "Issue #${ISSUE_NUMBER}: branch ${BRANCH} pushed but PR creation FAILED — needs manual attention"
     fi
     git checkout main >> "$LOG_FILE" 2>&1
-    run_retrospective "$ISSUE_NUMBER" "$ISSUE_TITLE" "SUCCESS — PR opened after ${ATTEMPT} attempt(s)" "$TASK_DIFF"
   else
     local FAIL_OUTPUT
     FAIL_OUTPUT=$(tail -100 "$VERIFY_OUT" 2>/dev/null)
@@ -1020,7 +955,6 @@ ${FAIL_OUTPUT}
     git branch -D "$BRANCH" 2>/dev/null
     log "Issue #${ISSUE_NUMBER}: failed after 2 attempts, labeled needs-review"
     telegram "Failed after 2 attempts: issue #${ISSUE_NUMBER}: ${ISSUE_TITLE} — labeled needs-review, branch deleted"
-    run_retrospective "$ISSUE_NUMBER" "$ISSUE_TITLE" "FAILURE — 2 attempts exhausted (verification or review failed)" "$TASK_DIFF"
   fi
 
   # One trace per issue, written after the run has fully finished either way.
