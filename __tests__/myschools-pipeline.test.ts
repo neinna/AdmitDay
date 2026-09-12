@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import { spawnSync } from 'child_process'
+import yaml from 'js-yaml'
 
 describe('MySchools program pipeline', () => {
   const buildSource = fs.readFileSync(path.join(__dirname, '../build_school_data.py'), 'utf-8')
@@ -10,18 +11,13 @@ describe('MySchools program pipeline', () => {
   const vpsRefreshSource = fs.readFileSync(path.join(__dirname, '../scripts/vps-data-refresh.sh'), 'utf-8')
 
   it('keeps workflow YAML parseable', () => {
-    const result = spawnSync(
-      'ruby',
-      [
-        '-e',
-        "require 'yaml'; ARGV.each { |f| YAML.load_file(f) }",
-        '.github/workflows/ci.yml',
-      ],
-      { cwd: path.join(__dirname, '..'), encoding: 'utf-8' }
-    )
-
-    expect(result.status).toBe(0)
-    expect(result.stderr).toBe('')
+    // Parsed in-process with js-yaml rather than shelling out to a system
+    // `ruby` binary -- the previous check happened to work on GitHub's
+    // ubuntu-latest runners (which bundle Ruby) but isn't portable to every
+    // environment this suite runs in, and failed there for reasons entirely
+    // unrelated to the workflow YAML itself.
+    const workflowPath = path.join(__dirname, '../.github/workflows/ci.yml')
+    expect(() => yaml.load(fs.readFileSync(workflowPath, 'utf-8'))).not.toThrow()
   })
 
   it('keeps the VPS refresh runner shell-parseable', () => {
