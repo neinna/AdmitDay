@@ -1,6 +1,7 @@
 import {
   validateSchoolData,
   EXPECTED_SCHOOL_COUNT,
+  MYSCHOOLS_COVERAGE_THRESHOLD,
 } from '../lib/validate-school-data'
 
 // ── Issue #118: data refresh validation (split from #93) ───────────────────
@@ -171,5 +172,112 @@ describe('validateSchoolData', () => {
 
   it('default EXPECTED_SCHOOL_COUNT reflects today\'s known-good baseline (~457)', () => {
     expect(EXPECTED_SCHOOL_COUNT).toBe(457)
+  })
+})
+
+// ── Issue #189: bounded MySchools fallback shouldn't abort the refresh ─────
+
+function makeMySchoolsProgram(dbn: string) {
+  return {
+    program_name: 'Program',
+    program_code: `${dbn}-M1`,
+    admissions_type: 'Screened',
+    provenance: {
+      source: 'MySchools',
+      url: `https://www.myschools.nyc/en/api/v2/schools/process/1/${dbn}/`,
+      fetched_at: '2026-09-12T00:00:00+00:00',
+    },
+  }
+}
+
+function makeFallbackProgram(sift_url: string) {
+  return {
+    program_name: 'Screened',
+    admissions_type: 'Screened',
+    raw_method: 'Screened',
+    provenance: {
+      source: 'NYC-SIFT',
+      url: sift_url,
+      fetched_at: '2026-09-12T00:00:00+00:00',
+    },
+  }
+}
+
+function makeSchoolsWithMySchoolsCoverage(total: number, myschoolsCount: number) {
+  return Array.from({ length: total }, (_, i) => {
+    const dbn = `0${i}X${100 + i}`
+    const school: Record<string, unknown> = {
+      dbn,
+      name: `Test School ${i}`,
+      borough: 'Brooklyn',
+    }
+    if (i < myschoolsCount) {
+      school.programs = [makeMySchoolsProgram(dbn)]
+    } else {
+      school.myschools_status = 'not_listed'
+      school.programs = [makeFallbackProgram(`https://nycsift.com/school.phtml?id=${dbn}`)]
+    }
+    return school
+  })
+}
+
+describe('validateSchoolData MySchools coverage threshold (issue #189)', () => {
+  it('passes when 448/457 schools have a MySchools-sourced program (98% coverage)', () => {
+    const schools = makeSchoolsWithMySchoolsCoverage(457, 448)
+    const result = validateSchoolData(schools, null, { requireMySchoolsPrograms: true })
+    expect(result.valid).toBe(true)
+    expect(result.errors).toEqual([])
+  })
+
+  it('fails when only 400/457 schools have a MySchools-sourced program (87.5% coverage)', () => {
+    const schools = makeSchoolsWithMySchoolsCoverage(457, 400)
+    const result = validateSchoolData(schools, null, { requireMySchoolsPrograms: true })
+    expect(result.valid).toBe(false)
+    expect(result.errors.some((e) => e.includes('MySchools coverage 400/457'))).toBe(true)
+  })
+
+  it('marks a fallback school and never reports it as MySchools-sourced', () => {
+    const schools = makeSchoolsWithMySchoolsCoverage(457, 448)
+    const fallbackSchool = schools[456] as Record<string, unknown>
+    expect(fallbackSchool.myschools_status).toBe('not_listed')
+
+    // The fallback school itself is not flagged invalid -- NYC-SIFT provenance
+    // is recognized -- so it must not appear in invalidRecords.
+    const result = validateSchoolData(schools, null, { requireMySchoolsPrograms: true })
+    const fallbackRecord = result.invalidRecords.find((r) => r.dbn === fallbackSchool.dbn)
+    expect(fallbackRecord).toBeUndefined()
+
+    // A threshold between 448/457 (actual coverage) and 449/457 fails only if
+    // the fallback school is correctly excluded from the MySchools count --
+    // proving it is never reported as MySchools-sourced.
+    const strict = validateSchoolData(schools, null, {
+      requireMySchoolsPrograms: true,
+      myschoolsCoverageThreshold: 0.981,
+    })
+    expect(strict.valid).toBe(false)
+    expect(strict.errors.some((e) => e.includes('MySchools coverage 448/457'))).toBe(true)
+  })
+
+  it('respects a custom myschoolsCoverageThreshold', () => {
+    const schools = makeSchoolsWithMySchoolsCoverage(10, 8) // 80% coverage
+    const strict = validateSchoolData(schools, null, {
+      expectedCount: 10,
+      countTolerance: 0,
+      requireMySchoolsPrograms: true,
+      myschoolsCoverageThreshold: 0.9,
+    })
+    expect(strict.valid).toBe(false)
+
+    const lenient = validateSchoolData(schools, null, {
+      expectedCount: 10,
+      countTolerance: 0,
+      requireMySchoolsPrograms: true,
+      myschoolsCoverageThreshold: 0.7,
+    })
+    expect(lenient.valid).toBe(true)
+  })
+
+  it('default MYSCHOOLS_COVERAGE_THRESHOLD is 95%', () => {
+    expect(MYSCHOOLS_COVERAGE_THRESHOLD).toBe(0.95)
   })
 })

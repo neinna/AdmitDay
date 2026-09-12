@@ -20,6 +20,7 @@ import os
 import time
 import re
 from bs4 import BeautifulSoup
+from datetime import datetime, timezone
 from pathlib import Path
 
 from scripts.scrape_myschools import MySchoolsError, scrape_school_programs
@@ -28,7 +29,16 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; AdmitDay/1.0; research tool)"
 }
 MYSCHOOLS_CACHE_DIR = Path("scripts") / ".myschools_cache"
-ALLOW_MYSCHOOLS_FALLBACK = os.environ.get("ADMITDAY_ALLOW_MYSCHOOLS_FALLBACK") == "1"
+
+# MySchools no longer lists every school that's still in the high-school
+# admissions process (id 1) -- a handful come back "Response is missing
+# school.dbn" (see issue #189). A small, bounded number of those misses must
+# not abort the whole refresh: fall back to NYC-SIFT detail for that one
+# school and keep going. The overall run still fails loudly if too many
+# schools fall back -- that check lives in lib/validate-school-data.ts
+# (coverage threshold), not here. Set ADMITDAY_ALLOW_MYSCHOOLS_FALLBACK=0 to
+# force strict mode (abort on the first MySchools miss) for local debugging.
+ALLOW_MYSCHOOLS_FALLBACK = os.environ.get("ADMITDAY_ALLOW_MYSCHOOLS_FALLBACK", "1") != "0"
 
 # Minimum SHSAT score that received a specialized high school offer.
 # Source: NYC DOE "Specialized High School Offers" press release, 2024 admissions cycle.
@@ -210,6 +220,7 @@ def fetch_school_detail(dbn, sift_url):
 
         admissions_types = set()
         programs = []
+        fetched_at = datetime.now(timezone.utc).isoformat()
 
         for col_div in soup.find_all("div", class_="NYCSF_twocolumn"):
             children = [c for c in col_div.children if getattr(c, "name", None) == "div"]
@@ -222,8 +233,14 @@ def fetch_school_detail(dbn, sift_url):
                 if method:
                     admissions_types.add(method)
                     programs.append({
+                        "program_name": value,
                         "admissions_type": method,
                         "raw_method": value,
+                        "provenance": {
+                            "source": "NYC-SIFT",
+                            "url": sift_url,
+                            "fetched_at": fetched_at,
+                        },
                     })
 
         return list(admissions_types), programs
@@ -248,6 +265,7 @@ def build_school_json(sift_schools, doe_by_dbn):
             size = "medium"
 
         print(f"  [{i+1}/{len(sift_schools)}] {school['name'][:50]}")
+        myschools_status = None
         try:
             admissions_types, programs = fetch_myschools_program_detail(dbn)
         except MySchoolsError as e:
@@ -255,6 +273,7 @@ def build_school_json(sift_schools, doe_by_dbn):
                 raise
             print(f"    MySchools failed for {dbn}, falling back to NYC-SIFT detail: {e}")
             admissions_types, programs = fetch_school_detail(dbn, school["sift_url"])
+            myschools_status = "not_listed"
         time.sleep(0.3)
 
         has_shsat = "SHSAT" in admissions_types
@@ -381,6 +400,8 @@ def build_school_json(sift_schools, doe_by_dbn):
             "shsat_cutoff_score": SHSAT_CUTOFFS.get(dbn) if has_shsat else None,
             "shsat_cutoff_year": SHSAT_CUTOFFS_YEAR if has_shsat and SHSAT_CUTOFFS.get(dbn) else None,
         }
+        if myschools_status:
+            merged["myschools_status"] = myschools_status
         final.append(merged)
 
     return final
@@ -398,6 +419,10 @@ def validate(schools):
     print(f"Consortium schools:     {sum(1 for s in schools if s['flags']['has_consortium'])}")
     print(f"IB schools:             {sum(1 for s in schools if s['flags']['has_ib'])}")
     print(f"Missing admissions:     {sum(1 for s in schools if not s['admissions_types'])}")
+    fallback_dbns = [s["dbn"] for s in schools if s.get("myschools_status") == "not_listed"]
+    print(f"MySchools fallback:     {len(fallback_dbns)}")
+    if fallback_dbns:
+        print(f"  {', '.join(fallback_dbns)}")
     print()
     by_borough = {}
     for s in schools:
