@@ -48,13 +48,15 @@ Data currency is the core differentiator. One command runs the refresh pipeline:
 npm run refresh:data
 ```
 
-The pipeline runs `build_school_data.py`, validates counts and required fields, writes the validated JSON, rebuilds embeddings with `scripts/embed-schools.ts`, and then seeds Postgres with `scripts/seed-schools.ts`. Embeddings run before the DB update so a provider/key failure cannot leave `/find` data ahead of RAG. It refuses to write if the scrape looks structurally wrong, such as a large school-count drop, duplicate DBNs, missing required fields, or missing MySchools program provenance.
+The pipeline runs `build_school_data.py`, validates counts and required fields, writes the validated JSON, rebuilds embeddings with `scripts/embed-schools.ts`, and then seeds Postgres with `scripts/seed-schools.ts`. Embeddings run before the DB update so a provider/key failure cannot leave `/find` data ahead of RAG. It refuses to write if the scrape looks structurally wrong, such as a large school-count drop, duplicate DBNs, or missing required fields.
+
+MySchools no longer lists every school still in the high-school admissions process. A school MySchools omits falls back to NYC-SIFT program detail for that one school -- marked with `myschools_status: "not_listed"` on the school and `provenance.source: "NYC-SIFT"` on its programs -- rather than aborting the whole refresh. The refresh still fails loudly if MySchools coverage drops too far: at least 95% of schools must have a program with both `program_code` and `provenance.source == "MySchools"`, or validation rejects the scrape.
 
 Source roles:
 
-- NYC-SIFT provides the school list and school-level selectivity signals.
+- NYC-SIFT provides the school list and school-level selectivity signals, and is also the fallback source for per-program detail on schools MySchools has stopped listing.
 - NYC Open Data dataset `uq7m-95z8` provides older DOE directory fields. Its rows are from the 2018-era / 2019 DOE High School Directory and should be treated as historical where MySchools has fresher fields.
-- MySchools provides current per-school/per-program admissions records. Program data includes names, codes, admissions methods, seats/demand, requirements text, eligibility/priority text, source URL, and fetch timestamp.
+- MySchools provides current per-school/per-program admissions records for the schools it still lists. Program data includes names, codes, admissions methods, seats/demand, requirements text, eligibility/priority text, source URL, and fetch timestamp.
 
 Scheduled refresh runs from the VPS, where the env files already live. `scripts/vps-data-refresh.sh pr` sources `/root/app/.env.local`, then the root-owned secret files `/root/.env.local` and `/root/.env.agents`, runs the validated refresh with Postgres seeding disabled, rebuilds embeddings, pushes a `data/weekly-refresh` branch, dispatches CI, and opens or updates a PR with the tracked data artifacts. `scripts/vps-data-refresh.sh merge` is the data refresh runner's publication gate: it merges only when the generated PR changes exactly `schools.json` and `data/school-embeddings.json`, and the GitHub CI `test` check is green. `scripts/vps-data-refresh.sh apply` then pulls `main` on the VPS and seeds Postgres from the merged `schools.json`. This keeps `OPENAI_API_KEY` and `POSTGRES_URL` out of GitHub repository secrets while preserving an auditable data-artifact path without making routine refreshes a human review task.
 

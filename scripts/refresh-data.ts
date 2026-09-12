@@ -53,7 +53,8 @@ function printSummary(
   newCount: number,
   added: string[],
   removed: string[],
-  invalidRecords: { index: number; dbn?: string; reasons: string[] }[]
+  invalidRecords: { index: number; dbn?: string; reasons: string[] }[],
+  myschoolsFallbackDbns: string[]
 ): void {
   console.log('\n── Refresh summary ─────────────────────────────────')
   console.log(`Schools before: ${previousCount ?? '(none)'}`)
@@ -62,6 +63,8 @@ function printSummary(
   if (added.length > 0) console.log(`  ${added.join(', ')}`)
   console.log(`Removed:        ${removed.length}`)
   if (removed.length > 0) console.log(`  ${removed.join(', ')}`)
+  console.log(`MySchools fallback (not listed): ${myschoolsFallbackDbns.length}`)
+  if (myschoolsFallbackDbns.length > 0) console.log(`  ${myschoolsFallbackDbns.join(', ')}`)
   console.log(`Failed validation: ${invalidRecords.length}`)
   invalidRecords.forEach((r) => {
     console.log(`  [${r.index}] ${r.dbn ?? '(no dbn)'}: ${r.reasons.join('; ')}`)
@@ -78,9 +81,14 @@ async function main(): Promise<void> {
   const scrapedPath = path.join(scrapeTmpDir, 'schools.json')
 
   // 1. Scrape to a temp file so validation failure cannot overwrite the
-  // previous known-good root schools.json.
+  // previous known-good root schools.json. ADMITDAY_ALLOW_MYSCHOOLS_FALLBACK
+  // is passed explicitly (rather than relying on the scrape's own default) so
+  // a bounded number of MySchools misses fall back to NYC-SIFT detail per
+  // school instead of aborting the whole run; validateSchoolData below is
+  // what fails the refresh if too many schools fall back.
   run('python3', ['build_school_data.py'], {
     ADMITDAY_SCHOOLS_OUTPUT: scrapedPath,
+    ADMITDAY_ALLOW_MYSCHOOLS_FALLBACK: '1',
   })
 
   const scraped = readJsonArray(scrapedPath)
@@ -88,11 +96,23 @@ async function main(): Promise<void> {
     throw new Error(`${scrapedPath} was not produced by the scrape (or is not a JSON array).`)
   }
 
+  const myschoolsFallbackDbns = (scraped as RawSchoolRecord[])
+    .map((r) => (r ?? {}) as RawSchoolRecord)
+    .filter((r) => r.myschools_status === 'not_listed')
+    .map((r) => (typeof r.dbn === 'string' ? r.dbn : '(no dbn)'))
+
   // 2. Validate.
   const result = validateSchoolData(scraped as RawSchoolRecord[], previousSchools, {
     requireMySchoolsPrograms: true,
   })
-  printSummary(result.previousCount, result.schoolCount, result.added, result.removed, result.invalidRecords)
+  printSummary(
+    result.previousCount,
+    result.schoolCount,
+    result.added,
+    result.removed,
+    result.invalidRecords,
+    myschoolsFallbackDbns
+  )
 
   if (!result.valid) {
     console.error('\nValidation FAILED -- refusing to write data/schools.json.')

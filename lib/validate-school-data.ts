@@ -40,11 +40,21 @@ export interface ValidateOptions {
   maxDropRatio?: number
   /** Require current MySchools per-program records with provenance. Defaults to false for small unit fixtures. */
   requireMySchoolsPrograms?: boolean
+  /** Fraction (0-1) of schools that must have a MySchools-sourced program. Defaults to MYSCHOOLS_COVERAGE_THRESHOLD. */
+  myschoolsCoverageThreshold?: number
 }
 
 export const EXPECTED_SCHOOL_COUNT = 457
 export const EXPECTED_COUNT_TOLERANCE = 0.1
 export const MAX_DROP_VS_PREVIOUS = 0.1
+
+/**
+ * MySchools no longer lists every school still in the high-school admissions
+ * process (issue #189). A bounded number of schools falling back to NYC-SIFT
+ * detail (marked with provenance.source "NYC-SIFT") is tolerated -- only a
+ * genuine coverage collapse fails the refresh.
+ */
+export const MYSCHOOLS_COVERAGE_THRESHOLD = 0.95
 
 function asTrimmedString(value: unknown): string {
   return typeof value === 'string' ? value.trim() : ''
@@ -59,15 +69,27 @@ function hasEmptyString(value: unknown): boolean {
   return false
 }
 
-function validateMySchoolsPrograms(record: RawSchoolRecord): string[] {
+/**
+ * Validates a school's `programs` array and reports whether it has at least
+ * one program actually sourced from MySchools (as opposed to a school that
+ * fell back to NYC-SIFT detail because MySchools no longer lists it -- see
+ * `myschools_status: "not_listed"` and provenance.source "NYC-SIFT").
+ *
+ * A recognized fallback (provenance.source "NYC-SIFT") is valid at the
+ * per-school level; it just never counts toward MySchools coverage. Only a
+ * program with no recognized provenance source at all -- the old
+ * NYC-SIFT-shaped rows this replaced -- is flagged invalid.
+ */
+function validateMySchoolsPrograms(record: RawSchoolRecord): { reasons: string[]; hasMySchoolsProgram: boolean } {
   const reasons: string[] = []
   const programs = record.programs
 
   if (!Array.isArray(programs) || programs.length === 0) {
     reasons.push('missing MySchools programs')
-    return reasons
+    return { reasons, hasMySchoolsProgram: false }
   }
 
+  let hasMySchoolsProgram = false
   const seenProgramKeys = new Set<string>()
   programs.forEach((program, programIndex) => {
     const p = (program ?? {}) as Record<string, unknown>
@@ -80,9 +102,16 @@ function validateMySchoolsPrograms(record: RawSchoolRecord): string[] {
 
     if (!name) reasons.push(`program[${programIndex}] missing program name`)
     if (hasEmptyString(p)) reasons.push(`program[${programIndex}] contains empty string; omit missing fields instead`)
-    if (provenanceSource !== 'MySchools') reasons.push(`program[${programIndex}] missing MySchools provenance source`)
-    if (!provenanceUrl) reasons.push(`program[${programIndex}] missing provenance url`)
-    if (!fetchedAt) reasons.push(`program[${programIndex}] missing provenance fetched_at`)
+
+    if (provenanceSource === 'MySchools' || provenanceSource === 'NYC-SIFT') {
+      if (!provenanceUrl) reasons.push(`program[${programIndex}] missing provenance url`)
+      if (!fetchedAt) reasons.push(`program[${programIndex}] missing provenance fetched_at`)
+      if (provenanceSource === 'MySchools' && code) hasMySchoolsProgram = true
+    } else {
+      reasons.push(`program[${programIndex}] missing MySchools provenance source`)
+      reasons.push(`program[${programIndex}] missing provenance url`)
+      reasons.push(`program[${programIndex}] missing provenance fetched_at`)
+    }
 
     const key = code || name
     if (key) {
@@ -91,7 +120,7 @@ function validateMySchoolsPrograms(record: RawSchoolRecord): string[] {
     }
   })
 
-  return reasons
+  return { reasons, hasMySchoolsProgram }
 }
 
 /**
@@ -124,6 +153,7 @@ export function validateSchoolData(
 
   const seenDbns = new Set<string>()
   const dbns: string[] = []
+  let myschoolsCoveredCount = 0
 
   schools.forEach((record, index) => {
     const r = (record ?? {}) as RawSchoolRecord
@@ -137,7 +167,9 @@ export function validateSchoolData(
     if (!borough) reasons.push('missing borough')
     if (dbn && seenDbns.has(dbn)) reasons.push(`duplicate dbn: ${dbn}`)
     if (options?.requireMySchoolsPrograms) {
-      reasons.push(...validateMySchoolsPrograms(r))
+      const { reasons: programReasons, hasMySchoolsProgram } = validateMySchoolsPrograms(r)
+      reasons.push(...programReasons)
+      if (hasMySchoolsProgram) myschoolsCoveredCount++
     }
 
     if (dbn) {
@@ -152,6 +184,17 @@ export function validateSchoolData(
 
   if (invalidRecords.length > 0) {
     errors.push(`${invalidRecords.length} record(s) failed field validation.`)
+  }
+
+  if (options?.requireMySchoolsPrograms && schoolCount > 0) {
+    const coverageThreshold = options?.myschoolsCoverageThreshold ?? MYSCHOOLS_COVERAGE_THRESHOLD
+    const coverageRatio = myschoolsCoveredCount / schoolCount
+    if (coverageRatio < coverageThreshold) {
+      errors.push(
+        `MySchools coverage ${myschoolsCoveredCount}/${schoolCount} (${(coverageRatio * 100).toFixed(1)}%) ` +
+          `is below the required ${(coverageThreshold * 100).toFixed(0)}%.`
+      )
+    }
   }
 
   const expectedCount = options?.expectedCount ?? EXPECTED_SCHOOL_COUNT
