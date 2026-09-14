@@ -13,9 +13,6 @@ export default function Footer() {
             myschools.nyc
           </a>
         </p>
-        <p className="text-xs text-gray-300 text-center mt-2">
-          Built by Long Tail Studio
-        </p>
       </div>
     </footer>
   )
