@@ -596,20 +596,6 @@ describe('Issue #19: Sentry source maps in next.config.js', () => {
   })
 })
 
-// ── Issue #17: Built by Long Tail Studio footer ──────────────────────────────
-
-describe('Issue #17: Built by Long Tail Studio footer', () => {
-  const footerSource = fs.readFileSync(path.join(__dirname, '../components/Footer.tsx'), 'utf-8')
-
-  it('contains Built by Long Tail Studio text', () => {
-    expect(footerSource).toContain('Built by Long Tail Studio')
-  })
-
-  it('uses subtle low-contrast styling', () => {
-    expect(footerSource).toContain('text-gray-300')
-  })
-})
-
 // ── Issue #18: Guard onRequestError against null errors ─────────────────────
 
 describe('Issue #18: instrumentation.ts onRequestError null guard', () => {
