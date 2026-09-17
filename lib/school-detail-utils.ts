@@ -14,6 +14,7 @@
 
 import { School } from '@/types'
 import { FindFilters } from '@/lib/school-list-utils'
+import { getShsatCutoffs } from '@/lib/shsat-cutoffs'
 
 // ── Lookup ───────────────────────────────────────────────────────────────────
 
@@ -139,6 +140,21 @@ export function buildNotReportedStatsSentence(missingLabels: string[]): string |
   const verb = missingLabels.length === 1 ? 'is' : 'are'
   const list = capitalize(joinOxford(missingLabels))
   return `${list} ${verb} not published for this school. That is a gap in the DOE data, not a low result.`
+}
+
+// ── SHSAT cutoffs ────────────────────────────────────────────────────────────
+
+export interface ShsatCutoffRow {
+  year: string
+  score: number
+}
+
+/** Published SHSAT offer cutoffs for this school, oldest year first — empty for non-specialized schools or a DBN with no published cutoff. */
+export function buildShsatCutoffRows(school: School): ShsatCutoffRow[] {
+  if (!school.flags.has_shsat) return []
+  const cutoffs = getShsatCutoffs(school.dbn)
+  if (!cutoffs) return []
+  return cutoffs.map((c) => ({ year: c.year, score: c.score }))
 }
 
 // ── Activities ───────────────────────────────────────────────────────────────

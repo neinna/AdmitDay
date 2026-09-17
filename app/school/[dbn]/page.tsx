@@ -8,6 +8,7 @@ import {
   buildStatCells,
   getMissingStatLabels,
   buildNotReportedStatsSentence,
+  buildShsatCutoffRows,
   buildActivityGroups,
   getMissingActivityLabels,
   buildNotOfferedActivitiesSentence,
@@ -57,6 +58,7 @@ export default async function SchoolDetailPage({
 
   const statCells = buildStatCells(school)
   const notReportedStatsSentence = buildNotReportedStatsSentence(getMissingStatLabels(school))
+  const shsatCutoffRows = buildShsatCutoffRows(school)
 
   const activityGroupsRaw = buildActivityGroups(school)
   const activityGroups = activityGroupsRaw.map((g) => ({
@@ -102,6 +104,7 @@ export default async function SchoolDetailPage({
         tracks={tracks}
         statCells={statCells}
         notReportedStatsSentence={notReportedStatsSentence}
+        shsatCutoffRows={shsatCutoffRows}
         programs={programs}
         requirementBlocks={requirementBlocks}
         activityGroups={activityGroups}
