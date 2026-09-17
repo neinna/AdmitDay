@@ -12,6 +12,7 @@ import {
   parseCommaList,
   parsePsalSports,
   parseExtracurriculars,
+  buildShsatCutoffRows,
   buildActivityGroups,
   getMissingActivityLabels,
   buildNotOfferedActivitiesSentence,
@@ -240,6 +241,27 @@ describe('getMissingStatLabels + buildNotReportedStatsSentence (NOT REPORTED —
     expect(sentence).toBe(
       'Academic score and survey score are not published for this school. That is a gap in the DOE data, not a low result.'
     )
+  })
+})
+
+// ── SHSAT cutoffs: three published years for specialized schools (issue #192) ──
+
+describe('buildShsatCutoffRows', () => {
+  it('returns all published years, oldest first, for a specialized school', () => {
+    const school = makeSchool({ dbn: '13K430', flags: { has_shsat: true } })
+    const rows = buildShsatCutoffRows(school)
+    expect(rows.map((r) => r.year)).toEqual(['2024', '2025', '2026'])
+    expect(rows.map((r) => r.score)).toEqual([507, 505, 506])
+  })
+
+  it('returns an empty array for a school that does not have the SHSAT track', () => {
+    const school = makeSchool({ dbn: '13K430', flags: { has_shsat: false } })
+    expect(buildShsatCutoffRows(school)).toEqual([])
+  })
+
+  it('returns an empty array for a school flagged has_shsat with no published cutoff row', () => {
+    const school = makeSchool({ dbn: '99Z999', flags: { has_shsat: true } })
+    expect(buildShsatCutoffRows(school)).toEqual([])
   })
 })
 

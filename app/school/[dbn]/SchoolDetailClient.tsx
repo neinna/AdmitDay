@@ -4,7 +4,14 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { School } from '@/types'
 import { ADDED_SCHOOLS_KEY, trackLabel } from '@/lib/school-list-utils'
-import { StatCell, ActivityGroup, ProgramRow, RequirementBlock, chipIsMatched } from '@/lib/school-detail-utils'
+import {
+  StatCell,
+  ShsatCutoffRow,
+  ActivityGroup,
+  ProgramRow,
+  RequirementBlock,
+  chipIsMatched,
+} from '@/lib/school-detail-utils'
 import { Eyebrow, DefinitionRow, NotReportedLine, StatGrid } from '@/components/ui'
 import SiteHeader from './SiteHeader'
 
@@ -23,6 +30,7 @@ interface Props {
   tracks: string[]
   statCells: StatCell[]
   notReportedStatsSentence: string | null
+  shsatCutoffRows: ShsatCutoffRow[]
   programs: ProgramRow[]
   requirementBlocks: RequirementBlock[]
   activityGroups: ActivityGroup[]
@@ -49,6 +57,7 @@ export default function SchoolDetailClient({
   tracks,
   statCells,
   notReportedStatsSentence,
+  shsatCutoffRows,
   programs,
   requirementBlocks,
   activityGroups,
@@ -173,6 +182,16 @@ export default function SchoolDetailClient({
           <NotReportedLine variant="reported" className="pt-3">
             {notReportedStatsSentence}
           </NotReportedLine>
+        )}
+        {shsatCutoffRows.length > 0 && (
+          <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 pt-4">
+            <span className="text-[12.5px] text-faint">SHSAT offer cutoff, by year</span>
+            {shsatCutoffRows.map((row) => (
+              <span key={row.year} className="font-mono text-[13.5px] text-ink-2">
+                {row.year}: {row.score}
+              </span>
+            ))}
+          </div>
         )}
       </div>
 
