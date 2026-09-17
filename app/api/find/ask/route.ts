@@ -10,9 +10,12 @@
 import Anthropic from "@anthropic-ai/sdk";
 import * as Sentry from "@sentry/nextjs";
 import { NextRequest } from "next/server";
+import { randomUUID, createHash } from "crypto";
 import { searchSchools } from "@/lib/rag";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { classifyProviderError } from "@/lib/provider-error";
+import { recordLlmTrace } from "@/lib/trace";
+import { estimateCostUsd } from "@/lib/model-cost";
 
 let anthropicClient: Anthropic | null = null;
 
@@ -21,9 +24,30 @@ function getAnthropicClient(): Anthropic {
   return anthropicClient;
 }
 
+// Anonymous, per-request identifier for the Langfuse trace only — never
+// used for anything that affects the response. Prefers the client's
+// existing PostHog distinct id (if it chooses to send one) so a family's
+// asks group together in Langfuse; otherwise a fresh uuid per request.
+function getSessionId(request: NextRequest): string {
+  return request.headers.get("x-posthog-distinct-id") || randomUUID();
+}
+
+function hashQuestion(question: string): string {
+  return createHash("sha256").update(question).digest("hex").slice(0, 16);
+}
+
 export async function POST(request: NextRequest) {
+  const startedAt = Date.now();
+  const sessionId = getSessionId(request);
+
   const rl = checkRateLimit(request);
   if (!rl.ok) {
+    recordLlmTrace({
+      route: "find_ask",
+      sessionId,
+      latencyMs: Date.now() - startedAt,
+      outcome: "rate_limited",
+    });
     return Response.json(
       { error: "You're sending requests too quickly — please wait a moment and try again." },
       { status: 429, headers: { "Retry-After": String(rl.retryAfterSec) } },
@@ -33,8 +57,17 @@ export async function POST(request: NextRequest) {
   const { question } = await request.json();
 
   if (!question || typeof question !== "string") {
+    recordLlmTrace({
+      route: "find_ask",
+      sessionId,
+      latencyMs: Date.now() - startedAt,
+      outcome: "bad_request",
+    });
     return Response.json({ error: "question is required" }, { status: 400 });
   }
+
+  const questionLength = question.length;
+  const questionHash = hashQuestion(question);
 
   try {
     // Step 1: Retrieve the top 5 most relevant schools
@@ -68,6 +101,24 @@ export async function POST(request: NextRequest) {
     const answer =
       message.content[0].type === "text" ? message.content[0].text : "";
 
+    recordLlmTrace({
+      route: "find_ask",
+      sessionId,
+      questionLength,
+      questionHash,
+      retrieval: results.map((r) => ({
+        dbn: r.dbn,
+        score: r.score,
+        matchedChunkType: r.matchedChunkType,
+      })),
+      model: message.model,
+      inputTokens: message.usage?.input_tokens,
+      outputTokens: message.usage?.output_tokens,
+      latencyMs: Date.now() - startedAt,
+      costUsd: estimateCostUsd(message.model, message.usage?.input_tokens, message.usage?.output_tokens),
+      outcome: "ok",
+    });
+
     // Return the answer and the schools that were retrieved (for transparency)
     return Response.json({
       answer,
@@ -83,7 +134,16 @@ export async function POST(request: NextRequest) {
     // Log the real error (vendor detail, status, request id) to Sentry —
     // never let any part of it reach the client.
     Sentry.captureException(err);
-    const { status, body } = classifyProviderError(err);
+    const { status, body, classification } = classifyProviderError(err);
+    recordLlmTrace({
+      route: "find_ask",
+      sessionId,
+      questionLength,
+      questionHash,
+      latencyMs: Date.now() - startedAt,
+      outcome: classification === "rate_limited" ? "rate_limited" : "provider_error",
+      errorClassification: classification,
+    });
     return Response.json(body, { status });
   }
 }
