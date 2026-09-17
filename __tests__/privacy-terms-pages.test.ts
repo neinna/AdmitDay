@@ -1,0 +1,116 @@
+import fs from 'fs'
+import path from 'path'
+import React from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import PrivacyPage from '@/app/privacy/page'
+import TermsPage from '@/app/terms/page'
+
+// ── Issue #198: Publish /privacy and /terms before accounts collect anything ──
+//
+// Both pages are plain server components with no data fetching, so rendering
+// them with react-dom/server is the direct equivalent of "the route returns
+// 200": if either page threw during render, Next.js would serve a 500 in
+// production. This also proves both pages are reachable with JS disabled —
+// there is no 'use client' directive and no client-only hook gating content.
+
+const footerSource = fs.readFileSync(path.join(__dirname, '../components/Footer.tsx'), 'utf-8')
+const privacySource = fs.readFileSync(path.join(__dirname, '../app/privacy/page.tsx'), 'utf-8')
+const termsSource = fs.readFileSync(path.join(__dirname, '../app/terms/page.tsx'), 'utf-8')
+/** JSX wraps copy across lines, so sentence-spanning assertions read this. */
+const termsCopy = termsSource.replace(/\s+/g, ' ')
+
+describe('/privacy and /terms render', () => {
+  it('/privacy renders without throwing (route returns 200)', () => {
+    const html = renderToStaticMarkup(React.createElement(PrivacyPage))
+    expect(html).toContain('Privacy')
+    expect(html.length).toBeGreaterThan(0)
+  })
+
+  it('/terms renders without throwing (route returns 200)', () => {
+    const html = renderToStaticMarkup(React.createElement(TermsPage))
+    expect(html).toContain('Terms')
+    expect(html.length).toBeGreaterThan(0)
+  })
+
+  it('both pages are server components, reachable with JS disabled', () => {
+    expect(privacySource).not.toMatch(/^['"]use client['"]/m)
+    expect(termsSource).not.toMatch(/^['"]use client['"]/m)
+  })
+})
+
+describe('Footer links to /privacy and /terms sitewide', () => {
+  it('links to /privacy', () => {
+    expect(footerSource).toContain('href="/privacy"')
+  })
+
+  it('links to /terms', () => {
+    expect(footerSource).toContain('href="/terms"')
+  })
+
+  it('renders both links in the footer markup', () => {
+    const html = renderToStaticMarkup(React.createElement(require('@/components/Footer').default))
+    expect(html).toContain('href="/privacy"')
+    expect(html).toContain('href="/terms"')
+  })
+})
+
+describe('/privacy content matches the product as it actually exists', () => {
+  it('states that no information about a child is ever collected', () => {
+    expect(privacySource).toMatch(/no name, no grade, no date of birth, no contact details, no documents/i)
+  })
+
+  it('names only sub-processors this repo actually calls', () => {
+    // Every service named here must appear as a real dependency/integration
+    // elsewhere in the codebase — a listed processor that isn't wired up is
+    // worse than an unlisted one that is.
+    expect(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf-8')).toMatch(/@vercel\/postgres/)
+    expect(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf-8')).toMatch(/@anthropic-ai\/sdk/)
+    expect(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf-8')).toMatch(/"openai"/)
+    expect(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf-8')).toMatch(/@sentry\/nextjs/)
+    expect(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf-8')).toMatch(/posthog-js/)
+  })
+
+  it('does not name Langfuse as a sub-processor (it is not a package.json dependency and no app code imports it)', () => {
+    // scripts/langfuse_trace.py traces the coding-agent's own build metrics —
+    // issue numbers, tokens, cost — never product data, and it is not part of
+    // the deployed Next.js app. Listing it here would describe a system that
+    // doesn't exist yet (product LLM tracing, issue #194, is unmerged WIP).
+    expect(privacySource).not.toMatch(/langfuse/i)
+  })
+
+  it('says saved lists live in local storage, not on the server (accounts do not exist yet)', () => {
+    expect(privacySource).toMatch(/local storage/i)
+  })
+
+  it('does not claim parent accounts exist today', () => {
+    expect(privacySource).toMatch(/not collected today/i)
+  })
+})
+
+describe('/terms content matches product policy', () => {
+  it('states AdmitDay does not predict admissions outcomes', () => {
+    expect(termsCopy).toMatch(/does not estimate, score, or predict whether your child will be admitted/i)
+  })
+
+  it('uses no admissions-odds language of its own', () => {
+    const { findBannedPhrases } = require('@/lib/banned-phrases')
+    expect(findBannedPhrases(termsSource)).toEqual([])
+  })
+
+  it('states AdmitDay is not affiliated with or endorsed by the DOE', () => {
+    expect(termsCopy).toMatch(/not affiliated with, sponsored by, or endorsed by the New York City Department of Education/i)
+  })
+
+  it('tells families to confirm requirements and deadlines in MySchools', () => {
+    expect(termsSource).toMatch(/confirm every requirement and deadline/i)
+    expect(termsSource).toContain('https://www.myschools.nyc')
+  })
+
+  it('says AdmitDay copy is not authoritative', () => {
+    expect(termsSource).toMatch(/not authoritative/i)
+  })
+
+  it('admits DOE data can be out of date between refreshes', () => {
+    expect(termsSource).toMatch(/out of date/i)
+  })
+})
