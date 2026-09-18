@@ -7,7 +7,7 @@ import { classifyProviderError } from '@/lib/provider-error'
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export async function POST(request: NextRequest) {
-  const rl = checkRateLimit(request)
+  const rl = await checkRateLimit(request)
   if (!rl.ok) {
     return Response.json(
       { error: "You're sending requests too quickly — please wait a moment and try again." },

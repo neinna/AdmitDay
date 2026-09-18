@@ -23,7 +23,7 @@ function getAnthropicClient(): Anthropic {
 }
 
 export async function POST(request: NextRequest) {
-  const rl = checkRateLimit(request);
+  const rl = await checkRateLimit(request);
   if (!rl.ok) {
     return Response.json(
       { error: "You're sending requests too quickly — please wait a moment and try again." },
