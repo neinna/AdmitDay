@@ -21,6 +21,7 @@ import {
   TOO_LONG,
   OFF_TOPIC,
   PREDICTION_PREFACE,
+  NO_ANSWER,
   type Guardrail,
   isPredictionRequest,
   guardAnswer,
@@ -136,14 +137,28 @@ export async function POST(request: NextRequest) {
       ],
     });
 
-    const rawAnswer =
-      message.content[0].type === "text" ? message.content[0].text : "";
+    const rawAnswer = message.content
+      .filter((block): block is Anthropic.TextBlock => block.type === "text")
+      .map((block) => block.text)
+      .join("")
+      .trim();
 
     let answer: string;
     let guardrail: Guardrail;
     let sourcesForResponse = results;
+    let stopReason: string | undefined;
+    let contentBlockTypes: string[] | undefined;
 
-    if (rawAnswer.trim() === "OFF_TOPIC") {
+    if (rawAnswer === "") {
+      answer = NO_ANSWER;
+      guardrail = "empty";
+      stopReason = message.stop_reason ?? undefined;
+      contentBlockTypes = message.content.map((block) => block.type);
+      console.error(
+        "find_ask: model returned no text block",
+        { stopReason, contentBlockTypes }
+      );
+    } else if (rawAnswer === "OFF_TOPIC") {
       answer = OFF_TOPIC;
       guardrail = "off_topic";
       sourcesForResponse = [];
@@ -197,6 +212,8 @@ export async function POST(request: NextRequest) {
       costUsd: estimateCostUsd(message.model, message.usage?.input_tokens, message.usage?.output_tokens),
       outcome: "ok",
       guardrail,
+      stopReason,
+      contentBlockTypes,
     });
 
     return Response.json(responseBody);
