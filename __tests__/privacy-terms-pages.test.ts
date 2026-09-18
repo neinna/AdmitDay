@@ -109,6 +109,11 @@ describe('/privacy content matches the product as it actually exists', () => {
     expect(privacySource).toMatch(/label: 'IP address'/)
   })
 
+  it('promises automatic deletion of IP rate-limit rows within 24 hours (issue #233)', () => {
+    expect(privacySource).toMatch(/deleted automatically within 24 hours/i)
+    expect(privacySource).not.toMatch(/is on the way/i)
+  })
+
   it('the Sentry claim matches sendDefaultPii in every runtime config, not just the server one', () => {
     // A prior draft claimed IP addresses were stripped everywhere, but only
     // sentry.server.config.ts sets sendDefaultPii: false — the browser and

@@ -165,8 +165,7 @@ export default function PrivacyPage() {
           </p>
           <p>Your name, email, and saved lists are kept until you delete your account.</p>
           <p>
-            IP addresses used for rate limiting are kept until the same address makes another request. Automatic
-            deletion after 24 hours is on the way.
+            IP addresses used for rate limiting are deleted automatically within 24 hours.
           </p>
         </div>
       </section>

@@ -159,7 +159,10 @@ async function checkFromStore(
   const nextUtcMidnight = new Date(nextUtcMidnightMs(now)).toISOString()
 
   const { rows } = await sql<StoreRow>`
-    WITH ip AS (
+    WITH cleanup AS (
+      DELETE FROM rate_limits
+      WHERE key LIKE 'ip:%' AND expires_at < now() - interval '24 hours'
+    ), ip AS (
       INSERT INTO rate_limits (key, count, expires_at)
       VALUES (${ipKey}, 1, now() + make_interval(secs => ${WINDOW_SEC}))
       ON CONFLICT (key) DO UPDATE SET

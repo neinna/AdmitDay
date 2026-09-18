@@ -55,7 +55,15 @@ function createFakePostgres() {
       return Promise.resolve({ rows: [] })
     }
 
-    if (text.includes('WITH ip AS')) {
+    if (text.includes('ip AS (')) {
+      if (text.includes('DELETE FROM rate_limits')) {
+        store.forEach((entry, key) => {
+          if (key.startsWith('ip:') && entry.expiresAt < now - 24 * 60 * 60 * 1000) {
+            store.delete(key)
+          }
+        })
+      }
+
       const [ipKey, windowSec, dayKey, nextMidnightIso, maxRequests] = values as [
         string,
         number,
@@ -299,6 +307,31 @@ describe('checkRateLimit — global daily LLM ceiling (issue #197)', () => {
     expect(await mod.checkRateLimit(fakeRequest('1.1.1.1'))).toEqual({ ok: true })
     expect(await mod.checkRateLimit(fakeRequest('2.2.2.2'))).toEqual({ ok: true })
     expect((await mod.checkRateLimit(fakeRequest('3.3.3.3'))).ok).toBe(false)
+  })
+})
+
+describe('checkRateLimit — expired per-IP row cleanup (issue #233)', () => {
+  it('deletes ip:% rows older than 24 hours but leaves day:% rows alone', async () => {
+    jest.setSystemTime(20_000_000)
+    const { impl, store } = createFakePostgres()
+    mockSql.mockImplementation(impl)
+    const mod = loadFreshModule()
+
+    const now = Date.now()
+    // A stale per-IP row whose window expired over 24 hours ago — nothing
+    // ever hit this address again, so nothing else would clean it up.
+    store.set('ip:1.1.1.1', { count: 5, expiresAt: now - 25 * 60 * 60 * 1000 })
+    // A per-IP row that expired recently (under 24 hours ago) must survive.
+    store.set('ip:2.2.2.2', { count: 3, expiresAt: now - 60 * 60 * 1000 })
+    // A daily-ceiling row that looks "expired" by the same clock must never
+    // be touched by the ip:% cleanup, no matter how old.
+    store.set('day:2026-09-01', { count: 999, expiresAt: now - 25 * 60 * 60 * 1000 })
+
+    await mod.checkRateLimit(fakeRequest('9.8.7.6'))
+
+    expect(store.has('ip:1.1.1.1')).toBe(false)
+    expect(store.has('ip:2.2.2.2')).toBe(true)
+    expect(store.has('day:2026-09-01')).toBe(true)
   })
 })
 
