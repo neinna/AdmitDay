@@ -24,6 +24,21 @@ These are the shared rules for any coding agent working in this repo: Claude Cod
 - Never push, never merge, never switch branches unless the active orchestrator or human operator explicitly assigns that responsibility.
 - Stay strictly within the scope of the issue you were given; an independent reviewer rejects scope creep.
 
+## Cost And Issue Sizing
+
+Every implementation run is capped by `CLAUDE_IMPLEMENT_MAX_USD` (currently \$5.00). An issue that cannot be finished inside one capped run is not a hard issue — it is a badly sized one, and it will consume the whole cap and produce nothing.
+
+The metric is **cost per merged PR**, not cost per attempt. On 2026-09-17 this repo spent roughly \$13 per merged PR across five runs. \$2–5 is the healthy range for a multi-file feature with tests; \$0.50–1.50 for a single-file change with an explicit spec.
+
+When filing an issue for the agent:
+
+- **One concern per issue.** A new module, a new dependency, two route changes, and three test scenarios in one ticket is four issues.
+- **Put the answer in the issue, not a pointer to it.** Exact values, exact thresholds, exact API calls. #192 landed on the first pass because the verified cutoff numbers were written into the body. #162 failed four times because its four selectivity levels were named and never defined, leaving the agent to invent thresholds and then test its own invention.
+- **Do not list files "for context".** Every file named in the body is a paid read before any work begins. Name only the files that must change.
+- **No open design decisions.** If the issue requires choosing a threshold, a scale, or a product rule, that decision belongs in the issue or in Notion before the issue is filed.
+- **A new third-party dependency is its own issue.** Installing it and proving one call works is one ticket; using it is the next. Integrating an unfamiliar SDK is the single most expensive thing this pipeline does.
+- **Check the issue against the PRD before filing.** #162 asked for a derived rating that the PRD bans by name, so no implementation of it could ever have passed review.
+
 ## Issue Sequencing
 
 The coordinator picks up `agent-ok` issues in ascending issue-number order. File issues in the order they should be built.

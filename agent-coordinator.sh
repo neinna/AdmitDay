@@ -27,7 +27,7 @@ CLAUDE_TIMEOUT=1800
 CLAUDE_IMPLEMENT_MODEL="${CLAUDE_IMPLEMENT_MODEL:-sonnet}"
 CLAUDE_REVIEW_MODEL="${CLAUDE_REVIEW_MODEL:-sonnet}"
 CLAUDE_PLANNER_MODEL="${CLAUDE_PLANNER_MODEL:-sonnet}"
-CLAUDE_IMPLEMENT_MAX_USD="${CLAUDE_IMPLEMENT_MAX_USD:-2.00}"
+CLAUDE_IMPLEMENT_MAX_USD="${CLAUDE_IMPLEMENT_MAX_USD:-5.00}"
 CLAUDE_REVIEW_MAX_USD="${CLAUDE_REVIEW_MAX_USD:-0.75}"
 CLAUDE_PLANNER_MAX_USD="${CLAUDE_PLANNER_MAX_USD:-0.50}"
 LF_TRACE_SCRIPT="${APP_DIR}/scripts/langfuse_trace.py"
@@ -948,8 +948,15 @@ Instructions:
     ATTEMPTS_USED=$ATTEMPT
     local T0 T1
     T0=$(lf_now_ns)
+    # WebFetch/WebSearch are included so an issue that integrates a third-party
+    # SDK can read that SDK's documentation. Without them the agent can still
+    # reach the network through Bash, but the only way to learn an unfamiliar API
+    # is to npm install it and read the .d.ts files — which is what exhausted the
+    # budget on #194 (Langfuse SDK) in six minutes on attempt 1. Reading a
+    # quickstart page is orders of magnitude cheaper than inferring an API from
+    # type definitions.
     run_claude "$CLAUDE_OUT" "$([ $ATTEMPT -gt 1 ] && echo "$SESSION_ID")" \
-      "Bash,Read,Write,Edit,Glob,Grep" "$CLAUDE_IMPLEMENT_MODEL" "$CLAUDE_IMPLEMENT_MAX_USD"
+      "Bash,Read,Write,Edit,Glob,Grep,WebFetch,WebSearch" "$CLAUDE_IMPLEMENT_MODEL" "$CLAUDE_IMPLEMENT_MAX_USD"
     local RC=$?
     T1=$(lf_now_ns)
     lf_record "implement" "$T0" "$T1" "$([ $RC -eq 0 ] && echo 1 || echo 0)" \
