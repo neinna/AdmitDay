@@ -96,3 +96,28 @@ describe('extractFilters (issue #92: hybrid search deterministic pre-filter)', (
     expect(hasFilters({ sports: [], interests: [] })).toBe(false)
   })
 })
+
+describe('extractFilters negation (issue #258: respect "not X" when extracting subject chips)', () => {
+  it('excludes subjects negated across an "or" list, but keeps an earlier non-negated subject', () => {
+    const filters = extractFilters('strong stem specifically biology anything w medicine but not computer science or robotics')
+    expect(filters.interests).toContain('Health Professions')
+    expect(filters.interests).not.toContain('Computer Science')
+    expect(filters.interests).not.toContain('Engineering')
+  })
+
+  it('stops a negation at a clause break so a later subject still applies', () => {
+    const filters = extractFilters('no computer science, strong music')
+    expect(filters.interests).not.toContain('Computer Science')
+    expect(filters.interests).toContain('Performing Arts')
+  })
+
+  it('applies both subjects when joined by a plain "and" with no negation', () => {
+    const filters = extractFilters('computer science and biology')
+    expect(filters.interests).toContain('Computer Science')
+  })
+
+  it('excludes a subject introduced by "anything but"', () => {
+    const filters = extractFilters('anything but engineering')
+    expect(filters.interests).not.toContain('Engineering')
+  })
+})
