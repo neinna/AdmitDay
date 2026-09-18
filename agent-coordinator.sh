@@ -27,7 +27,7 @@ CLAUDE_TIMEOUT=1800
 CLAUDE_IMPLEMENT_MODEL="${CLAUDE_IMPLEMENT_MODEL:-sonnet}"
 CLAUDE_REVIEW_MODEL="${CLAUDE_REVIEW_MODEL:-sonnet}"
 CLAUDE_PLANNER_MODEL="${CLAUDE_PLANNER_MODEL:-sonnet}"
-CLAUDE_IMPLEMENT_MAX_USD="${CLAUDE_IMPLEMENT_MAX_USD:-2.00}"
+CLAUDE_IMPLEMENT_MAX_USD="${CLAUDE_IMPLEMENT_MAX_USD:-5.00}"
 CLAUDE_REVIEW_MAX_USD="${CLAUDE_REVIEW_MAX_USD:-0.75}"
 CLAUDE_PLANNER_MAX_USD="${CLAUDE_PLANNER_MAX_USD:-0.50}"
 LF_TRACE_SCRIPT="${APP_DIR}/scripts/langfuse_trace.py"
@@ -878,6 +878,33 @@ except Exception:
   github_label "$ISSUE_NUMBER" "in-progress"
 
   cd "$APP_DIR" || { log "FATAL: cannot cd to $APP_DIR"; LF_RUN_FILE=""; return; }
+
+  # Scrub the working tree before touching branches.
+  #
+  # A run that failed, errored, or exhausted its budget can leave edits behind.
+  # `git checkout main` carries modified tracked files across a branch switch
+  # when they do not conflict, `git checkout -b` carries them again onto the new
+  # task branch, and the `git add -A` fallback further down then commits the
+  # PREVIOUS issue's half-finished work into THIS issue's pull request.
+  #
+  # Observed 2026-09-17: #162 exhausted its \$2 budget mid-edit, and its three
+  # modified product files plus an untracked test file followed the coordinator
+  # onto #166's branch, where #166 — a change that should touch only this script
+  # — was about to commit all of them.
+  #
+  # Cleaning on entry rather than on exit is deliberate: there are five ways out
+  # of a run (success, test failure, review rejection, claude error, provider
+  # halt) and a guard on the single entry path cannot be bypassed by a new one.
+  # The tree between issues is scratch space and holds nothing worth keeping.
+  # `git clean -fd` leaves ignored files alone, so data/schools.json, .env.local,
+  # node_modules, and .next survive.
+  if [ -n "$(git status --porcelain)" ]; then
+    log "Issue #${ISSUE_NUMBER}: working tree dirty on entry — discarding leftovers from a previous run:"
+    git status --porcelain >> "$LOG_FILE" 2>&1
+    git reset --hard >> "$LOG_FILE" 2>&1
+    git clean -fd >> "$LOG_FILE" 2>&1
+  fi
+
   git checkout main >> "$LOG_FILE" 2>&1 && git pull origin main >> "$LOG_FILE" 2>&1
   git branch -D "$BRANCH" 2>/dev/null
   git checkout -b "$BRANCH" >> "$LOG_FILE" 2>&1
@@ -921,8 +948,15 @@ Instructions:
     ATTEMPTS_USED=$ATTEMPT
     local T0 T1
     T0=$(lf_now_ns)
+    # WebFetch/WebSearch are included so an issue that integrates a third-party
+    # SDK can read that SDK's documentation. Without them the agent can still
+    # reach the network through Bash, but the only way to learn an unfamiliar API
+    # is to npm install it and read the .d.ts files — which is what exhausted the
+    # budget on #194 (Langfuse SDK) in six minutes on attempt 1. Reading a
+    # quickstart page is orders of magnitude cheaper than inferring an API from
+    # type definitions.
     run_claude "$CLAUDE_OUT" "$([ $ATTEMPT -gt 1 ] && echo "$SESSION_ID")" \
-      "Bash,Read,Write,Edit,Glob,Grep" "$CLAUDE_IMPLEMENT_MODEL" "$CLAUDE_IMPLEMENT_MAX_USD"
+      "Bash,Read,Write,Edit,Glob,Grep,WebFetch,WebSearch" "$CLAUDE_IMPLEMENT_MODEL" "$CLAUDE_IMPLEMENT_MAX_USD"
     local RC=$?
     T1=$(lf_now_ns)
     lf_record "implement" "$T0" "$T1" "$([ $RC -eq 0 ] && echo 1 || echo 0)" \
@@ -977,8 +1011,13 @@ This is a controlled cost stop, not a verified implementation failure. The issue
     # Objective verification by the coordinator — the only success signal.
     if [ $RC -eq 0 ] && verify_app "$VERIFY_OUT"; then
       cd "$APP_DIR"
-      # Fallback: commit anything the agent left uncommitted
+      # Fallback: commit anything the agent left uncommitted.
+      # Logged before staging, because `git add -A` is indiscriminate: if this
+      # ever stages a file the issue had no business touching, the log is the
+      # only place that will show it.
       if [ -n "$(git status --porcelain)" ]; then
+        log "Issue #${ISSUE_NUMBER}: agent left work uncommitted, staging:"
+        git status --porcelain >> "$LOG_FILE" 2>&1
         git add -A && git commit -m "$COMMIT_TITLE" >> "$LOG_FILE" 2>&1
       fi
       if [ -n "$(git log origin/main..HEAD --oneline)" ]; then
