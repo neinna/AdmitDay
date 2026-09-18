@@ -49,6 +49,7 @@ SELF_UPDATE_STAMP="/tmp/agent-coordinator-self-update.last"
 SELF_UPDATE_LOCK="/tmp/agent-coordinator-self-update.lock"
 RECONCILE_INTERVAL_SECONDS="${RECONCILE_INTERVAL_SECONDS:-1800}"
 RECONCILE_STAMP="/tmp/agent-coordinator-reconcile.last"
+RUNNING_COORDINATOR_SCRIPT="${RUNNING_COORDINATOR_SCRIPT:-/home/agent/agent-coordinator.sh}"
 
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
@@ -79,36 +80,80 @@ self_update_from_main() {
       exit 0
     fi
 
-    if ! git fetch --quiet origin main >> "$LOG_FILE" 2>&1; then
+    if git fetch --quiet origin main >> "$LOG_FILE" 2>&1; then
+      local LOCAL_SHA REMOTE_SHA BASE_SHA
+      LOCAL_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
+      REMOTE_SHA=$(git rev-parse origin/main 2>/dev/null || echo "")
+      if [ -n "$LOCAL_SHA" ] && [ "$LOCAL_SHA" != "$REMOTE_SHA" ]; then
+        BASE_SHA=$(git merge-base HEAD origin/main 2>/dev/null || echo "")
+        if [ "$BASE_SHA" != "$LOCAL_SHA" ]; then
+          log "Self-update: local main diverged from origin/main, skipping pull"
+        else
+          log "Self-update: fast-forwarding main from ${LOCAL_SHA:0:7} to ${REMOTE_SHA:0:7}"
+          git pull --ff-only --quiet origin main >> "$LOG_FILE" 2>&1 || log "Self-update: fast-forward pull failed"
+        fi
+      fi
+    else
       log "Self-update: fetch failed"
-      exit 0
     fi
 
-    local LOCAL_SHA REMOTE_SHA BASE_SHA
-    LOCAL_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
-    REMOTE_SHA=$(git rev-parse origin/main 2>/dev/null || echo "")
-    [ -n "$LOCAL_SHA" ] && [ "$LOCAL_SHA" = "$REMOTE_SHA" ] && exit 0
-
-    BASE_SHA=$(git merge-base HEAD origin/main 2>/dev/null || echo "")
-    if [ "$BASE_SHA" != "$LOCAL_SHA" ]; then
-      log "Self-update: local main diverged from origin/main, skipping pull"
-      exit 0
-    fi
-
-    log "Self-update: fast-forwarding main from ${LOCAL_SHA:0:7} to ${REMOTE_SHA:0:7}"
-    if ! git pull --ff-only --quiet origin main >> "$LOG_FILE" 2>&1; then
-      log "Self-update: fast-forward pull failed"
-      exit 0
-    fi
-
-    log "Self-update: pulled latest main, restarting coordinator under PM2"
-    (sleep 1; pm2 restart agent-coordinator --update-env >> "$LOG_FILE" 2>&1) &
-    exit 42
+    # The pull above only advances the checked-out repo at $APP_DIR; nothing
+    # yet installs its agent-coordinator.sh over the copy PM2 actually runs
+    # at /home/agent/agent-coordinator.sh. Run this comparison on every
+    # check, not only right after a successful pull, so a running copy that
+    # has already drifted from the repo gets corrected even when main itself
+    # hasn't moved this cycle.
+    install_running_coordinator_script
+    [ $? -eq 42 ] && exit 42
+    exit 0
   ) 9>"$SELF_UPDATE_LOCK"
 
   local UPDATE_RC=$?
   [ "$UPDATE_RC" -eq 42 ] && return 42
   return 0
+}
+
+# install_running_coordinator_script: compare $APP_DIR/agent-coordinator.sh
+# (the repo's copy, possibly just fast-forwarded to origin/main) against
+# /home/agent/agent-coordinator.sh (the copy PM2 actually runs). If their
+# contents differ, stage the repo's copy in a temp file in the same
+# directory, gate it with `bash -n`, and `mv` the temp file over the running
+# path — never write into the running file in place, since a running bash
+# process reads its script incrementally off disk and an in-place write
+# would corrupt that read, whereas `mv` swaps the inode underneath it
+# atomically. Logs the old and new blob hashes either way, so the log shows
+# which coordinator version is live. Returns 42 if it installed a new script
+# and kicked off a PM2 restart, 0 otherwise (including when a candidate
+# fails `bash -n`, in which case the running script is left untouched).
+install_running_coordinator_script() {
+  local REPO_SCRIPT="$APP_DIR/agent-coordinator.sh"
+  local RUNNING_SCRIPT="$RUNNING_COORDINATOR_SCRIPT"
+
+  [ -f "$REPO_SCRIPT" ] || return 0
+  cmp -s "$REPO_SCRIPT" "$RUNNING_SCRIPT" 2>/dev/null && return 0
+
+  local OLD_HASH NEW_HASH
+  if [ -f "$RUNNING_SCRIPT" ]; then
+    OLD_HASH=$(git hash-object "$RUNNING_SCRIPT" 2>/dev/null || echo "unknown")
+  else
+    OLD_HASH="none"
+  fi
+  NEW_HASH=$(git hash-object "$REPO_SCRIPT" 2>/dev/null || echo "unknown")
+
+  local TMP_SCRIPT
+  TMP_SCRIPT=$(mktemp "${RUNNING_SCRIPT}.XXXXXX") || return 0
+  cp "$REPO_SCRIPT" "$TMP_SCRIPT"
+
+  if ! bash -n "$TMP_SCRIPT" 2>>"$LOG_FILE"; then
+    log "Self-update: repo's agent-coordinator.sh (blob ${NEW_HASH}) failed 'bash -n' — keeping running copy (blob ${OLD_HASH}), NOT restarting"
+    rm -f "$TMP_SCRIPT"
+    return 0
+  fi
+
+  mv "$TMP_SCRIPT" "$RUNNING_SCRIPT"
+  log "Self-update: installed agent-coordinator.sh (blob ${OLD_HASH} -> ${NEW_HASH}) over the running copy, restarting coordinator under PM2"
+  (sleep 1; pm2 restart agent-coordinator --update-env >> "$LOG_FILE" 2>&1) &
+  return 42
 }
 
 maybe_self_update_or_exit() {
