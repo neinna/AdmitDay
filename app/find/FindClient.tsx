@@ -25,6 +25,7 @@ import {
 } from '@/lib/school-list-utils'
 import { extractFilters, QueryFilters, appliedSignals, removeSignal } from '@/lib/query-filters'
 import { getUnmetCriteria } from '@/lib/soft-match'
+import { MAX_QUESTION_LENGTH } from '@/lib/ask-guardrails'
 import { buildFindRowSummary, MYSCHOOLS_URL } from '@/lib/school-detail-utils'
 import { Chip, Button, SchoolRow } from '@/components/ui'
 import FeedbackRow from '@/components/FeedbackRow'
@@ -381,6 +382,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
                   onChange={(e) => setAskText(e.target.value)}
                   placeholder="strong CS and a soccer team, small classes"
                   disabled={askLoading}
+                  maxLength={MAX_QUESTION_LENGTH}
                   className="flex-1 text-[15px] text-ink outline-none placeholder:text-faint bg-transparent"
                 />
               </div>
@@ -388,6 +390,11 @@ export default function FindClient({ schools, initialFilters }: Props) {
                 Ask
               </Button>
             </form>
+            {MAX_QUESTION_LENGTH - askText.length <= 50 && (
+              <p className="font-mono text-[12px] text-faint">
+                {MAX_QUESTION_LENGTH - askText.length} characters left
+              </p>
+            )}
             {askLoading && (
               <p className="font-mono text-[12px] text-faint">Searching schools and generating an answer…</p>
             )}
