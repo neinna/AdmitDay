@@ -23,7 +23,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime, timezone
 from pathlib import Path
 
-from scripts.scrape_myschools import MySchoolsError, scrape_school_programs
+from scripts.scrape_myschools import MySchoolsError, MySchoolsNotAdmittingError, scrape_school_programs
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; AdmitDay/1.0; research tool)"
@@ -32,12 +32,14 @@ MYSCHOOLS_CACHE_DIR = Path("scripts") / ".myschools_cache"
 
 # MySchools no longer lists every school that's still in the high-school
 # admissions process (id 1) -- a handful come back "Response is missing
-# school.dbn" (see issue #189). A small, bounded number of those misses must
-# not abort the whole refresh: fall back to NYC-SIFT detail for that one
-# school and keep going. The overall run still fails loudly if too many
-# schools fall back -- that check lives in lib/validate-school-data.ts
-# (coverage threshold), not here. Set ADMITDAY_ALLOW_MYSCHOOLS_FALLBACK=0 to
-# force strict mode (abort on the first MySchools miss) for local debugging.
+# school.dbn" (see issue #189), or an empty program list for a school that
+# isn't admitting this cycle (transfer schools, closing/phasing-out schools --
+# see issue #255). A small, bounded number of those misses must not abort the
+# whole refresh: exclude that one school from schools.json and keep going.
+# The overall run still fails loudly if too many schools are missing --
+# that check lives in lib/validate-school-data.ts (coverage threshold and drop
+# check), not here. Set ADMITDAY_ALLOW_MYSCHOOLS_FALLBACK=0 to force strict
+# mode (abort on the first MySchools miss) for local debugging.
 ALLOW_MYSCHOOLS_FALLBACK = os.environ.get("ADMITDAY_ALLOW_MYSCHOOLS_FALLBACK", "1") != "0"
 
 # Minimum SHSAT score that received a specialized high school offer, by DBN
@@ -207,7 +209,7 @@ def fetch_myschools_program_detail(dbn):
         enriched.append(program)
 
     if len(enriched) == 0:
-        raise MySchoolsError(f"{dbn} returned no MySchools programs")
+        raise MySchoolsNotAdmittingError(f"{dbn} returned no MySchools programs")
 
     return admissions_types, enriched
 
@@ -265,6 +267,7 @@ def fetch_school_detail(dbn, sift_url):
 def build_school_json(sift_schools, doe_by_dbn):
     print("Merging data sources and fetching school details...")
     final = []
+    excluded_dbns = []
 
     for i, school in enumerate(sift_schools):
         dbn = school["dbn"]
@@ -279,15 +282,18 @@ def build_school_json(sift_schools, doe_by_dbn):
             size = "medium"
 
         print(f"  [{i+1}/{len(sift_schools)}] {school['name'][:50]}")
-        myschools_status = None
         try:
             admissions_types, programs = fetch_myschools_program_detail(dbn)
-        except MySchoolsError as e:
+        except MySchoolsNotAdmittingError as e:
+            # Only an empty MySchools listing excludes a school. A network
+            # failure or shape change (any other MySchoolsError) propagates and
+            # aborts the refresh, so a flaky night can never quietly drop
+            # schools that the seed cron would then delete from production.
             if not ALLOW_MYSCHOOLS_FALLBACK:
                 raise
-            print(f"    MySchools failed for {dbn}, falling back to NYC-SIFT detail: {e}")
-            admissions_types, programs = fetch_school_detail(dbn, school["sift_url"])
-            myschools_status = "not_listed"
+            print(f"    {dbn} has no programs in this cycle's MySchools admissions -- excluding: {e}")
+            excluded_dbns.append(dbn)
+            continue
         time.sleep(0.3)
 
         has_shsat = "SHSAT" in admissions_types
@@ -414,14 +420,13 @@ def build_school_json(sift_schools, doe_by_dbn):
             "shsat_cutoff_score": SHSAT_CUTOFFS.get(dbn, {}).get(SHSAT_CUTOFFS_YEAR) if has_shsat else None,
             "shsat_cutoff_year": SHSAT_CUTOFFS_YEAR if has_shsat and SHSAT_CUTOFFS.get(dbn, {}).get(SHSAT_CUTOFFS_YEAR) else None,
         }
-        if myschools_status:
-            merged["myschools_status"] = myschools_status
         final.append(merged)
 
-    return final
+    return final, excluded_dbns
 
 
-def validate(schools):
+def validate(schools, excluded_dbns=None):
+    excluded_dbns = excluded_dbns or []
     print("\n── Validation Report ─────────────────────────────")
     print(f"Total schools:          {len(schools)}")
     print(f"With admissions types:  {sum(1 for s in schools if s['admissions_types'])}")
@@ -433,10 +438,9 @@ def validate(schools):
     print(f"Consortium schools:     {sum(1 for s in schools if s['flags']['has_consortium'])}")
     print(f"IB schools:             {sum(1 for s in schools if s['flags']['has_ib'])}")
     print(f"Missing admissions:     {sum(1 for s in schools if not s['admissions_types'])}")
-    fallback_dbns = [s["dbn"] for s in schools if s.get("myschools_status") == "not_listed"]
-    print(f"MySchools fallback:     {len(fallback_dbns)}")
-    if fallback_dbns:
-        print(f"  {', '.join(fallback_dbns)}")
+    print(f"Excluded (no programs in this cycle's MySchools admissions): {len(excluded_dbns)}")
+    if excluded_dbns:
+        print(f"  {', '.join(excluded_dbns)}")
     print()
     by_borough = {}
     for s in schools:
@@ -456,12 +460,18 @@ if __name__ == "__main__":
 
     sift_schools = fetch_nycsift_schools()
     doe_by_dbn = fetch_doe_directory()
-    schools = build_school_json(sift_schools, doe_by_dbn)
-    validate(schools)
+    schools, excluded_dbns = build_school_json(sift_schools, doe_by_dbn)
+    validate(schools, excluded_dbns)
 
     output_path = os.environ.get("ADMITDAY_SCHOOLS_OUTPUT", "schools.json")
     with open(output_path, "w") as f:
         json.dump(schools, f, indent=2)
+
+    # Sidecar file next to the output, read by scripts/refresh-data.ts so the
+    # refresh summary can show excluded DBNs separately from removed ones.
+    excluded_output_path = str(Path(output_path).with_name(Path(output_path).stem + ".excluded.json"))
+    with open(excluded_output_path, "w") as f:
+        json.dump(excluded_dbns, f)
 
     print(f"\nDone. Saved {len(schools)} schools to {output_path}")
     print("Copy schools.json into your app's data/ directory.")

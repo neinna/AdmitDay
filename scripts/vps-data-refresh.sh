@@ -104,6 +104,7 @@ build_refresh_pr_body() {
     const previous = load(process.argv[1]);
     const current = load(process.argv[2]);
     const fetchedAt = process.argv[3];
+    const excluded = load(process.argv[4]).filter((d) => typeof d === "string");
     const dbn = (s) => (s && typeof s.dbn === "string" ? s.dbn : null);
     const programCount = (schools) =>
       schools.reduce((n, s) => n + (Array.isArray(s.programs) ? s.programs.length : 0), 0);
@@ -118,6 +119,7 @@ build_refresh_pr_body() {
 - School count: ${previous.length} -> ${current.length}
 - Added DBNs: ${fmt(added)}
 - Removed DBNs: ${fmt(removed)}
+- Excluded DBNs (no programs in this admissions cycle on MySchools): ${fmt(excluded)}
 - Program count: ${programCount(previous)} -> ${programCount(current)}
 - Fetched at: ${fetchedAt}
 
@@ -127,7 +129,7 @@ This run used the validated refresh pipeline:
 - rebuild RAG embeddings
 
 This PR is intended to be merged by the VPS data refresh runner, not by a human. Run \`scripts/vps-data-refresh.sh merge\` after CI passes; it only merges when the changed files are the expected data artifacts and the GitHub CI test is green. Loading happens in Vercel after the data PR merges (/api/cron/seed-schools).`);
-  ' "$previous_file" "schools.json" "$fetched_at"
+  ' "$previous_file" "schools.json" "$fetched_at" "schools.excluded.json"
 }
 
 open_refresh_pr() {
