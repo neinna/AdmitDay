@@ -1,14 +1,30 @@
 import Anthropic from '@anthropic-ai/sdk'
 import * as Sentry from '@sentry/nextjs'
 import { NextRequest } from 'next/server'
+import { randomUUID } from 'crypto'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { classifyProviderError } from '@/lib/provider-error'
+import { recordLlmTrace } from '@/lib/trace'
+import { estimateCostUsd } from '@/lib/model-cost'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
+function getSessionId(request: NextRequest): string {
+  return request.headers.get('x-posthog-distinct-id') || randomUUID()
+}
+
 export async function POST(request: NextRequest) {
+  const startedAt = Date.now()
+  const sessionId = getSessionId(request)
+
   const rl = checkRateLimit(request)
   if (!rl.ok) {
+    recordLlmTrace({
+      route: 'rationale',
+      sessionId,
+      latencyMs: Date.now() - startedAt,
+      outcome: 'rate_limited',
+    })
     return Response.json(
       { error: "You're sending requests too quickly — please wait a moment and try again." },
       { status: 429, headers: { 'Retry-After': String(rl.retryAfterSec) } },
@@ -100,6 +116,17 @@ export async function POST(request: NextRequest) {
       parsed = { title: '', rationale: raw.slice(0, 200) }
     }
 
+    recordLlmTrace({
+      route: 'rationale',
+      sessionId,
+      model: message.model,
+      inputTokens: message.usage?.input_tokens,
+      outputTokens: message.usage?.output_tokens,
+      latencyMs: Date.now() - startedAt,
+      costUsd: estimateCostUsd(message.model, message.usage?.input_tokens, message.usage?.output_tokens),
+      outcome: 'ok',
+    })
+
     return Response.json({
       title: parsed.title ?? '',
       rationale: parsed.rationale ?? '',
@@ -108,7 +135,14 @@ export async function POST(request: NextRequest) {
     // Log the real error (vendor detail, status, request id) to Sentry —
     // never let any part of it reach the client.
     Sentry.captureException(err)
-    const { status, body } = classifyProviderError(err)
+    const { status, body, classification } = classifyProviderError(err)
+    recordLlmTrace({
+      route: 'rationale',
+      sessionId,
+      latencyMs: Date.now() - startedAt,
+      outcome: classification === 'rate_limited' ? 'rate_limited' : 'provider_error',
+      errorClassification: classification,
+    })
     return Response.json(body, { status })
   }
 }

@@ -22,9 +22,16 @@ export const GENERIC_MESSAGE = "Something went wrong. Please try again."
 const UNAVAILABLE_PATTERN =
   /usage limit|credit|quota|regain access|overloaded|unavailable|timed? ?out|ETIMEDOUT|ECONNRESET|ECONNREFUSED/i
 
+// A coarse label for *why* a call failed, safe to attach to internal
+// observability (e.g. a Langfuse trace) alongside the client-facing status.
+// Never derived from vendor text — only from the same branch that already
+// decided the client-safe message.
+export type ProviderErrorClassification = "rate_limited" | "unavailable" | "generic"
+
 export interface ClientSafeError {
   status: number
   body: { error: string }
+  classification: ProviderErrorClassification
 }
 
 /**
@@ -38,12 +45,12 @@ export function classifyProviderError(err: unknown): ClientSafeError {
   const message = err instanceof Error ? err.message : String(err)
 
   if (status === 429) {
-    return { status: 429, body: { error: RATE_LIMIT_MESSAGE } }
+    return { status: 429, body: { error: RATE_LIMIT_MESSAGE }, classification: "rate_limited" }
   }
 
   if ((status !== undefined && status >= 500) || UNAVAILABLE_PATTERN.test(message)) {
-    return { status: 503, body: { error: UNAVAILABLE_MESSAGE } }
+    return { status: 503, body: { error: UNAVAILABLE_MESSAGE }, classification: "unavailable" }
   }
 
-  return { status: 500, body: { error: GENERIC_MESSAGE } }
+  return { status: 500, body: { error: GENERIC_MESSAGE }, classification: "generic" }
 }
