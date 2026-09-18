@@ -172,7 +172,24 @@ install_running_coordinator_script() {
     rm -f "$TMP_SCRIPT"
     return 0
   fi
-  log "Self-update: installed agent-coordinator.sh (blob ${OLD_HASH} -> ${NEW_HASH}) over the running copy, restarting coordinator under PM2"
+
+  # Observed 2026-09-18 13:40 and 13:50 UTC: the running copy's blob hash
+  # changed (the mv above ran and PM2 was already serving the new script)
+  # but this "installed" line never landed in the log. The moment mv lands,
+  # /home/agent/agent-coordinator.sh already has the new content, and
+  # anything reacting to that — our own `pm2 restart` below included — can
+  # tear this process down before it finishes writing. `log()` pipes through
+  # `echo | tee`, which forks two more processes and does not write until
+  # both are scheduled and run; that scheduling delay is exactly the kind of
+  # gap a restart racing this line can win. Write it directly with the
+  # current shell process instead — a plain builtin `echo` with simple
+  # redirection needs no fork — and force it to disk with `sync` before
+  # anything else runs, so the write is done before a restart can pre-empt
+  # it.
+  local INSTALL_MSG="[$(date '+%Y-%m-%d %H:%M:%S')] Self-update: installed agent-coordinator.sh (blob ${OLD_HASH} -> ${NEW_HASH}) over the running copy, restarting coordinator under PM2"
+  echo "$INSTALL_MSG"
+  echo "$INSTALL_MSG" >> "$LOG_FILE"
+  sync
   (sleep 1; pm2 restart agent-coordinator --update-env >> "$LOG_FILE" 2>&1) &
   return 42
 }
