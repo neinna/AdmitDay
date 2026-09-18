@@ -24,6 +24,31 @@ def load_fixture(name: str) -> dict:
     return json.loads((FIXTURES / name).read_text())
 
 
+def _raw_with_priority_groups(priority_groups: list) -> dict:
+    return {
+        "school": {"dbn": "99X999", "school_year": "2025-26 School Year"},
+        "name": "Test School",
+        "programs": [
+            {
+                "program": {"name": "Test Program", "code": "T1"},
+                "admissions_method": {"name": "Screened"},
+                "program_priority_groups": priority_groups,
+            }
+        ],
+    }
+
+
+def _walk_strings(value):
+    if isinstance(value, str):
+        yield value
+    elif isinstance(value, dict):
+        for v in value.values():
+            yield from _walk_strings(v)
+    elif isinstance(value, list):
+        for v in value:
+            yield from _walk_strings(v)
+
+
 def test_laguardia_returns_six_distinct_programs():
     raw = load_fixture("laguardia_03M485.json")
     programs = parse_programs(raw, FAKE_URL, FAKE_FETCHED_AT)
@@ -120,3 +145,66 @@ def test_missing_fields_are_absent_not_empty_or_zero():
             assert value != "", f"{key} should be omitted, not an empty string"
         if isinstance(value, (list, dict)):
             assert len(value) > 0, f"{key} should be omitted, not empty"
+
+
+def test_empty_priority_group_descriptions_are_dropped_not_kept_as_empty_strings():
+    # Mirrors what MySchools actually returns (issue #252): a real group
+    # with valid id/order/name but blank ge_/swd_priority_group_description.
+    raw = _raw_with_priority_groups(
+        [
+            {
+                "id": 1,
+                "order": 1,
+                "name": "New York City residents",
+                "ge_priority_group_description": "",
+                "swd_priority_group_description": "   ",
+            }
+        ]
+    )
+    programs = parse_programs(raw, FAKE_URL, FAKE_FETCHED_AT)
+    serialized = programs[0].to_dict()
+
+    for s in _walk_strings(serialized):
+        assert s.strip() != "", f"found a blank string in serialized output: {serialized!r}"
+
+    groups = serialized["eligibility"]["priority_groups"]
+    assert len(groups) == 1
+    assert groups[0]["name"] == "New York City residents"
+    assert "ge_priority_group_description" not in groups[0]
+    assert "swd_priority_group_description" not in groups[0]
+
+
+def test_priority_group_with_only_empty_fields_is_dropped():
+    raw = _raw_with_priority_groups(
+        [
+            {
+                "id": 1,
+                "order": 1,
+                "name": "New York City residents",
+                "ge_priority_group_description": "some real description",
+            },
+            {
+                "ge_priority_group_description": "",
+                "swd_priority_group_description": "  ",
+            },
+        ]
+    )
+    programs = parse_programs(raw, FAKE_URL, FAKE_FETCHED_AT)
+    serialized = programs[0].to_dict()
+
+    groups = serialized["eligibility"]["priority_groups"]
+    assert len(groups) == 1
+    assert groups[0]["name"] == "New York City residents"
+
+
+def test_priority_groups_omitted_entirely_when_every_group_is_empty():
+    raw = _raw_with_priority_groups(
+        [
+            {"ge_priority_group_description": "", "swd_priority_group_description": "  "},
+        ]
+    )
+    programs = parse_programs(raw, FAKE_URL, FAKE_FETCHED_AT)
+    serialized = programs[0].to_dict()
+
+    eligibility = serialized.get("eligibility", {})
+    assert "priority_groups" not in eligibility

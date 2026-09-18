@@ -225,6 +225,7 @@ def fetch_school_detail(dbn, sift_url):
 
         admissions_types = set()
         programs = []
+        seen_program_keys = set()
         fetched_at = datetime.now(timezone.utc).isoformat()
 
         for col_div in soup.find_all("div", class_="NYCSF_twocolumn"):
@@ -237,6 +238,14 @@ def fetch_school_detail(dbn, sift_url):
                 method = classify_admissions(value)
                 if method:
                     admissions_types.add(method)
+                    # NYC-SIFT fallback rows have no program name, only a
+                    # method -- de-dupe on (method, raw value) so a school
+                    # listing the same method twice doesn't produce two
+                    # identical, unnamed program rows (issue #252).
+                    program_key = (method, value)
+                    if program_key in seen_program_keys:
+                        continue
+                    seen_program_keys.add(program_key)
                     programs.append({
                         "program_name": value,
                         "admissions_type": method,
