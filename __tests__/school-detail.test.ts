@@ -1,7 +1,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import { notFound } from 'next/navigation'
-import { School } from '../types'
+import { School, SchoolFlags } from '../types'
 import { FindFilters } from '../lib/school-list-utils'
 import {
   findSchoolByDbn,
@@ -31,7 +31,21 @@ import {
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function makeSchool(overrides: Partial<School> & { dbn?: string } = {}): School {
+function makeFlags(overrides: Partial<SchoolFlags> = {}): SchoolFlags {
+  return {
+    has_shsat: false,
+    has_audition: false,
+    has_screened: false,
+    has_open: false,
+    has_borough_priority: false,
+    is_hidden_gem: false,
+    has_consortium: false,
+    has_ib: false,
+    ...overrides,
+  }
+}
+
+function makeSchool(overrides: Omit<Partial<School>, 'flags'> & { dbn?: string; flags?: Partial<SchoolFlags> } = {}): School {
   return {
     dbn: overrides.dbn ?? 'X000',
     name: overrides.name ?? 'Test School',
@@ -43,17 +57,6 @@ function makeSchool(overrides: Partial<School> & { dbn?: string } = {}): School 
     survey_score_pct: null,
     admissions_types: overrides.admissions_types ?? [],
     programs: overrides.programs ?? [],
-    flags: {
-      has_shsat: false,
-      has_audition: false,
-      has_screened: false,
-      has_open: false,
-      has_borough_priority: false,
-      is_hidden_gem: false,
-      has_consortium: false,
-      has_ib: false,
-      ...overrides.flags,
-    },
     doe_data: {
       overview: '',
       language: '',
@@ -67,12 +70,37 @@ function makeSchool(overrides: Partial<School> & { dbn?: string } = {}): School 
     sift_url: '',
     last_verified: '',
     ...overrides,
+    flags: makeFlags(overrides.flags),
   }
 }
 
 function readSource(relPath: string): string {
   return fs.readFileSync(path.join(__dirname, '..', relPath), 'utf-8')
 }
+
+// ── makeSchool/makeFlags fixture helpers (issue #265) ───────────────────────
+
+describe('makeSchool flags fixture', () => {
+  it('defaults every flag to false when none are given', () => {
+    expect(makeSchool().flags).toEqual({
+      has_shsat: false,
+      has_audition: false,
+      has_screened: false,
+      has_open: false,
+      has_borough_priority: false,
+      is_hidden_gem: false,
+      has_consortium: false,
+      has_ib: false,
+    })
+  })
+
+  it('merges a partial flags override on top of the defaults', () => {
+    const school = makeSchool({ flags: { has_shsat: true } })
+    expect(school.flags.has_shsat).toBe(true)
+    expect(school.flags.has_audition).toBe(false)
+    expect(school.flags.has_ib).toBe(false)
+  })
+})
 
 // ── findSchoolByDbn — the lookup that drives 404 vs render (issue #116) ─────
 
