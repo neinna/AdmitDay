@@ -130,6 +130,12 @@ function createFakeRedis() {
         store.set(k, entry)
         return { result: entry.value }
       }
+      case 'DECR': {
+        const entry = getLive(k) ?? { value: 0, expiresAt: null }
+        entry.value -= 1
+        store.set(k, entry)
+        return { result: entry.value }
+      }
       case 'PEXPIRE':
       case 'EXPIRE': {
         const ms = Number(args[0]) * (op === 'EXPIRE' ? 1000 : 1)
@@ -310,5 +316,73 @@ describe('checkRateLimit — global daily LLM ceiling (issue #197)', () => {
     expect(await mod.checkRateLimit(fakeRequest('1.1.1.1'))).toEqual({ ok: true })
     expect(await mod.checkRateLimit(fakeRequest('2.2.2.2'))).toEqual({ ok: true })
     expect((await mod.checkRateLimit(fakeRequest('3.3.3.3'))).ok).toBe(false)
+  })
+})
+
+// --- A flood from one IP must not exhaust the global ceiling -------------
+// Found in review of the #197 PR: requests rejected by the per-IP limit were
+// still counted toward the daily ceiling. With a ceiling of 20, one IP firing
+// 40 requests got 15 real LLM calls through and still locked out a different
+// family's very first request. In production (ceiling 2000) a single burst
+// would take the ask box down for everyone until UTC midnight.
+describe('checkRateLimit — rejected requests do not consume the daily ceiling', () => {
+  const originalFetch = global.fetch
+  const originalEnv = { ...process.env }
+
+  afterEach(() => {
+    global.fetch = originalFetch
+    process.env = { ...originalEnv }
+  })
+
+  function reqFrom(ip: string) {
+    return {
+      headers: { get: (h: string) => (h === 'x-forwarded-for' ? ip : null) },
+    } as unknown as import('next/server').NextRequest
+  }
+
+  it('in memory: a flood from one IP does not lock out a different IP', async () => {
+    delete process.env.UPSTASH_REDIS_REST_URL
+    delete process.env.UPSTASH_REDIS_REST_TOKEN
+    process.env.DAILY_LLM_CEILING = '20'
+    const mod = loadFreshModule()
+
+    let allowed = 0
+    for (let i = 0; i < 40; i++) {
+      if ((await mod.checkRateLimit(reqFrom('1.1.1.1'))).ok) allowed++
+    }
+    expect(allowed).toBe(mod.MAX_REQUESTS)
+    expect((await mod.checkRateLimit(reqFrom('2.2.2.2'))).ok).toBe(true)
+  })
+
+  it('in memory: the ceiling still trips after exactly DAILY_LLM_CEILING allowed calls', async () => {
+    delete process.env.UPSTASH_REDIS_REST_URL
+    delete process.env.UPSTASH_REDIS_REST_TOKEN
+    process.env.DAILY_LLM_CEILING = '3'
+    const mod = loadFreshModule()
+
+    for (const ip of ['a', 'b', 'c']) {
+      expect((await mod.checkRateLimit(reqFrom(ip))).ok).toBe(true)
+    }
+    expect((await mod.checkRateLimit(reqFrom('d'))).ok).toBe(false)
+  })
+
+  it('durable store: a flood from one IP does not lock out a different IP, and the counter equals real LLM calls', async () => {
+    const { fetchImpl, store } = createFakeRedis()
+    global.fetch = fetchImpl as unknown as typeof fetch
+    process.env.UPSTASH_REDIS_REST_URL = 'https://fake-upstash.example'
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'token'
+    process.env.DAILY_LLM_CEILING = '20'
+    const mod = loadFreshModule()
+
+    let allowed = 0
+    for (let i = 0; i < 40; i++) {
+      if ((await mod.checkRateLimit(reqFrom('1.1.1.1'))).ok) allowed++
+    }
+    expect(allowed).toBe(mod.MAX_REQUESTS)
+    expect((await mod.checkRateLimit(reqFrom('2.2.2.2'))).ok).toBe(true)
+
+    const dailyKey = Array.from(store.keys()).find((k) => k.startsWith('ratelimit:daily:'))
+    expect(dailyKey).toBeDefined()
+    expect(store.get(dailyKey!)!.value).toBe(mod.MAX_REQUESTS + 1)
   })
 })

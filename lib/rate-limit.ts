@@ -131,37 +131,48 @@ async function redisPipeline(
 function checkInMemory(now: number, ip: string): RateLimitResult {
   pruneExpired(now)
 
+  // Per-IP limit first. The daily ceiling exists to cap LLM spend, so it
+  // must count requests that reach the LLM — not attempts. Counting rejected
+  // attempts let one IP flood past its own limit and exhaust the global
+  // ceiling for every family until UTC midnight, while making only
+  // MAX_REQUESTS real LLM calls.
+  const entry = buckets.get(ip)
+  const inWindow = entry !== undefined && now - entry.windowStart < WINDOW_MS
+  if (inWindow && entry.count >= MAX_REQUESTS) {
+    const retryAfterSec = Math.max(
+      1,
+      Math.ceil((entry.windowStart + WINDOW_MS - now) / 1000)
+    )
+    return { ok: false, retryAfterSec }
+  }
+
   const dayKey = utcDateKey(now)
   if (!dailyEntry || dailyEntry.dayKey !== dayKey) {
     dailyEntry = { dayKey, count: 0 }
   }
-  dailyEntry.count++
-  if (dailyEntry.count > DAILY_LLM_CEILING) {
+  if (dailyEntry.count >= DAILY_LLM_CEILING) {
     return { ok: false, retryAfterSec: secondsUntilUtcMidnight(now) }
   }
+  dailyEntry.count++
 
-  const entry = buckets.get(ip)
-  if (!entry || now - entry.windowStart >= WINDOW_MS) {
-    buckets.set(ip, { count: 1, windowStart: now })
-    return { ok: true }
-  }
-
-  if (entry.count < MAX_REQUESTS) {
+  if (inWindow) {
     entry.count++
-    return { ok: true }
+  } else {
+    buckets.set(ip, { count: 1, windowStart: now })
   }
+  return { ok: true }
+}
 
-  const retryAfterSec = Math.max(
-    1,
-    Math.ceil((entry.windowStart + WINDOW_MS - now) / 1000)
-  )
-  return { ok: false, retryAfterSec }
+interface PipelineOutcome {
+  result: RateLimitResult
+  /** The daily counter was incremented for a request that will not reach the LLM. */
+  refundDaily: boolean
 }
 
 function checkFromPipeline(
   results: RedisCommandResult[],
   now: number
-): RateLimitResult | null {
+): PipelineOutcome | null {
   const [ipIncrRes, , ipTtlRes, dailyIncrRes] = results
   const ipCount = Number(ipIncrRes?.result)
   const dailyCount = Number(dailyIncrRes?.result)
@@ -169,17 +180,24 @@ function checkFromPipeline(
     return null
   }
 
-  if (dailyCount > DAILY_LLM_CEILING) {
-    return { ok: false, retryAfterSec: secondsUntilUtcMidnight(now) }
-  }
-
+  // Per-IP first, for the reason given in checkInMemory.
   if (ipCount > MAX_REQUESTS) {
     const ipTtlMs = Number(ipTtlRes?.result)
     const remainingMs = ipTtlMs > 0 ? ipTtlMs : WINDOW_MS
-    return { ok: false, retryAfterSec: Math.max(1, Math.ceil(remainingMs / 1000)) }
+    return {
+      result: { ok: false, retryAfterSec: Math.max(1, Math.ceil(remainingMs / 1000)) },
+      refundDaily: true,
+    }
   }
 
-  return { ok: true }
+  if (dailyCount > DAILY_LLM_CEILING) {
+    return {
+      result: { ok: false, retryAfterSec: secondsUntilUtcMidnight(now) },
+      refundDaily: true,
+    }
+  }
+
+  return { result: { ok: true }, refundDaily: false }
 }
 
 export async function checkRateLimit(
@@ -208,5 +226,18 @@ export async function checkRateLimit(
   }
 
   const outcome = checkFromPipeline(results, now)
-  return outcome ?? checkInMemory(now, ip)
+  if (!outcome) {
+    return checkInMemory(now, ip)
+  }
+
+  // The daily INCR rides in the same pipeline as the per-IP INCR so an
+  // allowed request costs one round trip. A rejected request never reaches
+  // the LLM, so give its unit back. This costs a second round trip, but only
+  // on the rejection path, and a failed refund is ignored (redisPipeline
+  // never throws): the counter over-counts slightly until UTC midnight, which
+  // errs toward less spend, never more.
+  if (outcome.refundDaily) {
+    await redisPipeline([['DECR', dailyKey]])
+  }
+  return outcome.result
 }
