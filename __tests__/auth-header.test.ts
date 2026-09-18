@@ -14,15 +14,13 @@ function readSource(relPath: string): string {
   return fs.readFileSync(path.join(__dirname, '..', relPath), 'utf-8')
 }
 
-// /privacy and /terms are excluded: privacy-terms-pages.test.ts renders them
-// standalone with renderToStaticMarkup, with no <ClerkProvider> in the tree —
-// Clerk's SignedIn/SignedOut throw outside a provider, so those two pages keep
-// their pre-existing header (no auth controls) rather than break that test.
 const HEADER_FILES = [
   'app/page.tsx',
   'app/find/FindClient.tsx',
   'app/school/[dbn]/SiteHeader.tsx',
   'app/my-schools/MySchoolsClient.tsx',
+  'app/privacy/page.tsx',
+  'app/terms/page.tsx',
 ]
 
 // ── AuthControls: signed-out and signed-in states ───────────────────────────
