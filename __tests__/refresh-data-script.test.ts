@@ -66,6 +66,24 @@ describe('scripts/refresh-data.ts', () => {
     expect(scriptSource).toContain("from '../lib/validate-school-data'")
   })
 
+  // Issue #255: schools with no programs in this cycle's MySchools admissions
+  // are excluded by build_school_data.py rather than falling back to
+  // NYC-SIFT detail, so they never appear in the scraped array itself --
+  // their DBNs are read from a sidecar file and shown separately from
+  // "Removed" (which comes from comparing dbns against the previous file).
+  it('reads excluded DBNs from a sidecar file next to the scrape output', () => {
+    expect(scriptSource).toContain('excludedPath')
+    expect(scriptSource).toContain(".excluded.json'")
+  })
+
+  it('shows excluded DBNs separately from Removed in the summary', () => {
+    const removedIdx = scriptSource.indexOf('Removed:')
+    const excludedIdx = scriptSource.indexOf('Excluded (no programs')
+    expect(removedIdx).toBeGreaterThan(-1)
+    expect(excludedIdx).toBeGreaterThan(-1)
+    expect(excludedIdx).not.toBe(removedIdx)
+  })
+
   it('writes the root schools.json (in addition to data/schools.json) once validation passes', () => {
     const validIdx = scriptSource.indexOf('Validation passed.')
     const rootWriteIdx = scriptSource.indexOf('writeFileSync(ROOT_SCHOOLS_PATH')
