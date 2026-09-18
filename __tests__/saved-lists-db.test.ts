@@ -141,18 +141,8 @@ function loadModule(): typeof import('@/lib/saved-lists-db') {
 describe('getOrCreateParentId / findParentId', () => {
   it('creates a parent on first call and returns the same id on repeat calls', async () => {
     const db = loadModule()
-    const id1 = await db.getOrCreateParentId({
-      clerkUserId: 'user_a',
-      email: 'a@example.com',
-      firstName: 'A',
-      lastName: 'Parent',
-    })
-    const id2 = await db.getOrCreateParentId({
-      clerkUserId: 'user_a',
-      email: 'a@example.com',
-      firstName: 'A',
-      lastName: 'Parent',
-    })
+    const id1 = await db.getOrCreateParentId('user_a')
+    const id2 = await db.getOrCreateParentId('user_a')
     expect(id2).toBe(id1)
   })
 
@@ -163,12 +153,7 @@ describe('getOrCreateParentId / findParentId', () => {
 
   it('findParentId finds a parent created by getOrCreateParentId', async () => {
     const db = loadModule()
-    const id = await db.getOrCreateParentId({
-      clerkUserId: 'user_b',
-      email: null,
-      firstName: null,
-      lastName: null,
-    })
+    const id = await db.getOrCreateParentId('user_b')
     expect(await db.findParentId('user_b')).toBe(id)
   })
 })
@@ -176,12 +161,7 @@ describe('getOrCreateParentId / findParentId', () => {
 describe('getSavedDbns', () => {
   it('returns [] for a parent with no list yet', async () => {
     const db = loadModule()
-    const parentId = await db.getOrCreateParentId({
-      clerkUserId: 'user_c',
-      email: null,
-      firstName: null,
-      lastName: null,
-    })
+    const parentId = await db.getOrCreateParentId('user_c')
     expect(await db.getSavedDbns(parentId)).toEqual([])
   })
 })
@@ -189,12 +169,7 @@ describe('getSavedDbns', () => {
 describe('addSavedSchool', () => {
   it('creates a list named "My list" on first save', async () => {
     const db = loadModule()
-    const parentId = await db.getOrCreateParentId({
-      clerkUserId: 'user_d',
-      email: null,
-      firstName: null,
-      lastName: null,
-    })
+    const parentId = await db.getOrCreateParentId('user_d')
     await db.addSavedSchool(parentId, '01M001')
     const list = await db.getOwnedList(1, parentId)
     expect(list?.name).toBe('My list')
@@ -202,12 +177,7 @@ describe('addSavedSchool', () => {
 
   it('appends dbns in save order and is idempotent for a repeat add', async () => {
     const db = loadModule()
-    const parentId = await db.getOrCreateParentId({
-      clerkUserId: 'user_e',
-      email: null,
-      firstName: null,
-      lastName: null,
-    })
+    const parentId = await db.getOrCreateParentId('user_e')
     await db.addSavedSchool(parentId, '01M001')
     await db.addSavedSchool(parentId, '02M002')
     await db.addSavedSchool(parentId, '01M001') // duplicate add
@@ -216,18 +186,8 @@ describe('addSavedSchool', () => {
 
   it('gives each parent their own list — one parent adding a school never appears in another parent\'s list', async () => {
     const db = loadModule()
-    const parentA = await db.getOrCreateParentId({
-      clerkUserId: 'user_f',
-      email: null,
-      firstName: null,
-      lastName: null,
-    })
-    const parentB = await db.getOrCreateParentId({
-      clerkUserId: 'user_g',
-      email: null,
-      firstName: null,
-      lastName: null,
-    })
+    const parentA = await db.getOrCreateParentId('user_f')
+    const parentB = await db.getOrCreateParentId('user_g')
     await db.addSavedSchool(parentA, '01M001')
     expect(await db.getSavedDbns(parentB)).toEqual([])
     expect(await db.getSavedDbns(parentA)).toEqual(['01M001'])
@@ -237,12 +197,7 @@ describe('addSavedSchool', () => {
 describe('removeSavedSchool', () => {
   it('removes a saved dbn', async () => {
     const db = loadModule()
-    const parentId = await db.getOrCreateParentId({
-      clerkUserId: 'user_h',
-      email: null,
-      firstName: null,
-      lastName: null,
-    })
+    const parentId = await db.getOrCreateParentId('user_h')
     await db.addSavedSchool(parentId, '01M001')
     await db.addSavedSchool(parentId, '02M002')
     expect(await db.removeSavedSchool(parentId, '01M001')).toEqual(['02M002'])
@@ -250,12 +205,7 @@ describe('removeSavedSchool', () => {
 
   it('is a no-op returning [] for a parent with no list', async () => {
     const db = loadModule()
-    const parentId = await db.getOrCreateParentId({
-      clerkUserId: 'user_i',
-      email: null,
-      firstName: null,
-      lastName: null,
-    })
+    const parentId = await db.getOrCreateParentId('user_i')
     expect(await db.removeSavedSchool(parentId, '01M001')).toEqual([])
   })
 })
@@ -263,12 +213,7 @@ describe('removeSavedSchool', () => {
 describe('reorderSavedSchools', () => {
   it('re-ranks existing saved schools to match the given order', async () => {
     const db = loadModule()
-    const parentId = await db.getOrCreateParentId({
-      clerkUserId: 'user_j',
-      email: null,
-      firstName: null,
-      lastName: null,
-    })
+    const parentId = await db.getOrCreateParentId('user_j')
     await db.addSavedSchool(parentId, '01M001')
     await db.addSavedSchool(parentId, '02M002')
     await db.addSavedSchool(parentId, '03M003')
@@ -281,12 +226,7 @@ describe('reorderSavedSchools', () => {
 
   it('ignores dbns in the order that are not already saved — it reorders, it does not add', async () => {
     const db = loadModule()
-    const parentId = await db.getOrCreateParentId({
-      clerkUserId: 'user_k',
-      email: null,
-      firstName: null,
-      lastName: null,
-    })
+    const parentId = await db.getOrCreateParentId('user_k')
     await db.addSavedSchool(parentId, '01M001')
     await db.addSavedSchool(parentId, '02M002')
     await db.reorderSavedSchools(parentId, ['09Z999', '02M002', '01M001'])
@@ -297,12 +237,7 @@ describe('reorderSavedSchools', () => {
 describe('getOwnedList — the cross-parent isolation case (issue #200 reviewer risk)', () => {
   it('returns the list and its dbns when the requesting parent owns it', async () => {
     const db = loadModule()
-    const parentId = await db.getOrCreateParentId({
-      clerkUserId: 'user_l',
-      email: null,
-      firstName: null,
-      lastName: null,
-    })
+    const parentId = await db.getOrCreateParentId('user_l')
     await db.addSavedSchool(parentId, '01M001')
     const list = await db.getOwnedList(1, parentId)
     expect(list).toEqual({ id: 1, name: 'My list', dbns: ['01M001'] })
@@ -310,18 +245,8 @@ describe('getOwnedList — the cross-parent isolation case (issue #200 reviewer 
 
   it('returns null — never the data — when a different parent requests the same list id', async () => {
     const db = loadModule()
-    const owner = await db.getOrCreateParentId({
-      clerkUserId: 'owner',
-      email: null,
-      firstName: null,
-      lastName: null,
-    })
-    const attacker = await db.getOrCreateParentId({
-      clerkUserId: 'attacker',
-      email: null,
-      firstName: null,
-      lastName: null,
-    })
+    const owner = await db.getOrCreateParentId('owner')
+    const attacker = await db.getOrCreateParentId('attacker')
     await db.addSavedSchool(owner, '01M001')
     const ownersListId = (await db.getOwnedList(1, owner))!.id
 
@@ -330,12 +255,7 @@ describe('getOwnedList — the cross-parent isolation case (issue #200 reviewer 
 
   it('returns null for a list id that does not exist at all, same as a list owned by someone else', async () => {
     const db = loadModule()
-    const parentId = await db.getOrCreateParentId({
-      clerkUserId: 'user_m',
-      email: null,
-      firstName: null,
-      lastName: null,
-    })
+    const parentId = await db.getOrCreateParentId('user_m')
     expect(await db.getOwnedList(999, parentId)).toBeNull()
   })
 })

@@ -8,7 +8,7 @@
  */
 
 import { NextRequest } from 'next/server'
-import { auth, currentUser } from '@clerk/nextjs/server'
+import { auth } from '@clerk/nextjs/server'
 import {
   findParentId,
   getOrCreateParentId,
@@ -20,17 +20,15 @@ import {
 
 const UNAUTHORIZED = () => Response.json({ error: 'Sign in required' }, { status: 401 })
 
-/** Only calls out to Clerk for identity details the first time this user is seen. */
+// NYC DOE school code: district, borough letter, school number (e.g. 02M475).
+// Anything else is rejected before it reaches Postgres.
+const DBN = /^\d{2}[MKXQR]\d{3}$/
+const MAX_ORDER = 500
+
 async function resolveParentId(userId: string): Promise<number> {
   const existing = await findParentId(userId)
   if (existing !== null) return existing
-  const user = await currentUser()
-  return getOrCreateParentId({
-    clerkUserId: userId,
-    email: user?.emailAddresses?.[0]?.emailAddress ?? null,
-    firstName: user?.firstName ?? null,
-    lastName: user?.lastName ?? null,
-  })
+  return getOrCreateParentId(userId)
 }
 
 export async function GET() {
@@ -47,8 +45,8 @@ export async function POST(request: NextRequest) {
   if (!userId) return UNAUTHORIZED()
 
   const { dbn } = await request.json()
-  if (typeof dbn !== 'string' || !dbn) {
-    return Response.json({ error: 'dbn is required' }, { status: 400 })
+  if (typeof dbn !== 'string' || !DBN.test(dbn)) {
+    return Response.json({ error: 'a valid dbn is required' }, { status: 400 })
   }
 
   const parentId = await resolveParentId(userId)
@@ -61,8 +59,8 @@ export async function DELETE(request: NextRequest) {
   if (!userId) return UNAUTHORIZED()
 
   const { dbn } = await request.json()
-  if (typeof dbn !== 'string' || !dbn) {
-    return Response.json({ error: 'dbn is required' }, { status: 400 })
+  if (typeof dbn !== 'string' || !DBN.test(dbn)) {
+    return Response.json({ error: 'a valid dbn is required' }, { status: 400 })
   }
 
   const parentId = await findParentId(userId)
@@ -75,7 +73,7 @@ export async function PUT(request: NextRequest) {
   if (!userId) return UNAUTHORIZED()
 
   const { order } = await request.json()
-  if (!Array.isArray(order) || !order.every((d) => typeof d === 'string')) {
+  if (!Array.isArray(order) || order.length > MAX_ORDER || !order.every((d) => typeof d === 'string' && DBN.test(d))) {
     return Response.json({ error: 'order must be a string array' }, { status: 400 })
   }
 

@@ -38,3 +38,10 @@ describe('next.config.js — Clerk publishable key build fallback', () => {
     expect(nextConfigIdx).toBeGreaterThan(fallbackIdx)
   })
 })
+
+describe('placeholder Clerk key is never used on Vercel', () => {
+  it('only applies when VERCEL is unset, so a missing real key fails the Vercel build', () => {
+    const src = require('fs').readFileSync(require('path').join(__dirname, '../next.config.js'), 'utf8')
+    expect(src).toMatch(/if \(!process\.env\.VERCEL\) \{\s*process\.env\.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY \|\|=/)
+  })
+})

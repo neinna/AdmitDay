@@ -9,7 +9,11 @@
 // non-functional placeholder (base64 of "example.clerk.accounts.dev$") — it
 // satisfies Clerk's publishable-key format check without a live instance
 // behind it.
-process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||= 'pk_test_ZXhhbXBsZS5jbGVyay5hY2NvdW50cy5kZXYk'
+// Never on Vercel: there a missing real key must fail the build loudly
+// rather than ship a site whose sign-in silently points at nothing.
+if (!process.env.VERCEL) {
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||= 'pk_test_ZXhhbXBsZS5jbGVyay5hY2NvdW50cy5kZXYk'
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {}

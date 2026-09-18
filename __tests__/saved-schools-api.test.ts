@@ -100,30 +100,32 @@ describe('/api/saved-schools — signed in', () => {
     expect(mockGetSavedDbns).toHaveBeenCalledWith(42)
   })
 
+  it('POST 400s on a dbn that is not a school code', async () => {
+    const res = await POST(jsonRequest({ dbn: 'x'.repeat(5000) }))
+    expect(res.status).toBe(400)
+    expect(mockAddSavedSchool).not.toHaveBeenCalled()
+  })
+
+  it('PUT 400s when the order contains something that is not a school code', async () => {
+    const res = await PUT(jsonRequest({ order: ['01M001', 'DROP TABLE'] }))
+    expect(res.status).toBe(400)
+  })
+
   it('POST 400s on a missing dbn', async () => {
     const res = await POST(jsonRequest({}))
     expect(res.status).toBe(400)
     expect(mockAddSavedSchool).not.toHaveBeenCalled()
   })
 
-  it('POST creates a parent (fetching identity from Clerk) on a first-ever save', async () => {
+  it('POST creates a parent from the Clerk user id alone on a first-ever save (no name or email copied)', async () => {
     mockFindParentId.mockResolvedValue(null)
-    mockCurrentUser.mockResolvedValue({
-      emailAddresses: [{ emailAddress: 'a@example.com' }],
-      firstName: 'A',
-      lastName: 'Parent',
-    })
     mockGetOrCreateParentId.mockResolvedValue(7)
     mockAddSavedSchool.mockResolvedValue(['01M001'])
 
     const res = await POST(jsonRequest({ dbn: '01M001' }))
 
-    expect(mockGetOrCreateParentId).toHaveBeenCalledWith({
-      clerkUserId: 'user_1',
-      email: 'a@example.com',
-      firstName: 'A',
-      lastName: 'Parent',
-    })
+    expect(mockGetOrCreateParentId).toHaveBeenCalledWith('user_1')
+    expect(mockCurrentUser).not.toHaveBeenCalled()
     expect(mockAddSavedSchool).toHaveBeenCalledWith(7, '01M001')
     expect(await res.json()).toEqual({ dbns: ['01M001'] })
   })

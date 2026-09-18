@@ -91,8 +91,9 @@ describe('/privacy content matches the product as it actually exists', () => {
     expect(privacySource).toMatch(/label: 'Langfuse'/)
   })
 
-  it('says saved lists live in local storage, not on the server (lists move to accounts in #200)', () => {
+  it('says signed-out lists stay in the browser and signed-in lists are stored with the account (#200)', () => {
     expect(privacySource).toMatch(/local storage/i)
+    expect(privacySource).toMatch(/Signed in: saved to your account/)
   })
 
   it('describes accounts and names Clerk, because @clerk/nextjs ships in the app (#199)', () => {

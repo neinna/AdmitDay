@@ -31,9 +31,6 @@ function ensureSchema(): Promise<void> {
         CREATE TABLE IF NOT EXISTS parents (
           id SERIAL PRIMARY KEY,
           clerk_user_id TEXT UNIQUE NOT NULL,
-          email TEXT,
-          first_name TEXT,
-          last_name TEXT,
           created_at TIMESTAMPTZ NOT NULL DEFAULT now()
         )
       `
@@ -64,12 +61,9 @@ function ensureSchema(): Promise<void> {
   return schemaReady
 }
 
-export interface ParentIdentity {
-  clerkUserId: string
-  email: string | null
-  firstName: string | null
-  lastName: string | null
-}
+// Parents are stored by Clerk user id only. Name and email stay in Clerk,
+// which already holds them: AdmitDay's database keeps no copy, so there is
+// less personal data to protect and nothing to fall out of sync.
 
 /** Looks up a parent by Clerk user id. Never creates one. */
 export async function findParentId(clerkUserId: string): Promise<number | null> {
@@ -84,11 +78,11 @@ export async function findParentId(clerkUserId: string): Promise<number | null> 
  * Idempotent: a second call with the same clerk_user_id returns the same id
  * rather than erroring or duplicating the row.
  */
-export async function getOrCreateParentId(identity: ParentIdentity): Promise<number> {
+export async function getOrCreateParentId(clerkUserId: string): Promise<number> {
   await ensureSchema()
   const { rows } = await sql<{ id: number }>`
-    INSERT INTO parents (clerk_user_id, email, first_name, last_name)
-    VALUES (${identity.clerkUserId}, ${identity.email}, ${identity.firstName}, ${identity.lastName})
+    INSERT INTO parents (clerk_user_id)
+    VALUES (${clerkUserId})
     ON CONFLICT (clerk_user_id) DO UPDATE SET clerk_user_id = EXCLUDED.clerk_user_id
     RETURNING id
   `
