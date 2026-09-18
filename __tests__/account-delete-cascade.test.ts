@@ -19,6 +19,11 @@ jest.mock('@clerk/nextjs/server', () => ({
 }))
 
 const mockSql = jest.fn()
+const mockEnsureSchema = jest.fn().mockResolvedValue(undefined)
+jest.mock('@/lib/saved-lists-db', () => ({
+  ensureSchema: (...args: unknown[]) => mockEnsureSchema(...args),
+}))
+
 jest.mock('@vercel/postgres', () => ({
   sql: (...args: unknown[]) => mockSql(...args),
 }))

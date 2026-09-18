@@ -15,6 +15,11 @@ jest.mock('@clerk/nextjs/server', () => ({
 }))
 
 const mockSql = jest.fn()
+const mockEnsureSchema = jest.fn().mockResolvedValue(undefined)
+jest.mock('@/lib/saved-lists-db', () => ({
+  ensureSchema: (...args: unknown[]) => mockEnsureSchema(...args),
+}))
+
 jest.mock('@vercel/postgres', () => ({
   sql: (...args: unknown[]) => mockSql(...args),
 }))
@@ -93,5 +98,16 @@ describe('DELETE /api/account — signed in', () => {
     expect(mockSql).toHaveBeenCalledTimes(1)
     expect(res.status).toBe(500)
     expect(mockCaptureException).toHaveBeenCalledWith(clerkError)
+  })
+})
+
+describe('DELETE /api/account — schema guard', () => {
+  it('creates the tables (no-op when present) before running the delete, so a parent who never saved can still delete', async () => {
+    mockAuth.mockResolvedValue({ userId: 'user_1' })
+    const order: string[] = []
+    mockEnsureSchema.mockImplementation(async () => { order.push('schema') })
+    mockSql.mockImplementation(async () => { order.push('sql'); return { rows: [] } })
+    await DELETE()
+    expect(order.slice(0, 2)).toEqual(['schema', 'sql'])
   })
 })

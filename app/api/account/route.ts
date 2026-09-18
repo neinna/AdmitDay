@@ -16,11 +16,15 @@
 import { auth, clerkClient } from '@clerk/nextjs/server'
 import { sql } from '@vercel/postgres'
 import * as Sentry from '@sentry/nextjs'
+import { ensureSchema } from '@/lib/saved-lists-db'
 
 export async function DELETE() {
   const { userId } = await auth()
   if (!userId) return Response.json({ error: 'Sign in required' }, { status: 401 })
 
+  // A parent who never saved a school may be deleting before the tables
+  // exist; create them (no-op when present) so the delete can't error.
+  await ensureSchema()
   await sql`
     WITH p AS (SELECT id FROM parents WHERE clerk_user_id = ${userId}),
          l AS (SELECT id FROM school_lists WHERE parent_id IN (SELECT id FROM p)),
