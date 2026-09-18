@@ -8,14 +8,24 @@ import { renderToStaticMarkup } from 'react-dom/server'
 // throw when rendered outside a <ClerkProvider>, and this file renders the
 // pages standalone with renderToStaticMarkup, so @clerk/nextjs is mocked
 // with plain stand-ins rather than excluding these two pages from the header.
-jest.mock('@clerk/nextjs', () => ({
-  ClerkLoaded: ({ children }: { children: React.ReactNode }) => children,
-  SignedIn: () => null,
-  SignedOut: ({ children }: { children: React.ReactNode }) => children,
-  SignInButton: ({ children }: { children: React.ReactNode }) => children,
-  SignUpButton: ({ children }: { children: React.ReactNode }) => children,
-  UserButton: () => null,
-}))
+jest.mock('@clerk/nextjs', () => {
+  const UserButton = () => null
+  // Issue #241 added a <UserButton.MenuItems>/<UserButton.Link> child to
+  // AuthControls's <SignedIn> branch. That branch isn't reachable here
+  // (SignedIn renders null in this mock), but React still evaluates the JSX
+  // tree passed as children, so these sub-components must exist even though
+  // they're never called.
+  UserButton.MenuItems = ({ children }: { children: React.ReactNode }) => children
+  UserButton.Link = () => null
+  return {
+    ClerkLoaded: ({ children }: { children: React.ReactNode }) => children,
+    SignedIn: () => null,
+    SignedOut: ({ children }: { children: React.ReactNode }) => children,
+    SignInButton: ({ children }: { children: React.ReactNode }) => children,
+    SignUpButton: ({ children }: { children: React.ReactNode }) => children,
+    UserButton,
+  }
+})
 
 import PrivacyPage from '@/app/privacy/page'
 import TermsPage from '@/app/terms/page'
