@@ -23,6 +23,7 @@ import { extractFilters, QueryFilters, appliedSignals, removeSignal } from '@/li
 import { getUnmetCriteria } from '@/lib/soft-match'
 import { buildFindRowSummary } from '@/lib/school-detail-utils'
 import { Chip, Button, SchoolRow } from '@/components/ui'
+import FeedbackRow from '@/components/FeedbackRow'
 import FindRail from './FindRail'
 
 interface AskSource {
@@ -75,6 +76,9 @@ export default function FindClient({ schools, initialFilters }: Props) {
   const [askSources, setAskSources] = useState<AskSource[]>([])
   const [askLoading, setAskLoading] = useState(false)
   const [askAnswerError, setAskAnswerError] = useState('')
+  // Trace id of the answer currently on screen (issue #195) — cleared the
+  // moment a new ask starts so a rating can never attach to a stale trace.
+  const [askTraceId, setAskTraceId] = useState<string | null>(null)
 
   const [addedDbns, setAddedDbns] = useState<Set<string>>(new Set())
   const [hydrated, setHydrated] = useState(false)
@@ -227,6 +231,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
     setAskAnswerError('')
     setAskAnswer('')
     setAskSources([])
+    setAskTraceId(null)
 
     const startedAt = Date.now()
 
@@ -254,6 +259,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
       setAskAnswer(typeof data.answer === 'string' ? data.answer : '')
       const sources = Array.isArray(data.sources) ? data.sources : []
       setAskSources(sources)
+      setAskTraceId(typeof data.traceId === 'string' ? data.traceId : null)
       posthog?.capture('ask_answered', {
         latency_ms: Date.now() - startedAt,
         source_count: sources.length,
@@ -377,9 +383,12 @@ export default function FindClient({ schools, initialFilters }: Props) {
                 )}
                 {!askAnswerError && askAnswer && (
                   <div>
-                    <p className="text-[14px] text-ink-2 whitespace-pre-wrap leading-relaxed">
-                      {askAnswer}
-                    </p>
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-[14px] text-ink-2 whitespace-pre-wrap leading-relaxed">
+                        {askAnswer}
+                      </p>
+                      <FeedbackRow key={askTraceId ?? 'no-trace'} screen="find_ask" traceId={askTraceId ?? undefined} />
+                    </div>
                     {askSources.length > 0 && (
                       <div className="mt-3">
                         <h2 className="font-mono text-[11px] tracking-[0.1em] uppercase text-faint mb-1.5">
