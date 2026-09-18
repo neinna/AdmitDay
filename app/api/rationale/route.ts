@@ -1,14 +1,30 @@
 import Anthropic from '@anthropic-ai/sdk'
 import * as Sentry from '@sentry/nextjs'
 import { NextRequest } from 'next/server'
+import { randomUUID } from 'crypto'
 import { checkRateLimit } from '@/lib/rate-limit'
 import { classifyProviderError } from '@/lib/provider-error'
+import { recordLlmTrace } from '@/lib/trace'
+import { estimateCostUsd } from '@/lib/model-cost'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
+function getSessionId(request: NextRequest): string {
+  return request.headers.get('x-posthog-distinct-id') || randomUUID()
+}
+
 export async function POST(request: NextRequest) {
+  const startedAt = Date.now()
+  const sessionId = getSessionId(request)
+
   const rl = checkRateLimit(request)
   if (!rl.ok) {
+    recordLlmTrace({
+      route: 'rationale',
+      sessionId,
+      latencyMs: Date.now() - startedAt,
+      outcome: 'rate_limited',
+    })
     return Response.json(
       { error: "You're sending requests too quickly — please wait a moment and try again." },
       { status: 429, headers: { 'Retry-After': String(rl.retryAfterSec) } },
