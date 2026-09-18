@@ -9,7 +9,7 @@ describe('scripts/vps-data-refresh.sh dependency step', () => {
 
   it('only runs pip when the Python imports are missing', () => {
     expect(fn).toContain("if ! python3 -c 'import bs4, requests'")
-    expect(fn.indexOf('if ! python3')).toBeLessThan(fn.indexOf('pip install'))
+    expect(fn.indexOf('if ! python3')).toBeLessThan(fn.indexOf('python3 -m pip install'))
   })
 
   it('still installs node dependencies', () => {
