@@ -66,3 +66,99 @@ def test_fallback_keeps_distinct_methods(monkeypatch):
     assert set(admissions_types) == {"Screened", "Educational Option"}
     assert len(programs) == 2
     assert {p["raw_method"] for p in programs} == {"Screened", "Educational Option / Ed. Opt."}
+
+
+# ── Issue #255: schools with no programs in this cycle's MySchools
+# admissions are excluded from schools.json instead of falling back to
+# NYC-SIFT detail. ────────────────────────────────────────────────────────
+
+def _sift_school(dbn, name, borough="Bronx"):
+    return {
+        "dbn": dbn,
+        "name": name,
+        "borough": borough,
+        "total_students": 500,
+        "applicants_per_seat": 2.0,
+        "academic_score_pct": 70.0,
+        "sift_url": f"https://nycsift.com/school.phtml?id={dbn}",
+    }
+
+
+def _myschools_program():
+    return {
+        "program_name": "Test Program",
+        "program_code": "T01",
+        "admissions_method": "Screened",
+        "provenance": {
+            "source": "MySchools",
+            "url": "https://www.myschools.nyc/fake",
+            "fetched_at": "2026-09-18T00:00:00+00:00",
+        },
+    }
+
+
+def test_build_school_json_excludes_school_with_no_myschools_programs(monkeypatch):
+    def fake_fetch(dbn):
+        if dbn == "08X537":
+            raise build_school_data.MySchoolsNotAdmittingError(f"{dbn} returned no MySchools programs")
+        return (["Screened"], [_myschools_program()])
+
+    monkeypatch.setattr(build_school_data, "fetch_myschools_program_detail", fake_fetch)
+    monkeypatch.setattr(build_school_data.time, "sleep", lambda *_: None)
+
+    sift_schools = [
+        _sift_school("08X537", "Bronx Arena High School"),
+        _sift_school("13K430", "Brooklyn Technical High School", borough="Brooklyn"),
+    ]
+
+    schools, excluded_dbns = build_school_data.build_school_json(sift_schools, {})
+
+    assert excluded_dbns == ["08X537"]
+    assert [s["dbn"] for s in schools] == ["13K430"]
+    assert "myschools_status" not in schools[0]
+
+
+def test_build_school_json_keeps_school_with_myschools_programs(monkeypatch):
+    monkeypatch.setattr(
+        build_school_data,
+        "fetch_myschools_program_detail",
+        lambda dbn: (["Screened"], [_myschools_program()]),
+    )
+    monkeypatch.setattr(build_school_data.time, "sleep", lambda *_: None)
+
+    sift_schools = [_sift_school("13K430", "Brooklyn Technical High School", borough="Brooklyn")]
+
+    schools, excluded_dbns = build_school_data.build_school_json(sift_schools, {})
+
+    assert excluded_dbns == []
+    assert len(schools) == 1
+    assert schools[0]["programs"] == [_myschools_program()]
+
+
+def test_build_school_json_aborts_on_network_error_instead_of_excluding(monkeypatch):
+    # A flaky request must never quietly drop a school: the seed cron would
+    # then delete it from production. Only an empty MySchools listing excludes.
+    def fake_fetch(dbn):
+        if dbn == "02M475":
+            raise build_school_data.MySchoolsError("Failed to fetch https://www.myschools.nyc/... after 3 attempts")
+        return (["Screened"], [_myschools_program()])
+
+    monkeypatch.setattr(build_school_data, "fetch_myschools_program_detail", fake_fetch)
+    monkeypatch.setattr(build_school_data.time, "sleep", lambda *_: None)
+    sift_schools = [_sift_school("02M475", "Stuyvesant High School"), _sift_school("13K430", "Brooklyn Technical High School", borough="Brooklyn")]
+
+    import pytest
+    with pytest.raises(build_school_data.MySchoolsError):
+        build_school_data.build_school_json(sift_schools, {})
+
+
+def test_empty_myschools_record_is_not_admitting():
+    from scripts.scrape_myschools import parse_programs, MySchoolsNotAdmittingError, MySchoolsParseError
+    import pytest
+    empty = {"school": {"dbn": "", "name": ""}, "programs": []}
+    with pytest.raises(MySchoolsNotAdmittingError):
+        parse_programs(empty, "https://example/08X537", "2026-09-18T00:00:00+00:00")
+    # A real shape change is still a plain parse error, not an exclusion.
+    with pytest.raises(MySchoolsParseError) as e:
+        parse_programs({"school": "not-an-object"}, "https://example/x", "2026-09-18T00:00:00+00:00")
+    assert not isinstance(e.value, MySchoolsNotAdmittingError)

@@ -35,6 +35,19 @@ describe('scripts/vps-data-refresh.sh: PR body on a changed, valid scrape', () =
     expect(body).toContain('build_refresh_pr_body')
     expect(body).toContain('gh pr create')
   })
+
+  // Issue #255: schools excluded for having no programs in this cycle's
+  // MySchools admissions are called out in the PR body, separate from the
+  // generic Removed DBNs list.
+  it('reports excluded DBNs separately from Removed DBNs', () => {
+    const body = bodyOfFunction('build_refresh_pr_body')
+    expect(body).toContain('Excluded DBNs')
+    expect(body).toContain('schools.excluded.json')
+    const removedIdx = body.indexOf('Removed DBNs:')
+    const excludedIdx = body.indexOf('Excluded DBNs')
+    expect(removedIdx).toBeGreaterThan(-1)
+    expect(excludedIdx).toBeGreaterThan(removedIdx)
+  })
 })
 
 describe('scripts/vps-data-refresh.sh: no change means no PR', () => {

@@ -38,6 +38,10 @@ next-env.d.ts
 # school data is environment-specific, copied in at deploy time
 data/schools.json
 
+# refresh-data.ts sidecar: DBNs excluded from the current scrape, read by
+# scripts/vps-data-refresh.sh for the data PR body -- not app data
+schools.excluded.json
+
 # local files
 *.csv
 install.cmd

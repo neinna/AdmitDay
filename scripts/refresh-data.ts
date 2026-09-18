@@ -54,7 +54,7 @@ function printSummary(
   added: string[],
   removed: string[],
   invalidRecords: { index: number; dbn?: string; reasons: string[] }[],
-  myschoolsFallbackDbns: string[]
+  excludedDbns: string[]
 ): void {
   console.log('\n── Refresh summary ─────────────────────────────────')
   console.log(`Schools before: ${previousCount ?? '(none)'}`)
@@ -63,8 +63,8 @@ function printSummary(
   if (added.length > 0) console.log(`  ${added.join(', ')}`)
   console.log(`Removed:        ${removed.length}`)
   if (removed.length > 0) console.log(`  ${removed.join(', ')}`)
-  console.log(`MySchools fallback (not listed): ${myschoolsFallbackDbns.length}`)
-  if (myschoolsFallbackDbns.length > 0) console.log(`  ${myschoolsFallbackDbns.join(', ')}`)
+  console.log(`Excluded (no programs in this cycle's MySchools admissions): ${excludedDbns.length}`)
+  if (excludedDbns.length > 0) console.log(`  ${excludedDbns.join(', ')}`)
   console.log(`Failed validation: ${invalidRecords.length}`)
   invalidRecords.forEach((r) => {
     console.log(`  [${r.index}] ${r.dbn ?? '(no dbn)'}: ${r.reasons.join('; ')}`)
@@ -96,10 +96,13 @@ async function main(): Promise<void> {
     throw new Error(`${scrapedPath} was not produced by the scrape (or is not a JSON array).`)
   }
 
-  const myschoolsFallbackDbns = (scraped as RawSchoolRecord[])
-    .map((r) => (r ?? {}) as RawSchoolRecord)
-    .filter((r) => r.myschools_status === 'not_listed')
-    .map((r) => (typeof r.dbn === 'string' ? r.dbn : '(no dbn)'))
+  // Schools excluded for having no programs in this cycle's MySchools
+  // admissions (issue #255) never make it into `scraped` -- build_school_data.py
+  // writes their DBNs to this sidecar file next to its output instead.
+  const excludedPath = scrapedPath.replace(/\.json$/, '.excluded.json')
+  const excludedDbns = (readJsonArray(excludedPath) ?? []).filter(
+    (d): d is string => typeof d === 'string'
+  )
 
   // 2. Validate.
   const result = validateSchoolData(scraped as RawSchoolRecord[], previousSchools, {
@@ -111,7 +114,7 @@ async function main(): Promise<void> {
     result.added,
     result.removed,
     result.invalidRecords,
-    myschoolsFallbackDbns
+    excludedDbns
   )
 
   if (!result.valid) {
@@ -127,6 +130,16 @@ async function main(): Promise<void> {
   fs.mkdirSync(path.dirname(DATA_SCHOOLS_PATH), { recursive: true })
   fs.writeFileSync(DATA_SCHOOLS_PATH, JSON.stringify(scraped, null, 2))
   console.log(`Wrote ${DATA_SCHOOLS_PATH}`)
+
+  // Carry the excluded DBNs past the temp dir cleanup below, next to
+  // schools.json, so scripts/vps-data-refresh.sh can add them to the data
+  // PR body. Not a tracked file -- git only stages schools.json and
+  // data/school-embeddings.json for that PR.
+  fs.writeFileSync(
+    ROOT_SCHOOLS_PATH.replace(/\.json$/, '.excluded.json'),
+    JSON.stringify(excludedDbns, null, 2)
+  )
+
   fs.rmSync(scrapeTmpDir, { recursive: true, force: true })
 
   // 4. Re-embed first so a provider/key failure cannot update Postgres while
