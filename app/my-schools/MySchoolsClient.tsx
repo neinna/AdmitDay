@@ -34,8 +34,10 @@ import {
 type Props = {
   /** Slim index of every school — the client resolves saved dbns against it. */
   index: ListSchool[]
-  /** The signed-in parent's saved dbns, in rank order, fetched server-side from Postgres (issue #200). This page is sign-in gated, so there is no signed-out fallback here. */
+  /** The signed-in parent's saved dbns, in rank order, fetched server-side from Postgres (issue #200). Empty when signed out. */
   initialOrder: string[]
+  /** Whether the request that rendered this page had a session (issue #240). Signed out, there is no list — saving a school requires an account. */
+  signedIn: boolean
 }
 
 // Issue #199: /my-schools had no header at all before this — the sign-in /
@@ -62,7 +64,7 @@ function Header() {
   )
 }
 
-export default function MySchoolsClient({ index, initialOrder }: Props) {
+export default function MySchoolsClient({ index, initialOrder, signedIn }: Props) {
   const posthog = usePostHog()
   const [order, setOrder] = useState<string[]>(initialOrder)
   const [notice, setNotice] = useState<string | null>(null)
@@ -121,6 +123,22 @@ export default function MySchoolsClient({ index, initialOrder }: Props) {
     const school = index.find((s) => s.dbn === dbn)
     setNotice(school ? `Removed ${school.name}.` : 'Removed.')
     posthog?.capture('school_removed', { dbn, list_size_after: next.length })
+  }
+
+  if (!signedIn) {
+    // Issue #240: saving a school requires an account, so a signed-out visit
+    // has nothing to show — just the door in, via AuthControls in Header.
+    return (
+      <div>
+        <Header />
+        <div className="px-5 min-[900px]:px-9 py-14">
+          <h1 className="font-display font-bold text-[40px] leading-[1.04] tracking-[-0.038em] text-ink">
+            My Schools
+          </h1>
+          <p className="mt-5 text-[15px] text-muted">Sign in to see your saved schools.</p>
+        </div>
+      </div>
+    )
   }
 
   if (saved.length === 0) {

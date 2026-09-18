@@ -16,26 +16,32 @@ function readSource(relPath: string): string {
   return fs.readFileSync(path.join(__dirname, '..', relPath), 'utf-8')
 }
 
-describe('/my-schools is gated server-side (issue #200)', () => {
+describe('/my-schools is gated server-side (issue #200, updated by #240)', () => {
   const src = readSource('app/my-schools/page.tsx')
 
   it('stays a server component', () => {
     expect(src).not.toMatch(/^['"]use client['"]/m)
   })
 
-  it('checks the session with auth() and redirects before fetching any school or list data', () => {
+  it('checks the session with auth() and only fetches school or list data inside the signed-in branch', () => {
     const authIdx = src.indexOf('await auth()')
-    const redirectIdx = src.indexOf("redirect('/')")
+    const ifNoUserIdx = src.indexOf('if (!userId)')
     const getAllSchoolsIdx = src.indexOf('await getAllSchools()')
     const getSavedDbnsIdx = src.indexOf('getSavedDbns(')
 
     expect(authIdx).toBeGreaterThan(-1)
-    expect(redirectIdx).toBeGreaterThan(authIdx)
-    // The redirect is guarded by `if (!userId)` and both data fetches happen
-    // strictly after it in source order, matching the early-return control
-    // flow — a signed-out request never reaches either fetch.
-    expect(getAllSchoolsIdx).toBeGreaterThan(redirectIdx)
-    expect(getSavedDbnsIdx).toBeGreaterThan(redirectIdx)
+    expect(ifNoUserIdx).toBeGreaterThan(authIdx)
+    // The signed-out branch returns early; both data fetches happen strictly
+    // after it in source order, matching the early-return control flow — a
+    // signed-out request never reaches either fetch.
+    expect(getAllSchoolsIdx).toBeGreaterThan(ifNoUserIdx)
+    expect(getSavedDbnsIdx).toBeGreaterThan(ifNoUserIdx)
+  })
+
+  it('still renders the route (no redirect) so a signed-out visit can show a sign-in prompt (#240)', () => {
+    expect(src).not.toContain('redirect(')
+    expect(src).toContain('signedIn={false}')
+    expect(src).toContain('signedIn={true}')
   })
 
   it("imports auth from Clerk's server entrypoint, not the client one", () => {
@@ -72,7 +78,8 @@ describe('FindClient and SchoolDetailClient branch on sign-in state for saves (i
     ['FindClient', findSrc],
     ['SchoolDetailClient', detailSrc],
   ])('%s uses useAuth from @clerk/nextjs to branch signed-in saves to Postgres', (_name, src) => {
-    expect(src).toContain("import { useAuth } from '@clerk/nextjs'")
+    expect(src).toContain('useAuth')
+    expect(src).toContain("from '@clerk/nextjs'")
     expect(src).toContain('isSignedIn')
     expect(src).toContain("fetch('/api/saved-schools'")
   })
@@ -80,9 +87,20 @@ describe('FindClient and SchoolDetailClient branch on sign-in state for saves (i
   it.each([
     ['FindClient', findSrc],
     ['SchoolDetailClient', detailSrc],
-  ])('%s still falls back to ADDED_SCHOOLS_KEY localStorage when signed out — unchanged', (_name, src) => {
+  ])('%s no longer keeps an anonymous saved list in localStorage (issue #240)', (_name, src) => {
     expect(src).toContain('ADDED_SCHOOLS_KEY')
-    expect(src).toContain('localStorage.setItem(ADDED_SCHOOLS_KEY')
-    expect(src).toContain('localStorage.getItem(ADDED_SCHOOLS_KEY')
+    expect(src).toContain('localStorage.removeItem(ADDED_SCHOOLS_KEY')
+    expect(src).not.toMatch(/localStorage\.setItem\(ADDED_SCHOOLS_KEY/)
+    expect(src).not.toMatch(/localStorage\.getItem\(ADDED_SCHOOLS_KEY/)
+  })
+
+  it.each([
+    ['FindClient', findSrc],
+    ['SchoolDetailClient', detailSrc],
+  ])('%s opens Clerk sign-up and stashes the pending DBN when signed out (issue #240)', (_name, src) => {
+    expect(src).toContain("import { useAuth, useClerk } from '@clerk/nextjs'")
+    expect(src).toContain('openSignUp()')
+    expect(src).toContain("import { PENDING_SAVE_KEY } from '@/components/PendingSaveSync'")
+    expect(src).toContain('sessionStorage.setItem(PENDING_SAVE_KEY')
   })
 })
