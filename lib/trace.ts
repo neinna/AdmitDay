@@ -14,11 +14,17 @@
  * hash is computed before this module ever sees it.
  *
  * Config (read from the environment):
- *   LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY, LANGFUSE_HOST
+ *   LANGFUSE_APP_PUBLIC_KEY, LANGFUSE_APP_SECRET_KEY, LANGFUSE_APP_HOST
+ * Deliberately distinct names from scripts/langfuse_trace.py's
+ * LANGFUSE_PUBLIC_KEY / LANGFUSE_SECRET_KEY / LANGFUSE_HOST — this is a
+ * second Langfuse project (admitday-app), not the agent coordinator's, and
+ * a shared name would risk one process's keys silently applying to the
+ * other wherever both happen to share an environment (e.g. this repo's own
+ * dev/CI shell, which exports the coordinator's keys under those names).
  * If the keys are unset, every export here is a no-op.
  */
 
-import { Langfuse } from "langfuse"
+import type { Langfuse as LangfuseClient } from "langfuse"
 
 // Hard ceiling on how long a trace write may run before it is abandoned.
 // The Langfuse SDK also gets its own (shorter) request timeout below; this
@@ -98,23 +104,28 @@ export function buildTracePayload(raw: unknown): UnknownRecord | null {
   return picked
 }
 
-let client: Langfuse | null | undefined
+let client: LangfuseClient | null | undefined
 
-function getClient(): Langfuse | null {
+function getClient(): LangfuseClient | null {
   if (client !== undefined) return client
 
-  const publicKey = process.env.LANGFUSE_PUBLIC_KEY
-  const secretKey = process.env.LANGFUSE_SECRET_KEY
+  const publicKey = process.env.LANGFUSE_APP_PUBLIC_KEY
+  const secretKey = process.env.LANGFUSE_APP_SECRET_KEY
   if (!publicKey || !secretKey) {
     client = null
     return client
   }
 
   try {
+    // Required lazily, and inside the try: importing this module must
+    // never pull in the Langfuse SDK when tracing is unconfigured (the
+    // common case), and any failure to load or construct it is just
+    // another Langfuse failure to swallow, same as a bad host.
+    const { Langfuse } = require("langfuse") as typeof import("langfuse")
     client = new Langfuse({
       publicKey,
       secretKey,
-      baseUrl: process.env.LANGFUSE_HOST || undefined,
+      baseUrl: process.env.LANGFUSE_APP_HOST || undefined,
       requestTimeout: REQUEST_TIMEOUT_MS,
       flushAt: 1,
     })
@@ -140,7 +151,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   })
 }
 
-async function sendTrace(langfuse: Langfuse, payload: UnknownRecord): Promise<void> {
+async function sendTrace(langfuse: LangfuseClient, payload: UnknownRecord): Promise<void> {
   const route = typeof payload.route === "string" ? payload.route : "unknown"
   const sessionId = typeof payload.sessionId === "string" ? payload.sessionId : undefined
   const outcome = typeof payload.outcome === "string" ? payload.outcome : "ok"

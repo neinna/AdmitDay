@@ -116,6 +116,17 @@ export async function POST(request: NextRequest) {
       parsed = { title: '', rationale: raw.slice(0, 200) }
     }
 
+    recordLlmTrace({
+      route: 'rationale',
+      sessionId,
+      model: message.model,
+      inputTokens: message.usage?.input_tokens,
+      outputTokens: message.usage?.output_tokens,
+      latencyMs: Date.now() - startedAt,
+      costUsd: estimateCostUsd(message.model, message.usage?.input_tokens, message.usage?.output_tokens),
+      outcome: 'ok',
+    })
+
     return Response.json({
       title: parsed.title ?? '',
       rationale: parsed.rationale ?? '',
@@ -124,7 +135,14 @@ export async function POST(request: NextRequest) {
     // Log the real error (vendor detail, status, request id) to Sentry —
     // never let any part of it reach the client.
     Sentry.captureException(err)
-    const { status, body } = classifyProviderError(err)
+    const { status, body, classification } = classifyProviderError(err)
+    recordLlmTrace({
+      route: 'rationale',
+      sessionId,
+      latencyMs: Date.now() - startedAt,
+      outcome: classification === 'rate_limited' ? 'rate_limited' : 'provider_error',
+      errorClassification: classification,
+    })
     return Response.json(body, { status })
   }
 }
