@@ -1,14 +1,28 @@
 /**
  * lib/rate-limit.ts
  *
- * In-memory, per-IP fixed-window rate limiter for the unauthenticated
- * LLM-backed API routes (/api/find/ask, /api/rationale).
+ * Rate limiting for the unauthenticated LLM-backed API routes
+ * (/api/find/ask, /api/rationale): a per-IP fixed-window cap plus a
+ * global daily ceiling on LLM calls.
  *
- * NOTE: This is a deliberate stopgap. Vercel lambdas do not share memory,
- * so the limit is per-instance rather than global — it caps runaway loops
- * against a warm instance but is not a hard global cap. The future upgrade
- * is a durable KV-backed limiter (Upstash / Vercel KV), which needs
- * provisioning and secrets we don't add here.
+ * Backed by Upstash Redis over its REST API (issue #197). We use the
+ * REST API directly with `fetch` rather than the `@upstash/redis` SDK —
+ * per this repo's issue-sizing rules a new npm dependency is its own
+ * ticket, and the REST API's `/pipeline` endpoint already batches every
+ * command this module needs into a single HTTP round trip. Upstash was
+ * chosen over Vercel KV because Vercel KV is itself a rebrand of the
+ * same Upstash-hosted Redis — talking to Upstash directly avoids an
+ * extra layer with no functional difference.
+ *
+ * If UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN are unset, or the
+ * store doesn't answer, this falls back to the original in-memory
+ * per-instance counter. That fallback is a deliberate floor, not a nice
+ *-to-have: Vercel lambdas don't share memory, so on its own it only caps
+ * a single warm instance, but it is what keeps a cap in place at all
+ * during a store outage. It must never fail open (no limit) or fail
+ * fully closed (every request 429s).
+ *
+ * The global daily ceiling resets at UTC midnight.
  */
 
 import type { NextRequest } from 'next/server'
@@ -16,12 +30,32 @@ import type { NextRequest } from 'next/server'
 export const MAX_REQUESTS = 15
 export const WINDOW_MS = 60_000
 
+const DEFAULT_DAILY_LLM_CEILING = 2000
+const parsedCeiling = Number(process.env.DAILY_LLM_CEILING)
+export const DAILY_LLM_CEILING =
+  Number.isFinite(parsedCeiling) && parsedCeiling > 0
+    ? parsedCeiling
+    : DEFAULT_DAILY_LLM_CEILING
+
+const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL
+const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN
+const REDIS_TIMEOUT_MS = 1500
+
+type RateLimitResult = { ok: true } | { ok: false; retryAfterSec: number }
+
 interface WindowEntry {
   count: number
   windowStart: number
 }
 
+interface DailyEntry {
+  dayKey: string
+  count: number
+}
+
+// In-memory fallback state (per warm instance — see module doc above).
 const buckets = new Map<string, WindowEntry>()
+let dailyEntry: DailyEntry | null = null
 
 function getClientIp(request: NextRequest): string {
   return (
@@ -38,28 +72,172 @@ function pruneExpired(now: number): void {
   })
 }
 
-export function checkRateLimit(
-  request: NextRequest
-): { ok: true } | { ok: false; retryAfterSec: number } {
-  const now = Date.now()
+function utcDateKey(now: number): string {
+  return new Date(now).toISOString().slice(0, 10)
+}
+
+function secondsUntilUtcMidnight(now: number): number {
+  const d = new Date(now)
+  const nextMidnight = Date.UTC(
+    d.getUTCFullYear(),
+    d.getUTCMonth(),
+    d.getUTCDate() + 1
+  )
+  return Math.max(1, Math.ceil((nextMidnight - now) / 1000))
+}
+
+function isStoreConfigured(): boolean {
+  return Boolean(REDIS_URL && REDIS_TOKEN)
+}
+
+interface RedisCommandResult {
+  result?: unknown
+  error?: string
+}
+
+/**
+ * Sends every command in one `/pipeline` POST — one HTTP round trip
+ * regardless of how many commands are batched in. Returns null (never
+ * throws) on any failure so callers can fall back to the in-memory
+ * limiter instead of treating a store outage as a hard error.
+ */
+async function redisPipeline(
+  commands: (string | number)[][]
+): Promise<RedisCommandResult[] | null> {
+  if (!REDIS_URL || !REDIS_TOKEN) return null
+
+  try {
+    const res = await fetch(`${REDIS_URL}/pipeline`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${REDIS_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(commands),
+      signal: AbortSignal.timeout(REDIS_TIMEOUT_MS),
+    })
+    if (!res.ok) return null
+
+    const data = (await res.json()) as unknown
+    if (!Array.isArray(data) || data.some((entry) => entry?.error)) {
+      return null
+    }
+    return data as RedisCommandResult[]
+  } catch {
+    return null
+  }
+}
+
+function checkInMemory(now: number, ip: string): RateLimitResult {
   pruneExpired(now)
 
-  const ip = getClientIp(request)
+  // Per-IP limit first. The daily ceiling exists to cap LLM spend, so it
+  // must count requests that reach the LLM — not attempts. Counting rejected
+  // attempts let one IP flood past its own limit and exhaust the global
+  // ceiling for every family until UTC midnight, while making only
+  // MAX_REQUESTS real LLM calls.
   const entry = buckets.get(ip)
-
-  if (!entry || now - entry.windowStart >= WINDOW_MS) {
-    buckets.set(ip, { count: 1, windowStart: now })
-    return { ok: true }
+  const inWindow = entry !== undefined && now - entry.windowStart < WINDOW_MS
+  if (inWindow && entry.count >= MAX_REQUESTS) {
+    const retryAfterSec = Math.max(
+      1,
+      Math.ceil((entry.windowStart + WINDOW_MS - now) / 1000)
+    )
+    return { ok: false, retryAfterSec }
   }
 
-  if (entry.count < MAX_REQUESTS) {
+  const dayKey = utcDateKey(now)
+  if (!dailyEntry || dailyEntry.dayKey !== dayKey) {
+    dailyEntry = { dayKey, count: 0 }
+  }
+  if (dailyEntry.count >= DAILY_LLM_CEILING) {
+    return { ok: false, retryAfterSec: secondsUntilUtcMidnight(now) }
+  }
+  dailyEntry.count++
+
+  if (inWindow) {
     entry.count++
-    return { ok: true }
+  } else {
+    buckets.set(ip, { count: 1, windowStart: now })
+  }
+  return { ok: true }
+}
+
+interface PipelineOutcome {
+  result: RateLimitResult
+  /** The daily counter was incremented for a request that will not reach the LLM. */
+  refundDaily: boolean
+}
+
+function checkFromPipeline(
+  results: RedisCommandResult[],
+  now: number
+): PipelineOutcome | null {
+  const [ipIncrRes, , ipTtlRes, dailyIncrRes] = results
+  const ipCount = Number(ipIncrRes?.result)
+  const dailyCount = Number(dailyIncrRes?.result)
+  if (!Number.isFinite(ipCount) || !Number.isFinite(dailyCount)) {
+    return null
   }
 
-  const retryAfterSec = Math.max(
-    1,
-    Math.ceil((entry.windowStart + WINDOW_MS - now) / 1000)
-  )
-  return { ok: false, retryAfterSec }
+  // Per-IP first, for the reason given in checkInMemory.
+  if (ipCount > MAX_REQUESTS) {
+    const ipTtlMs = Number(ipTtlRes?.result)
+    const remainingMs = ipTtlMs > 0 ? ipTtlMs : WINDOW_MS
+    return {
+      result: { ok: false, retryAfterSec: Math.max(1, Math.ceil(remainingMs / 1000)) },
+      refundDaily: true,
+    }
+  }
+
+  if (dailyCount > DAILY_LLM_CEILING) {
+    return {
+      result: { ok: false, retryAfterSec: secondsUntilUtcMidnight(now) },
+      refundDaily: true,
+    }
+  }
+
+  return { result: { ok: true }, refundDaily: false }
+}
+
+export async function checkRateLimit(
+  request: NextRequest
+): Promise<RateLimitResult> {
+  const now = Date.now()
+  const ip = getClientIp(request)
+
+  if (!isStoreConfigured()) {
+    return checkInMemory(now, ip)
+  }
+
+  const ipKey = `ratelimit:ip:${ip}`
+  const dailyKey = `ratelimit:daily:${utcDateKey(now)}`
+
+  const results = await redisPipeline([
+    ['INCR', ipKey],
+    ['PEXPIRE', ipKey, String(WINDOW_MS), 'NX'],
+    ['PTTL', ipKey],
+    ['INCR', dailyKey],
+    ['EXPIRE', dailyKey, String(secondsUntilUtcMidnight(now)), 'NX'],
+  ])
+
+  if (!results) {
+    return checkInMemory(now, ip)
+  }
+
+  const outcome = checkFromPipeline(results, now)
+  if (!outcome) {
+    return checkInMemory(now, ip)
+  }
+
+  // The daily INCR rides in the same pipeline as the per-IP INCR so an
+  // allowed request costs one round trip. A rejected request never reaches
+  // the LLM, so give its unit back. This costs a second round trip, but only
+  // on the rejection path, and a failed refund is ignored (redisPipeline
+  // never throws): the counter over-counts slightly until UTC midnight, which
+  // errs toward less spend, never more.
+  if (outcome.refundDaily) {
+    await redisPipeline([['DECR', dailyKey]])
+  }
+  return outcome.result
 }

@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
   const startedAt = Date.now()
   const sessionId = getSessionId(request)
 
-  const rl = checkRateLimit(request)
+  const rl = await checkRateLimit(request)
   if (!rl.ok) {
     recordLlmTrace({
       route: 'rationale',
