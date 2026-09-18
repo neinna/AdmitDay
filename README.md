@@ -38,6 +38,7 @@ The older standalone `/chat` product surface is decommissioned; `/find` is the l
 - **Generation:** Claude Sonnet 5 through grounded prompts.
 - **Cost protection:** per-IP rate limiting on LLM routes plus a global daily LLM ceiling, both stored durably in Vercel Postgres (`rate_limits` table), with an in-memory fallback if the store errors.
 - **Observability:** Sentry for errors, PostHog for analytics, Langfuse (`lib/trace.ts`) for per-request LLM cost/latency/token/retrieval tracing on `/api/find/ask` and `/api/rationale` — logging only, never on the response path, and never carries question/answer/prompt/chunk text. `/api/find/ask` returns that request's trace id to the client; rating an answer (`FeedbackRow`, via `/api/find/feedback`) writes a Langfuse score against it, joining user feedback to the trace it belongs to.
+- **Auth:** Clerk for sign up, log in, log out, and password reset (email/password and Google). Identity only today — no saved data is attached to an account yet, and no route is gated by sign-in status.
 - **Deployment:** Vercel from `main`; GitHub Actions runs Jest on pushes and PRs.
 
 ## Data Quality

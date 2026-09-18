@@ -2,6 +2,21 @@ import fs from 'fs'
 import path from 'path'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
+
+// Issue #199 put AuthControls (which uses Clerk's SignedIn/SignedOut) in the
+// header on every page, including /privacy and /terms. Clerk's components
+// throw when rendered outside a <ClerkProvider>, and this file renders the
+// pages standalone with renderToStaticMarkup, so @clerk/nextjs is mocked
+// with plain stand-ins rather than excluding these two pages from the header.
+jest.mock('@clerk/nextjs', () => ({
+  ClerkLoaded: ({ children }: { children: React.ReactNode }) => children,
+  SignedIn: () => null,
+  SignedOut: ({ children }: { children: React.ReactNode }) => children,
+  SignInButton: ({ children }: { children: React.ReactNode }) => children,
+  SignUpButton: ({ children }: { children: React.ReactNode }) => children,
+  UserButton: () => null,
+}))
+
 import PrivacyPage from '@/app/privacy/page'
 import TermsPage from '@/app/terms/page'
 
@@ -111,6 +126,31 @@ describe('/privacy content matches the product as it actually exists', () => {
       expect(privacySource).not.toMatch(/strip(s|ped)? ip addresses? (and|or) session-replay content before anything is sent/i)
       expect(privacySource).toMatch(/currently include/i)
     }
+  })
+})
+
+describe('/privacy and /terms headers carry AuthControls (issue #199 — every page)', () => {
+  const privacySource = fs.readFileSync(path.join(__dirname, '../app/privacy/page.tsx'), 'utf-8')
+  const termsSource = fs.readFileSync(path.join(__dirname, '../app/terms/page.tsx'), 'utf-8')
+
+  it('/privacy imports and renders AuthControls', () => {
+    expect(privacySource).toContain("import AuthControls from '@/components/AuthControls'")
+    expect(privacySource).toContain('<AuthControls />')
+  })
+
+  it('/terms imports and renders AuthControls', () => {
+    expect(termsSource).toContain("import AuthControls from '@/components/AuthControls'")
+    expect(termsSource).toContain('<AuthControls />')
+  })
+
+  it('/privacy still renders without throwing with AuthControls in the header', () => {
+    const html = renderToStaticMarkup(React.createElement(PrivacyPage))
+    expect(html).toContain('Privacy')
+  })
+
+  it('/terms still renders without throwing with AuthControls in the header', () => {
+    const html = renderToStaticMarkup(React.createElement(TermsPage))
+    expect(html).toContain('Terms')
   })
 })
 

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Footer from '@/components/Footer'
+import AuthControls from '@/components/AuthControls'
 import { Eyebrow } from '@/components/ui'
 
 /**
@@ -21,10 +22,13 @@ export default function TermsPage() {
             <span className="font-wordmark italic text-[24px] text-accent ml-[3px] tracking-[-0.01em]">Day</span>
           </div>
         </Link>
-        <nav className="flex items-center gap-7 text-[14.5px] text-muted">
-          <Link href="/find" className="hover:text-ink transition-colors duration-[120ms] ease-out">Find</Link>
-          <Link href="/my-schools" className="hover:text-ink transition-colors duration-[120ms] ease-out">My Schools</Link>
-        </nav>
+        <div className="flex items-center gap-7">
+          <nav className="flex items-center gap-7 text-[14.5px] text-muted">
+            <Link href="/find" className="hover:text-ink transition-colors duration-[120ms] ease-out">Find</Link>
+            <Link href="/my-schools" className="hover:text-ink transition-colors duration-[120ms] ease-out">My Schools</Link>
+          </nav>
+          <AuthControls />
+        </div>
       </header>
 
       <section className="px-5 min-[900px]:px-9 pt-11 pb-[26px] border-b border-rule">
