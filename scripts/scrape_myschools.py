@@ -185,20 +185,33 @@ class Program:
 
 def _is_absent(value: Any) -> bool:
     """True for values that mean "the page didn't publish this" -- None,
-    "", [], {} -- but NOT for a real 0, which some fields (e.g.
-    applications_per_seat) publish as a meaningful value."""
+    "", whitespace-only strings, [], {} -- but NOT for a real 0, which some
+    fields (e.g. applications_per_seat) publish as a meaningful value."""
     if value is None:
         return True
-    if isinstance(value, (str, list, dict)) and len(value) == 0:
+    if isinstance(value, str):
+        return value.strip() == ""
+    if isinstance(value, (list, dict)) and len(value) == 0:
         return True
     return False
+
+
+def _clean(value: Any) -> Any:
+    """Recursively drop absent values from dicts and list items, so a list
+    of dicts (e.g. priority_groups) gets each entry cleaned in place and any
+    entry left empty afterward removed from the list."""
+    if isinstance(value, dict):
+        return _drop_absent(value)
+    if isinstance(value, list):
+        cleaned = [_clean(item) for item in value]
+        return [item for item in cleaned if not _is_absent(item)]
+    return value
 
 
 def _drop_absent(d: dict) -> dict:
     out = {}
     for k, v in d.items():
-        if isinstance(v, dict):
-            v = _drop_absent(v)
+        v = _clean(v)
         if _is_absent(v):
             continue
         out[k] = v
