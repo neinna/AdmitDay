@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { usePostHog } from 'posthog-js/react'
+import AuthControls from '@/components/AuthControls'
 import { School } from '@/types'
 import {
   FindFilters,
@@ -290,13 +291,16 @@ export default function FindClient({ schools, initialFilters }: Props) {
             </span>
           </div>
         </div>
-        <nav className="flex items-center gap-[28px] text-[14.5px] text-muted">
-          <span className="text-ink font-medium border-b-2 border-accent pb-[3px]">Find</span>
-          <Link href="/my-schools" className="hover:text-ink transition-colors duration-[120ms] ease-out">
-            My Schools
-            {addedCount > 0 && <span className="font-mono text-accent ml-1">{addedCount}</span>}
-          </Link>
-        </nav>
+        <div className="flex items-center gap-[28px]">
+          <nav className="flex items-center gap-[28px] text-[14.5px] text-muted">
+            <span className="text-ink font-medium border-b-2 border-accent pb-[3px]">Find</span>
+            <Link href="/my-schools" className="hover:text-ink transition-colors duration-[120ms] ease-out">
+              My Schools
+              {addedCount > 0 && <span className="font-mono text-accent ml-1">{addedCount}</span>}
+            </Link>
+          </nav>
+          <AuthControls />
+        </div>
       </header>
 
       <div className="grid grid-cols-1 min-[900px]:grid-cols-[316px_1fr]">
