@@ -7,6 +7,7 @@
  * a grounded answer.
  */
 
+import { randomUUID } from "crypto";
 import Anthropic from "@anthropic-ai/sdk";
 import * as Sentry from "@sentry/nextjs";
 import { NextRequest } from "next/server";
@@ -68,7 +69,10 @@ export async function POST(request: NextRequest) {
     const answer =
       message.content[0].type === "text" ? message.content[0].text : "";
 
-    // Return the answer and the schools that were retrieved (for transparency)
+    // Return the answer and the schools that were retrieved (for transparency).
+    // traceId is a fresh, content-free correlation id — client-side analytics
+    // (ask_answered, issue #196) reports it alongside latency so a slow or
+    // odd-looking answer in PostHog can be traced back to this request.
     return Response.json({
       answer,
       sources: results.map((r) => ({
@@ -78,6 +82,7 @@ export async function POST(request: NextRequest) {
         score: r.score,
         matchedOn: r.matchedChunkType,
       })),
+      traceId: randomUUID(),
     });
   } catch (err) {
     // Log the real error (vendor detail, status, request id) to Sentry —
