@@ -1,16 +1,5 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
-  webpack: (config, { dev }) => {
-    // The persistent filesystem cache (~400MB in .next/cache) can exceed the
-    // free disk on the VPS build host, causing ENOSPC during agent verification
-    // builds. Use an in-memory cache for production builds; keep the fast disk
-    // cache for local dev.
-    if (!dev) {
-      config.cache = { type: 'memory' }
-    }
-    return config
-  },
-}
+const nextConfig = {}
 
 module.exports = nextConfig
 

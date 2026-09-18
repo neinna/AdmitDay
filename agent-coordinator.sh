@@ -49,6 +49,8 @@ SELF_UPDATE_STAMP="/tmp/agent-coordinator-self-update.last"
 SELF_UPDATE_LOCK="/tmp/agent-coordinator-self-update.lock"
 RECONCILE_INTERVAL_SECONDS="${RECONCILE_INTERVAL_SECONDS:-1800}"
 RECONCILE_STAMP="/tmp/agent-coordinator-reconcile.last"
+RUNNING_COORDINATOR_SCRIPT="${RUNNING_COORDINATOR_SCRIPT:-/home/agent/agent-coordinator.sh}"
+BUILD_CACHE_MIN_FREE_MB="${BUILD_CACHE_MIN_FREE_MB:-2048}"
 
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
@@ -79,36 +81,80 @@ self_update_from_main() {
       exit 0
     fi
 
-    if ! git fetch --quiet origin main >> "$LOG_FILE" 2>&1; then
+    if git fetch --quiet origin main >> "$LOG_FILE" 2>&1; then
+      local LOCAL_SHA REMOTE_SHA BASE_SHA
+      LOCAL_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
+      REMOTE_SHA=$(git rev-parse origin/main 2>/dev/null || echo "")
+      if [ -n "$LOCAL_SHA" ] && [ "$LOCAL_SHA" != "$REMOTE_SHA" ]; then
+        BASE_SHA=$(git merge-base HEAD origin/main 2>/dev/null || echo "")
+        if [ "$BASE_SHA" != "$LOCAL_SHA" ]; then
+          log "Self-update: local main diverged from origin/main, skipping pull"
+        else
+          log "Self-update: fast-forwarding main from ${LOCAL_SHA:0:7} to ${REMOTE_SHA:0:7}"
+          git pull --ff-only --quiet origin main >> "$LOG_FILE" 2>&1 || log "Self-update: fast-forward pull failed"
+        fi
+      fi
+    else
       log "Self-update: fetch failed"
-      exit 0
     fi
 
-    local LOCAL_SHA REMOTE_SHA BASE_SHA
-    LOCAL_SHA=$(git rev-parse HEAD 2>/dev/null || echo "")
-    REMOTE_SHA=$(git rev-parse origin/main 2>/dev/null || echo "")
-    [ -n "$LOCAL_SHA" ] && [ "$LOCAL_SHA" = "$REMOTE_SHA" ] && exit 0
-
-    BASE_SHA=$(git merge-base HEAD origin/main 2>/dev/null || echo "")
-    if [ "$BASE_SHA" != "$LOCAL_SHA" ]; then
-      log "Self-update: local main diverged from origin/main, skipping pull"
-      exit 0
-    fi
-
-    log "Self-update: fast-forwarding main from ${LOCAL_SHA:0:7} to ${REMOTE_SHA:0:7}"
-    if ! git pull --ff-only --quiet origin main >> "$LOG_FILE" 2>&1; then
-      log "Self-update: fast-forward pull failed"
-      exit 0
-    fi
-
-    log "Self-update: pulled latest main, restarting coordinator under PM2"
-    (sleep 1; pm2 restart agent-coordinator --update-env >> "$LOG_FILE" 2>&1) &
-    exit 42
+    # The pull above only advances the checked-out repo at $APP_DIR; nothing
+    # yet installs its agent-coordinator.sh over the copy PM2 actually runs
+    # at /home/agent/agent-coordinator.sh. Run this comparison on every
+    # check, not only right after a successful pull, so a running copy that
+    # has already drifted from the repo gets corrected even when main itself
+    # hasn't moved this cycle.
+    install_running_coordinator_script
+    [ $? -eq 42 ] && exit 42
+    exit 0
   ) 9>"$SELF_UPDATE_LOCK"
 
   local UPDATE_RC=$?
   [ "$UPDATE_RC" -eq 42 ] && return 42
   return 0
+}
+
+# install_running_coordinator_script: compare $APP_DIR/agent-coordinator.sh
+# (the repo's copy, possibly just fast-forwarded to origin/main) against
+# /home/agent/agent-coordinator.sh (the copy PM2 actually runs). If their
+# contents differ, stage the repo's copy in a temp file in the same
+# directory, gate it with `bash -n`, and `mv` the temp file over the running
+# path — never write into the running file in place, since a running bash
+# process reads its script incrementally off disk and an in-place write
+# would corrupt that read, whereas `mv` swaps the inode underneath it
+# atomically. Logs the old and new blob hashes either way, so the log shows
+# which coordinator version is live. Returns 42 if it installed a new script
+# and kicked off a PM2 restart, 0 otherwise (including when a candidate
+# fails `bash -n`, in which case the running script is left untouched).
+install_running_coordinator_script() {
+  local REPO_SCRIPT="$APP_DIR/agent-coordinator.sh"
+  local RUNNING_SCRIPT="$RUNNING_COORDINATOR_SCRIPT"
+
+  [ -f "$REPO_SCRIPT" ] || return 0
+  cmp -s "$REPO_SCRIPT" "$RUNNING_SCRIPT" 2>/dev/null && return 0
+
+  local OLD_HASH NEW_HASH
+  if [ -f "$RUNNING_SCRIPT" ]; then
+    OLD_HASH=$(git hash-object "$RUNNING_SCRIPT" 2>/dev/null || echo "unknown")
+  else
+    OLD_HASH="none"
+  fi
+  NEW_HASH=$(git hash-object "$REPO_SCRIPT" 2>/dev/null || echo "unknown")
+
+  local TMP_SCRIPT
+  TMP_SCRIPT=$(mktemp "${RUNNING_SCRIPT}.XXXXXX") || return 0
+  cp "$REPO_SCRIPT" "$TMP_SCRIPT"
+
+  if ! bash -n "$TMP_SCRIPT" 2>>"$LOG_FILE"; then
+    log "Self-update: repo's agent-coordinator.sh (blob ${NEW_HASH}) failed 'bash -n' — keeping running copy (blob ${OLD_HASH}), NOT restarting"
+    rm -f "$TMP_SCRIPT"
+    return 0
+  fi
+
+  mv "$TMP_SCRIPT" "$RUNNING_SCRIPT"
+  log "Self-update: installed agent-coordinator.sh (blob ${OLD_HASH} -> ${NEW_HASH}) over the running copy, restarting coordinator under PM2"
+  (sleep 1; pm2 restart agent-coordinator --update-env >> "$LOG_FILE" 2>&1) &
+  return 42
 }
 
 maybe_self_update_or_exit() {
@@ -614,15 +660,24 @@ PYEOF
 }
 
 # Coordinator-owned verification: the ONLY success signal.
-# This VPS has <600MB free disk and Next's webpack filesystem cache alone is
-# ~400MB, so: wipe .next before building and keep pruning .next/cache while
-# the build runs (webpack treats failed cache writes as non-fatal warnings).
+# Keeps Next's webpack cache (.next/cache, ~325MB) between builds: a warm
+# build takes ~74s on this VPS versus ~160s cold. Everything else in .next is
+# wiped so no stale output survives. If free disk ever drops below
+# BUILD_CACHE_MIN_FREE_MB the cache is dropped too, as it was when this VPS
+# had <600MB free.
 verify_app() {
   local OUT="$1" RC=0
   local T0 T1
   TEST_RESULT="not-run"
   BUILD_RESULT="not-run"
-  rm -rf "$APP_DIR/.next"
+  if [ -d "$APP_DIR/.next" ]; then
+    find "$APP_DIR/.next" -mindepth 1 -maxdepth 1 ! -name cache -exec rm -rf {} +
+  fi
+  local FREE_MB
+  FREE_MB=$(df -Pm "$APP_DIR" | awk 'NR==2 {print $4}')
+  if [ -n "$FREE_MB" ] && [ "$FREE_MB" -lt "$BUILD_CACHE_MIN_FREE_MB" ]; then
+    rm -rf "$APP_DIR/.next/cache"
+  fi
   T0=$(lf_now_ns)
   (cd "$APP_DIR" && npm test) > "$OUT" 2>&1 || RC=1
   T1=$(lf_now_ns)
@@ -630,12 +685,7 @@ verify_app() {
   lf_record "test" "$T0" "$T1" "$([ $RC -eq 0 ] && echo 1 || echo 0)" "" "" "$TEST_RESULT"
   if [ $RC -eq 0 ]; then
     T0=$(lf_now_ns)
-    ( while true; do rm -rf "$APP_DIR/.next/cache" 2>/dev/null; sleep 10; done ) &
-    local PRUNE_PID=$!
     (cd "$APP_DIR" && npm run build) >> "$OUT" 2>&1 || RC=1
-    kill "$PRUNE_PID" 2>/dev/null
-    wait "$PRUNE_PID" 2>/dev/null
-    rm -rf "$APP_DIR/.next/cache"
     T1=$(lf_now_ns)
     BUILD_RESULT="$([ $RC -eq 0 ] && echo passed || echo failed)"
     lf_record "build" "$T0" "$T1" "$([ $RC -eq 0 ] && echo 1 || echo 0)" "" "" "$BUILD_RESULT"
@@ -670,6 +720,7 @@ ${DIFF}
 Questions to answer:
 1. Does this diff actually resolve the issue?
 2. What did it break or put at risk? Look for scope creep (changes the issue did not ask for), modifications to data/schools.json (forbidden), deleted or weakened tests, and unrelated refactors.
+   Also reject if the diff adds a new external service, hosted database, or paid API (including one called directly with fetch) that the issue does not name, or adds complexity the issue did not ask for, such as new configuration options or fallback paths.
 3. Does this diff touch the database/connection layer, migrations, seeding, how a secret or session is handled, or the deploy/infra config? CI has no live database, so an APPROVE here cannot confirm the change actually works at runtime — that is exactly how a runtime bug shipped before.
 
 You may read files in /home/agent/app for context. Be strict about scope: if the diff contains significant changes beyond what the issue asked for, reject it.
@@ -939,11 +990,11 @@ ${ISSUE_COMMENTS}
 Instructions:
 - Work in /home/agent/app on branch ${BRANCH} (already checked out). Read /home/agent/app/AGENTS.md first and follow its house rules.
 - Fix the issue. Stay strictly within its scope — an independent reviewer will reject scope creep. Add tests for your change in __tests__/ (add, don't overwrite existing tests).
-- Run 'cd /home/agent/app && npm test' and 'cd /home/agent/app && npm run build' and iterate until both are green.
+- While working, run only the tests for what you changed ('npx jest __tests__/<file>') and 'npx tsc --noEmit'. Run the full 'npm test' once before committing. Do NOT run 'npm run build': the coordinator runs the full test suite and the build after you finish and will send you any failure.
+- Solve the issue with the infrastructure the app already has (listed in AGENTS.md). Do not add a new external service, hosted database, or paid API unless the issue names it.
 - Commit your work: cd /home/agent/app && git add -A && git commit -m \"${COMMIT_TITLE}\"
 - Never modify data/schools.json.
 - Never push, never merge, never switch branches.
-- You can send the owner a short progress update with: /home/agent/notify.sh \"message\"
 - End with a short summary of what you changed and why (it becomes the pull request description)."
 
   local ATTEMPT=1
@@ -1048,7 +1099,7 @@ This is a controlled cost stop, not a verified implementation failure. The issue
 ${REVIEW_TEXT}
 
 Address the reviewer's objections. Diagnose what is wrong before changing anything else."
-          log "Issue #${ISSUE_NUMBER}: reviewer rejected attempt ${ATTEMPT}"
+          log "Issue #${ISSUE_NUMBER}: reviewer rejected attempt ${ATTEMPT}: $(echo "$REVIEW_TEXT" | grep -m1 'VERDICT: REJECT' | cut -c1-300)"
         else
           [ $REVIEW_RC -eq 2 ] && log "Issue #${ISSUE_NUMBER}: reviewer unavailable, proceeding without review"
           SUCCESS=1
