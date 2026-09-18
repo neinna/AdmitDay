@@ -162,3 +162,63 @@ def test_empty_myschools_record_is_not_admitting():
     with pytest.raises(MySchoolsParseError) as e:
         parse_programs({"school": "not-an-object"}, "https://example/x", "2026-09-18T00:00:00+00:00")
     assert not isinstance(e.value, MySchoolsNotAdmittingError)
+
+
+# ── Issue #271: recognize D75/ASD-ACES/Language Criteria MySchools methods,
+# and drop Transfer programs entirely. ──────────────────────────────────────
+
+def test_classify_admissions_recognizes_new_myschools_methods():
+    assert build_school_data.classify_admissions("D75 Special Education Inclusive Services") == "District 75"
+    assert build_school_data.classify_admissions("District 75 Program") == "District 75"
+    assert build_school_data.classify_admissions("ASD/ACES Program") == "ASD / ACES"
+    assert build_school_data.classify_admissions("Language Criteria") == "Language Program"
+
+
+def test_classify_admissions_keeps_existing_mappings():
+    assert build_school_data.classify_admissions("Zoned Guarantee") == "Zoned"
+    assert build_school_data.classify_admissions("Zoned Priority") == "Zoned"
+    assert build_school_data.classify_admissions("Test") == "SHSAT"
+    assert build_school_data.classify_admissions("Screened: Language & Academics") == "Screened"
+
+
+def test_normalize_myschools_admissions_method_maps_new_methods_and_drops_transfer():
+    assert build_school_data.normalize_myschools_admissions_method(
+        "D75 Special Education Inclusive Services"
+    ) == "District 75"
+    assert build_school_data.normalize_myschools_admissions_method("ASD/ACES Program") == "ASD / ACES"
+    assert build_school_data.normalize_myschools_admissions_method("Language Criteria") == "Language Program"
+    assert build_school_data.normalize_myschools_admissions_method("Transfer") is None
+
+
+def _fake_program(dbn, program_name, admissions_method):
+    from scripts.scrape_myschools import Program, Provenance
+
+    return Program(
+        dbn=dbn,
+        school_name="Test School",
+        program_name=program_name,
+        provenance=Provenance(url="https://www.myschools.nyc/fake", fetched_at="2026-09-18T00:00:00+00:00"),
+        admissions_method=admissions_method,
+    )
+
+
+def test_fetch_myschools_program_detail_drops_transfer_but_keeps_others(monkeypatch):
+    programs = [
+        _fake_program("13K430", "Transfer Program", "Transfer"),
+        _fake_program("13K430", "Screened Program", "Screened"),
+    ]
+    monkeypatch.setattr(build_school_data, "scrape_school_programs", lambda dbn, cache_dir=None: programs)
+
+    admissions_types, enriched = build_school_data.fetch_myschools_program_detail("13K430")
+
+    assert admissions_types == ["Screened"]
+    assert [p["program_name"] for p in enriched] == ["Screened Program"]
+
+
+def test_fetch_myschools_program_detail_raises_when_only_transfer(monkeypatch):
+    programs = [_fake_program("13K430", "Transfer Program", "Transfer")]
+    monkeypatch.setattr(build_school_data, "scrape_school_programs", lambda dbn, cache_dir=None: programs)
+
+    import pytest
+    with pytest.raises(build_school_data.MySchoolsNotAdmittingError):
+        build_school_data.fetch_myschools_program_detail("13K430")

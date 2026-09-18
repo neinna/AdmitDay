@@ -2,7 +2,12 @@
 
 import { School } from '@/types'
 import { BOROUGH_ORDER } from '@/lib/school-list-utils'
-import { FindFilters, countMatchingTrack, trackLabel } from '@/lib/school-list-utils'
+import {
+  FindFilters,
+  countMatchingTrack,
+  splitTrackOptionsForRail,
+  trackLabel,
+} from '@/lib/school-list-utils'
 import { Chip, SegmentedControl } from '@/components/ui'
 
 const BOROUGHS = Object.keys(BOROUGH_ORDER)
@@ -24,6 +29,31 @@ interface Props {
   onReset: () => void
 }
 
+function renderTrackButton(
+  track: string,
+  schools: School[],
+  filters: FindFilters,
+  onToggleTrack: (track: string) => void
+) {
+  const selected = filters.tracks.includes(track)
+  const count = countMatchingTrack(schools, filters, track)
+  return (
+    <button
+      key={track}
+      type="button"
+      onClick={() => onToggleTrack(track)}
+      className={`flex items-center justify-between py-[9px] border-b border-rule-light text-[14px] text-left transition-colors duration-[120ms] ease-out ${
+        selected ? 'text-ink' : 'text-faint'
+      }`}
+    >
+      <span>{trackLabel(track)}</span>
+      <span className={`font-mono text-[12px] ${selected ? 'text-accent' : 'text-faint'}`}>
+        {selected ? `✓ ${count}` : count}
+      </span>
+    </button>
+  )
+}
+
 export default function FindRail({
   schools,
   filters,
@@ -33,6 +63,8 @@ export default function FindRail({
   onSizeChange,
   onReset,
 }: Props) {
+  const { main: mainTrackOptions, iep: iepTrackOptions } = splitTrackOptionsForRail(trackOptions)
+
   return (
     <div className="flex flex-col gap-[30px] px-7 py-8 min-[900px]:border-r min-[900px]:border-rule">
       <div className="flex flex-col gap-3">
@@ -58,27 +90,20 @@ export default function FindRail({
       <div className="flex flex-col gap-3">
         <div className="font-mono text-[11px] tracking-[0.12em] uppercase text-faint">Admissions track</div>
         <div className="flex flex-col">
-          {trackOptions.map((track) => {
-            const selected = filters.tracks.includes(track)
-            const count = countMatchingTrack(schools, filters, track)
-            return (
-              <button
-                key={track}
-                type="button"
-                onClick={() => onToggleTrack(track)}
-                className={`flex items-center justify-between py-[9px] border-b border-rule-light text-[14px] text-left transition-colors duration-[120ms] ease-out ${
-                  selected ? 'text-ink' : 'text-faint'
-                }`}
-              >
-                <span>{trackLabel(track)}</span>
-                <span className={`font-mono text-[12px] ${selected ? 'text-accent' : 'text-faint'}`}>
-                  {selected ? `✓ ${count}` : count}
-                </span>
-              </button>
-            )
-          })}
+          {mainTrackOptions.map((track) => renderTrackButton(track, schools, filters, onToggleTrack))}
         </div>
       </div>
+
+      {iepTrackOptions.length > 0 && (
+        <div className="flex flex-col gap-3">
+          <div className="font-mono text-[11px] tracking-[0.12em] uppercase text-faint">
+            Programs for students with IEPs or learning English
+          </div>
+          <div className="flex flex-col">
+            {iepTrackOptions.map((track) => renderTrackButton(track, schools, filters, onToggleTrack))}
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col gap-3">
         <div className="font-mono text-[11px] tracking-[0.12em] uppercase text-faint">Size</div>
