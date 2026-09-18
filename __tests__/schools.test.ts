@@ -205,7 +205,7 @@ describe('agent-coordinator.sh PR flow', () => {
       'CLAUDE_IMPLEMENT_MODEL="${CLAUDE_IMPLEMENT_MODEL:-sonnet}"',
       'CLAUDE_REVIEW_MODEL="${CLAUDE_REVIEW_MODEL:-sonnet}"',
       'CLAUDE_PLANNER_MODEL="${CLAUDE_PLANNER_MODEL:-sonnet}"',
-      'CLAUDE_IMPLEMENT_MAX_USD="${CLAUDE_IMPLEMENT_MAX_USD:-2.00}"',
+      'CLAUDE_IMPLEMENT_MAX_USD="${CLAUDE_IMPLEMENT_MAX_USD:-5.00}"',
       'CLAUDE_REVIEW_MAX_USD="${CLAUDE_REVIEW_MAX_USD:-0.75}"',
       'CLAUDE_PLANNER_MAX_USD="${CLAUDE_PLANNER_MAX_USD:-0.50}"',
       '--model "$MODEL"',
@@ -218,7 +218,14 @@ describe('agent-coordinator.sh PR flow', () => {
     expect(coordinatorSource).toContain('"$CLAUDE_REVIEW_MODEL" "$CLAUDE_REVIEW_MAX_USD"')
     expect(coordinatorSource).toContain('"$CLAUDE_PLANNER_MODEL" "$CLAUDE_PLANNER_MAX_USD"')
     expect(coordinatorSource).toContain('"$CLAUDE_IMPLEMENT_MODEL" "$CLAUDE_IMPLEMENT_MAX_USD"')
-    expect(envAgentsExampleSource).toContain('CLAUDE_IMPLEMENT_MAX_USD=2.00')
+    // The implementation agent can read documentation. Without it, learning an
+    // unfamiliar SDK means npm install plus reading .d.ts files, which is what
+    // consumed #194's entire budget on the Langfuse client.
+    expect(coordinatorSource).toContain('Bash,Read,Write,Edit,Glob,Grep,WebFetch,WebSearch')
+    // Raised from 2.00 on 2026-09-17: see the "Cost And Issue Sizing" section of
+    // AGENTS.md. 2.00 was exhausted by #194 in six minutes on attempt 1 with
+    // nothing committed, and by #162 across two attempts with no PR.
+    expect(envAgentsExampleSource).toContain('CLAUDE_IMPLEMENT_MAX_USD=5.00')
     expect(envAgentsExampleSource).toContain('Max budgets cap each individual')
   })
 
