@@ -462,13 +462,18 @@ export default function FindClient({ schools, initialFilters }: Props) {
           </div>
 
           <div className="flex items-baseline justify-between px-9 py-4 bg-surface-2 border-b border-rule">
-            <div className="flex items-baseline gap-2">
-              <span className="font-mono text-[22px] font-medium text-ink tracking-[-0.02em]">
-                {ranked.length}
-              </span>
-              <span className="text-[14px] text-muted">
-                match{ranked.length === 1 ? '' : 'es'} {describeFindFilters(filters)}
-              </span>
+            <div>
+              <div className="flex items-baseline gap-2">
+                <span className="font-mono text-[22px] font-medium text-ink tracking-[-0.02em]">
+                  {ranked.length}
+                </span>
+                <span className="text-[14px] text-muted">
+                  match{ranked.length === 1 ? '' : 'es'} {describeFindFilters(filters)}
+                </span>
+              </div>
+              <p className="text-[12.5px] text-faint mt-1">
+                Schools admitting 9th graders through this year&rsquo;s NYC high school admissions.
+              </p>
             </div>
             <div className="font-mono text-[11.5px] tracking-[0.1em] uppercase text-faint">
               Sorted by fit
