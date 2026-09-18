@@ -74,7 +74,7 @@ function assertSameSchools(before: School[], after: School[], askDescription: st
   }
   const beforeSet = dbnSet(before)
   const afterSet = dbnSet(after)
-  const dropped = [...beforeSet].filter((d) => !afterSet.has(d))
+  const dropped = Array.from(beforeSet).filter((d) => !afterSet.has(d))
   if (dropped.length > 0) {
     throw new Error(
       `Rule (issue #127, rule 1): the ask never removes schools. Asking "${askDescription}" kept the same ` +
