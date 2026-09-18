@@ -65,8 +65,10 @@ describe('AuthControls is wired into the header on every page (issue #199)', () 
 // ── No route gating — the anonymous path is unchanged ───────────────────────
 
 describe('No route gating (issue #199)', () => {
-  it('adds no middleware.ts — route gating is out of scope for this slice, and the sole prior purpose of that file (gating /shsat) was removed in #97 (see shsat-removed.test.ts)', () => {
-    expect(fs.existsSync(path.join(__dirname, '..', 'middleware.ts'))).toBe(false)
+  it('middleware.ts wires Clerk but protects no route — route gating is out of scope for this slice (see clerk-middleware.test.ts)', () => {
+    const source = fs.readFileSync(path.join(__dirname, '..', 'middleware.ts'), 'utf8')
+    expect(source).toContain('clerkMiddleware()')
+    expect(source).not.toMatch(/protect\(|createRouteMatcher/)
   })
 })
 

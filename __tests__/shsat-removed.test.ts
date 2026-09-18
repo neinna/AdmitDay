@@ -25,8 +25,11 @@ describe('private SHSAT practice tool stays removed', () => {
     expect(fs.existsSync(path.join(root, 'components/shsat'))).toBe(false)
   })
 
-  it('middleware.ts does not exist (its only job was gating /shsat)', () => {
-    expect(fs.existsSync(path.join(root, 'middleware.ts'))).toBe(false)
+  it('middleware.ts no longer gates /shsat (#199 reintroduced it for Clerk only)', () => {
+    const mw = path.join(root, 'middleware.ts')
+    if (fs.existsSync(mw)) {
+      expect(fs.readFileSync(mw, 'utf8')).not.toMatch(/shsat/i)
+    }
   })
 
   it('no source file references the removed practice-tool internals', () => {
