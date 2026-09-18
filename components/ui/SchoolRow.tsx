@@ -47,8 +47,8 @@ export default function SchoolRow({
         <div className="flex items-center gap-2.5">
           <div className="font-sans font-bold text-[18px] text-ink">{name}</div>
           {isHiddenGem && (
-            <span className="font-mono text-[10.5px] tracking-[0.08em] uppercase text-gem bg-gem-bg border border-gem-border px-[7px] py-[3px]">
-              Hidden gem
+            <span title="Under 5 applicants per seat and an academic score above 60% (NYC-SIFT)" className="font-mono text-[10.5px] tracking-[0.08em] uppercase text-gem bg-gem-bg border border-gem-border px-[7px] py-[3px]">
+              Fewer applicants per seat, strong results
             </span>
           )}
         </div>
