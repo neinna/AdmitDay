@@ -1,4 +1,5 @@
 import { School, SectionGroup, SectionType, UserInputs } from '@/types'
+import { getShsatCutoffs } from './shsat-cutoffs'
 
 // localStorage key for the optimistic "added to My Schools" set. Shared by
 // /find (FindClient) and /school/[dbn] so both pages agree on the same saved
@@ -351,4 +352,68 @@ export function groupSchools(schools: School[]): SectionGroup[] {
   }
 
   return result
+}
+
+// ── Admissions evidence (/find rows, issue #216) ─────────────────────────────
+// Replaces the derived rating/label the PRD forbids: show where a school's
+// applicants-per-seat sits citywide, and which published admissions method(s)
+// apply. No score, no verdict — evidence a family reads for itself.
+
+/**
+ * Rank of `aps` among every school with a published applicants_per_seat
+ * value: the floor of 100 * (schools strictly below aps) / (schools with a
+ * value). The comparison is strict so ties never inflate the rank, and the
+ * result is always derived from `allSchools` — never a hardcoded table — so
+ * it stays correct after each data refresh.
+ */
+export function citywidePercentile(aps: number, allSchools: School[]): number {
+  const withValue = allSchools.filter((s) => s.applicants_per_seat !== null)
+  if (withValue.length === 0) return 0
+  const below = withValue.filter((s) => (s.applicants_per_seat as number) < aps).length
+  return Math.floor((100 * below) / withValue.length)
+}
+
+// Table order Inna approved 2026-09-18 (issue #216) — fixed display order
+// regardless of the order admissions_type values appear in the source data.
+const ADMISSION_METHOD_ORDER = [
+  'SHSAT',
+  'Audition',
+  'Screened',
+  'Screened with Assessment',
+  'Open',
+  'Educational Option',
+  'Zoned',
+] as const
+
+/** The distinct admissions_type values across a school's programs, in the approved table order. */
+export function admissionMethods(school: School): string[] {
+  const present = new Set(
+    school.programs.map((p) => p.admissions_type).filter((t): t is string => Boolean(t))
+  )
+  return ADMISSION_METHOD_ORDER.filter((method) => present.has(method))
+}
+
+// Exact row copy Inna approved 2026-09-18 (issue #216) — never reword without
+// re-running it past the no-admissions-odds-language rule.
+export const ADMISSION_METHOD_COPY: Record<string, string> = {
+  SHSAT: 'Specialized: admission by SHSAT score.',
+  Audition: 'Audition: admission by audition or portfolio',
+  Screened: 'Screened: the school ranks applicants on criteria such as grades',
+  'Screened with Assessment': 'Screened + assessment: ranked on grades plus a school assessment',
+  Open: 'Open: offers by lottery within priority groups',
+  'Educational Option': 'Educational Option: admits a mix of students across achievement levels',
+  Zoned: 'Zoned: priority for students living in the zone',
+}
+
+/**
+ * The approved row copy for one admissions method this school uses. SHSAT
+ * appends up to three published offer cutoffs, newest year first, skipping
+ * any year DOE hasn't published — never a 0.
+ */
+export function admissionMethodCopy(method: string, school: School): string {
+  const base = ADMISSION_METHOD_COPY[method] ?? method
+  if (method !== 'SHSAT') return base
+  const scores = (getShsatCutoffs(school.dbn) ?? []).map((c) => c.score).reverse()
+  if (scores.length === 0) return base
+  return `${base} Lowest score offered: ${scores.join(' · ')}`
 }
