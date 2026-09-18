@@ -263,6 +263,11 @@ export function findFiltersToQueryString(filters: FindFilters): string {
   return params.toString()
 }
 
+/** Count of individual active filter values across all rail dimensions — used for the ask_submitted `filters_active` analytics property (issue #196). */
+export function countActiveFindFilters(filters: FindFilters): number {
+  return filters.boroughs.length + filters.tracks.length + (filters.size ? 1 : 0)
+}
+
 /** Hard-filters schools by the rail's borough/track/size controls. */
 export function applyFindFilters(schools: School[], filters: FindFilters): School[] {
   return schools.filter((school) => {
