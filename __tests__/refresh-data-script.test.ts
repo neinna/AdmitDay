@@ -65,6 +65,15 @@ describe('scripts/refresh-data.ts', () => {
   it('imports the shared validation module rather than duplicating logic', () => {
     expect(scriptSource).toContain("from '../lib/validate-school-data'")
   })
+
+  it('writes the root schools.json (in addition to data/schools.json) once validation passes', () => {
+    const validIdx = scriptSource.indexOf('Validation passed.')
+    const rootWriteIdx = scriptSource.indexOf('writeFileSync(ROOT_SCHOOLS_PATH')
+    const dataWriteIdx = scriptSource.indexOf('writeFileSync(DATA_SCHOOLS_PATH')
+    expect(validIdx).toBeGreaterThan(-1)
+    expect(rootWriteIdx).toBeGreaterThan(validIdx)
+    expect(dataWriteIdx).toBeGreaterThan(rootWriteIdx)
+  })
 })
 
 describe('package.json refresh:data command', () => {

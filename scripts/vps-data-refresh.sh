@@ -79,9 +79,8 @@ This run used the validated refresh pipeline:
 - scrape NYC-SIFT, DOE Open Data, and MySchools program data
 - validate school count, required fields, and MySchools program provenance
 - rebuild RAG embeddings
-- skip production Postgres seeding until merge
 
-This PR is intended to be merged by the VPS data refresh runner, not by a human. Run `scripts/vps-data-refresh.sh merge` after CI passes; it only merges when the changed files are the expected data artifacts and the GitHub CI test is green. Then run `scripts/vps-data-refresh.sh apply` to seed Postgres from the merged `schools.json`.
+This PR is intended to be merged by the VPS data refresh runner, not by a human. Run `scripts/vps-data-refresh.sh merge` after CI passes; it only merges when the changed files are the expected data artifacts and the GitHub CI test is green. Loading happens in Vercel after the data PR merges (/api/cron/seed-schools).
 PR_BODY
 )"
 
@@ -125,12 +124,8 @@ merge_refresh_pr() {
 }
 
 apply_merged_data() {
-  require_env POSTGRES_URL
-
-  prepare_checkout
-  install_dependencies
-
-  npx ts-node --compiler-options '{"module":"commonjs","moduleResolution":"node"}' --transpile-only scripts/seed-schools.ts
+  echo "Loading happens in Vercel after the data PR merges (/api/cron/seed-schools)"
+  exit 0
 }
 
 load_env_file "$APP_ENV_FILE"
