@@ -7,21 +7,24 @@
 # Install on the VPS:
 #   crontab -l | { cat; cat scripts/vps-data-cron.txt; } | crontab -
 #
-# All times are America/New_York. If your cron does not support the CRON_TZ
-# variable, convert these entries to your server's local time before
-# installing.
-CRON_TZ=America/New_York
+# Times are UTC: the VPS clock is UTC and Ubuntu's cron ignores CRON_TZ.
+# 12:00 UTC is 08:00 ET in summer and 07:00 ET in winter. The data PR opens
+# at 12:00 and merges at 12:30, before Vercel's seed cron at 14:00 UTC
+# (10:00 ET), so merged data reaches Postgres the same day.
+#
+# Runs in /root/admitday-data, a dedicated AdmitDay checkout. /root/app on
+# this server is a different app (hs-navigator); never point these at it.
 
 # Admissions season (September - March): every Monday, open a data PR at
-# 09:00, then merge it at 09:30 (only if CI's "test" check is green and the
+# 12:00 UTC, then merge it at 12:30 UTC (only if CI's "test" check is green and the
 # PR changes exactly the two data files).
-0 9 * 9-12,1-3 1 cd /root/app && ./scripts/vps-data-refresh.sh pr
-30 9 * 9-12,1-3 1 cd /root/app && ./scripts/vps-data-refresh.sh merge
+0 12 * 9-12,1-3 1 cd /root/admitday-data && APP_DIR=/root/admitday-data ./scripts/vps-data-refresh.sh pr
+30 12 * 9-12,1-3 1 cd /root/admitday-data && APP_DIR=/root/admitday-data ./scripts/vps-data-refresh.sh merge
 
 # Off-season (April - August): same pr/merge pair, but only on the first
 # Monday of the month. Cron's day-of-month and day-of-week fields are OR'd
 # together, not AND'd, so "first Monday" can't be expressed as a single cron
 # field combination -- every Monday fires and the inline date check below
 # limits execution to day-of-month 1-7.
-0 9 * 4-8 1 [ "$(date +\%d)" -le 7 ] && cd /root/app && ./scripts/vps-data-refresh.sh pr
-30 9 * 4-8 1 [ "$(date +\%d)" -le 7 ] && cd /root/app && ./scripts/vps-data-refresh.sh merge
+0 12 * 4-8 1 [ "$(date +\%d)" -le 7 ] && cd /root/admitday-data && APP_DIR=/root/admitday-data ./scripts/vps-data-refresh.sh pr
+30 12 * 4-8 1 [ "$(date +\%d)" -le 7 ] && cd /root/admitday-data && APP_DIR=/root/admitday-data ./scripts/vps-data-refresh.sh merge

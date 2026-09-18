@@ -5,7 +5,7 @@ set -euo pipefail
 # and must not be run in GitHub Actions with app secrets duplicated there.
 
 MODE="${1:-pr}"
-APP_DIR="${APP_DIR:-/root/app}"
+APP_DIR="${APP_DIR:-/root/admitday-data}"  # /root/app is a different app (hs-navigator)
 APP_ENV_FILE="${APP_ENV_FILE:-$APP_DIR/.env.local}"
 ROOT_ENV_FILE="${ROOT_ENV_FILE:-/root/.env.local}"
 AGENT_ENV_FILE="${AGENT_ENV_FILE:-/root/.env.agents}"

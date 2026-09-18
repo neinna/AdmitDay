@@ -15,8 +15,8 @@ describe('scripts/vps-data-cron.txt', () => {
   })
 
   it('runs pr at 09:00 and merge at 09:30, 30 minutes later', () => {
-    expect(cronSource).toMatch(/^0 9 .*vps-data-refresh\.sh pr$/m)
-    expect(cronSource).toMatch(/^30 9 .*vps-data-refresh\.sh merge$/m)
+    expect(cronSource).toMatch(/^0 12 .*vps-data-refresh\.sh pr$/m)
+    expect(cronSource).toMatch(/^30 12 .*vps-data-refresh\.sh merge$/m)
   })
 
   it('covers the admissions season (September - March) on Mondays', () => {
@@ -29,7 +29,9 @@ describe('scripts/vps-data-cron.txt', () => {
   })
 
   it('declares the schedule in America/New_York time', () => {
-    expect(cronSource).toContain('CRON_TZ=America/New_York')
+    expect(cronSource).not.toMatch(/^CRON_TZ=/m) // Ubuntu cron ignores it; times are UTC
+    expect(cronSource).toContain('cd /root/admitday-data && APP_DIR=/root/admitday-data')
+    expect(cronSource).not.toContain('cd /root/app ')
   })
 })
 
