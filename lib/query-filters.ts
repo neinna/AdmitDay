@@ -77,7 +77,70 @@ const INTEREST_ALIASES: Record<string, string> = {
   theatre: "Performing Arts",
   humanities: "Humanities & Interdisciplinary",
   jrotc: "JROTC",
+  music: "Performing Arts",
 };
+
+// Negation cues (issue #258): a subject mentioned right after one of these,
+// within the same clause, is something the student is ruling out rather than
+// asking for, so it must not turn into an applied chip. Longest phrases are
+// tried first so "but not" / "anything but" win over a bare "not" / "but" at
+// the same position.
+const NEGATION_CUES = ["other than", "anything but", "but not", "excluding", "without", "except", "not", "no"];
+
+type Token =
+  | { kind: "break" }
+  | { kind: "cue" }
+  | { kind: "conj" }
+  | { kind: "interest"; canonical: string };
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Scans the question once for negation cues, clause breaks, and interest
+ * mentions (in reading order), then walks the tokens left to right to figure
+ * out which interest mentions fall inside an active negation. A negation
+ * turns on at a cue and carries through "and"/"or" lists of subjects, but
+ * turns off at a clause break (., ;, ,) or when "and"/"but" is followed by
+ * something other than another subject.
+ */
+function negatedInterests(question: string): Set<string> {
+  const words = [...NEGATION_CUES, "and", "but", ...Object.keys(INTEREST_ALIASES)].sort(
+    (a, b) => b.length - a.length
+  );
+  const tokenPattern = new RegExp(`\\b(?:${words.map(escapeRegExp).join("|")})\\b|[.;,]`, "gi");
+
+  const tokens: Token[] = [];
+  for (const match of Array.from(question.matchAll(tokenPattern))) {
+    const text = match[0].toLowerCase();
+    if (/[.;,]/.test(text)) {
+      tokens.push({ kind: "break" });
+    } else if ((NEGATION_CUES as string[]).includes(text)) {
+      tokens.push({ kind: "cue" });
+    } else if (text === "and" || text === "but") {
+      tokens.push({ kind: "conj" });
+    } else {
+      tokens.push({ kind: "interest", canonical: INTEREST_ALIASES[text] });
+    }
+  }
+
+  const excluded = new Set<string>();
+  let active = false;
+  tokens.forEach((token, i) => {
+    if (token.kind === "break") {
+      active = false;
+    } else if (token.kind === "cue") {
+      active = true;
+    } else if (token.kind === "conj") {
+      const next = tokens[i + 1];
+      if (!next || next.kind !== "interest") active = false;
+    } else if (active) {
+      excluded.add(token.canonical);
+    }
+  });
+  return excluded;
+}
 
 export interface QueryFilters {
   borough?: string;
@@ -106,13 +169,14 @@ export function extractFilters(question: string): QueryFilters {
     )
   );
 
+  const excluded = negatedInterests(question);
   const interests = Array.from(
     new Set(
       Object.entries(INTEREST_ALIASES)
         .filter(([alias]) => findWord(question, alias))
         .map(([, canonical]) => canonical)
     )
-  );
+  ).filter((canonical) => !excluded.has(canonical));
 
   return { borough, sports, interests };
 }
