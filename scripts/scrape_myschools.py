@@ -131,6 +131,17 @@ class MySchoolsParseError(MySchoolsError):
     """
 
 
+class MySchoolsNotAdmittingError(MySchoolsParseError):
+    """MySchools answered, but lists no programs for this school this cycle.
+
+    Seen for transfer schools and schools not admitting 9th graders (issue
+    #255): the high-school process endpoint returns an empty record (no
+    school.dbn, no programs). This, and only this, lets the refresh exclude a
+    school. Network failures and real shape changes stay MySchoolsError /
+    MySchoolsParseError and abort the refresh.
+    """
+
+
 @dataclass
 class Provenance:
     url: str
@@ -372,6 +383,10 @@ def parse_programs(raw: dict, url: str, fetched_at: str) -> list[Program]:
         raise MySchoolsParseError(f"Expected a JSON object, got {type(raw).__name__}")
 
     school = raw.get("school")
+    if isinstance(school, dict) and not school.get("dbn") and not raw.get("programs"):
+        raise MySchoolsNotAdmittingError(
+            "MySchools returned an empty record (no school.dbn, no programs) -- not in this cycle's admissions"
+        )
     if not isinstance(school, dict) or not school.get("dbn"):
         raise MySchoolsParseError("Response is missing school.dbn")
 
@@ -381,7 +396,7 @@ def parse_programs(raw: dict, url: str, fetched_at: str) -> list[Program]:
             "Response is missing a 'programs' list -- MySchools page shape may have changed"
         )
     if len(programs_raw) == 0:
-        raise MySchoolsParseError(f"{school.get('dbn')} has zero programs -- expected at least one")
+        raise MySchoolsNotAdmittingError(f"{school.get('dbn')} has zero programs in this cycle's MySchools admissions")
 
     dbn = school["dbn"]
     school_name = raw.get("name") or school.get("name") or dbn

@@ -23,7 +23,7 @@ from bs4 import BeautifulSoup
 from datetime import datetime, timezone
 from pathlib import Path
 
-from scripts.scrape_myschools import MySchoolsError, scrape_school_programs
+from scripts.scrape_myschools import MySchoolsError, MySchoolsNotAdmittingError, scrape_school_programs
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; AdmitDay/1.0; research tool)"
@@ -209,7 +209,7 @@ def fetch_myschools_program_detail(dbn):
         enriched.append(program)
 
     if len(enriched) == 0:
-        raise MySchoolsError(f"{dbn} returned no MySchools programs")
+        raise MySchoolsNotAdmittingError(f"{dbn} returned no MySchools programs")
 
     return admissions_types, enriched
 
@@ -284,7 +284,11 @@ def build_school_json(sift_schools, doe_by_dbn):
         print(f"  [{i+1}/{len(sift_schools)}] {school['name'][:50]}")
         try:
             admissions_types, programs = fetch_myschools_program_detail(dbn)
-        except MySchoolsError as e:
+        except MySchoolsNotAdmittingError as e:
+            # Only an empty MySchools listing excludes a school. A network
+            # failure or shape change (any other MySchoolsError) propagates and
+            # aborts the refresh, so a flaky night can never quietly drop
+            # schools that the seed cron would then delete from production.
             if not ALLOW_MYSCHOOLS_FALLBACK:
                 raise
             print(f"    {dbn} has no programs in this cycle's MySchools admissions -- excluding: {e}")
