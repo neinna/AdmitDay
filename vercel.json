@@ -5,5 +5,6 @@
       "agent-*": false,
       "task-*": false
     }
-  }
+  },
+  "crons": [{ "path": "/api/cron/seed-schools", "schedule": "0 14 * * *" }]
 }
