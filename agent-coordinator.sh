@@ -7,7 +7,17 @@
 # GitHub auto-merge on the PR (GitHub merges once the required "test" check
 # passes); a diff the reviewer flags as touching the database/connection
 # layer, migrations, seeding, secrets, or deploy/infra config is labeled
-# "needs-review" instead and left for a human to merge.
+# "needs-you" instead and left for a human to merge.
+#
+# Two labels, deliberately distinct. They used to be one ("needs-review"),
+# which made an issue list read as a backlog of neglect when most of it was
+# not waiting on anybody:
+#   needs-you    a pull request exists and is waiting on a human decision —
+#                an escalated diff to verify and merge, or a real merge
+#                conflict to resolve. Actionable.
+#   agent-stuck  no pull request exists. The agent ran out of budget, failed
+#                its attempts, or could not open the PR. A flag, not a task:
+#                the fix is usually to resize or re-specify the issue.
 # This coordinator itself NEVER pushes to main and NEVER merges directly.
 
 # Load credentials
@@ -454,7 +464,7 @@ except Exception:
     # Cannot be auto-resolved — escalate instead of touching the branch.
     if [ "$MERGEABLE_STATE" = "dirty" ] && [ "$MERGEABLE" = "false" ]; then
       log "Reconcile: PR #${NUM} (${REF}) has a real merge conflict, escalating issue #${ISSUE_NUM}"
-      github_label "$ISSUE_NUM" "needs-review"
+      github_label "$ISSUE_NUM" "needs-you"
       github_comment "$ISSUE_NUM" "Reconciliation swept PR #${NUM} (branch \`${REF}\`) and found a real merge conflict with main that cannot be auto-resolved. Please resolve manually."
       continue
     fi
@@ -660,7 +670,7 @@ ${DIFF}
 Questions to answer:
 1. Does this diff actually resolve the issue?
 2. What did it break or put at risk? Look for scope creep (changes the issue did not ask for), modifications to data/schools.json (forbidden), deleted or weakened tests, and unrelated refactors.
-3. Does this diff touch the database/connection layer, migrations, seeding, environment/secrets handling, or the deploy/infra config? CI has no live database, so an APPROVE here cannot confirm the change actually works at runtime — that is exactly how a runtime bug shipped before.
+3. Does this diff touch the database/connection layer, migrations, seeding, how a secret or session is handled, or the deploy/infra config? CI has no live database, so an APPROVE here cannot confirm the change actually works at runtime — that is exactly how a runtime bug shipped before.
 
 You may read files in /home/agent/app for context. Be strict about scope: if the diff contains significant changes beyond what the issue asked for, reject it.
 
@@ -669,7 +679,14 @@ VERDICT: APPROVE
 or
 VERDICT: REJECT - <one-line reason>
 
-Then, ONLY if the diff touches the database/connection layer, migrations, seeding, environment/secrets handling, or deploy/infra config (regardless of the verdict above), add exactly one more line:
+Then, regardless of the verdict above, add exactly one more line — RISK: LIVE-VERIFY-NEEDED — ONLY if the diff does at least one of these:
+- changes the database/connection layer, schema, migrations, or seeding
+- changes how a secret, credential, or session is stored, transmitted, logged, or validated
+- changes deploy/infra config: vercel.json, next.config.js, a CI workflow, or this coordinator
+
+Do NOT add it merely because the diff reads a new environment variable through process.env, or documents one in a .env*.example file. Reading a configuration value is not handling a secret, and escalating on it sends routine changes to a human for no reason.
+
+The line, when it applies, is exactly:
 RISK: LIVE-VERIFY-NEEDED"
 
   # No log() calls in this function: its stdout is the review text.
@@ -990,12 +1007,12 @@ Instructions:
     fi
 
     if [ $RC -ne 0 ] && claude_budget_exhausted "$CLAUDE_OUT"; then
-      OUTCOME="budget-exhausted"; GH_LABEL="needs-review"; PR_OUTCOME="not-attempted"
-      log "Issue #${ISSUE_NUMBER}: Claude hit the coordinator max budget (${CLAUDE_IMPLEMENT_MAX_USD} USD) on attempt ${ATTEMPT}; labeling needs-review instead of retrying."
+      OUTCOME="budget-exhausted"; GH_LABEL="agent-stuck"; PR_OUTCOME="not-attempted"
+      log "Issue #${ISSUE_NUMBER}: Claude hit the coordinator max budget (${CLAUDE_IMPLEMENT_MAX_USD} USD) on attempt ${ATTEMPT}; labeling agent-stuck instead of retrying."
       github_comment "$ISSUE_NUMBER" "Agent stopped because the coordinator's Claude per-call budget cap was reached on attempt ${ATTEMPT}.
 
-This is a controlled cost stop, not a verified implementation failure. The issue is labeled needs-review so a human can either narrow the scope, raise the cap for this issue, or run it manually."
-      github_label "$ISSUE_NUMBER" "needs-review"
+This is a controlled cost stop, not a verified implementation failure. The issue is labeled agent-stuck: no pull request was opened, so there is nothing to review. The usual fix is to split or re-specify the issue so it fits inside one capped run (see \"Cost And Issue Sizing\" in AGENTS.md), or raise the cap for this issue."
+      github_label "$ISSUE_NUMBER" "agent-stuck"
       github_remove_label "$ISSUE_NUMBER" "in-progress"
       cd "$APP_DIR"
       git checkout main >> "$LOG_FILE" 2>&1
@@ -1089,9 +1106,9 @@ Closes #${ISSUE_NUMBER}"
         github_comment "$ISSUE_NUMBER" "Agent opened a pull request for this issue: ${PR_URL}
 
 Tests and build verified green by the coordinator. The independent reviewer ${ESCALATION_REASON}. Auto-merge was NOT enabled — please verify before merging."
-        github_label "$ISSUE_NUMBER" "needs-review"
+        github_label "$ISSUE_NUMBER" "needs-you"
         github_remove_label "$ISSUE_NUMBER" "in-progress"
-        OUTCOME="needs-review"; GH_LABEL="needs-review"; PR_OUTCOME="opened-escalated"
+        OUTCOME="needs-review"; GH_LABEL="needs-you"; PR_OUTCOME="opened-escalated"
         log "Issue #${ISSUE_NUMBER}: PR opened at ${PR_URL}, escalated (${ESCALATION_REASON}), auto-merge NOT enabled"
         telegram "PR ready for issue #${ISSUE_NUMBER} but ESCALATED for human review: ${ISSUE_TITLE} — ${PR_URL}"
       else
@@ -1118,9 +1135,9 @@ Tests and build verified green by the coordinator, and an independent reviewer a
         telegram "PR ready for issue #${ISSUE_NUMBER}: ${ISSUE_TITLE} — ${PR_URL}"
       fi
     else
-      OUTCOME="needs-review"; GH_LABEL="needs-review"
+      OUTCOME="needs-review"; GH_LABEL="agent-stuck"
       PR_OUTCOME="creation-failed"
-      github_label "$ISSUE_NUMBER" "needs-review"
+      github_label "$ISSUE_NUMBER" "agent-stuck"
       github_remove_label "$ISSUE_NUMBER" "in-progress"
       log "Issue #${ISSUE_NUMBER}: branch pushed but PR creation failed"
       telegram "Issue #${ISSUE_NUMBER}: branch ${BRANCH} pushed but PR creation FAILED — needs manual attention"
@@ -1143,17 +1160,18 @@ ${FAIL_OUTPUT}
 \`\`\`
 
 </details>"
-    # The agent failed; GitHub gets needs-review so a human picks it up. The
-    # trace records both facts rather than collapsing them into one.
-    OUTCOME="failed"; GH_LABEL="needs-review"
+    # The agent failed and opened no PR, so there is nothing for a human to
+    # review — agent-stuck, not needs-you. The trace records both facts rather
+    # than collapsing them into one.
+    OUTCOME="failed"; GH_LABEL="agent-stuck"
     PR_OUTCOME="not-attempted"
-    github_label "$ISSUE_NUMBER" "needs-review"
+    github_label "$ISSUE_NUMBER" "agent-stuck"
     github_remove_label "$ISSUE_NUMBER" "in-progress"
     cd "$APP_DIR"
     git checkout main >> "$LOG_FILE" 2>&1
     git branch -D "$BRANCH" 2>/dev/null
-    log "Issue #${ISSUE_NUMBER}: failed after 2 attempts, labeled needs-review"
-    telegram "Failed after 2 attempts: issue #${ISSUE_NUMBER}: ${ISSUE_TITLE} — labeled needs-review, branch deleted"
+    log "Issue #${ISSUE_NUMBER}: failed after 2 attempts, labeled agent-stuck"
+    telegram "Failed after 2 attempts: issue #${ISSUE_NUMBER}: ${ISSUE_TITLE} — labeled agent-stuck, branch deleted"
   fi
 
   # One trace per issue, written after the run has fully finished either way.
