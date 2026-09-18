@@ -27,7 +27,9 @@ source /home/agent/.env.agents
 # the trace script's process whether or not .env.agents used `export`. Values
 # are never logged, never passed as arguments, and never written to the repo.
 export LANGFUSE_PUBLIC_KEY LANGFUSE_SECRET_KEY LANGFUSE_HOST
-ANTHROPIC_API_KEY=$(grep ANTHROPIC_API_KEY /home/agent/app/.env.local | cut -d '=' -f2 | tr -d '"' | tr -d "'")
+# ANTHROPIC_API_KEY comes from /home/agent/.env.agents (sourced above). The
+# app checkout holds no secrets: /home/agent/app/.env.local was removed on
+# 2026-09-18 after the agent read it and wrote placeholder keys into it.
 
 APP_DIR="/home/agent/app"
 LOG_FILE="/home/agent/agent-coordinator.log"
@@ -51,6 +53,20 @@ RECONCILE_INTERVAL_SECONDS="${RECONCILE_INTERVAL_SECONDS:-1800}"
 RECONCILE_STAMP="/tmp/agent-coordinator-reconcile.last"
 RUNNING_COORDINATOR_SCRIPT="${RUNNING_COORDINATOR_SCRIPT:-/home/agent/agent-coordinator.sh}"
 BUILD_CACHE_MIN_FREE_MB="${BUILD_CACHE_MIN_FREE_MB:-2048}"
+
+# env_fingerprint: one hash over every secrets file the agent must never
+# touch: .env files in the app checkout (except committed *.example files)
+# and the coordinator's own .env.agents. Compared before and after each agent
+# attempt; any change fails the run.
+env_fingerprint() {
+  {
+    find "$APP_DIR" -maxdepth 3 -path "$APP_DIR/node_modules" -prune -o \
+      -type f -name '.env*' ! -name '*.example' -print 2>/dev/null | sort
+    find "$APP_DIR" -maxdepth 3 -path "$APP_DIR/node_modules" -prune -o \
+      -type f -name '.env*' ! -name '*.example' -print0 2>/dev/null | sort -z | xargs -0 -r sha256sum
+    sha256sum /home/agent/.env.agents 2>/dev/null
+  } | sha256sum | cut -d' ' -f1
+}
 
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
@@ -1023,9 +1039,25 @@ Instructions:
     # budget on #194 (Langfuse SDK) in six minutes on attempt 1. Reading a
     # quickstart page is orders of magnitude cheaper than inferring an API from
     # type definitions.
+    local ENV_FP_BEFORE
+    ENV_FP_BEFORE=$(env_fingerprint)
     run_claude "$CLAUDE_OUT" "$([ $ATTEMPT -gt 1 ] && echo "$SESSION_ID")" \
       "Bash,Read,Write,Edit,Glob,Grep,WebFetch,WebSearch" "$CLAUDE_IMPLEMENT_MODEL" "$CLAUDE_IMPLEMENT_MAX_USD"
     local RC=$?
+    if [ "$(env_fingerprint)" != "$ENV_FP_BEFORE" ]; then
+      log "Issue #${ISSUE_NUMBER}: SECRETS FILE CHANGED during attempt ${ATTEMPT}: an .env file was created, edited, or deleted. Failing the run."
+      github_comment "$ISSUE_NUMBER" "The coordinator stopped this run: during attempt ${ATTEMPT} the agent created, edited, or deleted a secrets (.env) file. Agents must never touch secrets. If the build needs a placeholder value, it belongs in a committed file where the PR diff shows it. Check the VPS before re-queuing."
+      github_label "$ISSUE_NUMBER" "agent-stuck"
+      github_remove_label "$ISSUE_NUMBER" "in-progress"
+      OUTCOME="failed"; GH_LABEL="agent-stuck"; PR_OUTCOME="not-attempted"
+      cd "$APP_DIR"
+      git checkout main >> "$LOG_FILE" 2>&1
+      lf_emit "$ISSUE_NUMBER" "$ISSUE_TITLE" "$BRANCH" "$OUTCOME" "$ATTEMPTS_USED" \
+        "$GH_LABEL" "$RUN_START" "$(lf_now_ns)" "$TEST_RESULT" "$BUILD_RESULT" \
+        "$REVIEWER_RESULT" "$PR_OUTCOME"
+      rm -f "$CLAUDE_OUT" "$VERIFY_OUT"
+      return 0
+    fi
     T1=$(lf_now_ns)
     lf_record "implement" "$T0" "$T1" "$([ $RC -eq 0 ] && echo 1 || echo 0)" \
       "$CLAUDE_OUT" "$ATTEMPT"
