@@ -11,6 +11,7 @@ interface Props {
   statValue: string | number
   statLabel: string
   action: ReactNode
+  onNavigate?: () => void
 }
 
 export default function SchoolRow({
@@ -23,6 +24,7 @@ export default function SchoolRow({
   statValue,
   statLabel,
   action,
+  onNavigate,
 }: Props) {
   return (
     <div
@@ -31,6 +33,7 @@ export default function SchoolRow({
       <Link
         href={href}
         aria-label={typeof name === 'string' ? name : undefined}
+        onClick={onNavigate}
         className="absolute inset-0 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       />
 
