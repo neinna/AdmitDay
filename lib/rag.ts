@@ -107,6 +107,69 @@ function loadEmbeddings(): SchoolEmbedding[] {
 }
 
 // ---------------------------------------------------------------------------
+// Hard filters (issue #231): the /find rail's borough/track/size filters are
+// a hard floor for the school list, and retrieval must honor the same floor
+// — a school outside the active filters must never be a candidate, let alone
+// something the model describes in its answer. Unlike the deterministic
+// pre-filter below, this never falls back to the unfiltered pool.
+// ---------------------------------------------------------------------------
+
+export interface HardFilters {
+  boroughs?: string[];
+  tracks?: string[];
+  size?: string;
+}
+
+function hasHardFilters(filters: HardFilters): boolean {
+  return Boolean(filters.boroughs?.length) || Boolean(filters.tracks?.length) || Boolean(filters.size);
+}
+
+function schoolMatchesHardFilters(entries: SchoolEmbedding[], filters: HardFilters): boolean {
+  const { borough, metadata } = entries[0];
+
+  if (filters.boroughs && filters.boroughs.length > 0 && !filters.boroughs.includes(borough)) {
+    return false;
+  }
+
+  if (
+    filters.tracks &&
+    filters.tracks.length > 0 &&
+    !(metadata.admissions_types ?? []).some((t) => filters.tracks!.includes(t))
+  ) {
+    return false;
+  }
+
+  if (filters.size && metadata.size !== filters.size) return false;
+
+  return true;
+}
+
+/**
+ * Restricts chunks to schools matching the active /find rail filters. Never
+ * falls back to the full pool — an empty result here means the rail filters
+ * themselves match zero schools, and the answer must reflect that instead of
+ * reaching outside them.
+ */
+function applyHardFilters(chunks: SchoolEmbedding[], filters: HardFilters): SchoolEmbedding[] {
+  if (!hasHardFilters(filters)) return chunks;
+
+  const byDbn = new Map<string, SchoolEmbedding[]>();
+  for (const entry of chunks) {
+    const group = byDbn.get(entry.dbn);
+    if (group) group.push(entry);
+    else byDbn.set(entry.dbn, [entry]);
+  }
+
+  const matchingDbns = new Set(
+    Array.from(byDbn.entries())
+      .filter(([, entries]) => schoolMatchesHardFilters(entries, filters))
+      .map(([dbn]) => dbn)
+  );
+
+  return chunks.filter((entry) => matchingDbns.has(entry.dbn));
+}
+
+// ---------------------------------------------------------------------------
 // Deterministic pre-filter (roadmap #72 item 6): restrict the candidate pool
 // by borough/sport/interest signals extracted from the question, before the
 // existing semantic ranking runs within that pool.
@@ -193,7 +256,8 @@ function getOpenAIClient(): OpenAI {
 
 export async function searchSchools(
   query: string,
-  topK: number = 5
+  topK: number = 5,
+  hardFilters: HardFilters = {}
 ): Promise<SearchResult[]> {
   // Embed the user's query
   const response = await getOpenAIClient().embeddings.create({
@@ -202,11 +266,13 @@ export async function searchSchools(
   });
   const queryEmbedding = response.data[0].embedding;
 
-  // Load all chunk embeddings, then restrict to schools matching any
+  // Load all chunk embeddings, restrict to the active /find rail filters
+  // (hard floor, issue #231), then further restrict to schools matching any
   // deterministic filters (borough/sport/interest) extracted from the query.
   const allChunks = loadEmbeddings();
+  const hardFilteredChunks = applyHardFilters(allChunks, hardFilters);
   const filters = extractFilters(query);
-  const candidateChunks = applyDeterministicFilters(allChunks, filters);
+  const candidateChunks = applyDeterministicFilters(hardFilteredChunks, filters);
 
   // Score every candidate chunk against the query
   const scored = candidateChunks.map((entry) => ({

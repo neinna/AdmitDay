@@ -268,7 +268,10 @@ export default function FindClient({ schools, initialFilters }: Props) {
       const res = await fetch('/api/find/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: trimmed }),
+        // The rail filters are a hard floor for the school list (issue #114)
+        // and must be one for the ask answer too (issue #231) — a school
+        // outside them must never be a candidate the model can describe.
+        body: JSON.stringify({ question: trimmed, filters }),
       })
 
       if (res.status === 429) {
