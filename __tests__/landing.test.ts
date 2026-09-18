@@ -42,8 +42,7 @@ describe('landscape numbers are derived, never claimed', () => {
 
 describe('the landing page keeps the product’s promises', () => {
   it('states the refusal to predict', () => {
-    expect(pageSrc).toMatch(/No chance of admission/i)
-    expect(pageSrc).toMatch(/No reach, target or likely/i)
+    expect(pageSrc).toMatch(/We never predict admission/i)
   })
 
   it('uses no odds or rating language of its own', () => {
@@ -55,8 +54,8 @@ describe('the landing page keeps the product’s promises', () => {
     expect(pageCopy).toMatch(/not affiliated with, or endorsed by, the New York City Department of Education/i)
   })
 
-  it('admits the data can be older than the current cycle', () => {
-    expect(pageSrc).toMatch(/older than the current cycle/i)
+  it('tells parents to confirm every program on the official listing', () => {
+    expect(pageSrc).toMatch(/Confirm every program on the official listing before you apply/i)
   })
 
   it('invents no social proof', () => {
