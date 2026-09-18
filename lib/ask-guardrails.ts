@@ -24,7 +24,10 @@ export const OFF_TOPIC =
 export const BLOCKED_FALLBACK =
   "We held this answer back because it started to predict admission, which AdmitDay doesn't do. The schools below matched your question. Open any of them to see how each one admits students.";
 
-export type Guardrail = "none" | "prediction_preface" | "blocked" | "off_topic" | "too_long";
+export const NO_ANSWER =
+  "We couldn't write an answer for this question. The schools below matched it; open any of them for the details.";
+
+export type Guardrail = "none" | "prediction_preface" | "blocked" | "off_topic" | "too_long" | "empty";
 
 // Signals a parent is asking for an odds/prediction-style answer.
 // Deliberately not the bare words reach, safety, or target — NYC parents

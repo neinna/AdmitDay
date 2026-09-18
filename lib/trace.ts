@@ -61,6 +61,10 @@ export interface LlmTraceEvent {
   // Which ask-box guardrail (issue #218) applied to this answer. Never the
   // question or answer text itself — see the privacy note above.
   guardrail?: string
+  // Set when the model returned no text block (issue #257) — the stop
+  // reason and the content block types, never the answer text itself.
+  stopReason?: string
+  contentBlockTypes?: string[]
 }
 
 export type FeedbackRating = "up" | "down"
@@ -88,6 +92,8 @@ const EVENT_KEYS = [
   "outcome",
   "errorClassification",
   "guardrail",
+  "stopReason",
+  "contentBlockTypes",
 ] as const
 
 const RETRIEVAL_KEYS = ["dbn", "score", "matchedChunkType"] as const
@@ -196,6 +202,8 @@ async function sendTrace(langfuse: LangfuseClient, payload: UnknownRecord): Prom
       retrieval: payload.retrieval,
       errorClassification: payload.errorClassification,
       guardrail: payload.guardrail,
+      stopReason: payload.stopReason,
+      contentBlockTypes: payload.contentBlockTypes,
     },
   })
 
