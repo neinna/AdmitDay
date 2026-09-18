@@ -47,7 +47,21 @@ export default function AuthControls() {
               userButtonPopoverActionButton: 'rounded-none',
             },
           }}
-        />
+        >
+          {/* Issue #241 (part of #179): account deletion needs a confirmation
+              page, so this links to /account/delete rather than acting here. */}
+          <UserButton.MenuItems>
+            <UserButton.Link
+              label="Delete account"
+              href="/account/delete"
+              labelIcon={
+                <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2m2 0-1 13a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 7h14Z" />
+                </svg>
+              }
+            />
+          </UserButton.MenuItems>
+        </UserButton>
       </SignedIn>
       </ClerkLoaded>
     </div>

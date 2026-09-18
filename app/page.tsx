@@ -77,7 +77,7 @@ export default async function Landing() {
         </div>
         <div>
           <Cta />
-          <p className="text-[13px] text-faint mt-[10px]">Free. No account, no email.</p>
+          <p className="text-[13px] text-faint mt-[10px]">Sign up to save your list.</p>
         </div>
       </section>
 
@@ -221,9 +221,6 @@ export default async function Landing() {
         </div>
         <div>
           <Cta />
-          <p className="text-[13px] text-faint mt-[10px]">
-            Free while it&rsquo;s being built. More is coming.
-          </p>
         </div>
       </section>
 
