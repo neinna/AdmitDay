@@ -15,7 +15,7 @@ const COLLECTS: { label: string; value: string }[] = [
   {
     label: 'Saved school list',
     value:
-      "Held in your browser's local storage. It never reaches AdmitDay's servers — there are no accounts yet to attach it to.",
+      "Held in your browser's local storage, even when you're signed in. It never reaches AdmitDay's servers. Saving your list to your account comes later.",
   },
   {
     label: 'Search questions',
@@ -30,7 +30,7 @@ const COLLECTS: { label: string; value: string }[] = [
   {
     label: 'Product analytics',
     value:
-      "Anonymous page views and clicks, via PostHog. Not tied to a name or email — AdmitDay doesn't identify visitors, because there's no account to identify them with yet.",
+      "Page views and clicks, via PostHog. Signed out, they're anonymous. Signed in, they're linked to a random account ID, never to your name or email.",
   },
   {
     label: 'Error reports',
@@ -40,7 +40,12 @@ const COLLECTS: { label: string; value: string }[] = [
   {
     label: 'Parent name and email',
     value:
-      "Not collected today. Once accounts ship, this will be collected only if you create one — to save your list across devices and sign back in.",
+      "Collected only if you create an account: your first name, last name, and email, and either a password or your Google sign-in. Clerk stores these for AdmitDay. AdmitDay never sees your password.",
+  },
+  {
+    label: 'IP address',
+    value:
+      'Used to limit how many questions one visitor can ask per minute, so the service stays up for everyone. It is stored in our database with that request counter.',
   },
 ]
 
@@ -48,7 +53,7 @@ const PROCESSORS: { label: string; value: string }[] = [
   { label: 'Vercel', value: 'Hosts the website and its serverless functions.' },
   {
     label: 'Vercel Postgres',
-    value: 'Stores the school and program directory today; will store account records once accounts ship.',
+    value: 'Stores the school and program directory, and the request counters used for rate limiting.',
   },
   { label: 'Anthropic', value: "Generates the answers on /find and each school's rationale text." },
   { label: 'OpenAI', value: 'Turns your search question into a vector used to find matching schools.' },
@@ -57,10 +62,20 @@ const PROCESSORS: { label: string; value: string }[] = [
     value:
       'Receives error reports so bugs can get fixed. Session replay is masked. IP addresses are left out of every report, from the server, the browser, and edge routes alike.',
   },
-  { label: 'PostHog', value: 'Receives anonymous usage analytics.' },
+  { label: 'PostHog', value: 'Receives usage analytics: anonymous when signed out, linked to a random account ID when signed in.' },
   {
-    label: 'Auth provider',
-    value: 'Not chosen yet. Will be named here before accounts ship, once it is.',
+    label: 'Langfuse',
+    value:
+      'Receives the cost, timing, and token counts of each AI request so AdmitDay can watch spend and speed. Never your question, the answer, or anything that identifies you.',
+  },
+  {
+    label: 'Clerk',
+    value:
+      'Handles sign-up, log-in, and password reset, and stores your account details (name, email, password or Google sign-in) on AdmitDay’s behalf.',
+  },
+  {
+    label: 'Google',
+    value: 'Only if you choose “Continue with Google”: confirms who you are and shares your name and email with Clerk.',
   },
 ]
 
@@ -91,14 +106,14 @@ export default function PrivacyPage() {
         <p className="text-[15.5px] text-muted mt-4 max-w-[620px]">
           What AdmitDay collects, why, who sees it, and how to have it deleted.
         </p>
-        <p className="text-[13px] text-faint mt-3">Last updated September 17, 2026.</p>
+        <p className="text-[13px] text-faint mt-3">Last updated September 18, 2026.</p>
       </section>
 
       <section className="px-5 min-[900px]:px-9 pt-[26px] pb-[30px] border-b border-rule">
         <Eyebrow>What we collect</Eyebrow>
         <p className="text-[14.5px] text-ink-2 leading-[1.55] mt-3 max-w-[680px]">
-          AdmitDay doesn&rsquo;t have accounts yet, so most of the list below is either anonymous or never leaves
-          your browser. That changes only where noted.
+          Accounts are optional. Everything on AdmitDay works without one. If you create one, we collect your
+          name and email, as described below.
         </p>
         <div className="mt-4 flex flex-col gap-[14px]">
           {COLLECTS.map((row) => (
@@ -148,7 +163,11 @@ export default function PrivacyPage() {
             AdmitDay afterward. Neither Anthropic nor OpenAI trains its models on API traffic by default; each
             provider&rsquo;s own terms govern how long it retains a request on its side.
           </p>
-          <p>Once accounts exist, your name, email, and saved list are kept until you delete your account.</p>
+          <p>Your name and email are kept until you delete your account.</p>
+          <p>
+            IP addresses used for rate limiting are kept until the same address makes another request. Automatic
+            deletion after 24 hours is on the way.
+          </p>
         </div>
       </section>
 
@@ -160,12 +179,11 @@ export default function PrivacyPage() {
             admitday.com removes it completely — AdmitDay never had a copy.
           </p>
           <p>
-            Accounts don&rsquo;t exist yet. Once they do, deleting your account removes your name, email, and
-            saved list from our database. Until then, or if you&rsquo;d like something removed sooner, email{' '}
-            <a href="mailto:privacy@admitday.com" className="underline hover:text-ink">
-              privacy@admitday.com
-            </a>
-            .
+            Self-serve account deletion is coming soon. Until then, email{' '}
+            <a href="mailto:admitday@longtailstudio.com" className="underline hover:text-ink">
+              admitday@longtailstudio.com
+            </a>{' '}
+            and we&rsquo;ll delete your account, and everything tied to it, within 30 days.
           </p>
         </div>
       </section>

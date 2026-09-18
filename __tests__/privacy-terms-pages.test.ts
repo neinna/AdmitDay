@@ -85,20 +85,27 @@ describe('/privacy content matches the product as it actually exists', () => {
     expect(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf-8')).toMatch(/posthog-js/)
   })
 
-  it('does not name Langfuse as a sub-processor (it is not a package.json dependency and no app code imports it)', () => {
-    // scripts/langfuse_trace.py traces the coding-agent's own build metrics —
-    // issue numbers, tokens, cost — never product data, and it is not part of
-    // the deployed Next.js app. Listing it here would describe a system that
-    // doesn't exist yet (product LLM tracing, issue #194, is unmerged WIP).
-    expect(privacySource).not.toMatch(/langfuse/i)
+  it('names Langfuse, because the deployed app traces AI requests to it (lib/trace.ts, #194)', () => {
+    const trace = fs.readFileSync(path.join(__dirname, '../lib/trace.ts'), 'utf-8')
+    expect(trace).toMatch(/LANGFUSE_APP_/)
+    expect(privacySource).toMatch(/label: 'Langfuse'/)
   })
 
-  it('says saved lists live in local storage, not on the server (accounts do not exist yet)', () => {
+  it('says saved lists live in local storage, not on the server (lists move to accounts in #200)', () => {
     expect(privacySource).toMatch(/local storage/i)
   })
 
-  it('does not claim parent accounts exist today', () => {
-    expect(privacySource).toMatch(/not collected today/i)
+  it('describes accounts and names Clerk, because @clerk/nextjs ships in the app (#199)', () => {
+    const pkg = fs.readFileSync(path.join(__dirname, '../package.json'), 'utf-8')
+    expect(pkg).toContain('"@clerk/nextjs"')
+    expect(privacySource).toMatch(/label: 'Clerk'/)
+    expect(privacySource).not.toMatch(/not collected today/i)
+  })
+
+  it('discloses the IP address stored by the Postgres rate limiter (lib/rate-limit.ts)', () => {
+    const rl = fs.readFileSync(path.join(__dirname, '../lib/rate-limit.ts'), 'utf-8')
+    expect(rl).toMatch(/ip:\$\{ip\}/)
+    expect(privacySource).toMatch(/label: 'IP address'/)
   })
 
   it('the Sentry claim matches sendDefaultPii in every runtime config, not just the server one', () => {
