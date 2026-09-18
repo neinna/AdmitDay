@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePostHog } from 'posthog-js/react'
-import { ADDED_SCHOOLS_KEY, trackLabel } from '@/lib/school-list-utils'
+import { trackLabel } from '@/lib/school-list-utils'
 import { Eyebrow } from '@/components/ui'
 import AuthControls from '@/components/AuthControls'
 import {
@@ -34,9 +34,9 @@ import {
 type Props = {
   /** Slim index of every school — the client resolves saved dbns against it. */
   index: ListSchool[]
+  /** The signed-in parent's saved dbns, in rank order, fetched server-side from Postgres (issue #200). This page is sign-in gated, so there is no signed-out fallback here. */
+  initialOrder: string[]
 }
-
-const SAVED_ORDER_KEY = 'admitday_my_schools_order'
 
 // Issue #199: /my-schools had no header at all before this — the sign-in /
 // sign-up buttons are required on every page, so this adds the same header
@@ -62,42 +62,35 @@ function Header() {
   )
 }
 
-export default function MySchoolsClient({ index }: Props) {
+export default function MySchoolsClient({ index, initialOrder }: Props) {
   const posthog = usePostHog()
-  const [order, setOrder] = useState<string[]>([])
-  const [hydrated, setHydrated] = useState(false)
+  const [order, setOrder] = useState<string[]>(initialOrder)
   const [notice, setNotice] = useState<string | null>(null)
   const viewFiredRef = useRef(false)
 
-  // Saved dbns come from the same key /find writes. A separate key holds the
-  // family's ranking, so adding on /find never disturbs an order set here.
+  // The order arrives from the server (Postgres, issue #200) as a prop, so
+  // there is no client-side fetch/hydration step here — only the view-fired
+  // analytics guard, which still needs the Strict Mode double-invoke guard
+  // (issue #196).
   useEffect(() => {
-    try {
-      const added: string[] = JSON.parse(localStorage.getItem(ADDED_SCHOOLS_KEY) ?? '[]')
-      const stored: string[] = JSON.parse(localStorage.getItem(SAVED_ORDER_KEY) ?? '[]')
-      const ranked = stored.filter((dbn) => added.includes(dbn))
-      const unranked = added.filter((dbn) => !ranked.includes(dbn))
-      const resolvedOrder = [...ranked, ...unranked]
-      setOrder(resolvedOrder)
-      // Guarded with a ref (not just the effect's empty dep array) because
-      // React 18 Strict Mode double-invokes mount effects in dev — without
-      // the guard this would double-fire my_schools_viewed (issue #196).
-      if (!viewFiredRef.current) {
-        viewFiredRef.current = true
-        posthog?.capture('my_schools_viewed', { list_size: resolvedOrder.length })
-      }
-    } catch {
-      setOrder([])
+    const resolvedOrder = initialOrder
+    if (!viewFiredRef.current) {
+      viewFiredRef.current = true
+      posthog?.capture('my_schools_viewed', { list_size: resolvedOrder.length })
     }
-    setHydrated(true)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [initialOrder.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const persist = (next: string[]) => {
+  const persist = async (next: string[]) => {
     setOrder(next)
     try {
-      localStorage.setItem(SAVED_ORDER_KEY, JSON.stringify(next))
+      const res = await fetch('/api/saved-schools', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order: next }),
+      })
+      if (!res.ok) throw new Error('save failed')
     } catch {
-      setNotice('Could not save that change on this device.')
+      setNotice('Could not save that change.')
     }
   }
 
@@ -112,24 +105,22 @@ export default function MySchoolsClient({ index }: Props) {
     }
   }
 
-  const remove = (dbn: string) => {
+  const remove = async (dbn: string) => {
     const next = order.filter((d) => d !== dbn)
-    persist(next)
+    setOrder(next)
     try {
-      const added: string[] = JSON.parse(localStorage.getItem(ADDED_SCHOOLS_KEY) ?? '[]')
-      localStorage.setItem(ADDED_SCHOOLS_KEY, JSON.stringify(added.filter((d) => d !== dbn)))
+      const res = await fetch('/api/saved-schools', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dbn }),
+      })
+      if (!res.ok) throw new Error('remove failed')
     } catch {
-      /* the ranking already updated; storage failure is surfaced below */
+      /* the ranking already updated locally; storage failure is surfaced below */
     }
     const school = index.find((s) => s.dbn === dbn)
     setNotice(school ? `Removed ${school.name}.` : 'Removed.')
     posthog?.capture('school_removed', { dbn, list_size_after: next.length })
-  }
-
-  if (!hydrated) {
-    // The list lives in localStorage, so render nothing rather than flashing an
-    // empty state at a family who has schools saved.
-    return <div className="min-h-[40vh]" aria-busy="true" />
   }
 
   if (saved.length === 0) {

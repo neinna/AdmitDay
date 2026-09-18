@@ -15,7 +15,7 @@ const COLLECTS: { label: string; value: string }[] = [
   {
     label: 'Saved school list',
     value:
-      "Held in your browser's local storage, even when you're signed in. It never reaches AdmitDay's servers. Saving your list to your account comes later.",
+      "Signed out: held only in your browser's local storage. Signed in: saved to your account in AdmitDay's database, linked to your account ID rather than your name or email, so it follows you across devices.",
   },
   {
     label: 'Search questions',
@@ -53,7 +53,7 @@ const PROCESSORS: { label: string; value: string }[] = [
   { label: 'Vercel', value: 'Hosts the website and its serverless functions.' },
   {
     label: 'Vercel Postgres',
-    value: 'Stores the school and program directory, and the request counters used for rate limiting.',
+    value: "Stores the school and program directory, signed-in parents' saved lists, and the request counters used for rate limiting.",
   },
   { label: 'Anthropic', value: "Generates the answers on /find and each school's rationale text." },
   { label: 'OpenAI', value: 'Turns your search question into a vector used to find matching schools.' },
@@ -163,7 +163,7 @@ export default function PrivacyPage() {
             AdmitDay afterward. Neither Anthropic nor OpenAI trains its models on API traffic by default; each
             provider&rsquo;s own terms govern how long it retains a request on its side.
           </p>
-          <p>Your name and email are kept until you delete your account.</p>
+          <p>Your name, email, and saved lists are kept until you delete your account.</p>
           <p>
             IP addresses used for rate limiting are kept until the same address makes another request. Automatic
             deletion after 24 hours is on the way.
@@ -175,8 +175,8 @@ export default function PrivacyPage() {
         <Eyebrow>Deleting your data</Eyebrow>
         <div className="mt-3 flex flex-col gap-[10px] text-[14.5px] text-ink-2 leading-[1.55] max-w-[680px]">
           <p>
-            Your saved school list lives only in your browser. Clearing your browser&rsquo;s site data for
-            admitday.com removes it completely — AdmitDay never had a copy.
+            Signed out, your saved school list lives only in your browser: clearing your browser&rsquo;s site data
+            for admitday.com removes it completely. Signed in, it is stored with your account and deleted with it.
           </p>
           <p>
             Self-serve account deletion is coming soon. Until then, email{' '}

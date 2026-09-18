@@ -1,3 +1,20 @@
+// `next build` statically prerenders every page, and <ClerkProvider> (wired
+// app-wide in issue #199) throws synchronously if
+// NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is unset, even for pages with no Clerk UI
+// of their own — surfaced by issue #200's build in an environment with no
+// Clerk secrets configured. Vercel always injects the real key in every
+// deployed environment, so this fallback is a no-op there; it only applies to
+// a local/CI build run without secrets, which never had a working Clerk
+// instance to begin with. The value is a syntactically valid but
+// non-functional placeholder (base64 of "example.clerk.accounts.dev$") — it
+// satisfies Clerk's publishable-key format check without a live instance
+// behind it.
+// Never on Vercel: there a missing real key must fail the build loudly
+// rather than ship a site whose sign-in silently points at nothing.
+if (!process.env.VERCEL) {
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||= 'pk_test_ZXhhbXBsZS5jbGVyay5hY2NvdW50cy5kZXYk'
+}
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {}
 

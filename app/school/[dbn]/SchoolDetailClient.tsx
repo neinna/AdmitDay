@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePostHog } from 'posthog-js/react'
+import { useAuth } from '@clerk/nextjs'
 import { School } from '@/types'
 import { ADDED_SCHOOLS_KEY, trackLabel } from '@/lib/school-list-utils'
 import {
@@ -78,12 +79,24 @@ export default function SchoolDetailClient({
   alsoOnYourListIndex,
 }: Props) {
   const posthog = usePostHog()
+  const { isSignedIn, isLoaded } = useAuth()
   const [addedDbns, setAddedDbns] = useState<Set<string>>(new Set())
   const [hydrated, setHydrated] = useState(false)
   const [programsExpanded, setProgramsExpanded] = useState(false)
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({})
 
+  // Issue #200: signed-in saves read/write Postgres via /api/saved-schools;
+  // signed-out saves stay in localStorage exactly as before.
   useEffect(() => {
+    if (!isLoaded) return
+    if (isSignedIn) {
+      fetch('/api/saved-schools')
+        .then((res) => (res.ok ? res.json() : { dbns: [] }))
+        .then((data) => setAddedDbns(new Set(Array.isArray(data.dbns) ? data.dbns : [])))
+        .catch(() => setAddedDbns(new Set()))
+        .finally(() => setHydrated(true))
+      return
+    }
     try {
       const stored = localStorage.getItem(ADDED_SCHOOLS_KEY)
       if (stored) setAddedDbns(new Set(JSON.parse(stored)))
@@ -91,19 +104,33 @@ export default function SchoolDetailClient({
       // ignore
     }
     setHydrated(true)
-  }, [])
+  }, [isLoaded, isSignedIn])
 
-  function toggleAdded() {
+  async function toggleAdded() {
     const next = new Set(addedDbns)
     const adding = !next.has(school.dbn)
     if (adding) next.add(school.dbn)
     else next.delete(school.dbn)
     setAddedDbns(next)
-    try {
-      localStorage.setItem(ADDED_SCHOOLS_KEY, JSON.stringify(Array.from(next)))
-    } catch {
-      // ignore
+
+    if (isSignedIn) {
+      try {
+        await fetch('/api/saved-schools', {
+          method: adding ? 'POST' : 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dbn: school.dbn }),
+        })
+      } catch {
+        // ignore
+      }
+    } else {
+      try {
+        localStorage.setItem(ADDED_SCHOOLS_KEY, JSON.stringify(Array.from(next)))
+      } catch {
+        // ignore
+      }
     }
+
     posthog?.capture(adding ? 'school_saved' : 'school_removed', {
       dbn: school.dbn,
       list_size_after: next.size,

@@ -25,7 +25,10 @@ describe('/find ask box wired to conversational RAG (issue #110)', () => {
   })
 
   it('does not introduce another LLM/RAG route', () => {
-    expect(src).not.toMatch(/fetch\(\s*['"]\/api\/(?!find\/ask)/)
+    // /api/saved-schools (issue #200) is a plain Postgres read/write for the
+    // signed-in save toggle — never calls an LLM — so it's whitelisted here
+    // alongside /api/find/ask rather than tripping this guard.
+    expect(src).not.toMatch(/fetch\(\s*['"]\/api\/(?!find\/ask|saved-schools)/)
   })
 
   it('tracks loading state for the grounded answer', () => {
