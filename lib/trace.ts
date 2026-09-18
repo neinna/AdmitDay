@@ -58,6 +58,9 @@ export interface LlmTraceEvent {
   costUsd?: number
   outcome: TraceOutcome
   errorClassification?: string
+  // Which ask-box guardrail (issue #218) applied to this answer. Never the
+  // question or answer text itself — see the privacy note above.
+  guardrail?: string
 }
 
 export type FeedbackRating = "up" | "down"
@@ -84,6 +87,7 @@ const EVENT_KEYS = [
   "costUsd",
   "outcome",
   "errorClassification",
+  "guardrail",
 ] as const
 
 const RETRIEVAL_KEYS = ["dbn", "score", "matchedChunkType"] as const
@@ -191,6 +195,7 @@ async function sendTrace(langfuse: LangfuseClient, payload: UnknownRecord): Prom
       questionHash: payload.questionHash,
       retrieval: payload.retrieval,
       errorClassification: payload.errorClassification,
+      guardrail: payload.guardrail,
     },
   })
 
