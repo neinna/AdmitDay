@@ -24,7 +24,7 @@ import { sql } from '@vercel/postgres'
 
 let schemaReady: Promise<void> | null = null
 
-function ensureSchema(): Promise<void> {
+export function ensureSchema(): Promise<void> {
   if (!schemaReady) {
     schemaReady = (async () => {
       await sql`

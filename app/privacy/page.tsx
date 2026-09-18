@@ -177,11 +177,12 @@ export default function PrivacyPage() {
             Your saved school list is stored with your account and deleted with it.
           </p>
           <p>
-            Self-serve account deletion is coming soon. Until then, email{' '}
+            Delete your account any time from the account menu. It removes your name, email, sign-in, and saved
+            schools right away. Questions:{' '}
             <a href="mailto:admitday@longtailstudio.com" className="underline hover:text-ink">
               admitday@longtailstudio.com
-            </a>{' '}
-            and we&rsquo;ll delete your account, and everything tied to it, within 30 days.
+            </a>
+            .
           </p>
         </div>
       </section>
