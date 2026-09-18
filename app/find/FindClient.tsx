@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { usePostHog } from 'posthog-js/react'
 import { School } from '@/types'
 import {
   FindFilters,
@@ -11,6 +12,7 @@ import {
   PAGE_SIZE,
   ADDED_SCHOOLS_KEY,
   applyFindFilters,
+  countActiveFindFilters,
   describeFindFilters,
   findFilterToLoosen,
   findFiltersToQueryString,
@@ -43,6 +45,15 @@ function formatSchoolName(name: string): string {
   return name
 }
 
+// Carries which plain-language ask_failed reason (issue #196) a failed
+// /api/find/ask call should report, without re-deriving it (or re-firing the
+// event) in the catch block.
+class AskRequestError extends Error {
+  constructor(public reason: 'bad_request' | 'provider_error') {
+    super(`ask request failed: ${reason}`)
+  }
+}
+
 interface Props {
   schools: School[]
   initialFilters: FindFilters
@@ -51,6 +62,7 @@ interface Props {
 export default function FindClient({ schools, initialFilters }: Props) {
   const router = useRouter()
   const pathname = usePathname()
+  const posthog = usePostHog()
 
   const [filters, setFilters] = useState<FindFilters>(initialFilters)
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -117,33 +129,76 @@ export default function FindClient({ schools, initialFilters }: Props) {
 
   const signals = useMemo(() => (askFilters ? appliedSignals(askFilters) : []), [askFilters])
 
+  // Filter changes are computed from the current `filters` closure (not a
+  // setState updater) so the posthog.capture call below runs exactly once per
+  // click — React 18 Strict Mode double-invokes updater functions in dev,
+  // which would otherwise double-fire the analytics event (issue #196).
   function toggleBorough(borough: string) {
-    setFilters((f) => ({ ...f, boroughs: toggleValue(f.boroughs, borough) }))
+    const boroughs = toggleValue(filters.boroughs, borough)
+    const next = { ...filters, boroughs }
+    setFilters(next)
+    if (boroughs.length === 0) {
+      posthog?.capture('filter_cleared', { filter_type: 'borough' })
+    } else {
+      posthog?.capture('filter_applied', {
+        filter_type: 'borough',
+        value_count: boroughs.length,
+        results_after: applyFindFilters(schools, next).length,
+      })
+    }
   }
 
   function toggleTrack(track: string) {
-    setFilters((f) => ({ ...f, tracks: toggleValue(f.tracks, track) }))
+    const tracks = toggleValue(filters.tracks, track)
+    const next = { ...filters, tracks }
+    setFilters(next)
+    if (tracks.length === 0) {
+      posthog?.capture('filter_cleared', { filter_type: 'track' })
+    } else {
+      posthog?.capture('filter_applied', {
+        filter_type: 'track',
+        value_count: tracks.length,
+        results_after: applyFindFilters(schools, next).length,
+      })
+    }
   }
 
   function setSize(size: string) {
-    setFilters((f) => ({ ...f, size }))
+    if (size === filters.size) return
+    const next = { ...filters, size }
+    setFilters(next)
+    if (size === '') {
+      posthog?.capture('filter_cleared', { filter_type: 'size' })
+    } else {
+      posthog?.capture('filter_applied', {
+        filter_type: 'size',
+        value_count: 1,
+        results_after: applyFindFilters(schools, next).length,
+      })
+    }
   }
 
   function resetFilters() {
+    if (filters.boroughs.length > 0) posthog?.capture('filter_cleared', { filter_type: 'borough' })
+    if (filters.tracks.length > 0) posthog?.capture('filter_cleared', { filter_type: 'track' })
+    if (filters.size) posthog?.capture('filter_cleared', { filter_type: 'size' })
     setFilters(EMPTY_FIND_FILTERS)
   }
 
   function toggleAdded(dbn: string) {
-    setAddedDbns((prev) => {
-      const next = new Set(prev)
-      if (next.has(dbn)) next.delete(dbn)
-      else next.add(dbn)
-      try {
-        localStorage.setItem(ADDED_SCHOOLS_KEY, JSON.stringify(Array.from(next)))
-      } catch {
-        // ignore
-      }
-      return next
+    const next = new Set(addedDbns)
+    const adding = !next.has(dbn)
+    if (adding) next.add(dbn)
+    else next.delete(dbn)
+    setAddedDbns(next)
+    try {
+      localStorage.setItem(ADDED_SCHOOLS_KEY, JSON.stringify(Array.from(next)))
+    } catch {
+      // ignore
+    }
+    posthog?.capture(adding ? 'school_saved' : 'school_removed', {
+      dbn,
+      list_size_after: next.size,
     })
   }
 
@@ -162,10 +217,17 @@ export default function FindClient({ schools, initialFilters }: Props) {
 
     if (!trimmed) return
 
+    posthog?.capture('ask_submitted', {
+      question_length: trimmed.length,
+      filters_active: countActiveFindFilters(filters),
+    })
+
     setAskLoading(true)
     setAskAnswerError('')
     setAskAnswer('')
     setAskSources([])
+
+    const startedAt = Date.now()
 
     try {
       const res = await fetch('/api/find/ask', {
@@ -179,18 +241,28 @@ export default function FindClient({ schools, initialFilters }: Props) {
         setAskAnswerError(
           data?.error ?? "You're sending requests too quickly — please wait a moment and try again."
         )
+        posthog?.capture('ask_failed', { reason: 'rate_limited' })
         return
       }
 
       if (!res.ok) {
-        throw new Error(`Request failed (${res.status})`)
+        throw new AskRequestError(res.status === 400 ? 'bad_request' : 'provider_error')
       }
 
       const data = await res.json()
       setAskAnswer(typeof data.answer === 'string' ? data.answer : '')
-      setAskSources(Array.isArray(data.sources) ? data.sources : [])
-    } catch {
+      const sources = Array.isArray(data.sources) ? data.sources : []
+      setAskSources(sources)
+      posthog?.capture('ask_answered', {
+        latency_ms: Date.now() - startedAt,
+        source_count: sources.length,
+        trace_id: typeof data.traceId === 'string' ? data.traceId : '',
+      })
+    } catch (err) {
       setAskAnswerError('Something went wrong getting an answer. Please try again.')
+      posthog?.capture('ask_failed', {
+        reason: err instanceof AskRequestError ? err.reason : 'provider_error',
+      })
     } finally {
       setAskLoading(false)
     }
@@ -372,6 +444,9 @@ export default function FindClient({ schools, initialFilters }: Props) {
                     rowNumber={i + 1}
                     name={formatSchoolName(school.name)}
                     href={detailHref}
+                    onNavigate={() =>
+                      posthog?.capture('school_detail_viewed', { dbn: school.dbn, from: 'find' })
+                    }
                     isHiddenGem={school.flags.is_hidden_gem}
                     metadata={`${neighborhood} · ${tracks} · ${students} students`}
                     rationale={buildFindRowSummary(school)}
