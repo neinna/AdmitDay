@@ -130,8 +130,8 @@ export default function SchoolCard({ school, userInputs }: Props) {
               {school.name}
             </a>
             {school.flags.is_hidden_gem && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                Hidden gem
+              <span title="Under 5 applicants per seat and an academic score above 60% (NYC-SIFT)" className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                Fewer applicants per seat, strong results
               </span>
             )}
           </div>
