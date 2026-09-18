@@ -15,14 +15,28 @@ These are the shared rules for any coding agent working in this repo: Claude Cod
 - **Never modify `data/schools.json`.** It is curated source data.
 - Filtering logic lives in `lib/school-list-utils.ts` — look there first for anything about school list filtering.
 - Tests live in `__tests__/`. **Add** new test files or cases; never overwrite or delete existing tests.
-- Run `npm test` and `npm run build` before considering any change done; both must exit 0.
+- While working, run only the tests for what you changed (`npx jest __tests__/<file>`) and `npx tsc --noEmit`. Run the full `npm test` once before committing. Under the coordinator, do not run `npm run build`: the coordinator runs the full suite and the build after you finish and sends you any failure, and a build takes about 3 minutes on its 1-CPU server. Outside the coordinator, `npm test` and `npm run build` must both exit 0 before a change is done.
 - After broad exploration, write a compact task brief and start a fresh implementation session instead of carrying the full exploratory context forward.
 - Before implementation, state success criteria cold: expected behavior, files likely involved, verification commands, and reviewer risks.
 - The app deploys to Vercel automatically from `main`. Do not add local deploy or pm2 steps.
 - The product name in UI copy is **"AdmitDay"**.
-- If a change alters user-facing behavior, the data model, or the architecture, update `README.md` in the same PR so the README never drifts from reality.
+- If a change alters user-facing behavior, the data model, or the architecture, update `README.md` in the same PR so the README never drifts from reality. That includes adding or removing an environment variable, an external service, a database table, or an API route.
 - Never push, never merge, never switch branches unless the active orchestrator or human operator explicitly assigns that responsibility.
 - Stay strictly within the scope of the issue you were given; an independent reviewer rejects scope creep.
+
+## Use What Already Exists
+
+Read the **Architecture** section of `README.md` before starting. It lists what the app already runs on:
+
+- **Vercel Postgres** (`@vercel/postgres`, see `lib/load-schools.ts`) for anything persisted, including counters and small operational tables. Tables are created with `CREATE TABLE IF NOT EXISTS` on first use; there is no migration tool.
+- **`data/school-embeddings.json`**, loaded into memory by `lib/rag.ts`, for retrieval.
+- **Sentry** for errors, **PostHog** for product analytics, **Langfuse** (`lib/trace.ts`) for LLM tracing.
+
+Rules:
+
+- **Solve the issue with existing infrastructure.** Do not add a new external service, hosted database, queue, or paid API unless the issue names it. Calling a service's HTTP API directly with `fetch` still counts as adding it.
+- If the issue cannot be done without something new, stop and say so in your summary instead of adding it. Choosing a new service is a product decision, not an implementation detail.
+- **Prefer the smallest change that meets the issue.** No new abstractions, configuration options, or fallback paths the issue did not ask for.
 
 ## Cost And Issue Sizing
 

@@ -670,6 +670,8 @@ ${DIFF}
 Questions to answer:
 1. Does this diff actually resolve the issue?
 2. What did it break or put at risk? Look for scope creep (changes the issue did not ask for), modifications to data/schools.json (forbidden), deleted or weakened tests, and unrelated refactors.
+   Also reject if the diff adds a new external service, hosted database, or paid API (including one called directly with fetch) that the issue does not name, or adds complexity the issue did not ask for, such as new configuration options or fallback paths.
+   Also reject if the diff adds or removes an environment variable, external service, database table, or API route, or changes the architecture, without updating README.md to match.
 3. Does this diff touch the database/connection layer, migrations, seeding, how a secret or session is handled, or the deploy/infra config? CI has no live database, so an APPROVE here cannot confirm the change actually works at runtime — that is exactly how a runtime bug shipped before.
 
 You may read files in /home/agent/app for context. Be strict about scope: if the diff contains significant changes beyond what the issue asked for, reject it.
@@ -939,11 +941,11 @@ ${ISSUE_COMMENTS}
 Instructions:
 - Work in /home/agent/app on branch ${BRANCH} (already checked out). Read /home/agent/app/AGENTS.md first and follow its house rules.
 - Fix the issue. Stay strictly within its scope — an independent reviewer will reject scope creep. Add tests for your change in __tests__/ (add, don't overwrite existing tests).
-- Run 'cd /home/agent/app && npm test' and 'cd /home/agent/app && npm run build' and iterate until both are green.
+- While working, run only the tests for what you changed ('npx jest __tests__/<file>') and 'npx tsc --noEmit'. Run the full 'npm test' once before committing. Do NOT run 'npm run build': the coordinator runs the full test suite and the build after you finish and will send you any failure.
+- Solve the issue with the infrastructure the app already has (see the Architecture section of README.md and AGENTS.md). Do not add a new external service, hosted database, or paid API unless the issue names it.
 - Commit your work: cd /home/agent/app && git add -A && git commit -m \"${COMMIT_TITLE}\"
 - Never modify data/schools.json.
 - Never push, never merge, never switch branches.
-- You can send the owner a short progress update with: /home/agent/notify.sh \"message\"
 - End with a short summary of what you changed and why (it becomes the pull request description)."
 
   local ATTEMPT=1
@@ -1048,7 +1050,7 @@ This is a controlled cost stop, not a verified implementation failure. The issue
 ${REVIEW_TEXT}
 
 Address the reviewer's objections. Diagnose what is wrong before changing anything else."
-          log "Issue #${ISSUE_NUMBER}: reviewer rejected attempt ${ATTEMPT}"
+          log "Issue #${ISSUE_NUMBER}: reviewer rejected attempt ${ATTEMPT}: $(echo "$REVIEW_TEXT" | grep -m1 'VERDICT: REJECT' | cut -c1-300)"
         else
           [ $REVIEW_RC -eq 2 ] && log "Issue #${ISSUE_NUMBER}: reviewer unavailable, proceeding without review"
           SUCCESS=1
