@@ -9,7 +9,7 @@ import { School } from '@/types'
 // calls; on failure it resets so the next request can retry.
 let schemaReady: Promise<void> | null = null
 
-function ensureSchema(): Promise<void> {
+export function ensureSchema(): Promise<void> {
   if (!schemaReady) {
     schemaReady = (async () => {
       await sql`
