@@ -73,11 +73,11 @@ describe('MySchools program pipeline', () => {
     expect(vpsRefreshSource).toContain('gh pr merge "$BRANCH"')
   })
 
-  it('seeds Postgres from the VPS after refreshed tracked data lands on main', () => {
+  it('ends the VPS job at the data PR; Vercel loads it into Postgres after merge (#175 option B)', () => {
     expect(vpsRefreshSource).toContain('apply_merged_data')
-    expect(vpsRefreshSource).toContain('require_env POSTGRES_URL')
-    expect(vpsRefreshSource).toContain('git pull --ff-only origin main')
-    expect(vpsRefreshSource).toContain('scripts/seed-schools.ts')
+    expect(vpsRefreshSource).not.toContain('require_env POSTGRES_URL')
+    expect(vpsRefreshSource).not.toContain('scripts/seed-schools.ts')
+    expect(vpsRefreshSource).toContain('Loading happens in Vercel after the data PR merges (/api/cron/seed-schools)')
   })
 
   it('can seed from root schools.json in clean CI checkouts', () => {
