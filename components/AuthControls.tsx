@@ -1,15 +1,20 @@
 'use client'
 
-import { SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs'
+import { ClerkLoaded, SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs'
 
 /**
  * Issue #199: sign-in / sign-up buttons in the top right of every header, and
  * the signed-in user's name with a log-out menu. Identity only — no saved
  * data moves here, and no route is gated by this component.
+ *
+ * Wrapped in <ClerkLoaded> so the server and the browser's first render both
+ * output nothing here: the controls appear once Clerk has loaded. Without it,
+ * statically prerendered pages hit a hydration mismatch in the header.
  */
 export default function AuthControls() {
   return (
     <div className="flex items-center gap-3">
+      <ClerkLoaded>
       <SignedOut>
         <SignInButton mode="modal">
           <button
@@ -44,6 +49,7 @@ export default function AuthControls() {
           }}
         />
       </SignedIn>
+      </ClerkLoaded>
     </div>
   )
 }

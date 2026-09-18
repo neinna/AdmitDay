@@ -18,3 +18,17 @@ describe('middleware.ts (Clerk)', () => {
     expect(source).toContain("'/(api|trpc)(.*)'")
   })
 })
+
+// Hydration: the header controls render only after Clerk loads, so the
+// server HTML and the browser's first render match on prerendered pages.
+describe('AuthControls hydration guard', () => {
+  const src = fs.readFileSync(path.join(__dirname, '../components/AuthControls.tsx'), 'utf8')
+
+  it('wraps the signed-in and signed-out controls in <ClerkLoaded>', () => {
+    const open = src.indexOf('<ClerkLoaded>')
+    const close = src.indexOf('</ClerkLoaded>')
+    expect(open).toBeGreaterThan(-1)
+    expect(src.indexOf('<SignedOut>')).toBeGreaterThan(open)
+    expect(src.indexOf('</SignedIn>')).toBeLessThan(close)
+  })
+})

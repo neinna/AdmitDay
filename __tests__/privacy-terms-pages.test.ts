@@ -9,6 +9,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 // pages standalone with renderToStaticMarkup, so @clerk/nextjs is mocked
 // with plain stand-ins rather than excluding these two pages from the header.
 jest.mock('@clerk/nextjs', () => ({
+  ClerkLoaded: ({ children }: { children: React.ReactNode }) => children,
   SignedIn: () => null,
   SignedOut: ({ children }: { children: React.ReactNode }) => children,
   SignInButton: ({ children }: { children: React.ReactNode }) => children,
