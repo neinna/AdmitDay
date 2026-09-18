@@ -10,11 +10,13 @@ describe('/find ask API top-K (issue #70: reverted from 10 to 5)', () => {
   })
 
   it('calls searchSchools with topK = 5', () => {
-    expect(src).toMatch(/searchSchools\(\s*question\s*,\s*5\s*\)/)
+    // issue #231: searchSchools also takes the active /find rail filters as a
+    // third argument, so this now tolerates trailing args after topK.
+    expect(src).toMatch(/searchSchools\(\s*question\s*,\s*5\s*[,)]/)
   })
 
   it('no longer uses topK = 10', () => {
-    expect(src).not.toMatch(/searchSchools\(\s*question\s*,\s*10\s*\)/)
+    expect(src).not.toMatch(/searchSchools\(\s*question\s*,\s*10\s*[,)]/)
   })
 })
 

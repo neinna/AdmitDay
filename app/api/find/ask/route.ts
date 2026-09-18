@@ -11,7 +11,7 @@ import { randomUUID, createHash } from "crypto";
 import Anthropic from "@anthropic-ai/sdk";
 import * as Sentry from "@sentry/nextjs";
 import { NextRequest } from "next/server";
-import { searchSchools } from "@/lib/rag";
+import { searchSchools, HardFilters } from "@/lib/rag";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { classifyProviderError } from "@/lib/provider-error";
 import { recordLlmTrace } from "@/lib/trace";
@@ -36,6 +36,20 @@ function hashQuestion(question: string): string {
   return createHash("sha256").update(question).digest("hex").slice(0, 16);
 }
 
+// The /find rail's active borough/track/size filters (lib/school-list-utils.ts
+// FindFilters), sent alongside the question so retrieval never draws on a
+// school outside them (issue #231). Untrusted request input, so each field is
+// coerced to the expected shape rather than assumed.
+function parseHardFilters(value: unknown): HardFilters {
+  const v = (value ?? {}) as Record<string, unknown>;
+  const strings = (x: unknown): string[] => (Array.isArray(x) ? x.filter((s): s is string => typeof s === "string") : []);
+  return {
+    boroughs: strings(v.boroughs),
+    tracks: strings(v.tracks),
+    size: typeof v.size === "string" ? v.size : undefined,
+  };
+}
+
 export async function POST(request: NextRequest) {
   const startedAt = Date.now();
   const sessionId = getSessionId(request);
@@ -54,7 +68,8 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { question } = await request.json();
+  const { question, filters } = await request.json();
+  const hardFilters = parseHardFilters(filters);
 
   if (!question || typeof question !== "string") {
     recordLlmTrace({
@@ -70,8 +85,9 @@ export async function POST(request: NextRequest) {
   const questionHash = hashQuestion(question);
 
   try {
-    // Step 1: Retrieve the top 5 most relevant schools
-    const results = await searchSchools(question, 5);
+    // Step 1: Retrieve the top 5 most relevant schools, restricted to the
+    // active /find rail filters (issue #231)
+    const results = await searchSchools(question, 5, hardFilters);
 
     // Step 2: Build context from retrieved schools
     // Each result already contains all chunks for that school, concatenated.
@@ -87,7 +103,7 @@ export async function POST(request: NextRequest) {
       model: "claude-sonnet-5",
       max_tokens: 600,
       system:
-        "You are an experienced NYC high school admissions consultant. Answer the parent's question using ONLY the school information provided below.\n\nFor each school provided, state the school name, then 1-2 sentences about why it is relevant to the parent's question. Mention concrete details and numbers when available. Describe every school provided. Do not skip any.\n\nUse only facts from the provided context. Never say 'appears to', 'seems to', or other hedging language. If a specific detail is not stated in the context, say it is not listed. Do not make up information about schools.\n\nAfter describing all schools, provide a 1-2 sentence summary.",
+        "You are an experienced NYC high school admissions consultant. Answer the parent's question using ONLY the school information provided below.\n\nFor each school provided, state the school name, then 1-2 sentences about why it is relevant to the parent's question. Mention concrete details and numbers when available. Describe every school provided. Do not skip any.\n\nUse only facts from the provided context. Never say 'appears to', 'seems to', or other hedging language. If a specific detail is not stated in the context, say it is not listed. Do not make up information about schools.\n\nWrite in plain text only. Do not use markdown — no asterisks, no bold, no numbered or bulleted list syntax.\n\nAfter describing all schools, provide a 1-2 sentence summary.",
       messages: [
         {
           role: "user",
