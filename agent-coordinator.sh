@@ -50,6 +50,7 @@ SELF_UPDATE_LOCK="/tmp/agent-coordinator-self-update.lock"
 RECONCILE_INTERVAL_SECONDS="${RECONCILE_INTERVAL_SECONDS:-1800}"
 RECONCILE_STAMP="/tmp/agent-coordinator-reconcile.last"
 RUNNING_COORDINATOR_SCRIPT="${RUNNING_COORDINATOR_SCRIPT:-/home/agent/agent-coordinator.sh}"
+BUILD_CACHE_MIN_FREE_MB="${BUILD_CACHE_MIN_FREE_MB:-2048}"
 
 log() {
   echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
@@ -659,15 +660,24 @@ PYEOF
 }
 
 # Coordinator-owned verification: the ONLY success signal.
-# This VPS has <600MB free disk and Next's webpack filesystem cache alone is
-# ~400MB, so: wipe .next before building and keep pruning .next/cache while
-# the build runs (webpack treats failed cache writes as non-fatal warnings).
+# Keeps Next's webpack cache (.next/cache, ~325MB) between builds: a warm
+# build takes ~74s on this VPS versus ~160s cold. Everything else in .next is
+# wiped so no stale output survives. If free disk ever drops below
+# BUILD_CACHE_MIN_FREE_MB the cache is dropped too, as it was when this VPS
+# had <600MB free.
 verify_app() {
   local OUT="$1" RC=0
   local T0 T1
   TEST_RESULT="not-run"
   BUILD_RESULT="not-run"
-  rm -rf "$APP_DIR/.next"
+  if [ -d "$APP_DIR/.next" ]; then
+    find "$APP_DIR/.next" -mindepth 1 -maxdepth 1 ! -name cache -exec rm -rf {} +
+  fi
+  local FREE_MB
+  FREE_MB=$(df -Pm "$APP_DIR" | awk 'NR==2 {print $4}')
+  if [ -n "$FREE_MB" ] && [ "$FREE_MB" -lt "$BUILD_CACHE_MIN_FREE_MB" ]; then
+    rm -rf "$APP_DIR/.next/cache"
+  fi
   T0=$(lf_now_ns)
   (cd "$APP_DIR" && npm test) > "$OUT" 2>&1 || RC=1
   T1=$(lf_now_ns)
@@ -675,12 +685,7 @@ verify_app() {
   lf_record "test" "$T0" "$T1" "$([ $RC -eq 0 ] && echo 1 || echo 0)" "" "" "$TEST_RESULT"
   if [ $RC -eq 0 ]; then
     T0=$(lf_now_ns)
-    ( while true; do rm -rf "$APP_DIR/.next/cache" 2>/dev/null; sleep 10; done ) &
-    local PRUNE_PID=$!
     (cd "$APP_DIR" && npm run build) >> "$OUT" 2>&1 || RC=1
-    kill "$PRUNE_PID" 2>/dev/null
-    wait "$PRUNE_PID" 2>/dev/null
-    rm -rf "$APP_DIR/.next/cache"
     T1=$(lf_now_ns)
     BUILD_RESULT="$([ $RC -eq 0 ] && echo passed || echo failed)"
     lf_record "build" "$T0" "$T1" "$([ $RC -eq 0 ] && echo 1 || echo 0)" "" "" "$BUILD_RESULT"
