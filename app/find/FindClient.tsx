@@ -19,11 +19,14 @@ import {
   findFilterToLoosen,
   findFiltersToQueryString,
   trackLabel,
+  citywidePercentile,
+  admissionMethods,
+  admissionMethodCopy,
 } from '@/lib/school-list-utils'
 import { extractFilters, QueryFilters, appliedSignals, removeSignal } from '@/lib/query-filters'
 import { getUnmetCriteria } from '@/lib/soft-match'
 import { MAX_QUESTION_LENGTH } from '@/lib/ask-guardrails'
-import { buildFindRowSummary } from '@/lib/school-detail-utils'
+import { buildFindRowSummary, MYSCHOOLS_URL } from '@/lib/school-detail-utils'
 import { Chip, Button, SchoolRow } from '@/components/ui'
 import FeedbackRow from '@/components/FeedbackRow'
 import FindRail from './FindRail'
@@ -490,6 +493,15 @@ export default function FindClient({ schools, initialFilters }: Props) {
                 if (matchedValues.length > 0) detailQuery.set('matched', matchedValues.join(','))
                 const detailHref = `/school/${school.dbn}?${detailQuery.toString()}`
 
+                // Evidence, not a verdict (issue #216) — citywide scale for
+                // the Apps/seat stat plus the published method(s) that
+                // decide admission. No derived rating, no label.
+                const percentile =
+                  school.applicants_per_seat != null
+                    ? citywidePercentile(school.applicants_per_seat, schools)
+                    : null
+                const methods = admissionMethods(school)
+
                 return (
                   <SchoolRow
                     key={school.dbn}
@@ -506,6 +518,36 @@ export default function FindClient({ schools, initialFilters }: Props) {
                       school.applicants_per_seat != null ? school.applicants_per_seat.toFixed(1) : '—'
                     }
                     statLabel="Apps / seat"
+                    evidence={
+                      (percentile != null || methods.length > 0) && (
+                        <>
+                          {percentile != null && (
+                            <p className="text-[12.5px] text-faint">
+                              more applicants per seat than{' '}
+                              <span className="font-mono text-ink-2">{percentile}%</span> of NYC high
+                              schools
+                            </p>
+                          )}
+                          {methods.length > 0 && (
+                            <p className="text-[13px] text-muted" style={{ textWrap: 'pretty' }}>
+                              {methods.map((method, methodIndex) => (
+                                <span key={method}>
+                                  {methodIndex > 0 && ' · '}
+                                  <a
+                                    href={MYSCHOOLS_URL}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-accent hover:underline"
+                                  >
+                                    {admissionMethodCopy(method, school)}
+                                  </a>
+                                </span>
+                              ))}
+                            </p>
+                          )}
+                        </>
+                      )
+                    }
                     action={
                       <Button
                         type="button"
