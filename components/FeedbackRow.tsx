@@ -6,13 +6,18 @@ import { usePostHog } from 'posthog-js/react'
 const STORAGE_KEYS: Record<string, string> = {
   school_list: 'feedback_school_list',
   requirements: 'feedback_requirements',
+  find_ask: 'feedback_find_ask',
 }
 
 interface Props {
-  screen: 'school_list' | 'requirements'
+  screen: 'school_list' | 'requirements' | 'find_ask'
+  // Opaque Langfuse trace id for the answer this row rates (issue #195).
+  // Optional — omitted entirely on screens with no LLM trace behind them,
+  // in which case feedback behaves exactly as before.
+  traceId?: string
 }
 
-export default function FeedbackRow({ screen }: Props) {
+export default function FeedbackRow({ screen, traceId }: Props) {
   const posthog = usePostHog()
   const [rating, setRating] = useState<'up' | 'down' | null>(null)
   const [hydrated, setHydrated] = useState(false)
@@ -45,7 +50,20 @@ export default function FeedbackRow({ screen }: Props) {
       // ignore
     }
     if (newRating !== null) {
-      posthog?.capture('screen_feedback', { screen, rating: value })
+      posthog?.capture('screen_feedback', {
+        screen,
+        rating: value,
+        ...(traceId ? { trace_id: traceId } : {}),
+      })
+      if (traceId) {
+        fetch('/api/find/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ traceId, rating: value }),
+        }).catch(() => {
+          // A failed score write must never surface to the user (same rule as #194).
+        })
+      }
     }
   }
 

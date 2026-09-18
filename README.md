@@ -37,7 +37,7 @@ The older standalone `/chat` product surface is decommissioned; `/find` is the l
 - **Retrieval:** OpenAI `text-embedding-3-small`, semantic chunking by identity, current MySchools programs, academics, and activities, plus deterministic filtering.
 - **Generation:** Claude Sonnet 5 through grounded prompts.
 - **Cost protection:** per-IP rate limiting on LLM routes.
-- **Observability:** Sentry for errors, PostHog for analytics, Langfuse (`lib/trace.ts`) for per-request LLM cost/latency/token/retrieval tracing on `/api/find/ask` and `/api/rationale` — logging only, never on the response path, and never carries question/answer/prompt/chunk text.
+- **Observability:** Sentry for errors, PostHog for analytics, Langfuse (`lib/trace.ts`) for per-request LLM cost/latency/token/retrieval tracing on `/api/find/ask` and `/api/rationale` — logging only, never on the response path, and never carries question/answer/prompt/chunk text. `/api/find/ask` returns that request's trace id to the client; rating an answer (`FeedbackRow`, via `/api/find/feedback`) writes a Langfuse score against it, joining user feedback to the trace it belongs to.
 - **Deployment:** Vercel from `main`; GitHub Actions runs Jest on pushes and PRs.
 
 ## Data Quality

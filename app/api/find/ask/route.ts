@@ -101,9 +101,28 @@ export async function POST(request: NextRequest) {
     const answer =
       message.content[0].type === "text" ? message.content[0].text : "";
 
+    // Built once so the id returned to the client and the id attached to
+    // the Langfuse trace below are the same value — that join is what lets
+    // a rating (issue #195) land on the trace that earned it. traceId is a
+    // fresh, content-free correlation id; client-side analytics (ask_answered,
+    // issue #196) reports it alongside latency so a slow or odd-looking
+    // answer in PostHog can be traced back to this request.
+    const responseBody = {
+      answer,
+      sources: results.map((r) => ({
+        name: r.name,
+        dbn: r.dbn,
+        borough: r.borough,
+        score: r.score,
+        matchedOn: r.matchedChunkType,
+      })),
+      traceId: randomUUID(),
+    };
+
     recordLlmTrace({
       route: "find_ask",
       sessionId,
+      traceId: responseBody.traceId,
       questionLength,
       questionHash,
       retrieval: results.map((r) => ({
@@ -119,21 +138,7 @@ export async function POST(request: NextRequest) {
       outcome: "ok",
     });
 
-    // Return the answer and the schools that were retrieved (for transparency).
-    // traceId is a fresh, content-free correlation id — client-side analytics
-    // (ask_answered, issue #196) reports it alongside latency so a slow or
-    // odd-looking answer in PostHog can be traced back to this request.
-    return Response.json({
-      answer,
-      sources: results.map((r) => ({
-        name: r.name,
-        dbn: r.dbn,
-        borough: r.borough,
-        score: r.score,
-        matchedOn: r.matchedChunkType,
-      })),
-      traceId: randomUUID(),
-    });
+    return Response.json(responseBody);
   } catch (err) {
     // Log the real error (vendor detail, status, request id) to Sentry —
     // never let any part of it reach the client.

@@ -44,6 +44,10 @@ export interface RetrievedSchool {
 export interface LlmTraceEvent {
   route: string
   sessionId: string
+  // Opaque per-request id, set by the caller so the response returned to
+  // the client and the Langfuse trace are the same record (issue #195) —
+  // never anything user-identifying, and useless for reading data back.
+  traceId?: string
   questionLength?: number
   questionHash?: string
   retrieval?: RetrievedSchool[]
@@ -56,12 +60,20 @@ export interface LlmTraceEvent {
   errorClassification?: string
 }
 
+export type FeedbackRating = "up" | "down"
+
+export interface LlmFeedbackEvent {
+  traceId: string
+  rating: FeedbackRating
+}
+
 type UnknownRecord = Record<string, unknown>
 
 // Allowlists. This is the privacy guarantee, enforced here and nowhere else.
 const EVENT_KEYS = [
   "route",
   "sessionId",
+  "traceId",
   "questionLength",
   "questionHash",
   "retrieval",
@@ -75,6 +87,8 @@ const EVENT_KEYS = [
 ] as const
 
 const RETRIEVAL_KEYS = ["dbn", "score", "matchedChunkType"] as const
+
+const FEEDBACK_KEYS = ["traceId", "rating"] as const
 
 function pick(src: UnknownRecord, keys: readonly string[]): UnknownRecord {
   const out: UnknownRecord = {}
@@ -102,6 +116,16 @@ export function buildTracePayload(raw: unknown): UnknownRecord | null {
   }
 
   return picked
+}
+
+/**
+ * Same allowlist discipline as buildTracePayload: only traceId and rating
+ * ever leave this module for a feedback write, so a future caller can never
+ * leak question/answer text by spreading a richer object in.
+ */
+export function buildFeedbackPayload(raw: unknown): UnknownRecord | null {
+  if (!raw || typeof raw !== "object") return null
+  return pick(raw as UnknownRecord, FEEDBACK_KEYS)
 }
 
 let client: LangfuseClient | null | undefined
@@ -154,9 +178,11 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 async function sendTrace(langfuse: LangfuseClient, payload: UnknownRecord): Promise<void> {
   const route = typeof payload.route === "string" ? payload.route : "unknown"
   const sessionId = typeof payload.sessionId === "string" ? payload.sessionId : undefined
+  const traceId = typeof payload.traceId === "string" ? payload.traceId : undefined
   const outcome = typeof payload.outcome === "string" ? payload.outcome : "ok"
 
   const trace = langfuse.trace({
+    id: traceId,
     name: route,
     sessionId,
     tags: [`outcome:${outcome}`],
@@ -203,5 +229,36 @@ export function recordLlmTrace(event: LlmTraceEvent): void {
   withTimeout(sendTrace(langfuse, payload), WATCHDOG_MS).catch(() => {
     // Logging only. A bad host, an auth rejection, a timeout, an SDK
     // change — all the same to us: the product request already returned.
+  })
+}
+
+async function sendFeedback(langfuse: LangfuseClient, payload: UnknownRecord): Promise<void> {
+  const traceId = typeof payload.traceId === "string" ? payload.traceId : undefined
+  if (!traceId) return
+
+  langfuse.score({
+    traceId,
+    name: "user_feedback",
+    value: payload.rating === "up" ? 1 : 0,
+  })
+
+  await langfuse.flushAsync()
+}
+
+/**
+ * Fire-and-forget: attach one user rating (issue #195) to the Langfuse
+ * trace it belongs to. Same never-throw, never-awaited, no-op-when-
+ * unconfigured contract as recordLlmTrace — a failed score write must
+ * never surface to the user.
+ */
+export function recordLlmFeedback(event: LlmFeedbackEvent): void {
+  const langfuse = getClient()
+  if (!langfuse) return
+
+  const payload = buildFeedbackPayload(event)
+  if (!payload) return
+
+  withTimeout(sendFeedback(langfuse, payload), WATCHDOG_MS).catch(() => {
+    // Logging only, same as recordLlmTrace.
   })
 }
