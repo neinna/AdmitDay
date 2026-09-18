@@ -51,6 +51,7 @@ When filing an issue for the agent:
 - **Do not list files "for context".** Every file named in the body is a paid read before any work begins. Name only the files that must change.
 - **No open design decisions.** If the issue requires choosing a threshold, a scale, or a product rule, that decision belongs in the issue or in Notion before the issue is filed.
 - **A new third-party dependency is its own issue.** Installing it and proving one call works is one ticket; using it is the next. Integrating an unfamiliar SDK is the single most expensive thing this pipeline does.
+- **Name the infrastructure.** Whoever writes the issue checks the README Architecture section and states which existing piece the work uses (for example, "store it in Postgres"). If the work truly needs a new service, the issue names it and says why the existing stack can't do it. Adding a service is Inna's decision, made before the issue is filed, never the agent's.
 - **Check the issue against the PRD before filing.** #162 asked for a derived rating that the PRD bans by name, so no implementation of it could ever have passed review.
 
 ## Issue Sequencing
