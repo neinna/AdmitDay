@@ -31,6 +31,10 @@ describe('implementation brief', () => {
     expect(brief).toContain('infrastructure the app already has')
   })
 
+  it('does not ask for a README update on every issue', () => {
+    expect(brief).not.toContain('README')
+  })
+
   it('no longer offers the Telegram progress hook', () => {
     expect(brief).not.toContain('notify.sh')
   })
@@ -41,8 +45,8 @@ describe('reviewer prompt', () => {
     expect(reviewPrompt).toContain('adds a new external service')
   })
 
-  it('rejects infrastructure changes that leave README.md behind', () => {
-    expect(reviewPrompt).toContain('without updating README.md')
+  it('does not reject a diff just because README.md was not updated', () => {
+    expect(reviewPrompt).not.toContain('README')
   })
 })
 

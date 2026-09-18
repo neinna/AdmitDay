@@ -671,7 +671,6 @@ Questions to answer:
 1. Does this diff actually resolve the issue?
 2. What did it break or put at risk? Look for scope creep (changes the issue did not ask for), modifications to data/schools.json (forbidden), deleted or weakened tests, and unrelated refactors.
    Also reject if the diff adds a new external service, hosted database, or paid API (including one called directly with fetch) that the issue does not name, or adds complexity the issue did not ask for, such as new configuration options or fallback paths.
-   Also reject if the diff adds or removes an environment variable, external service, database table, or API route, or changes the architecture, without updating README.md to match.
 3. Does this diff touch the database/connection layer, migrations, seeding, how a secret or session is handled, or the deploy/infra config? CI has no live database, so an APPROVE here cannot confirm the change actually works at runtime — that is exactly how a runtime bug shipped before.
 
 You may read files in /home/agent/app for context. Be strict about scope: if the diff contains significant changes beyond what the issue asked for, reject it.
@@ -942,7 +941,7 @@ Instructions:
 - Work in /home/agent/app on branch ${BRANCH} (already checked out). Read /home/agent/app/AGENTS.md first and follow its house rules.
 - Fix the issue. Stay strictly within its scope — an independent reviewer will reject scope creep. Add tests for your change in __tests__/ (add, don't overwrite existing tests).
 - While working, run only the tests for what you changed ('npx jest __tests__/<file>') and 'npx tsc --noEmit'. Run the full 'npm test' once before committing. Do NOT run 'npm run build': the coordinator runs the full test suite and the build after you finish and will send you any failure.
-- Solve the issue with the infrastructure the app already has (see the Architecture section of README.md and AGENTS.md). Do not add a new external service, hosted database, or paid API unless the issue names it.
+- Solve the issue with the infrastructure the app already has (listed in AGENTS.md). Do not add a new external service, hosted database, or paid API unless the issue names it.
 - Commit your work: cd /home/agent/app && git add -A && git commit -m \"${COMMIT_TITLE}\"
 - Never modify data/schools.json.
 - Never push, never merge, never switch branches.
