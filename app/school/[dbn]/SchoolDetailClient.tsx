@@ -2,9 +2,17 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { usePostHog } from 'posthog-js/react'
 import { School } from '@/types'
 import { ADDED_SCHOOLS_KEY, trackLabel } from '@/lib/school-list-utils'
-import { StatCell, ActivityGroup, ProgramRow, RequirementBlock, chipIsMatched } from '@/lib/school-detail-utils'
+import {
+  StatCell,
+  ShsatCutoffRow,
+  ActivityGroup,
+  ProgramRow,
+  RequirementBlock,
+  chipIsMatched,
+} from '@/lib/school-detail-utils'
 import { Eyebrow, DefinitionRow, NotReportedLine, StatGrid } from '@/components/ui'
 import SiteHeader from './SiteHeader'
 
@@ -23,6 +31,7 @@ interface Props {
   tracks: string[]
   statCells: StatCell[]
   notReportedStatsSentence: string | null
+  shsatCutoffRows: ShsatCutoffRow[]
   programs: ProgramRow[]
   requirementBlocks: RequirementBlock[]
   activityGroups: ActivityGroup[]
@@ -49,6 +58,7 @@ export default function SchoolDetailClient({
   tracks,
   statCells,
   notReportedStatsSentence,
+  shsatCutoffRows,
   programs,
   requirementBlocks,
   activityGroups,
@@ -67,6 +77,7 @@ export default function SchoolDetailClient({
   positionLabel,
   alsoOnYourListIndex,
 }: Props) {
+  const posthog = usePostHog()
   const [addedDbns, setAddedDbns] = useState<Set<string>>(new Set())
   const [hydrated, setHydrated] = useState(false)
   const [programsExpanded, setProgramsExpanded] = useState(false)
@@ -83,16 +94,19 @@ export default function SchoolDetailClient({
   }, [])
 
   function toggleAdded() {
-    setAddedDbns((prev) => {
-      const next = new Set(prev)
-      if (next.has(school.dbn)) next.delete(school.dbn)
-      else next.add(school.dbn)
-      try {
-        localStorage.setItem(ADDED_SCHOOLS_KEY, JSON.stringify(Array.from(next)))
-      } catch {
-        // ignore
-      }
-      return next
+    const next = new Set(addedDbns)
+    const adding = !next.has(school.dbn)
+    if (adding) next.add(school.dbn)
+    else next.delete(school.dbn)
+    setAddedDbns(next)
+    try {
+      localStorage.setItem(ADDED_SCHOOLS_KEY, JSON.stringify(Array.from(next)))
+    } catch {
+      // ignore
+    }
+    posthog?.capture(adding ? 'school_saved' : 'school_removed', {
+      dbn: school.dbn,
+      list_size_after: next.size,
     })
   }
 
@@ -159,6 +173,7 @@ export default function SchoolDetailClient({
             href={myschoolsUrl}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => posthog?.capture('myschools_link_clicked', { dbn: school.dbn })}
             className="flex-1 text-center border border-border text-[13.5px] text-accent py-[10px] hover:bg-surface-2 transition-colors duration-[120ms] ease-out"
           >
             MySchools page ↗
@@ -173,6 +188,16 @@ export default function SchoolDetailClient({
           <NotReportedLine variant="reported" className="pt-3">
             {notReportedStatsSentence}
           </NotReportedLine>
+        )}
+        {shsatCutoffRows.length > 0 && (
+          <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 pt-4">
+            <span className="text-[12.5px] text-faint">SHSAT offer cutoff, by year</span>
+            {shsatCutoffRows.map((row) => (
+              <span key={row.year} className="font-mono text-[13.5px] text-ink-2">
+                {row.year}: {row.score}
+              </span>
+            ))}
+          </div>
         )}
       </div>
 
@@ -239,6 +264,7 @@ export default function SchoolDetailClient({
                 href={myschoolsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={() => posthog?.capture('myschools_link_clicked', { dbn: school.dbn })}
                 className="text-[13.5px] font-medium border border-accent px-[14px] py-2 whitespace-nowrap text-accent hover:bg-accent hover:text-white transition-colors duration-[120ms] ease-out"
               >
                 Open in MySchools ↗

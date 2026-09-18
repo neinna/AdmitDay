@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
+import { usePostHog } from 'posthog-js/react'
 import { ADDED_SCHOOLS_KEY, trackLabel } from '@/lib/school-list-utils'
 import { Eyebrow } from '@/components/ui'
 import {
@@ -37,9 +38,11 @@ type Props = {
 const SAVED_ORDER_KEY = 'admitday_my_schools_order'
 
 export default function MySchoolsClient({ index }: Props) {
+  const posthog = usePostHog()
   const [order, setOrder] = useState<string[]>([])
   const [hydrated, setHydrated] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
+  const viewFiredRef = useRef(false)
 
   // Saved dbns come from the same key /find writes. A separate key holds the
   // family's ranking, so adding on /find never disturbs an order set here.
@@ -49,12 +52,20 @@ export default function MySchoolsClient({ index }: Props) {
       const stored: string[] = JSON.parse(localStorage.getItem(SAVED_ORDER_KEY) ?? '[]')
       const ranked = stored.filter((dbn) => added.includes(dbn))
       const unranked = added.filter((dbn) => !ranked.includes(dbn))
-      setOrder([...ranked, ...unranked])
+      const resolvedOrder = [...ranked, ...unranked]
+      setOrder(resolvedOrder)
+      // Guarded with a ref (not just the effect's empty dep array) because
+      // React 18 Strict Mode double-invokes mount effects in dev — without
+      // the guard this would double-fire my_schools_viewed (issue #196).
+      if (!viewFiredRef.current) {
+        viewFiredRef.current = true
+        posthog?.capture('my_schools_viewed', { list_size: resolvedOrder.length })
+      }
     } catch {
       setOrder([])
     }
     setHydrated(true)
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const persist = (next: string[]) => {
     setOrder(next)
@@ -77,7 +88,8 @@ export default function MySchoolsClient({ index }: Props) {
   }
 
   const remove = (dbn: string) => {
-    persist(order.filter((d) => d !== dbn))
+    const next = order.filter((d) => d !== dbn)
+    persist(next)
     try {
       const added: string[] = JSON.parse(localStorage.getItem(ADDED_SCHOOLS_KEY) ?? '[]')
       localStorage.setItem(ADDED_SCHOOLS_KEY, JSON.stringify(added.filter((d) => d !== dbn)))
@@ -86,6 +98,7 @@ export default function MySchoolsClient({ index }: Props) {
     }
     const school = index.find((s) => s.dbn === dbn)
     setNotice(school ? `Removed ${school.name}.` : 'Removed.')
+    posthog?.capture('school_removed', { dbn, list_size_after: next.length })
   }
 
   if (!hydrated) {
@@ -162,6 +175,9 @@ export default function MySchoolsClient({ index }: Props) {
                 <div className="min-w-0">
                   <Link
                     href={`/school/${school.dbn}`}
+                    onClick={() =>
+                      posthog?.capture('school_detail_viewed', { dbn: school.dbn, from: 'my_schools' })
+                    }
                     className="text-[15px] font-semibold text-ink hover:text-accent"
                   >
                     {school.name}
