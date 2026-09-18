@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePostHog } from 'posthog-js/react'
-import { useAuth } from '@clerk/nextjs'
+import { useAuth, useClerk } from '@clerk/nextjs'
 import { School } from '@/types'
 import { ADDED_SCHOOLS_KEY, trackLabel } from '@/lib/school-list-utils'
+import { PENDING_SAVE_KEY } from '@/components/PendingSaveSync'
 import {
   StatCell,
   ShsatCutoffRow,
@@ -80,13 +81,16 @@ export default function SchoolDetailClient({
 }: Props) {
   const posthog = usePostHog()
   const { isSignedIn, isLoaded } = useAuth()
+  const { openSignUp } = useClerk()
   const [addedDbns, setAddedDbns] = useState<Set<string>>(new Set())
   const [hydrated, setHydrated] = useState(false)
   const [programsExpanded, setProgramsExpanded] = useState(false)
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({})
 
-  // Issue #200: signed-in saves read/write Postgres via /api/saved-schools;
-  // signed-out saves stay in localStorage exactly as before.
+  // Issue #200/#240: saving a school requires an account, so the only saved
+  // list is Postgres via /api/saved-schools. Signed out, there is no list —
+  // any list left over from before accounts existed is discarded by clearing
+  // the old key.
   useEffect(() => {
     if (!isLoaded) return
     if (isSignedIn) {
@@ -98,8 +102,7 @@ export default function SchoolDetailClient({
       return
     }
     try {
-      const stored = localStorage.getItem(ADDED_SCHOOLS_KEY)
-      if (stored) setAddedDbns(new Set(JSON.parse(stored)))
+      localStorage.removeItem(ADDED_SCHOOLS_KEY)
     } catch {
       // ignore
     }
@@ -107,28 +110,33 @@ export default function SchoolDetailClient({
   }, [isLoaded, isSignedIn])
 
   async function toggleAdded() {
+    // Issue #240: saving a school requires an account. Signed out, stash the
+    // clicked DBN and open sign-up — PendingSaveSync saves it once the
+    // account exists.
+    if (!isSignedIn) {
+      try {
+        sessionStorage.setItem(PENDING_SAVE_KEY, school.dbn)
+      } catch {
+        // ignore
+      }
+      openSignUp()
+      return
+    }
+
     const next = new Set(addedDbns)
     const adding = !next.has(school.dbn)
     if (adding) next.add(school.dbn)
     else next.delete(school.dbn)
     setAddedDbns(next)
 
-    if (isSignedIn) {
-      try {
-        await fetch('/api/saved-schools', {
-          method: adding ? 'POST' : 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ dbn: school.dbn }),
-        })
-      } catch {
-        // ignore
-      }
-    } else {
-      try {
-        localStorage.setItem(ADDED_SCHOOLS_KEY, JSON.stringify(Array.from(next)))
-      } catch {
-        // ignore
-      }
+    try {
+      await fetch('/api/saved-schools', {
+        method: adding ? 'POST' : 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dbn: school.dbn }),
+      })
+    } catch {
+      // ignore
     }
 
     posthog?.capture(adding ? 'school_saved' : 'school_removed', {

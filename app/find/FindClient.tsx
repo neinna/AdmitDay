@@ -4,8 +4,9 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { usePostHog } from 'posthog-js/react'
-import { useAuth } from '@clerk/nextjs'
+import { useAuth, useClerk } from '@clerk/nextjs'
 import AuthControls from '@/components/AuthControls'
+import { PENDING_SAVE_KEY } from '@/components/PendingSaveSync'
 import { School } from '@/types'
 import {
   FindFilters,
@@ -71,6 +72,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
   const pathname = usePathname()
   const posthog = usePostHog()
   const { isSignedIn, isLoaded } = useAuth()
+  const { openSignUp } = useClerk()
 
   const [filters, setFilters] = useState<FindFilters>(initialFilters)
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -97,10 +99,11 @@ export default function FindClient({ schools, initialFilters }: Props) {
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
   }, [filters, pathname, router])
 
-  // Issue #200: signed-in saves read/write Postgres via /api/saved-schools;
-  // signed-out saves stay in localStorage exactly as before. Waits for Clerk
-  // to finish loading (isLoaded) so a signed-in family's first render never
-  // briefly reads the (stale, signed-out-only) localStorage state.
+  // Issue #200/#240: saving a school requires an account, so the only saved
+  // list is Postgres via /api/saved-schools. Waits for Clerk to finish
+  // loading (isLoaded) so a signed-in family's first render never briefly
+  // shows an empty list. Signed out, there is no list — any list left over
+  // from before accounts existed is discarded by clearing the old key.
   useEffect(() => {
     if (!isLoaded) return
     if (isSignedIn) {
@@ -112,8 +115,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
       return
     }
     try {
-      const stored = localStorage.getItem(ADDED_SCHOOLS_KEY)
-      if (stored) setAddedDbns(new Set(JSON.parse(stored)))
+      localStorage.removeItem(ADDED_SCHOOLS_KEY)
     } catch {
       // ignore
     }
@@ -210,28 +212,33 @@ export default function FindClient({ schools, initialFilters }: Props) {
   }
 
   async function toggleAdded(dbn: string) {
+    // Issue #240: saving a school requires an account. Signed out, stash the
+    // clicked DBN and open sign-up — PendingSaveSync saves it once the
+    // account exists.
+    if (!isSignedIn) {
+      try {
+        sessionStorage.setItem(PENDING_SAVE_KEY, dbn)
+      } catch {
+        // ignore
+      }
+      openSignUp()
+      return
+    }
+
     const next = new Set(addedDbns)
     const adding = !next.has(dbn)
     if (adding) next.add(dbn)
     else next.delete(dbn)
     setAddedDbns(next)
 
-    if (isSignedIn) {
-      try {
-        await fetch('/api/saved-schools', {
-          method: adding ? 'POST' : 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ dbn }),
-        })
-      } catch {
-        // ignore
-      }
-    } else {
-      try {
-        localStorage.setItem(ADDED_SCHOOLS_KEY, JSON.stringify(Array.from(next)))
-      } catch {
-        // ignore
-      }
+    try {
+      await fetch('/api/saved-schools', {
+        method: adding ? 'POST' : 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dbn }),
+      })
+    } catch {
+      // ignore
     }
 
     posthog?.capture(adding ? 'school_saved' : 'school_removed', {
