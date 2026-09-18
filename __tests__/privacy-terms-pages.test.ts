@@ -85,6 +85,33 @@ describe('/privacy content matches the product as it actually exists', () => {
   it('does not claim parent accounts exist today', () => {
     expect(privacySource).toMatch(/not collected today/i)
   })
+
+  it('the Sentry claim matches sendDefaultPii in every runtime config, not just the server one', () => {
+    // A prior draft claimed IP addresses were stripped everywhere, but only
+    // sentry.server.config.ts sets sendDefaultPii: false — the browser and
+    // edge configs still default to sendDefaultPii: true (see issue #21 and
+    // the sentry-pii.test.ts suite tracking the standalone fix for that gap).
+    // This guards against re-publishing the blanket claim before the gap
+    // actually closes, and against the copy going stale once it does.
+    const serverConfig = fs.readFileSync(path.join(__dirname, '../sentry.server.config.ts'), 'utf-8')
+    const clientConfig = fs.readFileSync(path.join(__dirname, '../instrumentation-client.ts'), 'utf-8')
+    const edgeConfig = fs.readFileSync(path.join(__dirname, '../sentry.edge.config.ts'), 'utf-8')
+
+    const serverStripsPii = serverConfig.includes('sendDefaultPii: false')
+    const clientStripsPii = clientConfig.includes('sendDefaultPii: false')
+    const edgeStripsPii = edgeConfig.includes('sendDefaultPii: false')
+
+    if (serverStripsPii && clientStripsPii && edgeStripsPii) {
+      // The gap has closed — the page must not still describe an asymmetry
+      // that no longer exists.
+      expect(privacySource).not.toMatch(/currently include/i)
+    } else {
+      // The gap is still open somewhere — the page must say so rather than
+      // claiming a blanket strip that isn't true everywhere.
+      expect(privacySource).not.toMatch(/strip(s|ped)? ip addresses? (and|or) session-replay content before anything is sent/i)
+      expect(privacySource).toMatch(/currently include/i)
+    }
+  })
 })
 
 describe('/terms content matches product policy', () => {
