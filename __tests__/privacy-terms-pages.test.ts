@@ -101,9 +101,9 @@ describe('/privacy content matches the product as it actually exists', () => {
     expect(privacySource).toMatch(/label: 'Langfuse'/)
   })
 
-  it('says signed-out lists stay in the browser and signed-in lists are stored with the account (#200)', () => {
-    expect(privacySource).toMatch(/local storage/i)
-    expect(privacySource).toMatch(/Signed in: saved to your account/)
+  it('says saved lists are stored with the account and require one (#240)', () => {
+    expect(privacySource).toMatch(/Saved to your account in AdmitDay's database/)
+    expect(privacySource).toMatch(/Saving a school requires an account/)
   })
 
   it('describes accounts and names Clerk, because @clerk/nextjs ships in the app (#199)', () => {

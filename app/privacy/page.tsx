@@ -15,7 +15,7 @@ const COLLECTS: { label: string; value: string }[] = [
   {
     label: 'Saved school list',
     value:
-      "Signed out: held only in your browser's local storage. Signed in: saved to your account in AdmitDay's database, linked to your account ID rather than your name or email, so it follows you across devices.",
+      "Saved to your account in AdmitDay's database, linked to your account ID rather than your name or email. Saving a school requires an account.",
   },
   {
     label: 'Search questions',
@@ -174,8 +174,7 @@ export default function PrivacyPage() {
         <Eyebrow>Deleting your data</Eyebrow>
         <div className="mt-3 flex flex-col gap-[10px] text-[14.5px] text-ink-2 leading-[1.55] max-w-[680px]">
           <p>
-            Signed out, your saved school list lives only in your browser: clearing your browser&rsquo;s site data
-            for admitday.com removes it completely. Signed in, it is stored with your account and deleted with it.
+            Your saved school list is stored with your account and deleted with it.
           </p>
           <p>
             Delete your account any time from the account menu. It removes your name, email, sign-in, and saved

@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import PHProvider from '@/components/PosthogProvider'
 import AuthPosthogSync from '@/components/AuthPosthogSync'
+import PendingSaveSync from '@/components/PendingSaveSync'
 import { fontDisplay, fontWordmark, fontSans, fontMono } from '@/lib/fonts'
 import './globals.css'
 
@@ -56,6 +57,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <body className={inter.className}>
           <PHProvider>
             <AuthPosthogSync />
+            <PendingSaveSync />
             {children}
           </PHProvider>
         </body>
