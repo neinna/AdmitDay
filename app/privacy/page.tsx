@@ -34,7 +34,7 @@ const COLLECTS: { label: string; value: string }[] = [
   {
     label: 'Error reports',
     value:
-      "Crash and exception details, via Sentry. Session recordings are masked by default, so on-screen text is never captured. Reports from AdmitDay's servers leave out your IP address; reports from your browser or from edge routes currently include it.",
+      "Crash and exception details, via Sentry. Session recordings are masked, so on-screen text and anything you type is never captured. Error reports leave out your IP address, whether they come from AdmitDay's servers, your browser, or edge routes.",
   },
   {
     label: 'Parent name and email',
@@ -54,7 +54,7 @@ const PROCESSORS: { label: string; value: string }[] = [
   {
     label: 'Sentry',
     value:
-      'Receives error reports so bugs can get fixed. Session replay is masked by default. IP addresses are left out of server-side reports; browser and edge-runtime reports currently include one.',
+      'Receives error reports so bugs can get fixed. Session replay is masked. IP addresses are left out of every report, from the server, the browser, and edge routes alike.',
   },
   { label: 'PostHog', value: 'Receives anonymous usage analytics.' },
   {

@@ -8,7 +8,18 @@ Sentry.init({
   dsn: "https://50b3b81955c8e03faf9108c48d32b64a@o4511185594744832.ingest.us.sentry.io/4511185656741888",
 
   // Add optional integrations for additional features
-  integrations: [Sentry.replayIntegration()],
+  // Replay masking is pinned explicitly rather than left to the SDK default.
+  // These are the defaults today, but this product records sessions of parents
+  // researching schools for their children: the masking must be a stated
+  // decision in this file, not an inherited one that a future SDK upgrade or a
+  // copy-pasted config could silently flip.
+  integrations: [
+    Sentry.replayIntegration({
+      maskAllText: true,
+      maskAllInputs: true,
+      blockAllMedia: true,
+    }),
+  ],
 
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
   tracesSampleRate: 1,
@@ -23,9 +34,12 @@ Sentry.init({
   // Define how likely Replay events are sampled when an error occurs.
   replaysOnErrorSampleRate: 1.0,
 
-  // Enable sending user PII (Personally Identifiable Information)
-  // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-  sendDefaultPii: true,
+  // PII is deliberately NOT sent. AdmitDay is used by parents applying on
+  // behalf of minors, and accounts (#179) will add real names and emails to the
+  // browser session. Attaching IPs and user context to every client event would
+  // put that in a third-party error store for no debugging benefit we need.
+  // Matches sentry.server.config.ts, which already sets this to false.
+  sendDefaultPii: false,
 });
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
