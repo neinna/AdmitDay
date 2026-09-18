@@ -51,6 +51,80 @@ install_dependencies() {
   npm ci
 }
 
+report_refresh_failure() {
+  local summary="$1"
+  require_gh_token
+
+  local title="Data refresh failed"
+  local body
+  body="$(cat <<BODY
+The scheduled VPS data refresh (\`scripts/vps-data-refresh.sh pr\`) failed during the scrape or validation step.
+
+Time (UTC): $(date -u +%Y-%m-%dT%H:%M:%SZ)
+Branch: $BRANCH
+
+Failure summary:
+\`\`\`
+$summary
+\`\`\`
+BODY
+)"
+
+  local existing
+  existing="$(gh issue list --repo "$REPO" --search "$title in:title" --state open --json number --jq '.[0].number // empty')"
+
+  if [ -n "$existing" ]; then
+    gh issue comment "$existing" --repo "$REPO" --body "$body"
+  else
+    gh issue create --repo "$REPO" --title "$title" --body "$body"
+  fi
+}
+
+build_refresh_pr_body() {
+  local previous_file="$1"
+  local fetched_at
+  fetched_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+  node -e '
+    const fs = require("fs");
+    function load(filePath) {
+      if (!fs.existsSync(filePath)) return [];
+      try {
+        const parsed = JSON.parse(fs.readFileSync(filePath, "utf-8"));
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    const previous = load(process.argv[1]);
+    const current = load(process.argv[2]);
+    const fetchedAt = process.argv[3];
+    const dbn = (s) => (s && typeof s.dbn === "string" ? s.dbn : null);
+    const programCount = (schools) =>
+      schools.reduce((n, s) => n + (Array.isArray(s.programs) ? s.programs.length : 0), 0);
+    const previousDbns = new Set(previous.map(dbn).filter(Boolean));
+    const currentDbns = new Set(current.map(dbn).filter(Boolean));
+    const added = [...currentDbns].filter((d) => !previousDbns.has(d));
+    const removed = [...previousDbns].filter((d) => !currentDbns.has(d));
+    const fmt = (list) => (list.length ? list.join(", ") : "(none)");
+
+    console.log(`Automated school data refresh.
+
+- School count: ${previous.length} -> ${current.length}
+- Added DBNs: ${fmt(added)}
+- Removed DBNs: ${fmt(removed)}
+- Program count: ${programCount(previous)} -> ${programCount(current)}
+- Fetched at: ${fetchedAt}
+
+This run used the validated refresh pipeline:
+- scrape NYC-SIFT, DOE Open Data, and MySchools program data
+- validate school count, required fields, and MySchools program provenance
+- rebuild RAG embeddings
+
+This PR is intended to be merged by the VPS data refresh runner, not by a human. Run \`scripts/vps-data-refresh.sh merge\` after CI passes; it only merges when the changed files are the expected data artifacts and the GitHub CI test is green. Loading happens in Vercel after the data PR merges (/api/cron/seed-schools).`);
+  ' "$previous_file" "schools.json" "$fetched_at"
+}
+
 open_refresh_pr() {
   require_env OPENAI_API_KEY
   require_gh_token
@@ -59,11 +133,26 @@ open_refresh_pr() {
   git switch -C "$BRANCH" origin/main
   install_dependencies
 
-  ADMITDAY_SKIP_POSTGRES_SEED=1 npm run refresh:data
+  local previous_schools
+  previous_schools="$(mktemp)"
+  cp schools.json "$previous_schools" 2>/dev/null || echo '[]' >"$previous_schools"
+
+  local refresh_log
+  refresh_log="$(mktemp)"
+
+  if ! ADMITDAY_SKIP_POSTGRES_SEED=1 npm run refresh:data >"$refresh_log" 2>&1; then
+    cat "$refresh_log"
+    report_refresh_failure "$(tail -n 200 "$refresh_log")"
+    rm -f "$refresh_log" "$previous_schools"
+    exit 1
+  fi
+  cat "$refresh_log"
+  rm -f "$refresh_log"
 
   git add schools.json data/school-embeddings.json
   if git diff --cached --quiet; then
     echo "No tracked data changes to commit."
+    rm -f "$previous_schools"
     return 0
   fi
 
@@ -72,17 +161,8 @@ open_refresh_pr() {
   gh workflow run ci.yml --repo "$REPO" --ref "$BRANCH"
 
   local body
-  body="$(cat <<'PR_BODY'
-Automated weekly school data refresh.
-
-This run used the validated refresh pipeline:
-- scrape NYC-SIFT, DOE Open Data, and MySchools program data
-- validate school count, required fields, and MySchools program provenance
-- rebuild RAG embeddings
-
-This PR is intended to be merged by the VPS data refresh runner, not by a human. Run `scripts/vps-data-refresh.sh merge` after CI passes; it only merges when the changed files are the expected data artifacts and the GitHub CI test is green. Loading happens in Vercel after the data PR merges (/api/cron/seed-schools).
-PR_BODY
-)"
+  body="$(build_refresh_pr_body "$previous_schools")"
+  rm -f "$previous_schools"
 
   if gh pr view "$BRANCH" --repo "$REPO" --json number >/dev/null 2>&1; then
     gh pr edit "$BRANCH" --repo "$REPO" --title "data: refresh school program data" --body "$body"
