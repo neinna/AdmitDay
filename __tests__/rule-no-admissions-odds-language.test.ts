@@ -11,6 +11,8 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import { BANNED_ADMISSIONS_ODDS_PHRASES, findBannedPhrases } from '../lib/banned-phrases'
+import { ADMISSION_METHOD_COPY, admissionMethodCopy } from '../lib/school-list-utils'
+import { School } from '../types'
 
 const ROOT = path.join(__dirname, '..')
 
@@ -103,6 +105,58 @@ describe('Rule #127.3: no admissions-odds language anywhere', () => {
   it('matches case-insensitively', () => {
     expect(findBannedPhrases('YOUR ODDS of getting in look strong')).toContain('your odds')
     expect(findBannedPhrases('This is a REACH SCHOOL for most applicants')).toContain('reach school')
+  })
+
+  // ── Issue #216: /find admissions-evidence copy (citywide percentile + the
+  // seven admissions-method row strings) must carry none of this language —
+  // neither the phrases above nor the standalone words the issue names by
+  // name (a derived rating the PRD forbids, even as a bare adjective). ──
+
+  const ISSUE_216_BANNED_WORDS = ['low', 'moderate', 'competitive', 'reach', 'safety', 'likely', 'odds']
+
+  function makeSchoolStub(dbn: string): School {
+    return {
+      dbn,
+      name: 'Test School',
+      borough: 'Brooklyn',
+      size: 'medium',
+      total_students: null,
+      applicants_per_seat: null,
+      academic_score_pct: null,
+      survey_score_pct: null,
+      admissions_types: [],
+      programs: [],
+      flags: {
+        has_shsat: false,
+        has_audition: false,
+        has_screened: false,
+        has_open: false,
+        has_borough_priority: false,
+        is_hidden_gem: false,
+        has_consortium: false,
+        has_ib: false,
+      },
+      doe_data: { overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '' },
+      sift_url: '',
+      last_verified: '',
+    }
+  }
+
+  it('issue #216: none of the seven admissions-method row strings contain a banned phrase', () => {
+    for (const method of Object.keys(ADMISSION_METHOD_COPY)) {
+      expect(findBannedPhrases(ADMISSION_METHOD_COPY[method])).toEqual([])
+    }
+    // The rendered SHSAT line (base copy + published cutoffs) too.
+    expect(findBannedPhrases(admissionMethodCopy('SHSAT', makeSchoolStub('02M475')))).toEqual([])
+  })
+
+  it('issue #216: none of the seven admissions-method row strings contain the standalone banned words (Low, Moderate, Competitive, Reach, Safety, Likely, odds)', () => {
+    for (const method of Object.keys(ADMISSION_METHOD_COPY)) {
+      const copy = admissionMethodCopy(method, makeSchoolStub('02M475')).toLowerCase()
+      for (const word of ISSUE_216_BANNED_WORDS) {
+        expect(copy).not.toMatch(new RegExp(`\\b${word}\\b`))
+      }
+    }
   })
 
   it('an explicit allowlist entry exempts only that exact approved string, not the pattern generally', () => {
