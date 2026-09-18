@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePostHog } from 'posthog-js/react'
 import { ADDED_SCHOOLS_KEY, trackLabel } from '@/lib/school-list-utils'
 import { Eyebrow } from '@/components/ui'
+import AuthControls from '@/components/AuthControls'
 import {
   buildComposition,
   moveItem,
@@ -36,6 +37,30 @@ type Props = {
 }
 
 const SAVED_ORDER_KEY = 'admitday_my_schools_order'
+
+// Issue #199: /my-schools had no header at all before this — the sign-in /
+// sign-up buttons are required on every page, so this adds the same header
+// pattern already duplicated across page.tsx, FindClient.tsx, and SiteHeader.tsx.
+function Header() {
+  return (
+    <header className="flex items-center justify-between px-5 min-[900px]:px-9 py-[18px] border-b border-rule">
+      <Link href="/" className="flex items-center gap-[9px]">
+        <span className="w-[9px] h-[9px] bg-accent inline-block" />
+        <div className="flex items-baseline">
+          <span className="font-display font-bold text-[21px] text-ink tracking-[-0.035em]">Admit</span>
+          <span className="font-wordmark italic text-[24px] text-accent ml-[3px] tracking-[-0.01em]">Day</span>
+        </div>
+      </Link>
+      <div className="flex items-center gap-7">
+        <nav className="flex items-center gap-7 text-[14.5px] text-muted">
+          <Link href="/find" className="hover:text-ink transition-colors duration-[120ms] ease-out">Find</Link>
+          <span className="text-ink font-medium border-b-2 border-accent pb-[3px]">My Schools</span>
+        </nav>
+        <AuthControls />
+      </div>
+    </header>
+  )
+}
 
 export default function MySchoolsClient({ index }: Props) {
   const posthog = usePostHog()
@@ -111,17 +136,20 @@ export default function MySchoolsClient({ index }: Props) {
     // Deliberately one line and one door. An onboarding panel was designed for
     // this state and cut.
     return (
-      <div className="px-5 min-[900px]:px-9 py-14">
-        <h1 className="font-display font-bold text-[40px] leading-[1.04] tracking-[-0.038em] text-ink">
-          My Schools
-        </h1>
-        <p className="mt-5 text-[15px] text-muted">
-          Nothing saved yet.{' '}
-          <Link href="/find" className="text-accent underline underline-offset-[3px]">
-            Find schools
-          </Link>{' '}
-          and add the ones you want to compare.
-        </p>
+      <div>
+        <Header />
+        <div className="px-5 min-[900px]:px-9 py-14">
+          <h1 className="font-display font-bold text-[40px] leading-[1.04] tracking-[-0.038em] text-ink">
+            My Schools
+          </h1>
+          <p className="mt-5 text-[15px] text-muted">
+            Nothing saved yet.{' '}
+            <Link href="/find" className="text-accent underline underline-offset-[3px]">
+              Find schools
+            </Link>{' '}
+            and add the ones you want to compare.
+          </p>
+        </div>
       </div>
     )
   }
@@ -130,6 +158,7 @@ export default function MySchoolsClient({ index }: Props) {
 
   return (
     <div>
+      <Header />
       <div className="flex items-end justify-between gap-5 px-5 min-[900px]:px-9 pt-[30px] pb-6 border-b border-rule">
         <h1 className="font-display font-bold text-[30px] min-[700px]:text-[40px] leading-[1.04] tracking-[-0.038em] text-ink">
           My Schools
