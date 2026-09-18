@@ -139,11 +139,11 @@ describe('agent-coordinator.sh PR flow', () => {
     )
     expect(successBranch).not.toBeNull()
     const body = successBranch![1]
-    // The risk check must gate auto-merge: escalated diffs get "needs-review"
-    // and skip github_enable_automerge; everything else gets "pr-open" and
-    // auto-merge enabled.
+    // The risk check must gate auto-merge: escalated diffs get "needs-you"
+    // (a PR exists and waits on a human) and skip github_enable_automerge;
+    // everything else gets "pr-open" and auto-merge enabled.
     expect(body).toMatch(/RISK: LIVE-VERIFY-NEEDED/)
-    expect(body).toMatch(/needs-review/)
+    expect(body).toContain('github_label "$ISSUE_NUMBER" "needs-you"')
     expect(body).toMatch(/github_enable_automerge/)
     expect(body).toMatch(/pr-open/)
   })
@@ -196,7 +196,8 @@ describe('agent-coordinator.sh PR flow', () => {
     expect(coordinatorSource).toContain('--max-budget-usd|max(?:imum)? budget')
     expect(coordinatorSource).toContain('OUTCOME="budget-exhausted"')
     expect(coordinatorSource).toContain('This is a controlled cost stop')
-    expect(coordinatorSource).toContain('GH_LABEL="needs-review"')
+    // No PR exists after a budget stop, so this is a flag, not a task.
+    expect(coordinatorSource).toContain('OUTCOME="budget-exhausted"; GH_LABEL="agent-stuck"')
     expect(coordinatorSource).toContain('return 0')
   })
 
@@ -285,10 +286,11 @@ describe('agent-coordinator.sh reconcile_open_prs', () => {
     expect(body).toContain('check-runs')
   })
 
-  it('escalates a real merge conflict with needs-review instead of trying to resolve it', () => {
+  it('escalates a real merge conflict with needs-you instead of trying to resolve it', () => {
     const body = reconcileFn![0]
     expect(body).toMatch(/MERGEABLE_STATE.*=.*dirty/)
-    expect(body).toContain('github_label "$ISSUE_NUM" "needs-review"')
+    // A conflicted PR exists and a human must resolve it: needs-you.
+    expect(body).toContain('github_label "$ISSUE_NUM" "needs-you"')
     expect(body).toContain('github_comment')
     expect(body).toMatch(/merge conflict/)
   })
@@ -301,7 +303,7 @@ describe('agent-coordinator.sh reconcile_open_prs', () => {
     expect(body).not.toContain('"/merge"')
   })
 
-  it('does not use Telegram for escalation — needs-review label plus an issue comment only', () => {
+  it('does not use Telegram for escalation — needs-you label plus an issue comment only', () => {
     const body = reconcileFn![0]
     expect(body).not.toContain('telegram ')
     expect(body).not.toContain('telegram"')
@@ -1887,3 +1889,42 @@ describe('Issue #56: source — isEligible has audition-only guard before has_op
 
 
 // ── Issue #84: Hide the unbuilt "Full Access" paid-tier UI ────────────────────
+
+// ── needs-you vs agent-stuck ────────────────────────────────────────────────
+// "needs-review" used to mean two unrelated things: a PR waiting on a human,
+// and an agent that gave up with no PR at all. On 2026-09-17 three issues sat
+// under that label and none of them had anything to review, which read as a
+// backlog of neglect. The split makes the label say whether you must act.
+describe('agent-coordinator.sh labels say whether a human must act', () => {
+  const src = fs.readFileSync(path.join(__dirname, '../agent-coordinator.sh'), 'utf-8')
+
+  it('never writes the retired needs-review label', () => {
+    expect(src).not.toMatch(/github_label [^\n]*"needs-review"/)
+    expect(src).not.toMatch(/GH_LABEL="needs-review"/)
+  })
+
+  it('uses agent-stuck for every outcome that opens no pull request', () => {
+    expect(src).toContain('OUTCOME="budget-exhausted"; GH_LABEL="agent-stuck"')
+    expect(src).toContain('OUTCOME="failed"; GH_LABEL="agent-stuck"')
+    expect(src).toMatch(/GH_LABEL="agent-stuck"\n\s*PR_OUTCOME="creation-failed"/)
+  })
+})
+
+// ── Escalation is narrowed to real risk ─────────────────────────────────────
+// Reading a new environment variable is not handling a secret. Before this,
+// every issue that added a config value escalated to a human — which on
+// 2026-09-17 was all five remaining launch issues, including ones whose only
+// "risk" was reading LANGFUSE_* or a KV URL through process.env.
+describe('reviewer escalation trigger', () => {
+  const src = fs.readFileSync(path.join(__dirname, '../agent-coordinator.sh'), 'utf-8')
+
+  it('tells the reviewer not to escalate on a plain env-var read', () => {
+    expect(src).toContain('Do NOT add it merely because the diff reads a new environment variable through process.env')
+  })
+
+  it('still escalates the categories that genuinely cannot be verified in CI', () => {
+    expect(src).toContain('changes the database/connection layer, schema, migrations, or seeding')
+    expect(src).toContain('changes how a secret, credential, or session is stored, transmitted, logged, or validated')
+    expect(src).toContain('changes deploy/infra config')
+  })
+})
