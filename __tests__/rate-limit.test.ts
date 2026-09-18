@@ -2,7 +2,8 @@
  * __tests__/rate-limit.test.ts
  *
  * Unit tests for the LLM-route rate limiter (issue #82), extended in
- * issue #197 with a durable per-IP store and a global daily LLM ceiling.
+ * issue #197 with a durable per-IP store and a global daily LLM ceiling,
+ * and moved in issue #225 from Upstash Redis to Vercel Postgres.
  * Uses fake timers so window resets need no real waiting, and a minimal
  * fake NextRequest (headers.get shim) — no real server.
  */
@@ -19,8 +20,98 @@ function fakeRequest(ip?: string): NextRequest {
   } as unknown as NextRequest
 }
 
+const mockSql = jest.fn()
+jest.mock('@vercel/postgres', () => ({
+  sql: (...args: unknown[]) => mockSql(...args),
+}))
+
+/**
+ * A minimal fake of the `rate_limits` Postgres table, driven off the same
+ * single-statement query lib/rate-limit.ts sends. Backed by a plain Map so
+ * state persists across separately `require`d module instances —
+ * simulating a durable store shared by lambdas that don't share memory.
+ */
+function createFakePostgres() {
+  interface Entry {
+    count: number
+    expiresAt: number
+  }
+  const store = new Map<string, Entry>()
+
+  function getLive(key: string, now: number): Entry | undefined {
+    const entry = store.get(key)
+    if (entry && entry.expiresAt <= now) {
+      store.delete(key)
+      return undefined
+    }
+    return entry
+  }
+
+  const impl = jest.fn((strings: readonly string[], ...values: unknown[]) => {
+    const text = strings.join('')
+    const now = Date.now()
+
+    if (text.includes('CREATE TABLE')) {
+      return Promise.resolve({ rows: [] })
+    }
+
+    if (text.includes('WITH ip AS')) {
+      const [ipKey, windowSec, dayKey, nextMidnightIso, maxRequests] = values as [
+        string,
+        number,
+        string,
+        string,
+        number
+      ]
+
+      let ipEntry = getLive(ipKey, now)
+      if (!ipEntry) {
+        ipEntry = { count: 1, expiresAt: now + windowSec * 1000 }
+      } else {
+        ipEntry.count += 1
+      }
+      store.set(ipKey, ipEntry)
+
+      let dayCount: number | null = null
+      if (ipEntry.count <= maxRequests) {
+        let dayEntry = getLive(dayKey, now)
+        if (!dayEntry) {
+          dayEntry = { count: 1, expiresAt: new Date(nextMidnightIso).getTime() }
+        } else {
+          dayEntry.count += 1
+        }
+        store.set(dayKey, dayEntry)
+        dayCount = dayEntry.count
+      }
+
+      return Promise.resolve({
+        rows: [
+          {
+            ip_count: ipEntry.count,
+            ip_expires_at: new Date(ipEntry.expiresAt).toISOString(),
+            day_count: dayCount,
+          },
+        ],
+      })
+    }
+
+    return Promise.resolve({ rows: [] })
+  })
+
+  return { impl, store }
+}
+
+/** Re-`require`s the module fresh, simulating a separate warm lambda instance. */
+function loadFreshModule(): typeof import('@/lib/rate-limit') {
+  jest.resetModules()
+  return require('@/lib/rate-limit')
+}
+
 beforeEach(() => {
   jest.useFakeTimers()
+  mockSql.mockReset()
+  const { impl } = createFakePostgres()
+  mockSql.mockImplementation(impl)
 })
 
 afterEach(() => {
@@ -93,99 +184,11 @@ describe('checkRateLimit (issue #82)', () => {
   })
 })
 
-// --- issue #197: durable store + global daily ceiling -----------------
-
-/**
- * A minimal fake of Upstash's REST `/pipeline` endpoint, backed by a
- * plain Map so state persists across separately `require`d module
- * instances — simulating a durable store shared by lambdas that don't
- * share memory. Supports just the commands lib/rate-limit.ts sends.
- */
-function createFakeRedis() {
-  interface Entry {
-    value: number
-    expiresAt: number | null
-  }
-  const store = new Map<string, Entry>()
-
-  function getLive(key: string): Entry | undefined {
-    const entry = store.get(key)
-    if (entry && entry.expiresAt !== null && entry.expiresAt <= Date.now()) {
-      store.delete(key)
-      return undefined
-    }
-    return entry
-  }
-
-  function handle([op, key, ...args]: (string | number)[]): {
-    result?: unknown
-    error?: string
-  } {
-    const now = Date.now()
-    const k = String(key)
-    switch (op) {
-      case 'INCR': {
-        const entry = getLive(k) ?? { value: 0, expiresAt: null }
-        entry.value += 1
-        store.set(k, entry)
-        return { result: entry.value }
-      }
-      case 'DECR': {
-        const entry = getLive(k) ?? { value: 0, expiresAt: null }
-        entry.value -= 1
-        store.set(k, entry)
-        return { result: entry.value }
-      }
-      case 'PEXPIRE':
-      case 'EXPIRE': {
-        const ms = Number(args[0]) * (op === 'EXPIRE' ? 1000 : 1)
-        const nx = args[1] === 'NX'
-        const entry = getLive(k)
-        if (!entry) return { result: 0 }
-        if (nx && entry.expiresAt !== null) return { result: 0 }
-        entry.expiresAt = now + ms
-        return { result: 1 }
-      }
-      case 'PTTL': {
-        const entry = getLive(k)
-        if (!entry) return { result: -2 }
-        if (entry.expiresAt === null) return { result: -1 }
-        return { result: entry.expiresAt - now }
-      }
-      default:
-        return { error: `unsupported command ${op}` }
-    }
-  }
-
-  const fetchImpl = jest.fn(async (_url: string, init: { body: string }) => {
-    const commands = JSON.parse(init.body) as (string | number)[][]
-    return { ok: true, json: async () => commands.map(handle) }
-  })
-
-  return { fetchImpl, store }
-}
-
-/** Re-`require`s the module fresh, simulating a separate warm lambda instance. */
-function loadFreshModule(): typeof import('@/lib/rate-limit') {
-  jest.resetModules()
-  return require('@/lib/rate-limit')
-}
-
-describe('checkRateLimit — durable store (issue #197)', () => {
-  const originalFetch = global.fetch
-  const originalEnv = { ...process.env }
-
-  afterEach(() => {
-    global.fetch = originalFetch
-    process.env = { ...originalEnv }
-  })
-
+describe('checkRateLimit — durable Postgres store (issue #225)', () => {
   it('shares one counter across two separate module instances backed by the same store', async () => {
     jest.setSystemTime(10_000_000)
-    process.env.UPSTASH_REDIS_REST_URL = 'https://fake-redis.example.com'
-    process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token'
-    const { fetchImpl } = createFakeRedis()
-    global.fetch = fetchImpl as unknown as typeof fetch
+    const { impl } = createFakePostgres()
+    mockSql.mockImplementation(impl)
 
     // Two independent module instances simulate two Vercel lambdas that
     // don't share memory but do share the durable store over the network.
@@ -204,29 +207,21 @@ describe('checkRateLimit — durable store (issue #197)', () => {
     expect((await instanceB.checkRateLimit(req)).ok).toBe(false)
   })
 
-  it('falls back to in-memory limiting and still serves the request when the store is unreachable', async () => {
+  it('falls back to in-memory limiting and still serves the request when the store errors', async () => {
     jest.setSystemTime(11_000_000)
-    process.env.UPSTASH_REDIS_REST_URL = 'https://fake-redis.example.com'
-    process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token'
-    global.fetch = jest.fn(() =>
-      Promise.reject(new Error('network down'))
-    ) as unknown as typeof fetch
+    mockSql.mockRejectedValue(new Error('connection refused'))
 
     const mod = loadFreshModule()
     const req = fakeRequest('8.8.8.8')
 
-    // A KV outage must degrade to the in-memory floor, never to "no limit
-    // at all" and never to "everything is a 429".
+    // A store outage must degrade to the in-memory floor, never to "no
+    // limit at all" and never to "everything is a 429".
     expect(await mod.checkRateLimit(req)).toEqual({ ok: true })
   })
 
-  it('still enforces the in-memory cap once the store is unreachable', async () => {
+  it('still enforces the in-memory cap once the store errors', async () => {
     jest.setSystemTime(12_000_000)
-    process.env.UPSTASH_REDIS_REST_URL = 'https://fake-redis.example.com'
-    process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token'
-    global.fetch = jest.fn(() =>
-      Promise.reject(new Error('network down'))
-    ) as unknown as typeof fetch
+    mockSql.mockRejectedValue(new Error('connection refused'))
 
     const mod = loadFreshModule()
     const req = fakeRequest('7.7.7.7')
@@ -236,39 +231,31 @@ describe('checkRateLimit — durable store (issue #197)', () => {
     expect((await mod.checkRateLimit(req)).ok).toBe(false)
   })
 
-  it('behaves exactly like the in-memory limiter, without touching the network, when store env vars are unset', async () => {
+  it('falls back to in-memory when the store does not respond within the timeout', async () => {
     jest.setSystemTime(13_000_000)
-    delete process.env.UPSTASH_REDIS_REST_URL
-    delete process.env.UPSTASH_REDIS_REST_TOKEN
-    const fetchSpy = jest.fn()
-    global.fetch = fetchSpy as unknown as typeof fetch
+    mockSql.mockImplementation(() => new Promise(() => {})) // never resolves
 
     const mod = loadFreshModule()
-    const req = fakeRequest('6.6.6.6')
-    for (let i = 0; i < mod.MAX_REQUESTS; i++) {
-      expect(await mod.checkRateLimit(req)).toEqual({ ok: true })
-    }
-    expect((await mod.checkRateLimit(req)).ok).toBe(false)
-    expect(fetchSpy).not.toHaveBeenCalled()
+    const req = fakeRequest('12.12.12.12')
+
+    const resultPromise = mod.checkRateLimit(req)
+    await jest.advanceTimersByTimeAsync(1500)
+    expect(await resultPromise).toEqual({ ok: true })
   })
 })
 
 describe('checkRateLimit — global daily LLM ceiling (issue #197)', () => {
-  const originalFetch = global.fetch
   const originalEnv = { ...process.env }
 
   afterEach(() => {
-    global.fetch = originalFetch
     process.env = { ...originalEnv }
   })
 
   it('trips once the daily ceiling is hit via the durable store, independent of any single IP', async () => {
     jest.setSystemTime(Date.UTC(2026, 8, 18, 12, 0, 0)) // 2026-09-18 noon UTC
-    process.env.UPSTASH_REDIS_REST_URL = 'https://fake-redis.example.com'
-    process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token'
     process.env.DAILY_LLM_CEILING = '3'
-    const { fetchImpl } = createFakeRedis()
-    global.fetch = fetchImpl as unknown as typeof fetch
+    const { impl } = createFakePostgres()
+    mockSql.mockImplementation(impl)
 
     const mod = loadFreshModule()
     expect(mod.DAILY_LLM_CEILING).toBe(3)
@@ -289,11 +276,9 @@ describe('checkRateLimit — global daily LLM ceiling (issue #197)', () => {
   })
 
   it('resets at the UTC midnight boundary', async () => {
-    process.env.UPSTASH_REDIS_REST_URL = 'https://fake-redis.example.com'
-    process.env.UPSTASH_REDIS_REST_TOKEN = 'fake-token'
     process.env.DAILY_LLM_CEILING = '1'
-    const { fetchImpl } = createFakeRedis()
-    global.fetch = fetchImpl as unknown as typeof fetch
+    const { impl } = createFakePostgres()
+    mockSql.mockImplementation(impl)
 
     jest.setSystemTime(Date.UTC(2026, 8, 18, 23, 59, 59))
     const mod = loadFreshModule()
@@ -305,12 +290,10 @@ describe('checkRateLimit — global daily LLM ceiling (issue #197)', () => {
     expect(await mod.checkRateLimit(fakeRequest('6.6.6.6'))).toEqual({ ok: true })
   })
 
-  it('also applies to the in-memory fallback when the store is unconfigured', async () => {
+  it('also applies to the in-memory fallback when the store errors', async () => {
     jest.setSystemTime(Date.UTC(2026, 8, 18, 12, 0, 0))
-    delete process.env.UPSTASH_REDIS_REST_URL
-    delete process.env.UPSTASH_REDIS_REST_TOKEN
     process.env.DAILY_LLM_CEILING = '2'
-    global.fetch = jest.fn() as unknown as typeof fetch
+    mockSql.mockRejectedValue(new Error('connection refused'))
 
     const mod = loadFreshModule()
     expect(await mod.checkRateLimit(fakeRequest('1.1.1.1'))).toEqual({ ok: true })
@@ -326,11 +309,9 @@ describe('checkRateLimit — global daily LLM ceiling (issue #197)', () => {
 // family's very first request. In production (ceiling 2000) a single burst
 // would take the ask box down for everyone until UTC midnight.
 describe('checkRateLimit — rejected requests do not consume the daily ceiling', () => {
-  const originalFetch = global.fetch
   const originalEnv = { ...process.env }
 
   afterEach(() => {
-    global.fetch = originalFetch
     process.env = { ...originalEnv }
   })
 
@@ -341,9 +322,8 @@ describe('checkRateLimit — rejected requests do not consume the daily ceiling'
   }
 
   it('in memory: a flood from one IP does not lock out a different IP', async () => {
-    delete process.env.UPSTASH_REDIS_REST_URL
-    delete process.env.UPSTASH_REDIS_REST_TOKEN
     process.env.DAILY_LLM_CEILING = '20'
+    mockSql.mockRejectedValue(new Error('connection refused'))
     const mod = loadFreshModule()
 
     let allowed = 0
@@ -355,9 +335,8 @@ describe('checkRateLimit — rejected requests do not consume the daily ceiling'
   })
 
   it('in memory: the ceiling still trips after exactly DAILY_LLM_CEILING allowed calls', async () => {
-    delete process.env.UPSTASH_REDIS_REST_URL
-    delete process.env.UPSTASH_REDIS_REST_TOKEN
     process.env.DAILY_LLM_CEILING = '3'
+    mockSql.mockRejectedValue(new Error('connection refused'))
     const mod = loadFreshModule()
 
     for (const ip of ['a', 'b', 'c']) {
@@ -367,11 +346,9 @@ describe('checkRateLimit — rejected requests do not consume the daily ceiling'
   })
 
   it('durable store: a flood from one IP does not lock out a different IP, and the counter equals real LLM calls', async () => {
-    const { fetchImpl, store } = createFakeRedis()
-    global.fetch = fetchImpl as unknown as typeof fetch
-    process.env.UPSTASH_REDIS_REST_URL = 'https://fake-upstash.example'
-    process.env.UPSTASH_REDIS_REST_TOKEN = 'token'
     process.env.DAILY_LLM_CEILING = '20'
+    const { impl, store } = createFakePostgres()
+    mockSql.mockImplementation(impl)
     const mod = loadFreshModule()
 
     let allowed = 0
@@ -381,8 +358,8 @@ describe('checkRateLimit — rejected requests do not consume the daily ceiling'
     expect(allowed).toBe(mod.MAX_REQUESTS)
     expect((await mod.checkRateLimit(reqFrom('2.2.2.2'))).ok).toBe(true)
 
-    const dailyKey = Array.from(store.keys()).find((k) => k.startsWith('ratelimit:daily:'))
-    expect(dailyKey).toBeDefined()
-    expect(store.get(dailyKey!)!.value).toBe(mod.MAX_REQUESTS + 1)
+    const dayKey = Array.from(store.keys()).find((k) => k.startsWith('day:'))
+    expect(dayKey).toBeDefined()
+    expect(store.get(dayKey!)!.count).toBe(mod.MAX_REQUESTS + 1)
   })
 })
