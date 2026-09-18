@@ -253,11 +253,13 @@ PYEOF
   return 0
 }
 
-# lf_emit ISSUE TITLE BRANCH OUTCOME ATTEMPTS LABEL START_NS END_NS TEST BUILD REVIEWER PR
+# lf_emit ISSUE TITLE BRANCH OUTCOME ATTEMPTS LABEL START_NS END_NS TEST BUILD REVIEWER PR [TRACE_NAME]
 # Assembles this run's buffered phases into one payload and hands it to the only
 # script that talks to Langfuse. Hard-timed and swallowed: a hung or dead
 # Langfuse costs the loop at most 30 seconds and nothing else. The same
 # sanitized payload is also written under RUN_METADATA_DIR for baseline analysis.
+# TRACE_NAME defaults to "agent-run" (real issue runs); the periodic reconcile
+# sweep passes "agent-reconcile" so it never dilutes agent-run charts (issue #262).
 lf_emit() {
   local RUN_FILE="$LF_RUN_FILE"
   LF_RUN_FILE=""
@@ -274,7 +276,7 @@ lf_emit() {
   LF_ISSUE="$1" LF_TITLE="$2" LF_BRANCH="$3" LF_OUTCOME="$4" LF_ATTEMPTS="$5" \
   LF_LABEL="$6" LF_TSTART="$7" LF_TEND="$8" LF_SPANS="$RUN_FILE" \
   LF_TEST_RESULT="$9" LF_BUILD_RESULT="${10}" LF_REVIEWER_RESULT="${11}" \
-  LF_PR_OUTCOME="${12}" LF_METADATA_DIR="$RUN_METADATA_DIR" \
+  LF_PR_OUTCOME="${12}" LF_TRACE_NAME="${13:-agent-run}" LF_METADATA_DIR="$RUN_METADATA_DIR" \
   GITHUB_REPO="$GITHUB_REPO" \
   python3 << 'PYEOF' 2>> "$LOG_FILE" | timeout 30 "$LF_TRACE_PYTHON" "$LF_TRACE_SCRIPT" 2>> "$LOG_FILE"
 import json, os
@@ -309,6 +311,7 @@ trace = {
     "build_result": os.environ.get("LF_BUILD_RESULT") or None,
     "reviewer_result": os.environ.get("LF_REVIEWER_RESULT") or None,
     "pr_outcome": os.environ.get("LF_PR_OUTCOME") or None,
+    "trace_name": os.environ.get("LF_TRACE_NAME") or None,
     "start_ns": num("LF_TSTART"),
     "end_ns": num("LF_TEND"),
 }
@@ -551,7 +554,7 @@ except Exception:
   T1=$(lf_now_ns)
   lf_record "reconcile" "$T0" "$T1" "1" "" "" "swept"
 
-  lf_emit "" "reconcile-open-prs" "" "swept" "" "" "$RUN_START" "$(lf_now_ns)" "" "" "" ""
+  lf_emit "" "reconcile-open-prs" "" "swept" "" "" "$RUN_START" "$(lf_now_ns)" "" "" "" "" "agent-reconcile"
   return 0
 }
 

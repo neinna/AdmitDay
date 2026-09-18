@@ -58,7 +58,7 @@ import sys
 WATCHDOG_SECONDS = int(os.environ.get("LANGFUSE_TRACE_TIMEOUT", "20"))
 HTTP_TIMEOUT_SECONDS = 5
 
-TRACE_NAME = "agent-run"
+DEFAULT_TRACE_NAME = "agent-run"
 VALID_OUTCOMES = ("success", "failed", "needs-review")
 
 # Phases that represent an LLM call become Langfuse generations (they carry
@@ -90,6 +90,7 @@ TRACE_KEYS = (
     "reviewer_result",
     "pr_outcome",
     "metadata_file",
+    "trace_name",
     "start_ns",
     "end_ns",
 )
@@ -211,9 +212,14 @@ def emit(raw):
     issue_number = trace_meta.get("issue_number")
     models = sorted({s["model"] for s in spans if s.get("model")})
 
+    # Real issue runs stay "agent-run"; the coordinator's periodic reconcile
+    # sweep passes trace_name="agent-reconcile" so its near-zero-work traces
+    # never dilute an agent-run latency/count chart (issue #262).
+    trace_name = trace_meta.get("trace_name") or DEFAULT_TRACE_NAME
+
     # Raw nanosecond edges are already the span's own start/end; keep them out of
     # metadata so the UI shows the one timing number a human reads.
-    metadata = {k: v for k, v in trace_meta.items() if k not in ("start_ns", "end_ns")}
+    metadata = {k: v for k, v in trace_meta.items() if k not in ("start_ns", "end_ns", "trace_name")}
     metadata["latency_ms"] = _ms(t_start, t_end)
     metadata["models"] = models
 
@@ -240,7 +246,7 @@ def emit(raw):
             return client.start_observation(name=name, as_type=as_type, **kwargs)
 
     with propagate_attributes(
-        trace_name=TRACE_NAME,
+        trace_name=trace_name,
         metadata=metadata,
         tags=tags,
         user_id="coding-agent",
@@ -248,7 +254,7 @@ def emit(raw):
         # its earlier attempts instead of scattering across the trace list.
         session_id="issue-%s" % issue_number if issue_number is not None else None,
     ):
-        root = new_span(TRACE_NAME, t_start, None, LangfuseSpan)
+        root = new_span(trace_name, t_start, None, LangfuseSpan)
         root.update(metadata=metadata, output={"outcome": trace_meta["outcome"]})
 
         # Nest the phases under the run. If the SDK ever stops exposing the
