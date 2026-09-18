@@ -209,6 +209,80 @@ describe('components/FeedbackRow.tsx accepts an optional traceId (issue #195)', 
   })
 })
 
+// ── FeedbackRow: a rating never leaks from one trace onto another via ──────
+// ── the shared per-screen localStorage key (the rejected review's finding) ─
+//
+// This exercises the actual read/write functions FeedbackRow's mount effect
+// and click handler call — not just source text — with a hand-rolled
+// localStorage (this repo's jest runs with testEnvironment: 'node', so
+// there is no real one), so it genuinely reproduces the leak scenario a
+// reviewer found: rate trace A "up", then a fresh row mounts for trace B.
+
+describe('readPersistedRating / persistRating never conflate two different traces (issue #195)', () => {
+  const { readPersistedRating, persistRating } = require('@/components/FeedbackRow')
+
+  let store: Record<string, string>
+
+  beforeEach(() => {
+    store = {}
+    ;(global as unknown as { localStorage: Storage }).localStorage = {
+      getItem: (key: string) => (key in store ? store[key] : null),
+      setItem: (key: string, value: string) => {
+        store[key] = value
+      },
+      removeItem: (key: string) => {
+        delete store[key]
+      },
+      clear: () => {
+        store = {}
+      },
+      key: () => null,
+      length: 0,
+    }
+  })
+
+  it('persistRating is a no-op when a traceId is present — a traced rating never reaches shared storage', () => {
+    persistRating('find_ask', 'trace-A', 'up')
+    expect(store).toEqual({})
+  })
+
+  it('readPersistedRating always returns null for a traced row, even if the shared key happens to hold a value', () => {
+    store['feedback_find_ask'] = 'up'
+    expect(readPersistedRating('find_ask', 'trace-B')).toBeNull()
+  })
+
+  it('end-to-end: rating trace A does not make trace B appear pre-rated', () => {
+    // Mount for trace A, rate up.
+    expect(readPersistedRating('find_ask', 'trace-A')).toBeNull()
+    persistRating('find_ask', 'trace-A', 'up')
+
+    // A brand-new answer arrives under a different trace id — FindClient
+    // remounts FeedbackRow (key={askTraceId}), so this call is exactly the
+    // mount-time hydration read for the new row.
+    expect(readPersistedRating('find_ask', 'trace-B')).toBeNull()
+  })
+
+  it('preserves the pre-#195 behavior for screens with no traceId: persists and rehydrates across mounts', () => {
+    expect(readPersistedRating('school_list')).toBeNull()
+    persistRating('school_list', undefined, 'down')
+    expect(readPersistedRating('school_list')).toBe('down')
+
+    // Deselecting (rating -> null) clears it, same as before.
+    persistRating('school_list', undefined, null)
+    expect(readPersistedRating('school_list')).toBeNull()
+  })
+
+  it('requirements screen (no traceId) also still persists and rehydrates as before', () => {
+    persistRating('requirements', undefined, 'up')
+    expect(readPersistedRating('requirements')).toBe('up')
+  })
+
+  it('screens are still isolated from each other (school_list rating does not leak into requirements)', () => {
+    persistRating('school_list', undefined, 'up')
+    expect(readPersistedRating('requirements')).toBeNull()
+  })
+})
+
 // ── FindClient: trace id must never survive into the next ask (reviewer risk) ─
 
 describe('FindClient — ask trace id lifecycle (issue #195)', () => {
