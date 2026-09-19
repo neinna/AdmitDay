@@ -61,7 +61,7 @@ const BUCKET_ORDER: { key: BucketKey; label: string; matches: (t: string) => boo
   },
   {
     key: 'audition',
-    label: 'Audition / Portfolio',
+    label: 'Audition / portfolio',
     matches: (t) => t.includes('audition') || t.includes('portfolio'),
   },
   {
@@ -75,7 +75,7 @@ const BUCKET_ORDER: { key: BucketKey; label: string; matches: (t: string) => boo
     // names it explicitly so a family isn't told "Open / Zoned" for a set that
     // is mostly Ed Opt — which in this dataset it usually is.
     key: 'open',
-    label: 'Open / Ed Opt / Zoned',
+    label: 'Open / Ed Opt / zoned',
     matches: () => true,
   },
 ]

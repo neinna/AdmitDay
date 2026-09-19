@@ -1,7 +1,12 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import Footer from '@/components/Footer'
 import AuthControls from '@/components/AuthControls'
 import { Eyebrow, DefinitionRow } from '@/components/ui'
+
+export const metadata: Metadata = {
+  title: 'Privacy · AdmitDay',
+}
 
 /**
  * /privacy — issue #198. Published before accounts (#179) exist, because the
@@ -71,7 +76,7 @@ const PROCESSORS: { label: string; value: string }[] = [
   {
     label: 'Clerk',
     value:
-      'Handles sign-up, log-in, and password reset, and stores your account details (name, email, password or Google sign-in) on AdmitDay’s behalf.',
+      'Handles sign-up, sign-in, and password reset, and stores your account details (name, email, password or Google sign-in) on AdmitDay’s behalf.',
   },
   {
     label: 'Google',
@@ -83,7 +88,7 @@ export default function PrivacyPage() {
   return (
     <main className="min-h-screen bg-white">
       <header className="flex items-center justify-between px-5 min-[900px]:px-9 py-[18px] border-b border-rule">
-        <Link href="/" className="flex items-center gap-[9px]">
+        <Link href="/" aria-label="AdmitDay home" className="flex items-center gap-[9px]">
           <span className="w-[9px] h-[9px] bg-accent inline-block" />
           <div className="flex items-baseline">
             <span className="font-display font-bold text-[21px] text-ink tracking-[-0.035em]">Admit</span>

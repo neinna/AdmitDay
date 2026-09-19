@@ -46,7 +46,7 @@ type Props = {
 function Header() {
   return (
     <header className="flex items-center justify-between px-5 min-[900px]:px-9 py-[18px] border-b border-rule">
-      <Link href="/" className="flex items-center gap-[9px]">
+      <Link href="/" aria-label="AdmitDay home" className="flex items-center gap-[9px]">
         <span className="w-[9px] h-[9px] bg-accent inline-block" />
         <div className="flex items-baseline">
           <span className="font-display font-bold text-[21px] text-ink tracking-[-0.035em]">Admit</span>
@@ -177,7 +177,7 @@ export default function ShortlistClient({ index, initialOrder, signedIn }: Props
           onClick={() => window.print()}
           className="bg-ink text-white text-[14px] font-medium px-5 py-[11px] hover:opacity-90 transition-opacity duration-[120ms] ease-out"
         >
-          Export
+          Export list
         </button>
       </div>
 
@@ -196,7 +196,7 @@ export default function ShortlistClient({ index, initialOrder, signedIn }: Props
             <span>Rank</span>
             <span>School</span>
             <span className="hidden min-[700px]:block">Track</span>
-            <span className="hidden min-[700px]:block">A/Seat</span>
+            <span className="hidden min-[700px]:block">Apps/seat</span>
             <span />
           </div>
 

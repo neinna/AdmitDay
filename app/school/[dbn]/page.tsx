@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import Footer from '@/components/Footer'
 import { getAllSchools } from '@/lib/load-schools'
@@ -25,6 +26,17 @@ import {
 } from '@/lib/school-detail-utils'
 import { buildProvenanceRows, summariseDataVintage } from '@/lib/data-provenance'
 import SchoolDetailClient from './SchoolDetailClient'
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { dbn: string }
+}): Promise<Metadata> {
+  const schools = await getAllSchools()
+  const school = findSchoolByDbn(schools, params.dbn)
+  if (!school) return { title: 'AdmitDay' }
+  return { title: `${formatSchoolName(school.name)} · AdmitDay` }
+}
 
 // Issue #116: the school detail view. Server component — loads via
 // getAllSchools() and does all data shaping here, so SchoolDetailClient only

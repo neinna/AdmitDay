@@ -438,28 +438,6 @@ describe('Issue #9: Jest setup in package.json', () => {
 
 // ── Issue #12/#84: Locked paid tier placeholders (removed in #84) ────────────
 
-describe('Issue #12/#84: SchoolList locked expand placeholder removed', () => {
-  const schoolListSource = fs.readFileSync(path.join(__dirname, '../components/SchoolList.tsx'), 'utf-8')
-
-  it('does NOT show a lock icon SVG (locked UI removed in #84)', () => {
-    expect(schoolListSource).not.toContain('M12 15v2m-6 4h12')
-  })
-
-  it('does NOT show "Full Access" label (locked UI removed in #84)', () => {
-    expect(schoolListSource).not.toContain('Full Access')
-  })
-
-  it('does NOT show "coming soon" label in the expand area', () => {
-    expect(schoolListSource).not.toContain('coming soon')
-  })
-
-  it('does NOT have a working "Load 15 more" button', () => {
-    expect(schoolListSource).not.toContain('>Load 15 more<')
-    expect(schoolListSource).not.toContain('Load 15 more\n')
-  })
-})
-
-
 // ── Issue #11: Fix incorrect "rank up to 12 schools" copy ───────────────────
 
 
@@ -512,37 +490,6 @@ describe('Issue #15: layout.tsx wraps with PHProvider', () => {
 
 
 // ── Issue #10: PostHog event tracking ───────────────────────────────────────
-
-
-describe('Issue #10: list_viewed event in SchoolList', () => {
-  const schoolListSource = fs.readFileSync(path.join(__dirname, '../components/SchoolList.tsx'), 'utf-8')
-
-  it('imports usePostHog from posthog-js/react', () => {
-    expect(schoolListSource).toContain("from 'posthog-js/react'")
-  })
-
-  it('calls posthog.capture with list_viewed', () => {
-    expect(schoolListSource).toContain("capture('list_viewed'")
-  })
-
-  it('captures total_count in list_viewed', () => {
-    expect(schoolListSource).toContain('total_count')
-  })
-})
-
-
-describe('Issue #10: source_link_clicked event in SchoolRow', () => {
-  const schoolRowSource = fs.readFileSync(path.join(__dirname, '../components/SchoolRow.tsx'), 'utf-8')
-
-  it('imports usePostHog from posthog-js/react', () => {
-    expect(schoolRowSource).toContain("from 'posthog-js/react'")
-  })
-
-  // Issue #53: source attribution and NYC-SIFT link removed — these events no longer fire
-  it('does NOT call posthog.capture with source_link_clicked (removed in #53)', () => {
-    expect(schoolRowSource).not.toContain("capture('source_link_clicked'")
-  })
-})
 
 
 // ── Issue #21: Fix next.config.js Sentry config crashing Server Actions ────
@@ -696,19 +643,6 @@ describe('Issue #22: FeedbackRow component', () => {
   })
 })
 
-describe('Issue #22: FeedbackRow added to SchoolList', () => {
-  const schoolListSource = fs.readFileSync(path.join(__dirname, '../components/SchoolList.tsx'), 'utf-8')
-
-  it('imports FeedbackRow', () => {
-    expect(schoolListSource).toContain("import FeedbackRow from './FeedbackRow'")
-  })
-
-  it('renders FeedbackRow with school_list screen', () => {
-    expect(schoolListSource).toContain('<FeedbackRow screen="school_list"')
-  })
-})
-
-
 // ── Issue #23: Move feedback thumbs to summary bar ───────────────────────────
 
 describe('Issue #23: FeedbackRow redesign — toggle and no text', () => {
@@ -747,31 +681,6 @@ describe('Issue #23: FeedbackRow redesign — toggle and no text', () => {
   })
 })
 
-describe('Issue #23: FeedbackRow placed in SummaryBar (SchoolList)', () => {
-  const schoolListSource = fs.readFileSync(path.join(__dirname, '../components/SchoolList.tsx'), 'utf-8')
-
-  it('FeedbackRow is inside SummaryBar function', () => {
-    const summaryBarBlock = schoolListSource.slice(
-      schoolListSource.indexOf('function SummaryBar'),
-      schoolListSource.indexOf('// ── Column header row'),
-    )
-    expect(summaryBarBlock).toContain('<FeedbackRow screen="school_list"')
-  })
-
-  it('FeedbackRow is NOT rendered standalone at the bottom of SchoolList', () => {
-    // The only usage is inside SummaryBar (the standalone bottom usage is gone)
-    const feedbackRowUses = schoolListSource.match(/<FeedbackRow/g) ?? []
-    expect(feedbackRowUses.length).toBe(1)
-  })
-
-  it('globals.css contains feedback-pop keyframe', () => {
-    const cssSource = fs.readFileSync(path.join(__dirname, '../app/globals.css'), 'utf-8')
-    expect(cssSource).toContain('@keyframes feedback-pop')
-    expect(cssSource).toContain('scale(1.1)')
-  })
-})
-
-
 // ── Issue #34: Remove commute filter entirely ────────────────────────────────
 
 describe('Issue #34: commute removed from types/index.ts', () => {
@@ -799,19 +708,6 @@ describe('Issue #35: types/index.ts boroughs array', () => {
 
 
 
-describe('Issue #35: SchoolRow isLocal uses boroughs array', () => {
-  const schoolRowSource = fs.readFileSync(path.join(__dirname, '../components/SchoolRow.tsx'), 'utf-8')
-
-  it('isLocal checks boroughs array length and includes', () => {
-    expect(schoolRowSource).toContain('userInputs.boroughs.length > 0')
-    expect(schoolRowSource).toContain('userInputs.boroughs.includes(school.borough)')
-  })
-
-  it('does NOT use the old All Boroughs string check', () => {
-    expect(schoolRowSource).not.toContain("'All Boroughs'")
-  })
-})
-
 // ── Issue #36: Update homepage title and tagline ─────────────────────────────
 
 
@@ -833,24 +729,6 @@ describe('Issue #37: types/index.ts academicRatings array', () => {
 })
 
 
-
-describe('Issue #37: SchoolRow No score badge', () => {
-  const schoolRowSource = fs.readFileSync(path.join(__dirname, '../components/SchoolRow.tsx'), 'utf-8')
-
-  it('renders No score badge when academic_score_pct is null', () => {
-    expect(schoolRowSource).toContain('school.academic_score_pct === null')
-    expect(schoolRowSource).toContain('No score')
-  })
-
-  it('No score badge uses gray styling', () => {
-    const nullBlock = schoolRowSource.slice(
-      schoolRowSource.indexOf('academic_score_pct === null'),
-      schoolRowSource.indexOf('academic_score_pct === null') + 200,
-    )
-    expect(nullBlock).toContain('bg-gray-100')
-    expect(nullBlock).toContain('text-gray-400')
-  })
-})
 
 // ── Issue #38: Fix academicRatings param mismatch / eligibility / borough ────
 
@@ -1177,16 +1055,7 @@ describe('Issue #40: capSchoolsByCategory', () => {
   })
 })
 
-describe('Issue #40/#84: SchoolList lock banner removed', () => {
-  it('SchoolList has no lock banner (locked UI removed in #84)', () => {
-    const schoolListSource = fs.readFileSync(path.join(__dirname, '../components/SchoolList.tsx'), 'utf-8')
-    // Must NOT use the old "visibleCount < totalCount" guard
-    expect(schoolListSource).not.toContain('visibleCount < totalCount')
-    // The lock banner count (and its PAID_TIER_CAP import) is gone
-    expect(schoolListSource).not.toContain('PAID_TIER_CAP - FREE_TIER_CAP')
-    expect(schoolListSource).not.toContain('PAID_TIER_CAP')
-  })
-
+describe('Issue #40/#84: tier cap constants', () => {
   it('tier cap constants are unchanged in lib (PAID_TIER_CAP 30 minus FREE_TIER_CAP 15)', () => {
     expect(PAID_TIER_CAP - FREE_TIER_CAP).toBe(15)
   })
@@ -1439,39 +1308,6 @@ describe('Issue #50: types/index.ts DoeData includes new fields', () => {
   })
 })
 
-// ── Issue #42: SchoolRow label cleanup ───────────────────────────────────────
-
-describe('Issue #42: SchoolRow expanded view and label changes', () => {
-  const schoolRowSource = fs.readFileSync(path.join(__dirname, '../components/SchoolRow.tsx'), 'utf-8')
-
-  it('BADGE_LABEL maps Educational Option to Ed Opt', () => {
-    expect(schoolRowSource).toContain("'Educational Option': 'Ed Opt'")
-  })
-
-  it('getCompetitionShort returns SHSAT only for SHSAT schools', () => {
-    expect(schoolRowSource).toContain("'SHSAT only'")
-    expect(schoolRowSource).not.toMatch(/text:\s*'SHSAT'[^O]/)
-  })
-
-  it('full competition text is conditionally hidden for SHSAT schools', () => {
-    expect(schoolRowSource).toContain('!school.flags.has_shsat')
-  })
-
-  it('expanded view does not render borough unconditionally before size', () => {
-    expect(schoolRowSource).not.toContain('{school.borough} ·')
-  })
-
-  it('expanded view still shows size description', () => {
-    expect(schoolRowSource).toContain('Small school (<400 students)')
-    expect(schoolRowSource).toContain('Large school (1,200+ students)')
-  })
-
-  it('expanded view still shows applicants per seat', () => {
-    expect(schoolRowSource).toContain('applicants/seat')
-  })
-})
-
-
 describe('Issue #43: updated category caps (free tier)', () => {
   it('CATEGORY_CAPS comment references paid Full Access', () => {
     const utilsSource = fs.readFileSync(path.join(__dirname, '../lib/school-list-utils.ts'), 'utf-8')
@@ -1657,28 +1493,6 @@ describe('Issue #52: Ed Opt section removed from MVP', () => {
     const fnMatch = libSource.match(/function getPrimarySection\([\s\S]*?\n\}/)
     expect(fnMatch).not.toBeNull()
     expect(fnMatch![0]).not.toContain("return 'edopt'")
-  })
-})
-
-// ── Issue #53: Remove source attribution and NYC-SIFT link ───────────────────
-
-describe('Issue #53: SchoolRow expanded view has no source attribution or external links', () => {
-  const schoolRowSource = fs.readFileSync(path.join(__dirname, '../components/SchoolRow.tsx'), 'utf-8')
-
-  it('does not contain "NYC-SIFT" text', () => {
-    expect(schoolRowSource).not.toContain('NYC-SIFT')
-  })
-
-  it('does not contain "Source: NYC" attribution span', () => {
-    expect(schoolRowSource).not.toContain('Source: NYC')
-  })
-
-  it('does not contain a link to sift_url', () => {
-    expect(schoolRowSource).not.toContain('href={school.sift_url}')
-  })
-
-  it('does not contain "View on NYC-SIFT" link text', () => {
-    expect(schoolRowSource).not.toContain('View on NYC-SIFT')
   })
 })
 

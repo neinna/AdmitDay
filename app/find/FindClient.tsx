@@ -47,7 +47,6 @@ function toggleValue(list: string[], value: string): string[] {
   return list.includes(value) ? list.filter((v) => v !== value) : [...list, value]
 }
 
-// Same fix applied by the existing components/SchoolRow.tsx.
 function formatSchoolName(name: string): string {
   if (name.endsWith(', The')) return 'The ' + name.slice(0, -5)
   return name
@@ -387,7 +386,8 @@ export default function FindClient({ schools, initialFilters }: Props) {
                   type="text"
                   value={askText}
                   onChange={(e) => setAskText(e.target.value)}
-                  placeholder="strong CS and a soccer team, small classes"
+                  aria-label="Describe what you're looking for"
+                  placeholder="Strong CS, a soccer team, small classes"
                   disabled={askLoading}
                   maxLength={MAX_QUESTION_LENGTH}
                   className="flex-1 text-[15px] text-ink outline-none placeholder:text-faint bg-transparent"
@@ -529,7 +529,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
                     statValue={
                       school.applicants_per_seat != null ? school.applicants_per_seat.toFixed(1) : '—'
                     }
-                    statLabel="Apps / seat"
+                    statLabel="Apps/seat"
                     evidence={
                       (percentile != null || methods.length > 0) && (
                         <>
@@ -586,12 +586,12 @@ export default function FindClient({ schools, initialFilters }: Props) {
                   onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
                   className="text-accent underline underline-offset-[3px]"
                 >
-                  {remaining} more match{remaining === 1 ? '' : 'es'}
+                  Show {remaining} more match{remaining === 1 ? '' : 'es'}
                 </button>
               )}
             </div>
             <div className="text-[13px] text-faint">
-              Requirements and deadlines from DOE data · confirm at MySchools before you submit.
+              Requirements and deadlines from DOE data · Confirm at MySchools before you submit.
             </div>
           </div>
         </div>

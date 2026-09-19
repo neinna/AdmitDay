@@ -180,19 +180,19 @@ describe('findFilterToLoosen (issue #114: empty-state guidance)', () => {
   })
 
   it('names the size filter first when set', () => {
-    expect(findFilterToLoosen({ boroughs: ['Brooklyn'], tracks: ['SHSAT'], size: 'small' })).toMatch(
-      /^Size/
+    expect(findFilterToLoosen({ boroughs: ['Brooklyn'], tracks: ['SHSAT'], size: 'small' })).toBe(
+      'the size filter'
     )
   })
 
   it('names the track filter when size is not set', () => {
-    expect(findFilterToLoosen({ boroughs: ['Brooklyn'], tracks: ['SHSAT'], size: '' })).toMatch(
-      /^Admissions track/
+    expect(findFilterToLoosen({ boroughs: ['Brooklyn'], tracks: ['SHSAT'], size: '' })).toBe(
+      'the admissions track filter'
     )
   })
 
   it('names the borough filter when only a borough is active', () => {
-    expect(findFilterToLoosen({ boroughs: ['Brooklyn'], tracks: [], size: '' })).toMatch(/^Borough/)
+    expect(findFilterToLoosen({ boroughs: ['Brooklyn'], tracks: [], size: '' })).toBe('the borough filter')
   })
 })
 

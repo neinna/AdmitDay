@@ -119,7 +119,7 @@ export default function FindRail({
           onClick={onReset}
           className="text-left text-[13.5px] text-accent underline underline-offset-[3px]"
         >
-          Reset
+          Reset filters
         </button>
       </div>
     </div>
