@@ -151,6 +151,12 @@ def classify_admissions(text):
     text = text.lower().strip()
     if "shsat" in text or "specialized" in text or text == "test":
         return "SHSAT"
+    if "d75" in text or "district 75" in text:
+        return "District 75"
+    if "asd" in text or "aces" in text:
+        return "ASD / ACES"
+    if "language criteria" in text:
+        return "Language Program"
     if "audition" in text:
         return "Audition"
     if "screened" in text and "assess" in text:
@@ -170,11 +176,14 @@ def normalize_myschools_admissions_method(text):
     if not text:
         return None
 
+    lower = text.lower().strip()
+    if "transfer" in lower:
+        return None
+
     normalized = classify_admissions(text)
     if normalized:
         return normalized
 
-    lower = text.lower().strip()
     if "screened with assessment" in lower or "screened with assessments" in lower:
         return "Screened with Assessment"
     if "screened" in lower:
@@ -192,7 +201,11 @@ def fetch_myschools_program_detail(dbn):
     admissions_types = []
 
     for program in programs:
-        method = normalize_myschools_admissions_method(program.get("admissions_method"))
+        raw_method = program.get("admissions_method")
+        if raw_method and "transfer" in raw_method.lower():
+            continue
+
+        method = normalize_myschools_admissions_method(raw_method)
         if method and method not in admissions_types:
             admissions_types.append(method)
 
@@ -202,7 +215,6 @@ def fetch_myschools_program_detail(dbn):
             program["program"] = program.get("program_name")
         if method:
             program["admissions_type"] = method
-        raw_method = program.get("admissions_method")
         if raw_method and "raw_method" not in program:
             program["raw_method"] = raw_method
 
