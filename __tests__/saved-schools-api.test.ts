@@ -1,7 +1,7 @@
 /**
  * __tests__/saved-schools-api.test.ts
  *
- * Issue #200 — the API surface behind /find, /school/[dbn], and /my-schools.
+ * Issue #200 — the API surface behind /find, /school/[dbn], and /shortlist.
  * Mocks @clerk/nextjs/server (auth/currentUser) and @/lib/saved-lists-db
  * directly, so these tests exercise real route-handler logic (auth gate,
  * request validation, parentId resolution) without a real DB or a real

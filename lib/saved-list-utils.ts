@@ -12,7 +12,7 @@ export type ListSchool = Pick<
 > & { neighborhood?: string | null }
 
 /**
- * Derivations for /my-schools (issue #137).
+ * Derivations for /shortlist (issue #137).
  *
  * The composition section is counts, never a score. Nothing here ranks buckets
  * by desirability, labels a list "risky" or "balanced", or emits a percentage —

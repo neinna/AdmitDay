@@ -16,8 +16,8 @@ function readSource(relPath: string): string {
   return fs.readFileSync(path.join(__dirname, '..', relPath), 'utf-8')
 }
 
-describe('/my-schools is gated server-side (issue #200, updated by #240)', () => {
-  const src = readSource('app/my-schools/page.tsx')
+describe('/shortlist is gated server-side (issue #200, updated by #240)', () => {
+  const src = readSource('app/shortlist/page.tsx')
 
   it('stays a server component', () => {
     expect(src).not.toMatch(/^['"]use client['"]/m)
@@ -54,8 +54,8 @@ describe('/my-schools is gated server-side (issue #200, updated by #240)', () =>
   })
 })
 
-describe('MySchoolsClient reads its list from server-provided props, not localStorage (issue #200)', () => {
-  const src = readSource('app/my-schools/MySchoolsClient.tsx')
+describe('ShortlistClient reads its list from server-provided props, not localStorage (issue #200)', () => {
+  const src = readSource('app/shortlist/ShortlistClient.tsx')
 
   it('takes initialOrder as a prop instead of reading a localStorage order key', () => {
     expect(src).toContain('initialOrder')

@@ -16,7 +16,19 @@ if (!process.env.VERCEL) {
 }
 
 /** @type {import('next').NextConfig} */
-const nextConfig = {}
+const nextConfig = {
+  // Issue #283: /my-schools was renamed to /shortlist. Permanent redirect so
+  // bookmarks and shared links still resolve.
+  async redirects() {
+    return [
+      {
+        source: '/my-schools',
+        destination: '/shortlist',
+        permanent: true,
+      },
+    ]
+  },
+}
 
 module.exports = nextConfig
 
