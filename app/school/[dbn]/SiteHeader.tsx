@@ -15,7 +15,7 @@ interface Props {
 export default function SiteHeader({ addedCount }: Props) {
   return (
     <header className="flex items-center justify-between px-5 min-[900px]:px-9 py-[18px] border-b border-rule">
-      <div className="flex items-center gap-[9px]">
+      <Link href="/" aria-label="AdmitDay home" className="flex items-center gap-[9px]">
         <span className="w-[9px] h-[9px] rounded-full bg-accent" />
         <div className="flex items-baseline">
           <span className="font-display font-bold text-[21px] text-ink tracking-[-0.035em]">Admit</span>
@@ -23,14 +23,14 @@ export default function SiteHeader({ addedCount }: Props) {
             Day
           </span>
         </div>
-      </div>
+      </Link>
       <div className="flex items-center gap-7">
         <nav className="flex items-center gap-7 text-[14.5px] text-muted">
           <Link href="/find" className="text-ink font-medium border-b-2 border-accent pb-[3px]">
             Find
           </Link>
           <Link href="/my-schools" className="hover:text-ink transition-colors duration-[120ms] ease-out">
-            My Schools
+            Shortlist
             {addedCount > 0 && <span className="font-mono text-accent ml-1">{addedCount}</span>}
           </Link>
         </nav>

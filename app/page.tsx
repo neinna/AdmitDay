@@ -46,17 +46,17 @@ export default async function Landing() {
     <main className="min-h-screen bg-white">
       {/* No active nav item: / isn't one of the app's sections. */}
       <header className="flex items-center justify-between px-5 min-[900px]:px-9 py-[18px] border-b border-rule">
-        <div className="flex items-center gap-[9px]">
+        <Link href="/" aria-label="AdmitDay home" className="flex items-center gap-[9px]">
           <span className="w-[9px] h-[9px] bg-accent inline-block" />
           <div className="flex items-baseline">
             <span className="font-display font-bold text-[21px] text-ink tracking-[-0.035em]">Admit</span>
             <span className="font-wordmark italic text-[24px] text-accent ml-[3px] tracking-[-0.01em]">Day</span>
           </div>
-        </div>
+        </Link>
         <div className="flex items-center gap-7">
           <nav className="flex items-center gap-7 text-[14.5px] text-muted">
             <Link href="/find" className="hover:text-ink transition-colors duration-[120ms] ease-out">Find</Link>
-            <Link href="/my-schools" className="hover:text-ink transition-colors duration-[120ms] ease-out">My Schools</Link>
+            <Link href="/my-schools" className="hover:text-ink transition-colors duration-[120ms] ease-out">Shortlist</Link>
           </nav>
           <AuthControls />
         </div>
@@ -65,7 +65,7 @@ export default async function Landing() {
       <section className="grid grid-cols-1 min-[900px]:grid-cols-[1fr_300px] gap-6 min-[900px]:gap-10 items-end px-5 min-[900px]:px-9 pt-11 min-[900px]:pt-[72px] pb-9 min-[900px]:pb-14 border-b border-rule">
         <div>
           <h1 className="font-display font-bold text-[36px] min-[700px]:text-[56px] leading-[1.02] tracking-[-0.038em] text-ink max-w-[760px]">
-            Every NYC high school, in one list you can actually use.
+            Every NYC public high school, in one list you can actually use
           </h1>
           <p className="text-[16px] min-[700px]:text-[17px] text-muted mt-4 min-[700px]:mt-5 max-w-[540px]">
             Filter by what matters. See what each school actually requires.
@@ -73,7 +73,6 @@ export default async function Landing() {
         </div>
         <div>
           <Cta className="w-full text-center" />
-          <p className="text-[13px] text-faint mt-[10px] text-center">Sign up to save your list.</p>
         </div>
       </section>
 

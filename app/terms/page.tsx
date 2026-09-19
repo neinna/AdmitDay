@@ -25,7 +25,7 @@ export default function TermsPage() {
         <div className="flex items-center gap-7">
           <nav className="flex items-center gap-7 text-[14.5px] text-muted">
             <Link href="/find" className="hover:text-ink transition-colors duration-[120ms] ease-out">Find</Link>
-            <Link href="/my-schools" className="hover:text-ink transition-colors duration-[120ms] ease-out">My Schools</Link>
+            <Link href="/my-schools" className="hover:text-ink transition-colors duration-[120ms] ease-out">Shortlist</Link>
           </nav>
           <AuthControls />
         </div>
@@ -54,14 +54,14 @@ export default function TermsPage() {
         <Eyebrow>What this is not</Eyebrow>
         <div className="mt-3 flex flex-col gap-[14px] max-w-[680px]">
           <div>
-            <p className="text-[15px] font-semibold text-ink">Not a predictor.</p>
+            <p className="text-[15px] font-semibold text-ink">Not a predictor</p>
             <p className="text-[14.5px] text-ink-2 leading-[1.55] mt-1">
               AdmitDay does not estimate, score, or predict whether your child will be admitted to any school or
               program. There is no reach, target, or likely label anywhere in the product, and there will not be.
             </p>
           </div>
           <div>
-            <p className="text-[15px] font-semibold text-ink">Not affiliated with the DOE.</p>
+            <p className="text-[15px] font-semibold text-ink">Not affiliated with the DOE</p>
             <p className="text-[14.5px] text-ink-2 leading-[1.55] mt-1">
               AdmitDay is an independent project. It is not affiliated with, sponsored by, or endorsed by the New
               York City Department of Education.
