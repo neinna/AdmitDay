@@ -383,7 +383,24 @@ const ADMISSION_METHOD_ORDER = [
   'Open',
   'Educational Option',
   'Zoned',
+  'District 75',
+  'ASD / ACES',
+  'Language Program',
 ] as const
+
+// The three MySchools methods added for issue #271, shown in their own /find
+// rail group ("Programs for students with IEPs or learning English") below
+// the seven main tracks — same chip style and filter behavior, only the
+// grouping differs.
+export const IEP_ENGLISH_LEARNER_TRACKS = ['District 75', 'ASD / ACES', 'Language Program']
+
+/** Splits /find's trackOptions into the seven main tracks and the IEP/English-learner group (issue #271). */
+export function splitTrackOptionsForRail(trackOptions: string[]): { main: string[]; iep: string[] } {
+  return {
+    main: trackOptions.filter((t) => !IEP_ENGLISH_LEARNER_TRACKS.includes(t)),
+    iep: IEP_ENGLISH_LEARNER_TRACKS.filter((t) => trackOptions.includes(t)),
+  }
+}
 
 /** The distinct admissions_type values across a school's programs, in the approved table order. */
 export function admissionMethods(school: School): string[] {
@@ -403,6 +420,9 @@ export const ADMISSION_METHOD_COPY: Record<string, string> = {
   Open: 'Open: offers by lottery within priority groups',
   'Educational Option': 'Educational Option: admits a mix of students across achievement levels',
   Zoned: 'Zoned: priority for students living in the zone',
+  'District 75': 'District 75: a special education program for students whose IEP recommends a District 75 setting',
+  'ASD / ACES': 'ASD / ACES: a specialized program for students with IEPs, including autism spectrum support',
+  'Language Program': "Language program: admission considers English-learner status or the program's target language",
 }
 
 /**

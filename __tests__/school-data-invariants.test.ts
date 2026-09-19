@@ -53,6 +53,9 @@ const KNOWN_ADMISSIONS_TRACKS = new Set([
   'Educational Option',
   'Zoned',
   'Open',
+  'District 75',
+  'ASD / ACES',
+  'Language Program',
 ])
 
 // Sane range around the current baseline (~457): wide enough that a normal

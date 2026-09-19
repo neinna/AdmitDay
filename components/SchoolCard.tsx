@@ -18,6 +18,9 @@ const BADGE_CLASSES: Record<string, string> = {
   'Educational Option': 'bg-gray-100 text-gray-600',
   Open: 'bg-gray-100 text-gray-600',
   Zoned: 'bg-gray-100 text-gray-600',
+  'District 75': 'bg-gray-100 text-gray-600',
+  'ASD / ACES': 'bg-gray-100 text-gray-600',
+  'Language Program': 'bg-gray-100 text-gray-600',
 }
 
 const BADGE_TOOLTIPS: Record<string, string> = {
