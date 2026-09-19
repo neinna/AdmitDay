@@ -211,7 +211,7 @@ export default function SchoolDetailClient({
             onClick={() => posthog?.capture('myschools_link_clicked', { dbn: school.dbn })}
             className="flex-1 text-center border border-border text-[13.5px] text-accent py-[10px] hover:bg-surface-2 transition-colors duration-[120ms] ease-out"
           >
-            MySchools page ↗
+            Open in MySchools ↗
           </a>
         </div>
       </div>
@@ -464,7 +464,7 @@ export default function SchoolDetailClient({
           ‹ Back to results
         </Link>
         <span className="text-[13px] text-faint">
-          Admit Day publishes DOE data as reported · we do not estimate admissions chances.
+          AdmitDay publishes DOE data as reported. We don&rsquo;t estimate admission chances.
         </span>
       </div>
     </div>

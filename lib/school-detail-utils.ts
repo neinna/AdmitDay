@@ -22,7 +22,7 @@ export function findSchoolByDbn(schools: School[], dbn: string): School | undefi
   return schools.find((s) => s.dbn === dbn)
 }
 
-// Same fix applied by components/SchoolRow.tsx and app/find/FindClient.tsx.
+// Same fix applied by app/find/FindClient.tsx.
 export function formatSchoolName(name: string): string {
   if (name.endsWith(', The')) return 'The ' + name.slice(0, -5)
   return name
@@ -94,7 +94,7 @@ const STAT_FIELDS: StatField[] = [
   },
   {
     key: 'collegeCareerRate',
-    gridLabel: 'College & career',
+    gridLabel: 'College and career',
     sentenceLabel: 'college & career rate',
     get: (s) => s.doe_data?.college_career_rate,
     format: ratePct,
@@ -432,8 +432,6 @@ export function buildRequirementBlocks(school: School): RequirementBlock[] {
 
 // ── Provenance ───────────────────────────────────────────────────────────────
 
-// Matches the source line already used for this data elsewhere in the app
-// (see components/SchoolCard.tsx).
 export const PROVENANCE_SOURCE = 'NYC-SIFT + NYC DOE Open Data'
 
 // No fallback deep-link format is confirmed for myschools.nyc, and a guessed

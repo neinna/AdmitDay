@@ -21,7 +21,7 @@ export default function AuthControls() {
             type="button"
             className="text-[14px] font-medium text-ink hover:text-accent transition-colors duration-[120ms] ease-out"
           >
-            Log in
+            Sign in
           </button>
         </SignInButton>
         <SignUpButton mode="modal">

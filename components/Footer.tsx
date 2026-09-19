@@ -14,6 +14,7 @@ export default function Footer() {
           >
             myschools.nyc
           </a>
+          .
         </p>
         <p className="text-xs text-gray-400 text-center mt-3">
           <Link href="/privacy" className="underline hover:text-gray-600">Privacy</Link>

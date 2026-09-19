@@ -252,11 +252,6 @@ describe('SchoolRow ui primitive (issue #113)', () => {
   it('puts the name and hidden-gem badge in a gapped flex row (badge cannot land mid-wrap)', () => {
     expect(src).toMatch(/flex items-center gap-2\.5[\s\S]{0,200}isHiddenGem/)
   })
-
-  it('is a distinct module from the existing components/SchoolRow.tsx (no collision)', () => {
-    const existing = readSource('components/SchoolRow.tsx')
-    expect(existing).not.toContain('grid-cols-[34px_1fr_128px_96px]')
-  })
 })
 
 describe('components/ui barrel exports (issue #113)', () => {

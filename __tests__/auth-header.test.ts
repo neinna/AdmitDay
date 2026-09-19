@@ -32,10 +32,10 @@ describe('components/AuthControls — signed-out and signed-in states (issue #19
     expect(src).toMatch(/^['"]use client['"]/m)
   })
 
-  it('renders Log in and Sign up as modal buttons when signed out', () => {
+  it('renders Sign in and Sign up as modal buttons when signed out', () => {
     expect(src).toContain('<SignedOut>')
     expect(src).toContain('<SignInButton mode="modal">')
-    expect(src).toContain('Log in')
+    expect(src).toContain('Sign in')
     expect(src).toContain('<SignUpButton mode="modal">')
     expect(src).toContain('Sign up')
   })

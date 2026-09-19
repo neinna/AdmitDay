@@ -298,8 +298,8 @@ export function countMatchingTrack(schools: School[], filters: FindFilters, trac
 // Display abbreviations only — the underlying admissions_types value (used
 // for filtering and the URL) is unabbreviated.
 const TRACK_DISPLAY: Record<string, string> = {
-  'Screened with Assessment': 'Screened w/ assessment',
-  'Educational Option': 'Ed. Opt.',
+  'Screened with Assessment': 'Screened + assessment',
+  'Educational Option': 'Ed Opt',
 }
 
 export function trackLabel(track: string): string {
@@ -321,9 +321,9 @@ export function describeFindFilters(filters: FindFilters): string {
  * track, then borough. Returns null when no rail filters are active.
  */
 export function findFilterToLoosen(filters: FindFilters): string | null {
-  if (filters.size) return `Size (${filters.size})`
-  if (filters.tracks.length > 0) return `Admissions track (${filters.tracks.join(', ')})`
-  if (filters.boroughs.length > 0) return `Borough (${filters.boroughs.join(', ')})`
+  if (filters.size) return 'the size filter'
+  if (filters.tracks.length > 0) return 'the admissions track filter'
+  if (filters.boroughs.length > 0) return 'the borough filter'
   return null
 }
 
