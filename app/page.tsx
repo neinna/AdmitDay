@@ -73,7 +73,6 @@ export default async function Landing() {
         </div>
         <div>
           <Cta className="w-full text-center" />
-          <p className="text-[13px] text-faint mt-[10px] text-center">Sign up to save your list.</p>
         </div>
       </section>
 
