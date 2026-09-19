@@ -127,7 +127,7 @@ export default function PrivacyPage() {
       <section className="px-5 min-[900px]:px-9 pt-[26px] pb-[30px] border-b border-rule">
         <Eyebrow>What we never collect</Eyebrow>
         <p className="text-[15px] font-semibold text-ink mt-3 max-w-[680px]">
-          Anything about your child.
+          Anything about your child
         </p>
         <p className="text-[14.5px] text-ink-2 leading-[1.55] mt-2 max-w-[680px]">
           No name, no grade, no date of birth, no contact details, no documents. AdmitDay works from the borough,

@@ -65,7 +65,7 @@ export default async function Landing() {
       <section className="grid grid-cols-1 min-[900px]:grid-cols-[1fr_300px] gap-6 min-[900px]:gap-10 items-end px-5 min-[900px]:px-9 pt-11 min-[900px]:pt-[72px] pb-9 min-[900px]:pb-14 border-b border-rule">
         <div>
           <h1 className="font-display font-bold text-[36px] min-[700px]:text-[56px] leading-[1.02] tracking-[-0.038em] text-ink max-w-[760px]">
-            Every NYC high school, in one list you can actually use.
+            Every NYC public high school, in one list you can actually use
           </h1>
           <p className="text-[16px] min-[700px]:text-[17px] text-muted mt-4 min-[700px]:mt-5 max-w-[540px]">
             Filter by what matters. See what each school actually requires.
