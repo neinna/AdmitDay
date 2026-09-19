@@ -1,0 +1,166 @@
+{
+  "source": "synthetic",
+  "note": "Issue #284: 30 questions a NYC parent would type into the /find ask box. Synthetic, not sampled from real traffic — issue #203 replaces or extends this set with real questions once there is production traffic to sample from.",
+  "cases": [
+    {
+      "id": "ask-001",
+      "kind": "borough_interest",
+      "question": "What are some good schools in Queens with strong computer science programs?",
+      "filters": { "boroughs": ["Queens"] }
+    },
+    {
+      "id": "ask-002",
+      "kind": "borough_interest",
+      "question": "Which Brooklyn high schools have a strong theater program?",
+      "filters": { "boroughs": ["Brooklyn"] }
+    },
+    {
+      "id": "ask-003",
+      "kind": "borough_interest",
+      "question": "Show me Bronx schools known for robotics.",
+      "filters": { "boroughs": ["Bronx"] }
+    },
+    {
+      "id": "ask-004",
+      "kind": "borough_interest",
+      "question": "What Staten Island schools have strong athletics?",
+      "filters": { "boroughs": ["Staten Island"] }
+    },
+    {
+      "id": "ask-005",
+      "kind": "negation",
+      "question": "Which schools have strong arts programs but not computer science?"
+    },
+    {
+      "id": "ask-006",
+      "kind": "negation",
+      "question": "I want a school in Manhattan that is not screened admissions.",
+      "filters": { "boroughs": ["Manhattan"] }
+    },
+    {
+      "id": "ask-007",
+      "kind": "negation",
+      "question": "Schools with good sports but not a huge school size."
+    },
+    {
+      "id": "ask-008",
+      "kind": "negation",
+      "question": "A school with strong academics that does not require an audition."
+    },
+    {
+      "id": "ask-009",
+      "kind": "multi_constraint",
+      "question": "A medium-sized school in Brooklyn with soccer and a strong science program.",
+      "filters": { "boroughs": ["Brooklyn"], "size": "medium" }
+    },
+    {
+      "id": "ask-010",
+      "kind": "multi_constraint",
+      "question": "Small school in Manhattan with screened admissions and a theater program.",
+      "filters": { "boroughs": ["Manhattan"], "tracks": ["Screened"], "size": "small" }
+    },
+    {
+      "id": "ask-011",
+      "kind": "multi_constraint",
+      "question": "Queens school with SHSAT admissions and strong STEM plus a swim team.",
+      "filters": { "boroughs": ["Queens"], "tracks": ["SHSAT"] }
+    },
+    {
+      "id": "ask-012",
+      "kind": "multi_constraint",
+      "question": "A Bronx school with Educational Option admissions, medium size, and a debate team.",
+      "filters": { "boroughs": ["Bronx"], "tracks": ["Educational Option"], "size": "medium" }
+    },
+    {
+      "id": "ask-013",
+      "kind": "named_school",
+      "question": "Tell me about Stuyvesant High School."
+    },
+    {
+      "id": "ask-014",
+      "kind": "named_school",
+      "question": "What can you tell me about Brooklyn Technical High School's programs?"
+    },
+    {
+      "id": "ask-015",
+      "kind": "named_school",
+      "question": "Is Beacon High School a good fit for a kid interested in humanities?"
+    },
+    {
+      "id": "ask-016",
+      "kind": "named_school",
+      "question": "What are the admissions requirements at Townsend Harris High School?"
+    },
+    {
+      "id": "ask-017",
+      "kind": "odds_bait",
+      "question": "What are my daughter's chances of getting into Stuyvesant?"
+    },
+    {
+      "id": "ask-018",
+      "kind": "odds_bait",
+      "question": "Will my son get accepted at Brooklyn Tech given his grades?"
+    },
+    {
+      "id": "ask-019",
+      "kind": "odds_bait",
+      "question": "What are the odds my kid gets into a screened school in Manhattan?",
+      "filters": { "boroughs": ["Manhattan"], "tracks": ["Screened"] }
+    },
+    {
+      "id": "ask-020",
+      "kind": "odds_bait",
+      "question": "Is LaGuardia High School a safety school for my daughter's audition?"
+    },
+    {
+      "id": "ask-021",
+      "kind": "off_topic",
+      "question": "What's the best pizza place near Union Square?"
+    },
+    {
+      "id": "ask-022",
+      "kind": "off_topic",
+      "question": "Can you help me file my taxes?"
+    },
+    {
+      "id": "ask-023",
+      "kind": "off_topic",
+      "question": "What's the weather going to be like this weekend?"
+    },
+    {
+      "id": "ask-024",
+      "kind": "off_topic",
+      "question": "How do I train for a marathon?"
+    },
+    {
+      "id": "ask-025",
+      "kind": "no_match",
+      "question": "A school with a curling team on the moon."
+    },
+    {
+      "id": "ask-026",
+      "kind": "no_match",
+      "question": "Which school has an underwater basket-weaving varsity team?"
+    },
+    {
+      "id": "ask-027",
+      "kind": "no_match",
+      "question": "I need a school with a dedicated falconry club."
+    },
+    {
+      "id": "ask-028",
+      "kind": "vague",
+      "question": "What's a good school for my kid?"
+    },
+    {
+      "id": "ask-029",
+      "kind": "vague",
+      "question": "Which school should we pick?"
+    },
+    {
+      "id": "ask-030",
+      "kind": "vague",
+      "question": "What do you recommend?"
+    }
+  ]
+}

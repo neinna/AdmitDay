@@ -78,6 +78,7 @@ AdmitDay uses product rules and tests to keep the AI parts bounded:
 - Admissions-odds language is banned.
 - Golden evals check factual accuracy, decision quality, output format, and completeness.
 - Smoke tests check the deployed site, not just local code.
+- `npm run eval:ask` is the live eval harness for the ask box (`evals/run-ask-eval.ts`); `admitday_eval.py` is historical.
 
 Key lessons from building the retrieval layer:
 

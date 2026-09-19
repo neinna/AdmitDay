@@ -38,6 +38,9 @@ next-env.d.ts
 # school data is environment-specific, copied in at deploy time
 data/schools.json
 
+# eval runner output (npm run eval:ask) — regenerated per run, not tracked
+/evals/results/
+
 # refresh-data.ts sidecar: DBNs excluded from the current scrape, read by
 # scripts/vps-data-refresh.sh for the data PR body -- not app data
 schools.excluded.json

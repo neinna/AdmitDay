@@ -1,6 +1,11 @@
 """
 AdmitDay LLM-as-a-Judge Eval Script
 =====================================
+HISTORICAL (issue #284): superseded by `npm run eval:ask`
+(evals/run-ask-eval.ts), the live harness for the ask box. This script's
+hand-labeled golden dataset predates the current /find ask box and is kept
+for reference only — it is not run in CI and not part of the eval pipeline.
+
 Sends each golden dataset test case to Claude for automated scoring,
 then compares against manual human scores.
 
