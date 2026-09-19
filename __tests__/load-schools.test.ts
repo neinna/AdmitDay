@@ -83,4 +83,40 @@ describe('getAllSchools', () => {
     await expect(getAllSchools()).resolves.toEqual([])
     await expect(getAllSchools()).resolves.toEqual([schoolA])
   })
+
+  it('reuses the cache for a second call inside the 5 minute TTL', async () => {
+    jest.useFakeTimers()
+    try {
+      mockSql.mockResolvedValue({ rows: [{ data: schoolA }] })
+      const getAllSchools = await freshGetAllSchools()
+
+      await getAllSchools()
+      const callsAfterFirst = mockSql.mock.calls.length
+
+      jest.advanceTimersByTime(4 * 60 * 1000)
+      const again = await getAllSchools()
+
+      expect(again).toEqual([schoolA])
+      expect(mockSql.mock.calls.length).toBe(callsAfterFirst)
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  it('re-queries after the cache is older than 5 minutes and returns the new rows', async () => {
+    jest.useFakeTimers()
+    try {
+      mockSql.mockResolvedValue({ rows: [{ data: schoolA }] })
+      const getAllSchools = await freshGetAllSchools()
+
+      await expect(getAllSchools()).resolves.toEqual([schoolA])
+
+      jest.advanceTimersByTime(5 * 60 * 1000 + 1)
+      mockSql.mockResolvedValue({ rows: [{ data: schoolB }] })
+
+      await expect(getAllSchools()).resolves.toEqual([schoolB])
+    } finally {
+      jest.useRealTimers()
+    }
+  })
 })
