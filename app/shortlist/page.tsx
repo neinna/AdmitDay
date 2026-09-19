@@ -3,10 +3,11 @@ import Footer from '@/components/Footer'
 import { getAllSchools } from '@/lib/load-schools'
 import { findParentId, getSavedDbns } from '@/lib/saved-lists-db'
 import type { ListSchool } from '@/lib/saved-list-utils'
-import MySchoolsClient from './MySchoolsClient'
+import ShortlistClient from './ShortlistClient'
 
 /**
- * /my-schools — issue #137, moved off localStorage onto Postgres in #200.
+ * /shortlist (renamed from /my-schools in issue #283) — issue #137, moved off
+ * localStorage onto Postgres in #200.
  *
  * The saved list is a family's, not a device's, so it requires a session.
  * Saving a school requires an account (#240): a signed-out request never
@@ -21,13 +22,13 @@ import MySchoolsClient from './MySchoolsClient'
  * index shaping are server-side, and the only thing handed across the
  * boundary is plain data.
  */
-export default async function MySchoolsPage() {
+export default async function ShortlistPage() {
   const { userId } = await auth()
 
   if (!userId) {
     return (
       <main className="min-h-screen bg-white">
-        <MySchoolsClient index={[]} initialOrder={[]} signedIn={false} />
+        <ShortlistClient index={[]} initialOrder={[]} signedIn={false} />
         <Footer />
       </main>
     )
@@ -48,7 +49,7 @@ export default async function MySchoolsPage() {
 
   return (
     <main className="min-h-screen bg-white">
-      <MySchoolsClient index={index} initialOrder={initialOrder} signedIn={true} />
+      <ShortlistClient index={index} initialOrder={initialOrder} signedIn={true} />
       <Footer />
     </main>
   )
