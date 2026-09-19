@@ -2,7 +2,10 @@ import * as fs from 'fs'
 import * as path from 'path'
 
 describe('/find ask API top-K (issue #70: reverted from 10 to 5)', () => {
-  const routePath = path.join(__dirname, '../app/api/find/ask/route.ts')
+  // Issue #284: the searchSchools call moved from the route into
+  // lib/ask.ts's answerQuestion() as part of extracting the ask logic for
+  // the eval runner. Same assertions, new home for the call they check.
+  const routePath = path.join(__dirname, '../lib/ask.ts')
   let src: string
 
   beforeAll(() => {

@@ -9,7 +9,8 @@
     "lint": "next lint",
     "test": "jest",
     "refresh:data": "ts-node --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' --transpile-only scripts/refresh-data.ts",
-    "smoke": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/smoke.ts"
+    "smoke": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/smoke.ts",
+    "eval:ask": "ts-node --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' --transpile-only evals/run-ask-eval.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

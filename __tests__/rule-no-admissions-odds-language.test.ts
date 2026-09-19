@@ -51,8 +51,12 @@ const USER_FACING_FILES = [path.join(ROOT, 'app'), path.join(ROOT, 'components')
 // The answer-shaping prompt text sent to the model — a banned phrase here
 // would coach the model into producing odds language even if no component
 // literally contains the string.
+//
+// Issue #284: the /find ask system prompt moved from the route into
+// lib/ask.ts's answerQuestion(); lib/ask.ts is scanned in its place.
 const PROMPT_FILES = [
   path.join(ROOT, 'app/api/find/ask/route.ts'),
+  path.join(ROOT, 'lib/ask.ts'),
   path.join(ROOT, 'app/api/rationale/route.ts'),
 ]
 

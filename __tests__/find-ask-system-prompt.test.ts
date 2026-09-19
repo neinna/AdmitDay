@@ -2,11 +2,14 @@ import * as fs from 'fs'
 import * as path from 'path'
 
 describe('/find ask API system prompt (issue #69)', () => {
-  const routePath = path.join(__dirname, '../app/api/find/ask/route.ts')
+  // Issue #284: the system prompt moved from the route into lib/ask.ts's
+  // answerQuestion() as part of extracting the ask logic for the eval
+  // runner. Same assertions, new home for the string they check.
+  const promptPath = path.join(__dirname, '../lib/ask.ts')
   let src: string
 
   beforeAll(() => {
-    src = fs.readFileSync(routePath, 'utf-8')
+    src = fs.readFileSync(promptPath, 'utf-8')
   })
 
   it('uses the new "experienced NYC high school admissions consultant" prompt', () => {
