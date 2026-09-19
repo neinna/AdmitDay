@@ -42,6 +42,7 @@ CLAUDE_PLANNER_MODEL="${CLAUDE_PLANNER_MODEL:-sonnet}"
 CLAUDE_IMPLEMENT_MAX_USD="${CLAUDE_IMPLEMENT_MAX_USD:-5.00}"
 CLAUDE_REVIEW_MAX_USD="${CLAUDE_REVIEW_MAX_USD:-0.75}"
 CLAUDE_PLANNER_MAX_USD="${CLAUDE_PLANNER_MAX_USD:-0.50}"
+CLAUDE_TRIAGE_MAX_USD="${CLAUDE_TRIAGE_MAX_USD:-0.50}"
 LF_TRACE_SCRIPT="${APP_DIR}/scripts/langfuse_trace.py"
 LF_TRACE_PYTHON="${LF_TRACE_PYTHON:-/home/agent/.venvs/agent-observability/bin/python}"
 RUN_METADATA_DIR="/home/agent/agent-run-metadata"
@@ -810,6 +811,25 @@ sys.exit(0 if data.get("is_error") is True and budgetish else 1)
 PYEOF
 }
 
+# triage_verdict_line: reads triage text on stdin, echoes the single
+# well-formed "TRIAGE: <CLASS> - <reason>" line it contains (the last one, if
+# more than one slipped in), or nothing if no line matches one of the four
+# allowed classes. Used to gate run_triage's github_comment: a missing or
+# malformed verdict must post nothing (issue #214), so absence of output here
+# is the signal, not an error.
+triage_verdict_line() {
+  python3 -c "
+import re
+import sys
+
+text = sys.stdin.read()
+matches = re.findall(
+    r'^TRIAGE: (?:TOO-BIG|RESUMABLE|NEEDS-DECISION|INFRA) - .+\$', text, re.M
+)
+print(matches[-1] if matches else '')
+"
+}
+
 # Coordinator-owned verification: the ONLY success signal.
 # Keeps Next's webpack cache (.next/cache, ~325MB) between builds: a warm
 # build takes ~74s on this VPS versus ~160s cold. Everything else in .next is
@@ -1068,6 +1088,88 @@ Uncommitted work from this run was committed to \`${BRANCH}\` (branch left in pl
   fi
 }
 
+# run_triage REASON OUTPUT_TAIL ATTEMPTS_USED
+# Diagnoses WHY a run just got labeled agent-stuck and posts one issue
+# comment, once, when the coordinator applies that label (issue #214). Relies
+# on run_agent's ISSUE_NUMBER/ISSUE_TITLE/ISSUE_BODY/BRANCH locals via bash's
+# dynamic scoping, like preserve_branch_before_abandoning above.
+#
+# Advisory only: this function never calls github_label and never queues
+# work. It is read-only (Read,Glob,Grep — no Bash, no Write/Edit) and capped
+# by its own CLAUDE_TRIAGE_MAX_USD budget, separate from implementation and
+# review. On any error — claude fails, times out, or returns text without one
+# of the four well-formed "TRIAGE: <CLASS> - ..." lines — it posts nothing
+# and only logs, so a triage failure can never change what the issue's label
+# already says or stop the coordinator loop. Always returns 0.
+run_triage() {
+  local REASON="$1" OUTPUT_TAIL="$2" ATTEMPTS_USED="$3"
+  local TRIAGE_OUT="/tmp/triage-issue-${ISSUE_NUMBER}.json"
+
+  local BRANCH_STATUS="no — the task branch has no commits ahead of main"
+  if [ -n "$(git log origin/main.."$BRANCH" --oneline 2>/dev/null)" ]; then
+    BRANCH_STATUS="yes — branch \`${BRANCH}\` has commits ahead of main"
+  fi
+
+  local PROMPT="You are triaging one GitHub issue in the AdmitDay Next.js app that just got stuck and was labeled agent-stuck. You have READ-ONLY access to /home/agent/app: use Read/Glob/Grep to check the issue against AGENTS.md (especially the \"Cost And Issue Sizing\" section) and against the product rules already encoded in the repo (guardrails, tests, design docs). Diagnose only — do not propose or make any code change.
+
+Issue #${ISSUE_NUMBER}: ${ISSUE_TITLE}
+
+${ISSUE_BODY}
+
+Why this run got stuck:
+${REASON}
+
+Attempts used: ${ATTEMPTS_USED}
+Does the task branch have commits: ${BRANCH_STATUS}
+
+Failure output tail (may be empty):
+${OUTPUT_TAIL}
+
+Diagnose the ROOT CAUSE, not just the symptom, and pick exactly one class:
+- TOO-BIG: the issue bundles more than one concern per AGENTS.md's sizing rules and should be split. Say which parts.
+- RESUMABLE: real, correct work already exists on the task branch and a retry should start from it instead of from scratch. Name the branch.
+- NEEDS-DECISION: the issue contradicts the PRD/product rules, or leaves a product decision (a threshold, a scale, a rule) undefined, so no implementation could pass review without a human answering one question first. State that one question, answerable in a sentence.
+- INFRA: something outside the issue itself broke (provider outage, a broken test unrelated to the change, a broken tool), not a sizing or spec problem.
+
+End your comment with exactly one line, using the class you diagnosed:
+TRIAGE: TOO-BIG - <which parts to split into>
+TRIAGE: RESUMABLE - <branch with the partial work>
+TRIAGE: NEEDS-DECISION - <the one product question, answerable in a sentence>
+TRIAGE: INFRA - <what broke outside the issue itself>"
+
+  local T0 T1
+  T0=$(lf_now_ns)
+  run_claude "$TRIAGE_OUT" "" "Read,Glob,Grep" "sonnet" "${CLAUDE_TRIAGE_MAX_USD}"
+  local RC=$?
+  T1=$(lf_now_ns)
+
+  local TRIAGE_TEXT VERDICT_LINE TRIAGE_OK=0 TRIAGE_STATUS
+  TRIAGE_TEXT=$(claude_json_field "$TRIAGE_OUT" "result")
+  if [ $RC -eq 124 ]; then
+    TRIAGE_STATUS="timeout"
+    log "Issue #${ISSUE_NUMBER}: triage timed out, posting nothing"
+  elif [ $RC -ne 0 ] || [ -z "$TRIAGE_TEXT" ]; then
+    TRIAGE_STATUS="failed"
+    log "Issue #${ISSUE_NUMBER}: triage claude call failed, posting nothing"
+  else
+    VERDICT_LINE=$(triage_verdict_line <<< "$TRIAGE_TEXT")
+    if [ -z "$VERDICT_LINE" ]; then
+      TRIAGE_STATUS="unparseable"
+      log "Issue #${ISSUE_NUMBER}: triage produced no parseable TRIAGE: line, posting nothing"
+    else
+      TRIAGE_OK=1
+      TRIAGE_STATUS="${VERDICT_LINE#TRIAGE: }"
+      TRIAGE_STATUS="${TRIAGE_STATUS%% - *}"
+      github_comment "$ISSUE_NUMBER" "$TRIAGE_TEXT"
+      log "Issue #${ISSUE_NUMBER}: triage posted (${TRIAGE_STATUS})"
+    fi
+  fi
+
+  lf_record "triage" "$T0" "$T1" "$TRIAGE_OK" "$TRIAGE_OUT" "$ATTEMPTS_USED" "$TRIAGE_STATUS"
+  rm -f "$TRIAGE_OUT"
+  return 0
+}
+
 run_agent() {
   local ISSUE_NUMBER=$1
   local RUN_START
@@ -1273,6 +1375,8 @@ Instructions:
 
 This is a controlled cost stop, not a verified implementation failure. The issue is labeled agent-stuck: no pull request was opened, so there is nothing to review. The usual fix is to split or re-specify the issue so it fits inside one capped run (see \"Cost And Issue Sizing\" in AGENTS.md), or raise the cap for this issue.${DIRTY_TREE_NOTE}"
       github_label "$ISSUE_NUMBER" "agent-stuck"
+      run_triage "Claude hit the coordinator's per-call budget cap (\$${CLAUDE_IMPLEMENT_MAX_USD}) on attempt ${ATTEMPT} of 2. This is a controlled cost stop, not a verified implementation failure." \
+        "$(claude_json_field "$CLAUDE_OUT" "result" | tail -c 4000)" "$ATTEMPTS_USED"
       github_remove_label "$ISSUE_NUMBER" "in-progress"
       git checkout main >> "$LOG_FILE" 2>&1
       lf_emit "$ISSUE_NUMBER" "$ISSUE_TITLE" "$BRANCH" "$OUTCOME" "$ATTEMPTS_USED" \
@@ -1428,6 +1532,8 @@ Tests and build verified green by the coordinator, and an independent reviewer a
       OUTCOME="needs-review"; GH_LABEL="agent-stuck"
       PR_OUTCOME="creation-failed"
       github_label "$ISSUE_NUMBER" "agent-stuck"
+      run_triage "Branch ${BRANCH} was pushed and verification/review passed, but opening the pull request via the GitHub API failed." \
+        "" "$ATTEMPTS_USED"
       github_remove_label "$ISSUE_NUMBER" "in-progress"
       log "Issue #${ISSUE_NUMBER}: branch pushed but PR creation failed"
       telegram "Issue #${ISSUE_NUMBER}: branch ${BRANCH} pushed but PR creation FAILED — needs manual attention"
@@ -1458,6 +1564,7 @@ ${FAIL_OUTPUT}
     OUTCOME="failed"; GH_LABEL="agent-stuck"
     PR_OUTCOME="not-attempted"
     github_label "$ISSUE_NUMBER" "agent-stuck"
+    run_triage "$FAIL_REASON" "$FAIL_OUTPUT" "$ATTEMPTS_USED"
     github_remove_label "$ISSUE_NUMBER" "in-progress"
     git checkout main >> "$LOG_FILE" 2>&1
     log "Issue #${ISSUE_NUMBER}: failed after 2 attempts, labeled agent-stuck"
