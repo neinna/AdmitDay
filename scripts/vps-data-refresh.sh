@@ -50,8 +50,8 @@ install_dependencies() {
   # Ubuntu 24.04 blocks `pip install --user` (PEP 668), which aborted every
   # run. The VPS has python3-bs4 and python3-requests from apt, so only fall
   # back to pip if an import is actually missing.
-  if ! python3 -c 'import bs4, requests' 2>/dev/null; then
-    python3 -m pip install --user --break-system-packages beautifulsoup4 requests
+  if ! python3 -c 'import bs4, requests, openpyxl' 2>/dev/null; then
+    python3 -m pip install --user --break-system-packages beautifulsoup4 requests openpyxl
   fi
   npm ci
 }
