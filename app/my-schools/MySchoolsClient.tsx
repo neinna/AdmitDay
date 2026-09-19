@@ -56,7 +56,7 @@ function Header() {
       <div className="flex items-center gap-7">
         <nav className="flex items-center gap-7 text-[14.5px] text-muted">
           <Link href="/find" className="hover:text-ink transition-colors duration-[120ms] ease-out">Find</Link>
-          <span className="text-ink font-medium border-b-2 border-accent pb-[3px]">My Schools</span>
+          <span className="text-ink font-medium border-b-2 border-accent pb-[3px]">Shortlist</span>
         </nav>
         <AuthControls />
       </div>
@@ -133,7 +133,7 @@ export default function MySchoolsClient({ index, initialOrder, signedIn }: Props
         <Header />
         <div className="px-5 min-[900px]:px-9 py-14">
           <h1 className="font-display font-bold text-[40px] leading-[1.04] tracking-[-0.038em] text-ink">
-            My Schools
+            Shortlist
           </h1>
           <p className="mt-5 text-[15px] text-muted">Sign in to see your saved schools.</p>
         </div>
@@ -149,7 +149,7 @@ export default function MySchoolsClient({ index, initialOrder, signedIn }: Props
         <Header />
         <div className="px-5 min-[900px]:px-9 py-14">
           <h1 className="font-display font-bold text-[40px] leading-[1.04] tracking-[-0.038em] text-ink">
-            My Schools
+            Shortlist
           </h1>
           <p className="mt-5 text-[15px] text-muted">
             Nothing saved yet.{' '}
@@ -170,7 +170,7 @@ export default function MySchoolsClient({ index, initialOrder, signedIn }: Props
       <Header />
       <div className="flex items-end justify-between gap-5 px-5 min-[900px]:px-9 pt-[30px] pb-6 border-b border-rule">
         <h1 className="font-display font-bold text-[30px] min-[700px]:text-[40px] leading-[1.04] tracking-[-0.038em] text-ink">
-          My Schools
+          Shortlist
         </h1>
         <button
           type="button"
