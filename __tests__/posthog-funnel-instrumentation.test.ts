@@ -6,8 +6,8 @@ import { countActiveFindFilters, FindFilters } from '../lib/school-list-utils'
  * Issue #196 — instrument the product funnel (land → filter → ask → open a
  * school → save a school → return) in PostHog with the ten new events:
  * ask_submitted, ask_answered, ask_failed, filter_applied, filter_cleared,
- * school_detail_viewed, school_saved, school_removed, my_schools_viewed,
- * myschools_link_clicked.
+ * school_detail_viewed, school_saved, school_removed, shortlist_viewed
+ * (renamed from my_schools_viewed in issue #283), myschools_link_clicked.
  *
  * This repo's jest config runs in the `node` environment with no
  * jsdom/testing-library, and no existing component test renders a .tsx
@@ -186,19 +186,19 @@ describe('components/ui/SchoolRow — onNavigate fires on click, not render (iss
   })
 })
 
-// ── MySchoolsClient: my_schools_viewed / school_removed / school_detail_viewed ─
+// ── ShortlistClient: shortlist_viewed / school_removed / school_detail_viewed ─
 
-describe('MySchoolsClient — my_schools_viewed, school_removed, and detail-view events (issue #196)', () => {
-  const src = readSource('app/my-schools/MySchoolsClient.tsx')
+describe('ShortlistClient — shortlist_viewed, school_removed, and detail-view events (issue #196, renamed by #283)', () => {
+  const src = readSource('app/shortlist/ShortlistClient.tsx')
 
   it('imports usePostHog', () => {
     expect(src).toContain("from 'posthog-js/react'")
   })
 
-  it('guards my_schools_viewed with a ref so Strict Mode double-invoking the mount effect only fires it once', () => {
+  it('guards shortlist_viewed with a ref so Strict Mode double-invoking the mount effect only fires it once', () => {
     expect(src).toContain('viewFiredRef')
     expect(src).toMatch(/if \(!viewFiredRef\.current\)/)
-    expect(src).toContain("posthog?.capture('my_schools_viewed', { list_size: resolvedOrder.length })")
+    expect(src).toContain("posthog?.capture('shortlist_viewed', { list_size: resolvedOrder.length })")
   })
 
   it('fires school_removed with the post-removal list size when a school is removed', () => {
@@ -207,7 +207,7 @@ describe('MySchoolsClient — my_schools_viewed, school_removed, and detail-view
     expect(body).toContain("posthog?.capture('school_removed', { dbn, list_size_after: next.length })")
   })
 
-  it('fires school_detail_viewed with from: "my_schools" on the row link click', () => {
+  it('fires school_detail_viewed with from: "my_schools" on the row link click (property value unchanged by #283)', () => {
     expect(src).toContain(
       "posthog?.capture('school_detail_viewed', { dbn: school.dbn, from: 'my_schools' })"
     )
@@ -245,7 +245,7 @@ describe('SchoolDetailClient — save and MySchools-link events (issue #196)', (
 describe('No PII in any funnel event payload (issue #196)', () => {
   const files = [
     'app/find/FindClient.tsx',
-    'app/my-schools/MySchoolsClient.tsx',
+    'app/shortlist/ShortlistClient.tsx',
     'app/school/[dbn]/SchoolDetailClient.tsx',
   ]
 

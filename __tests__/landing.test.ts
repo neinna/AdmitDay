@@ -63,7 +63,7 @@ describe('the landing page keeps the product’s promises', () => {
   })
 
   it('has exactly one destination, used twice', () => {
-    const links = Array.from(pageSrc.matchAll(/href="\/(find|my-schools)"/g)).map((m) => m[1])
+    const links = Array.from(pageSrc.matchAll(/href="\/(find|shortlist)"/g)).map((m) => m[1])
     expect(links.filter((l) => l === 'find').length).toBeGreaterThanOrEqual(2)
     expect(pageSrc).not.toMatch(/href="\/(pricing|about|faq|signup|login)"/)
   })

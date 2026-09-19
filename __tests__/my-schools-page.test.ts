@@ -7,9 +7,9 @@ import path from 'path'
  *     (that shipped a 500 on /school/[dbn] — see #132).
  *  2. Shipping the full school dataset to the browser.
  */
-const pageSrc = fs.readFileSync(path.join(__dirname, '../app/my-schools/page.tsx'), 'utf-8')
+const pageSrc = fs.readFileSync(path.join(__dirname, '../app/shortlist/page.tsx'), 'utf-8')
 const clientSrc = fs.readFileSync(
-  path.join(__dirname, '../app/my-schools/MySchoolsClient.tsx'),
+  path.join(__dirname, '../app/shortlist/ShortlistClient.tsx'),
   'utf-8'
 )
 /**
@@ -19,7 +19,7 @@ const clientSrc = fs.readFileSync(
  */
 const clientCode = clientSrc.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
 
-describe('/my-schools server/client boundary', () => {
+describe('/shortlist server/client boundary', () => {
   it('keeps the page a server component', () => {
     expect(pageSrc).not.toMatch(/^['"]use client['"]/m)
   })
@@ -32,7 +32,7 @@ describe('/my-schools server/client boundary', () => {
     // Only the client component itself, plus server-safe libs.
     const imports = Array.from(pageSrc.matchAll(/from '([^']+)'/g)).map((m) => m[1])
     const clientModules = imports.filter((i) => i.includes('Client') && !i.includes('type'))
-    expect(clientModules).toEqual(['./MySchoolsClient'])
+    expect(clientModules).toEqual(['./ShortlistClient'])
   })
 
   it('ships a slim index rather than full school records', () => {
@@ -42,7 +42,7 @@ describe('/my-schools server/client boundary', () => {
   })
 })
 
-describe('/my-schools makes no derived judgement', () => {
+describe('/shortlist makes no derived judgement', () => {
   it('uses no reach/target/likely or odds language', () => {
     // Note: the footer legitimately contains "we don't score a list", so this
     // checks for the vocabulary of a prediction, not the word "score" itself.

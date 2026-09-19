@@ -18,7 +18,7 @@ const HEADER_FILES = [
   'app/page.tsx',
   'app/find/FindClient.tsx',
   'app/school/[dbn]/SiteHeader.tsx',
-  'app/my-schools/MySchoolsClient.tsx',
+  'app/shortlist/ShortlistClient.tsx',
   'app/privacy/page.tsx',
   'app/terms/page.tsx',
 ]

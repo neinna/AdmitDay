@@ -15,7 +15,7 @@ import {
 } from '@/lib/saved-list-utils'
 
 /**
- * /my-schools — issue #137.
+ * /shortlist (renamed from /my-schools in issue #283) — issue #137.
  *
  * Rank order is the product: NYC families submit an ordered list of programs in
  * MySchools, and this page is a draft of that submission. So the array order IS
@@ -40,7 +40,7 @@ type Props = {
   signedIn: boolean
 }
 
-// Issue #199: /my-schools had no header at all before this — the sign-in /
+// Issue #199: /shortlist had no header at all before this — the sign-in /
 // sign-up buttons are required on every page, so this adds the same header
 // pattern already duplicated across page.tsx, FindClient.tsx, and SiteHeader.tsx.
 function Header() {
@@ -64,7 +64,7 @@ function Header() {
   )
 }
 
-export default function MySchoolsClient({ index, initialOrder, signedIn }: Props) {
+export default function ShortlistClient({ index, initialOrder, signedIn }: Props) {
   const posthog = usePostHog()
   const [order, setOrder] = useState<string[]>(initialOrder)
   const [notice, setNotice] = useState<string | null>(null)
@@ -78,7 +78,7 @@ export default function MySchoolsClient({ index, initialOrder, signedIn }: Props
     const resolvedOrder = initialOrder
     if (!viewFiredRef.current) {
       viewFiredRef.current = true
-      posthog?.capture('my_schools_viewed', { list_size: resolvedOrder.length })
+      posthog?.capture('shortlist_viewed', { list_size: resolvedOrder.length })
     }
   }, [initialOrder.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
