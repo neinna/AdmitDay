@@ -46,7 +46,7 @@ export default function SchoolNotFound() {
           </Link>
           <Link href="/find">
             <Button type="button" variant="outline">
-              Search all {EXPECTED_SCHOOL_COUNT} schools
+              Browse all {EXPECTED_SCHOOL_COUNT} schools
             </Button>
           </Link>
         </div>

@@ -111,5 +111,5 @@ export function summariseDataVintage(
   const oldest = dated.reduce((a, b) =>
     (a.publishedLabel as string) <= (b.publishedLabel as string) ? a : b
   )
-  return `DOE data published ${oldest.publishedLabel} · confirm at MySchools before you apply`
+  return `DOE data published ${oldest.publishedLabel} · Confirm at MySchools before you apply.`
 }

@@ -87,7 +87,7 @@ const ZERO_CASES: { key: string; label: string; overrides: Partial<School> }[] =
   },
   {
     key: 'collegeCareerRate',
-    label: 'College & career',
+    label: 'College and career',
     overrides: { doe_data: { overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '', college_career_rate: 0 } },
   },
 ]

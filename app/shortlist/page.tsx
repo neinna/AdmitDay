@@ -1,9 +1,14 @@
+import type { Metadata } from 'next'
 import { auth } from '@clerk/nextjs/server'
 import Footer from '@/components/Footer'
 import { getAllSchools } from '@/lib/load-schools'
 import { findParentId, getSavedDbns } from '@/lib/saved-lists-db'
 import type { ListSchool } from '@/lib/saved-list-utils'
 import ShortlistClient from './ShortlistClient'
+
+export const metadata: Metadata = {
+  title: 'Shortlist · AdmitDay',
+}
 
 /**
  * /shortlist (renamed from /my-schools in issue #283) — issue #137, moved off

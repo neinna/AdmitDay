@@ -23,13 +23,13 @@ jest.mock('@clerk/nextjs', () => ({
 import ShortlistClient from '@/app/shortlist/ShortlistClient'
 
 describe('/shortlist signed out (issue #240)', () => {
-  it('shows the sign-in prompt and the Log in / Sign up controls, with no saved list', () => {
+  it('shows the sign-in prompt and the Sign in / Sign up controls, with no saved list', () => {
     const html = renderToStaticMarkup(
       React.createElement(ShortlistClient, { index: [], initialOrder: [], signedIn: false })
     )
 
     expect(html).toContain('Sign in to see your saved schools.')
-    expect(html).toContain('Log in')
+    expect(html).toContain('Sign in')
     expect(html).toContain('Sign up')
     // None of the signed-in-only list chrome renders.
     expect(html).not.toContain('Your ranking')

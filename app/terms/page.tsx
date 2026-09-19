@@ -1,7 +1,12 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import Footer from '@/components/Footer'
 import AuthControls from '@/components/AuthControls'
 import { Eyebrow } from '@/components/ui'
+
+export const metadata: Metadata = {
+  title: 'Terms · AdmitDay',
+}
 
 /**
  * /terms — issue #198. FR-6.3 says the legal disclaimer belongs in the terms
@@ -15,7 +20,7 @@ export default function TermsPage() {
   return (
     <main className="min-h-screen bg-white">
       <header className="flex items-center justify-between px-5 min-[900px]:px-9 py-[18px] border-b border-rule">
-        <Link href="/" className="flex items-center gap-[9px]">
+        <Link href="/" aria-label="AdmitDay home" className="flex items-center gap-[9px]">
           <span className="w-[9px] h-[9px] bg-accent inline-block" />
           <div className="flex items-baseline">
             <span className="font-display font-bold text-[21px] text-ink tracking-[-0.035em]">Admit</span>
