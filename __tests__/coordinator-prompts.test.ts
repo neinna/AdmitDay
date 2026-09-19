@@ -20,6 +20,11 @@ const reviewPrompt = between(
   'You are an independent code reviewer',
   'RISK: LIVE-VERIFY-NEEDED"'
 )
+const retryInstruction = between(
+  coordinator,
+  'Diagnose why this failed before changing anything else.',
+  'The coordinator reruns the full test suite and the build."'
+)
 
 describe('implementation brief', () => {
   it('tells the agent not to run the build, which the coordinator runs anyway', () => {
@@ -37,6 +42,19 @@ describe('implementation brief', () => {
 
   it('no longer offers the Telegram progress hook', () => {
     expect(brief).not.toContain('notify.sh')
+  })
+})
+
+describe('retry prompt', () => {
+  it('does not tell the agent to run npm run build itself', () => {
+    expect(retryInstruction).not.toMatch(/npm run build/)
+    expect(retryInstruction).not.toMatch(/re-run npm test and npm run build/)
+  })
+
+  it('tells the agent to run the tests for the files it changed and tsc, then commit', () => {
+    expect(retryInstruction).toContain('run the tests for the files you changed')
+    expect(retryInstruction).toContain('npx tsc --noEmit')
+    expect(coordinator).toContain('The coordinator reruns the full test suite and the build.')
   })
 })
 

@@ -1290,7 +1290,7 @@ Address the reviewer's objections. Diagnose what is wrong before changing anythi
 Failing output (tail):
 ${FAIL_TAIL}
 
-Diagnose why this failed before changing anything else. Then fix it, re-run npm test and npm run build until green, and commit with message \"${COMMIT_TITLE}\"."
+Diagnose why this failed before changing anything else. Then fix it, run the tests for the files you changed and \`npx tsc --noEmit\`, then commit with message \"${COMMIT_TITLE}\". The coordinator reruns the full test suite and the build."
     fi
 
     if [ $ATTEMPT -lt 2 ]; then
