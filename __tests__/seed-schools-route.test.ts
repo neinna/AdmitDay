@@ -130,7 +130,7 @@ describe('GET /api/cron/seed-schools', () => {
     })
     mockQuery.mockImplementation((text: string) => {
       if (text.includes('DELETE FROM schools')) return Promise.resolve({ rowCount: 3, rows: [] })
-      // 3/100 = 3%, under the 5% cap.
+      // 3/100 = 3%, under the 10% cap.
       return Promise.resolve({ rows: [{ count: '3' }] })
     })
 
@@ -151,7 +151,7 @@ describe('GET /api/cron/seed-schools', () => {
     expect((deleteCall![0] as string)).toContain('dbn <> ALL')
   })
 
-  it('skips the delete and reports deleteSkipped when it would remove more than 5% of rows', async () => {
+  it('skips the delete and reports deleteSkipped when it would remove more than 10% of rows', async () => {
     mockSql.mockImplementation((strings: string[]) => {
       const text = strings.join('')
       if (text.includes('INSERT INTO schools')) return Promise.resolve({ rowCount: 3, rows: [] })
@@ -159,9 +159,9 @@ describe('GET /api/cron/seed-schools', () => {
       return Promise.resolve({ rows: [] })
     })
     mockQuery.mockImplementation((text: string) => {
-      if (text.includes('DELETE FROM schools')) return Promise.resolve({ rowCount: 10, rows: [] })
-      // 10/100 = 10%, over the 5% cap.
-      return Promise.resolve({ rows: [{ count: '10' }] })
+      if (text.includes('DELETE FROM schools')) return Promise.resolve({ rowCount: 11, rows: [] })
+      // 11/100 = 11%, over the 10% cap.
+      return Promise.resolve({ rows: [{ count: '11' }] })
     })
     const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
@@ -175,7 +175,7 @@ describe('GET /api/cron/seed-schools', () => {
 
     expect(res.status).toBe(200)
     expect(body.deleted).toBe(0)
-    expect(body.deleteSkipped).toBe(10)
+    expect(body.deleteSkipped).toBe(11)
 
     const deleteCall = mockQuery.mock.calls.find((c) => (c[0] as string).includes('DELETE FROM schools'))
     expect(deleteCall).toBeUndefined()
@@ -193,5 +193,14 @@ describe('vercel.json', () => {
       expect.arrayContaining([{ path: '/api/cron/seed-schools', schedule: '0 14 * * *' }])
     )
     expect(config.git.deploymentEnabled).toEqual({ 'agent-*': false, 'task-*': false })
+  })
+})
+
+describe('seed-schools delete cap allows the first MySchools cleanup', () => {
+  it('permits 31 of 457 (6.8%), the 2026-09-18 refresh', () => {
+    const src = require('fs').readFileSync(require('path').join(__dirname, '../app/api/cron/seed-schools/route.ts'), 'utf8')
+    const m = src.match(/DELETE_SAFETY_CAP_RATIO = ([0-9.]+)/)
+    expect(m).not.toBeNull()
+    expect(31 / 457).toBeLessThanOrEqual(Number(m![1]))
   })
 })
