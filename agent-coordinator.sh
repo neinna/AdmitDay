@@ -1039,6 +1039,35 @@ for u in data.get('result', []):
 ")
 }
 
+# preserve_branch_before_abandoning REASON
+# Called from run_agent (relies on its ISSUE_NUMBER/BRANCH/COMMIT_TITLE/
+# LOG_FILE locals via bash's dynamic scoping) right before a run gives up on
+# an issue. If the working tree is dirty, commits it to the current task
+# branch and sets DIRTY_TREE_NOTE for the caller's github_comment; either way
+# leaves the branch in place instead of deleting it.
+#
+# Observed 2026-09-17 (#162, issue #207): a run that died mid-edit on the
+# budget cap left its edits sitting uncommitted, `git checkout main` carried
+# them across since nothing conflicted, and the entry guard on the NEXT issue
+# (`git reset --hard && git clean -fd`, see "Scrub the working tree" above)
+# would have wiped them if a human had not happened to look first. Nothing
+# can build on a discarded working tree; a human or a retry can build on a
+# commit, so this both makes the commit and stops deleting the one place it
+# lives.
+preserve_branch_before_abandoning() {
+  local REASON="$1"
+  DIRTY_TREE_NOTE=""
+  if [ -n "$(git status --porcelain)" ]; then
+    log "Issue #${ISSUE_NUMBER}: dirty tree while abandoning (${REASON}) — committing partial work to ${BRANCH} instead of discarding it"
+    git status --porcelain >> "$LOG_FILE" 2>&1
+    if git add -A && git commit -m "${COMMIT_TITLE} (partial — ${REASON})" >> "$LOG_FILE" 2>&1; then
+      DIRTY_TREE_NOTE="
+
+Uncommitted work from this run was committed to \`${BRANCH}\` (branch left in place, not deleted) so it isn't lost."
+    fi
+  fi
+}
+
 run_agent() {
   local ISSUE_NUMBER=$1
   local RUN_START
@@ -1150,7 +1179,6 @@ Instructions:
 
   local ATTEMPT=1
   local ATTEMPTS_USED=0
-  local SESSION_ID=""
   local SUCCESS=0
   local FAIL_REASON=""
   local REVIEW_TEXT=""
@@ -1161,6 +1189,7 @@ Instructions:
   local BUILD_RESULT="not-run"
   local REVIEWER_RESULT="not-run"
   local PR_OUTCOME="not-run"
+  local DIRTY_TREE_NOTE=""
 
   while [ $ATTEMPT -le 2 ]; do
     log "Issue #${ISSUE_NUMBER}: agent attempt ${ATTEMPT}"
@@ -1176,7 +1205,15 @@ Instructions:
     # type definitions.
     local ENV_FP_BEFORE
     ENV_FP_BEFORE=$(env_fingerprint)
-    run_claude "$CLAUDE_OUT" "$([ $ATTEMPT -gt 1 ] && echo "$SESSION_ID")" \
+    # Never --resume: a resumed session re-sends the ENTIRE prior transcript —
+    # including attempt 1's exploration — as input context on every turn of
+    # attempt 2, so a 5-minute read-the-codebase phase gets billed again on
+    # every retry turn instead of once. AGENTS.md already asks agents to do
+    # this themselves ("write a compact task brief and start a fresh
+    # implementation session"); attempt 2 gets that same fresh start, with
+    # PROMPT below carrying forward just the issue, the failure reason, and
+    # the files already touched (issue #207).
+    run_claude "$CLAUDE_OUT" "" \
       "Bash,Read,Write,Edit,Glob,Grep,WebFetch,WebSearch" "$CLAUDE_IMPLEMENT_MODEL" "$CLAUDE_IMPLEMENT_MAX_USD"
     local RC=$?
     if [ "$(env_fingerprint)" != "$ENV_FP_BEFORE" ]; then
@@ -1202,8 +1239,6 @@ Instructions:
     elif [ $RC -ne 0 ]; then
       log "Issue #${ISSUE_NUMBER}: claude errored on attempt ${ATTEMPT}"
     fi
-    [ -z "$SESSION_ID" ] && SESSION_ID=$(claude_json_field "$CLAUDE_OUT" "session_id")
-
     if [ $RC -eq 0 ]; then
       github_remove_label "$ISSUE_NUMBER" "blocked-provider"
     fi
@@ -1232,14 +1267,14 @@ Instructions:
     if [ $RC -ne 0 ] && claude_budget_exhausted "$CLAUDE_OUT"; then
       OUTCOME="budget-exhausted"; GH_LABEL="agent-stuck"; PR_OUTCOME="not-attempted"
       log "Issue #${ISSUE_NUMBER}: Claude hit the coordinator max budget (${CLAUDE_IMPLEMENT_MAX_USD} USD) on attempt ${ATTEMPT}; labeling agent-stuck instead of retrying."
+      cd "$APP_DIR"
+      preserve_branch_before_abandoning "budget exhausted on attempt ${ATTEMPT}"
       github_comment "$ISSUE_NUMBER" "Agent stopped because the coordinator's Claude per-call budget cap was reached on attempt ${ATTEMPT}.
 
-This is a controlled cost stop, not a verified implementation failure. The issue is labeled agent-stuck: no pull request was opened, so there is nothing to review. The usual fix is to split or re-specify the issue so it fits inside one capped run (see \"Cost And Issue Sizing\" in AGENTS.md), or raise the cap for this issue."
+This is a controlled cost stop, not a verified implementation failure. The issue is labeled agent-stuck: no pull request was opened, so there is nothing to review. The usual fix is to split or re-specify the issue so it fits inside one capped run (see \"Cost And Issue Sizing\" in AGENTS.md), or raise the cap for this issue.${DIRTY_TREE_NOTE}"
       github_label "$ISSUE_NUMBER" "agent-stuck"
       github_remove_label "$ISSUE_NUMBER" "in-progress"
-      cd "$APP_DIR"
       git checkout main >> "$LOG_FILE" 2>&1
-      git branch -D "$BRANCH" 2>/dev/null
       lf_emit "$ISSUE_NUMBER" "$ISSUE_TITLE" "$BRANCH" "$OUTCOME" "$ATTEMPTS_USED" \
         "$GH_LABEL" "$RUN_START" "$(lf_now_ns)" "$TEST_RESULT" "$BUILD_RESULT" \
         "$REVIEWER_RESULT" "$PR_OUTCOME"
@@ -1294,8 +1329,40 @@ Diagnose why this failed before changing anything else. Then fix it, run the tes
     fi
 
     if [ $ATTEMPT -lt 2 ]; then
-      PROMPT="$FAIL_REASON"
-      log "Issue #${ISSUE_NUMBER}: attempt ${ATTEMPT} failed, retrying with session resume"
+      # Compact brief for the retry, NOT a resumed conversation (see the
+      # run_claude call above): list only the files actually touched so far
+      # (committed on this branch, or still sitting dirty in the tree) so the
+      # fresh session can inspect them with git instead of re-exploring from
+      # nothing.
+      local RETRY_TOUCHED
+      RETRY_TOUCHED=$(
+        { git diff --name-only origin/main...HEAD -- 2>/dev/null
+          git status --porcelain 2>/dev/null | awk '{print $2}'
+        } | sort -u | grep -v '^$'
+      )
+      [ -z "$RETRY_TOUCHED" ] && RETRY_TOUCHED="(no files changed yet)"
+      PROMPT="You are fixing a GitHub issue in the AdmitDay Next.js app. A previous attempt on this same issue just failed. This is a FRESH session with no memory of that attempt's exploration, so this brief is self-contained — read it instead of assuming shared context.
+
+Issue #${ISSUE_NUMBER}: ${ISSUE_TITLE}
+
+${ISSUE_BODY}
+
+What went wrong on the previous attempt:
+${FAIL_REASON}
+
+Files already changed on branch ${BRANCH} (inspect with git diff/git log before re-exploring from scratch):
+${RETRY_TOUCHED}
+
+Instructions:
+- Work in /home/agent/app on branch ${BRANCH} (already checked out). Read /home/agent/app/AGENTS.md first and follow its house rules.
+- Fix the issue. Stay strictly within its scope — an independent reviewer will reject scope creep. Add tests for your change in __tests__/ (add, don't overwrite existing tests).
+- While working, run only the tests for what you changed ('npx jest __tests__/<file>') and 'npx tsc --noEmit'. Run the full 'npm test' once before committing. Do NOT run 'npm run build': the coordinator runs the full test suite and the build after you finish and will send you any failure.
+- Solve the issue with the infrastructure the app already has (listed in AGENTS.md). Do not add a new external service, hosted database, or paid API unless the issue names it.
+- Commit your work: cd /home/agent/app && git add -A && git commit -m \"${COMMIT_TITLE}\"
+- Never modify data/schools.json.
+- Never push, never merge, never switch branches.
+- End with a short summary of what you changed and why (it becomes the pull request description)."
+      log "Issue #${ISSUE_NUMBER}: attempt ${ATTEMPT} failed, retrying in a fresh session with a compact brief"
     fi
     ATTEMPT=$((ATTEMPT + 1))
   done
@@ -1367,6 +1434,8 @@ Tests and build verified green by the coordinator, and an independent reviewer a
     fi
     git checkout main >> "$LOG_FILE" 2>&1
   else
+    cd "$APP_DIR"
+    preserve_branch_before_abandoning "failed after 2 attempts"
     local FAIL_OUTPUT
     FAIL_OUTPUT=$(tail -100 "$VERIFY_OUT" 2>/dev/null)
     [ -z "$FAIL_OUTPUT" ] && FAIL_OUTPUT="(no verification output — the claude run failed or timed out)"
@@ -1382,7 +1451,7 @@ ${REVIEW_TEXT}"
 ${FAIL_OUTPUT}
 \`\`\`
 
-</details>"
+</details>${DIRTY_TREE_NOTE}"
     # The agent failed and opened no PR, so there is nothing for a human to
     # review — agent-stuck, not needs-you. The trace records both facts rather
     # than collapsing them into one.
@@ -1390,11 +1459,9 @@ ${FAIL_OUTPUT}
     PR_OUTCOME="not-attempted"
     github_label "$ISSUE_NUMBER" "agent-stuck"
     github_remove_label "$ISSUE_NUMBER" "in-progress"
-    cd "$APP_DIR"
     git checkout main >> "$LOG_FILE" 2>&1
-    git branch -D "$BRANCH" 2>/dev/null
     log "Issue #${ISSUE_NUMBER}: failed after 2 attempts, labeled agent-stuck"
-    telegram "Failed after 2 attempts: issue #${ISSUE_NUMBER}: ${ISSUE_TITLE} — labeled agent-stuck, branch deleted"
+    telegram "Failed after 2 attempts: issue #${ISSUE_NUMBER}: ${ISSUE_TITLE} — labeled agent-stuck"
   fi
 
   # One trace per issue, written after the run has fully finished either way.
