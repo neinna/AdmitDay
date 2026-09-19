@@ -8,7 +8,10 @@ Outputs: schools.json (used directly by the app)
 
 Sources:
   - NYC-SIFT: https://nycsift.com (aggregates DOE data, public domain)
-  - DOE HS Directory: https://data.cityofnewyork.us (NYC Open Data, public domain)
+  - DOE HS Directory: Fall 2025 InfoHub HS directory + School Quality Reports
+    2024-25 (NYC Open Data `dnpx-dfnc`) -- see scripts/enrich_doe_directory.py.
+    Previously NYC Open Data `uq7m-95z8`, the 2019 DOE High School Directory,
+    replaced under issue #289 because it had gone six admissions cycles stale.
   - MySchools: https://www.myschools.nyc (current public program pages)
 
 Both are public domain / open data. Safe to use with attribution.
@@ -132,18 +135,45 @@ def extract_borough(text):
 
 
 def fetch_doe_directory():
-    print("Fetching DOE High School Directory from NYC Open Data...")
-    url = "https://data.cityofnewyork.us/resource/uq7m-95z8.json"
-    params = {"$limit": 1000}
-    r = requests.get(url, params=params, headers=HEADERS, timeout=30)
-    r.raise_for_status()
-    data = r.json()
-    print(f"  Found {len(data)} records from DOE Open Data")
+    print("Fetching the Fall 2025 HS Directory (InfoHub) and School Quality Reports 2024-25...")
+    from scripts.enrich_doe_directory import (
+        download_directory_workbook,
+        parse_directory_rows,
+        fetch_sqr_rows,
+        percent_to_fraction,
+        parsed_fraction,
+        SQR_METRIC_GRADUATION,
+        SQR_METRIC_ATTENDANCE,
+    )
+
+    directory_by_dbn = parse_directory_rows(download_directory_workbook())
+    sqr_by_dbn = fetch_sqr_rows()
+    print(f"  Found {len(directory_by_dbn)} records from the Fall 2025 HS Directory")
+
+    def reconciled_rate(directory_value, sqr_value):
+        fraction = percent_to_fraction(directory_value)
+        if fraction is None:
+            fraction = parsed_fraction(sqr_value)
+        return "" if fraction is None else str(fraction)
+
     by_dbn = {}
-    for record in data:
-        dbn = record.get("dbn", "").strip()
-        if dbn:
-            by_dbn[dbn] = record
+    for dbn, row in directory_by_dbn.items():
+        sqr_row = sqr_by_dbn.get(dbn, {})
+        merged = dict(row)
+        merged["graduation_rate"] = reconciled_rate(
+            row.get("graduation_rate"), sqr_row.get(SQR_METRIC_GRADUATION)
+        )
+        merged["attendance_rate"] = reconciled_rate(
+            row.get("attendance_rate"), sqr_row.get(SQR_METRIC_ATTENDANCE)
+        )
+        merged["college_career_rate"] = reconciled_rate(row.get("college_career_rate"), None)
+        # The Fall 2025 directory numbers requirement columns
+        # requirement_{req}_{program}; the merge below still reads the old
+        # Open Data dataset's requirement{program}_{req} shape (issue #289).
+        for prog in range(1, 5):
+            for req in range(1, 4):
+                merged[f"requirement{prog}_{req}"] = row.get(f"requirement_{req}_{prog}", "")
+        by_dbn[dbn] = merged
     return by_dbn
 
 

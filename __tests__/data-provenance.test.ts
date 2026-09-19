@@ -12,12 +12,16 @@ import {
 /**
  * Issue #138. The app used to stamp every record `last_verified: "2025-2026"`
  * and render it as the cycle the data was verified for — while the DOE half of
- * that record comes from NYC Open Data `uq7m-95z8`, the *2019* directory, whose
- * data is dated 2018-08-16.
+ * that record came from NYC Open Data `uq7m-95z8`, the *2019* directory, whose
+ * data was dated 2018-08-16.
  *
- * Telling a family that 2018 requirements were verified for the current cycle
+ * Telling a family that stale requirements were verified for the current cycle
  * is the one failure mode that can actually harm them. These tests exist so the
  * claim cannot quietly return — including via a future data-source change.
+ *
+ * Issue #289 replaced that 2018 dataset with the Fall 2025 InfoHub HS
+ * directory (plus School Quality Reports 2024-25 for attendance and a
+ * graduation-rate fallback); the literal vintage asserted below moved with it.
  */
 
 describe('data provenance — sources', () => {
@@ -25,7 +29,7 @@ describe('data provenance — sources', () => {
     const doe = DATA_SOURCES.find((s) => s.key === 'doe-directory')
     expect(doe).toBeDefined()
     expect(doe!.publishedLabel).toBe(DOE_DATASET_PUBLISHED)
-    expect(DOE_DATASET_PUBLISHED).toBe('2018')
+    expect(DOE_DATASET_PUBLISHED).toBe('Fall 2025')
     expect(doe!.url).toContain(DOE_DATASET_ID)
   })
 
@@ -55,7 +59,7 @@ describe('data provenance — rendered rows', () => {
     const rows = buildProvenanceRows()
     const doe = rows.find((r) => r.key === 'doe-directory')!
     const sift = rows.find((r) => r.key === 'sift')!
-    expect(doe.value).toContain('published 2018')
+    expect(doe.value).toContain('published Fall 2025')
     expect(sift.value).not.toMatch(/published/i)
   })
 
@@ -71,7 +75,7 @@ describe('data provenance — rendered rows', () => {
 describe('data provenance — summary line', () => {
   it('reports the oldest known vintage, since that is the honest summary', () => {
     const note = summariseDataVintage()
-    expect(note).toContain('2018')
+    expect(note).toContain('Fall 2025')
     expect(note).toMatch(/confirm at MySchools/i)
   })
 
