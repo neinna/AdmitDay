@@ -16,7 +16,10 @@ import { ensureSchema } from '@/lib/load-schools'
 // leave production. Deleting unconditionally is one bad file away from
 // wiping the table, so a delete that would remove more than this fraction of
 // the current rows is skipped instead of run.
-const DELETE_SAFETY_CAP_RATIO = 0.05
+// 10%: the first MySchools refresh (2026-09-18) legitimately removed 31 of
+// 457 schools (6.8%): 9 not in this cycle's admissions and 22 transfer-only
+// schools (#255, #271). A broken scrape still can't wipe the table.
+const DELETE_SAFETY_CAP_RATIO = 0.1
 
 export async function GET(request: Request) {
   const cronSecret = process.env.CRON_SECRET
