@@ -190,4 +190,71 @@ echo "RC=$?"
       .filter((f) => f.startsWith(path.basename(runningScript)) && f !== path.basename(runningScript))
     expect(leftoverTemps).toEqual([])
   })
+
+  it('keeps the running script and does not restart when mv fails to install the staged candidate', () => {
+    fs.writeFileSync(runningScript, '#!/bin/bash\necho old\n')
+    fs.writeFileSync(repoScript, '#!/bin/bash\necho new\n')
+
+    const fnBody = extractFunction('install_running_coordinator_script')
+    const script = `
+APP_DIR="${dir}"
+LOG_FILE="${logFile}"
+PM2_LOG="${pm2Log}"
+REPO_SCRIPT_OVERRIDE="${repoScript}"
+RUNNING_COORDINATOR_SCRIPT="${runningScript}"
+log() { echo "[ts] $1" | tee -a "$LOG_FILE" >/dev/null; }
+pm2() { echo "pm2 $*" >> "$PM2_LOG"; }
+mv() { return 1; }
+${fnBody.replace('local REPO_SCRIPT="$APP_DIR/agent-coordinator.sh"', 'local REPO_SCRIPT="$REPO_SCRIPT_OVERRIDE"')}
+install_running_coordinator_script
+echo "RC=$?"
+`
+    const out = execFileSync('bash', ['-c', script], { cwd: dir, encoding: 'utf-8' })
+    const rc = Number((out.match(/RC=(\d+)/) || [])[1])
+
+    expect(rc).toBe(0)
+    expect(fs.readFileSync(runningScript, 'utf-8')).toBe('#!/bin/bash\necho old\n')
+    expect(fs.readFileSync(pm2Log, 'utf-8')).toBe('')
+    expect(fs.readFileSync(logFile, 'utf-8').toLowerCase()).toMatch(/mv .*failed|keeping running copy/)
+  })
+
+  // Observed 2026-09-18 13:40 and 13:50 UTC: the running script's blob hash
+  // changed (mv ran, PM2 served the new code) but "installed agent-coordinator.sh"
+  // never appeared in the log. `log()` pipes through `echo | tee`, forking two
+  // processes that only write once scheduled — a restart racing that line can
+  // win. The fix writes the "installed" line directly (no fork) instead of
+  // going through log(). This test proves that guarantee by making log()
+  // itself a no-op: if the line still depended on log(), it would vanish here.
+  it('writes the "installed" line to the log file even if log() itself never runs', () => {
+    fs.writeFileSync(runningScript, '#!/bin/bash\necho old\n')
+    fs.writeFileSync(repoScript, '#!/bin/bash\necho new\n')
+
+    const fnBody = extractFunction('install_running_coordinator_script')
+    const script = `
+APP_DIR="${dir}"
+LOG_FILE="${logFile}"
+PM2_LOG="${pm2Log}"
+REPO_SCRIPT_OVERRIDE="${repoScript}"
+RUNNING_COORDINATOR_SCRIPT="${runningScript}"
+log() { :; }
+pm2() { echo "pm2 $*" >> "$PM2_LOG"; }
+${fnBody.replace('local REPO_SCRIPT="$APP_DIR/agent-coordinator.sh"', 'local REPO_SCRIPT="$REPO_SCRIPT_OVERRIDE"')}
+install_running_coordinator_script
+echo "RC=$?"
+`
+    const out = execFileSync('bash', ['-c', script], { cwd: dir, encoding: 'utf-8' })
+    const rc = Number((out.match(/RC=(\d+)/) || [])[1])
+
+    expect(rc).toBe(42)
+    const logged = fs.readFileSync(logFile, 'utf-8')
+    expect(logged).toMatch(/installed agent-coordinator\.sh/i)
+    expect(logged).toMatch(/restarting coordinator under PM2/i)
+  })
+
+  it('writes the "installed" line without piping through an extra tee process', () => {
+    const fn = extractFunction('install_running_coordinator_script')
+    const installLine = fn.slice(fn.indexOf('INSTALL_MSG'))
+    expect(installLine).not.toMatch(/\|\s*tee/)
+    expect(installLine).toContain('>> "$LOG_FILE"')
+  })
 })

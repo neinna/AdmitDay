@@ -167,8 +167,29 @@ install_running_coordinator_script() {
     return 0
   fi
 
-  mv "$TMP_SCRIPT" "$RUNNING_SCRIPT"
-  log "Self-update: installed agent-coordinator.sh (blob ${OLD_HASH} -> ${NEW_HASH}) over the running copy, restarting coordinator under PM2"
+  if ! mv "$TMP_SCRIPT" "$RUNNING_SCRIPT"; then
+    log "Self-update: mv of staged agent-coordinator.sh (blob ${NEW_HASH}) onto the running copy failed — keeping running copy (blob ${OLD_HASH}), NOT restarting"
+    rm -f "$TMP_SCRIPT"
+    return 0
+  fi
+
+  # Observed 2026-09-18 13:40 and 13:50 UTC: the running copy's blob hash
+  # changed (the mv above ran and PM2 was already serving the new script)
+  # but this "installed" line never landed in the log. The moment mv lands,
+  # /home/agent/agent-coordinator.sh already has the new content, and
+  # anything reacting to that — our own `pm2 restart` below included — can
+  # tear this process down before it finishes writing. `log()` pipes through
+  # `echo | tee`, which forks two more processes and does not write until
+  # both are scheduled and run; that scheduling delay is exactly the kind of
+  # gap a restart racing this line can win. Write it directly with the
+  # current shell process instead — a plain builtin `echo` with simple
+  # redirection needs no fork — and force it to disk with `sync` before
+  # anything else runs, so the write is done before a restart can pre-empt
+  # it.
+  local INSTALL_MSG="[$(date '+%Y-%m-%d %H:%M:%S')] Self-update: installed agent-coordinator.sh (blob ${OLD_HASH} -> ${NEW_HASH}) over the running copy, restarting coordinator under PM2"
+  echo "$INSTALL_MSG"
+  echo "$INSTALL_MSG" >> "$LOG_FILE"
+  sync
   (sleep 1; pm2 restart agent-coordinator --update-env >> "$LOG_FILE" 2>&1) &
   return 42
 }
@@ -412,6 +433,117 @@ github_create_issue() {
   BODY_JSON=$(printf '%s' "${2:-}" | json_escape)
   RESPONSE=$(gh_api POST "/issues" "{\"title\":${TITLE_JSON},\"body\":${BODY_JSON},\"labels\":[\"${TRIGGER_LABEL}\"]}")
   echo "$RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('number',''))" 2>/dev/null
+}
+
+# --- Provider-queue-stall alerting -------------------------------------------
+# Observed 2026-09-16/17: the queue retried a provider-unavailable issue every
+# 10 minutes for ~22 hours (133 no-op runs) with no alert anywhere reachable
+# overnight. The blocked-provider label (#168) exists but nobody watches
+# labels, and Telegram is being removed (#166), so the only channel left is a
+# GitHub issue. After 3 CONSECUTIVE provider-unavailable halts (no successful
+# claude call in between), open or comment on one issue titled "Agent queue
+# stalled", labeled needs-you. When a run next succeeds, comment "resumed at
+# <time>" and close it. State survives coordinator restarts in a small JSON
+# file and is reset the moment any claude call succeeds (RC 0) — direct proof
+# the provider is reachable again.
+STALL_STATE_FILE="${STALL_STATE_FILE:-/tmp/agent-coordinator-stall-state.json}"
+STALL_THRESHOLD=3
+STALL_ISSUE_TITLE="Agent queue stalled"
+
+stall_state_field() {
+  # stall_state_field FIELD -> value from $STALL_STATE_FILE, or "" if absent/missing
+  python3 -c "
+import json
+try:
+    d = json.load(open('$STALL_STATE_FILE'))
+except Exception:
+    d = {}
+print(d.get('$1', '') or '')
+" 2>/dev/null
+}
+
+stall_state_write() {
+  # stall_state_write COUNT FIRST_TIME REASON ALERT_ISSUE
+  SS_COUNT="$1" SS_FIRST="$2" SS_REASON="$3" SS_ISSUE="$4" python3 << 'PYEOF' > "$STALL_STATE_FILE" 2>/dev/null
+import json, os
+print(json.dumps({
+    "count": int(os.environ.get("SS_COUNT") or 0),
+    "first_time": os.environ.get("SS_FIRST") or "",
+    "reason": os.environ.get("SS_REASON") or "",
+    "alert_issue": os.environ.get("SS_ISSUE") or "",
+}))
+PYEOF
+}
+
+github_create_needs_you_issue() {
+  # github_create_needs_you_issue TITLE BODY -> echoes issue number, labeled
+  # needs-you directly (never agent-ok: this is an alert, not queue work).
+  local TITLE_JSON BODY_JSON RESPONSE
+  TITLE_JSON=$(printf '%s' "$1" | json_escape)
+  BODY_JSON=$(printf '%s' "$2" | json_escape)
+  RESPONSE=$(gh_api POST "/issues" "{\"title\":${TITLE_JSON},\"body\":${BODY_JSON},\"labels\":[\"needs-you\"]}")
+  echo "$RESPONSE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('number','') or '')" 2>/dev/null
+}
+
+# record_provider_halt REASON: call once per provider-unavailable run_agent
+# attempt. Increments the consecutive-halt count; at exactly the 3rd it opens
+# the alert issue, and on every one after that (while the streak continues)
+# it comments on that same issue instead of opening a duplicate.
+record_provider_halt() {
+  local REASON="$1" COUNT FIRST_TIME ALERT_ISSUE NOW
+  COUNT=$(stall_state_field "count")
+  [ -z "$COUNT" ] && COUNT=0
+  FIRST_TIME=$(stall_state_field "first_time")
+  ALERT_ISSUE=$(stall_state_field "alert_issue")
+  NOW=$(date '+%Y-%m-%d %H:%M:%S %Z')
+  COUNT=$((COUNT + 1))
+  [ -z "$FIRST_TIME" ] && FIRST_TIME="$NOW"
+
+  if [ "$COUNT" -ge "$STALL_THRESHOLD" ]; then
+    if [ -n "$ALERT_ISSUE" ]; then
+      github_comment "$ALERT_ISSUE" "Still stalled: ${COUNT} consecutive provider-unavailable halts so far. Latest reason:
+
+${REASON}"
+      log "Provider halt streak: ${COUNT} consecutive, commented on existing alert issue #${ALERT_ISSUE}"
+    else
+      local BODY="The agent queue has been halted by provider-unavailable errors ${COUNT} times in a row, with no successful run in between.
+
+First stall: ${FIRST_TIME}
+Reason: ${REASON}
+
+The coordinator keeps retrying automatically every 10 minutes. This issue will be commented on and closed once a run succeeds."
+      ALERT_ISSUE=$(github_create_needs_you_issue "$STALL_ISSUE_TITLE" "$BODY")
+      if [ -n "$ALERT_ISSUE" ]; then
+        log "Provider halt streak reached ${COUNT}, opened alert issue #${ALERT_ISSUE} (needs-you)"
+      else
+        log "Provider halt streak reached ${COUNT}, but failed to open the alert issue"
+      fi
+    fi
+  else
+    log "Provider halt streak: ${COUNT}/${STALL_THRESHOLD} consecutive provider-unavailable halts"
+  fi
+
+  stall_state_write "$COUNT" "$FIRST_TIME" "$REASON" "$ALERT_ISSUE"
+}
+
+# resolve_provider_halt: call whenever a claude call succeeds (RC 0), direct
+# proof the provider is reachable again. Resets any in-progress streak; if
+# that streak had opened an alert issue, comments "resumed at <time>" and
+# closes it.
+resolve_provider_halt() {
+  local COUNT ALERT_ISSUE NOW
+  COUNT=$(stall_state_field "count")
+  [ -z "$COUNT" ] && COUNT=0
+  [ "$COUNT" -eq 0 ] && return 0
+
+  ALERT_ISSUE=$(stall_state_field "alert_issue")
+  if [ -n "$ALERT_ISSUE" ]; then
+    NOW=$(date '+%Y-%m-%d %H:%M:%S %Z')
+    github_comment "$ALERT_ISSUE" "resumed at ${NOW}"
+    gh_api PATCH "/issues/${ALERT_ISSUE}" "{\"state\":\"closed\"}" > /dev/null
+    log "Provider halt streak resolved: closed alert issue #${ALERT_ISSUE} (resumed at ${NOW})"
+  fi
+  rm -f "$STALL_STATE_FILE"
 }
 
 github_open_pr() {
@@ -1075,10 +1207,15 @@ Instructions:
     if [ $RC -eq 0 ]; then
       github_remove_label "$ISSUE_NUMBER" "blocked-provider"
     fi
+    [ $RC -eq 0 ] && resolve_provider_halt
 
     if [ $RC -ne 0 ] && claude_provider_unavailable "$CLAUDE_OUT"; then
       OUTCOME="provider-unavailable"; GH_LABEL="$TRIGGER_LABEL"; PR_OUTCOME="not-attempted"
       log "Issue #${ISSUE_NUMBER}: provider unavailable (billing, rate limit, or API outage). Work was never attempted; restoring the issue to the queue."
+      local STALL_REASON
+      STALL_REASON=$(claude_json_field "$CLAUDE_OUT" "result")
+      [ -z "$STALL_REASON" ] && STALL_REASON="(no error text captured on issue #${ISSUE_NUMBER})"
+      record_provider_halt "$STALL_REASON"
       github_label "$ISSUE_NUMBER" "$TRIGGER_LABEL"
       github_label "$ISSUE_NUMBER" "blocked-provider"
       github_remove_label "$ISSUE_NUMBER" "in-progress"
