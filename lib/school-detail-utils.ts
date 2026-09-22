@@ -347,6 +347,8 @@ export interface ProgramRow {
   name: string
   method: string
   code?: string
+  /** Present only when general_education.all_seats_filled is false last cycle (issue #304). */
+  seatsLeftLastYear?: { cycle?: string }
 }
 
 /**
@@ -367,7 +369,11 @@ export function dedupePrograms(programs: School['programs']): ProgramRow[] {
     const key = `${code || name}||${method}`
     if (seen.has(key)) continue
     seen.add(key)
-    rows.push(code ? { name, method, code } : { name, method })
+    const row: ProgramRow = code ? { name, method, code } : { name, method }
+    if (p.seats_filled_last_year?.general_education === false) {
+      row.seatsLeftLastYear = { cycle: p.provenance?.admissions_cycle }
+    }
+    rows.push(row)
   }
   return rows
 }
