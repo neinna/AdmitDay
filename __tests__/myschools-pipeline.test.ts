@@ -60,7 +60,7 @@ describe('MySchools program pipeline', () => {
     expect(vpsRefreshSource).toContain('load_env_file "$APP_ENV_FILE"\nload_env_file "$ROOT_ENV_FILE"\nload_env_file "$AGENT_ENV_FILE"')
     expect(vpsRefreshSource).toContain('require_env OPENAI_API_KEY')
     expect(vpsRefreshSource).toContain('ADMITDAY_SKIP_POSTGRES_SEED=1 npm run refresh:data')
-    expect(vpsRefreshSource).toContain('git add schools.json data/school-embeddings.json')
+    expect(vpsRefreshSource).toContain('git add schools.json data/schema-summary.json data/school-embeddings.json')
     expect(vpsRefreshSource).toContain('gh workflow run ci.yml --repo "$REPO" --ref "$BRANCH"')
     expect(vpsRefreshSource).toContain('gh pr create')
   })
@@ -69,7 +69,9 @@ describe('MySchools program pipeline', () => {
     expect(vpsRefreshSource).toContain('merge_refresh_pr')
     expect(vpsRefreshSource).toContain('assert_refresh_pr_files')
     expect(vpsRefreshSource).toContain('assert_refresh_ci_green')
-    expect(vpsRefreshSource).toContain('EXPECTED_DATA_FILES="data/school-embeddings.json\nschools.json"')
+    expect(vpsRefreshSource).toContain(
+      'EXPECTED_DATA_FILES="data/schema-summary.json\ndata/school-embeddings.json\nschools.json"'
+    )
     expect(vpsRefreshSource).toContain('gh pr merge "$BRANCH"')
   })
 

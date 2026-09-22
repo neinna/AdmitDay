@@ -41,6 +41,7 @@ import fs from 'fs'
 import path from 'path'
 
 const SCHOOLS_PATH = path.resolve(__dirname, '../schools.json')
+const SCHEMA_SUMMARY_PATH = path.resolve(__dirname, '../data/schema-summary.json')
 
 const KNOWN_BOROUGHS = new Set(['Manhattan', 'Brooklyn', 'Queens', 'Bronx', 'Staten Island'])
 
@@ -185,11 +186,13 @@ if (!dataAvailable) {
   )
 }
 
-;(dataAvailable ? describe : describe.skip)('school data invariants (real dataset)', () => {
-  // describe.skip still evaluates this body (it just skips the `it`s), so
-  // guard the read -- it must not throw when the file is absent.
-  const schools: MinimalSchool[] = dataAvailable ? JSON.parse(fs.readFileSync(SCHOOLS_PATH, 'utf-8')) : []
+// Loaded once at module scope (not just inside the first describe) so the
+// schema summary freshness checks below can reuse it. Guarded the same way:
+// describe.skip still evaluates this body, so the read must not throw when
+// the file is absent.
+const schools: MinimalSchool[] = dataAvailable ? JSON.parse(fs.readFileSync(SCHOOLS_PATH, 'utf-8')) : []
 
+;(dataAvailable ? describe : describe.skip)('school data invariants (real dataset)', () => {
   it('loads as a non-empty array', () => {
     expect(Array.isArray(schools)).toBe(true)
     expect(schools.length).toBeGreaterThan(0)
@@ -232,6 +235,85 @@ if (!dataAvailable) {
     expect(ratio).toBeLessThanOrEqual(MAX_MISSING_ADMISSIONS_RATIO)
   })
 })
+
+// ── Schema summary freshness (issue #321) ───────────────────────────────
+// data/schema-summary.json exists so nobody has to open the 4 MB
+// schools.json to learn its shape (scripts/build_schema_summary.py, wired
+// into scripts/refresh-data.ts). If schools.json changes -- a field added or
+// removed, the school/program count shifting -- without regenerating the
+// summary, it silently goes stale and starts lying about the data.
+//
+// A raw file-mtime comparison ("is the summary older than schools.json?")
+// is not reliable here: a fresh CI checkout stamps every file with the
+// checkout time rather than its original commit time, so which of two
+// tracked files ends up with the later mtime is checkout-order noise, not
+// signal. Comparing content instead is a strictly stronger check anyway --
+// it catches the actual failure mode (summary doesn't match the data)
+// rather than a proxy for it.
+
+const schemaSummaryAvailable = dataAvailable && fs.existsSync(SCHEMA_SUMMARY_PATH)
+
+if (dataAvailable && !schemaSummaryAvailable) {
+  // eslint-disable-next-line no-console
+  console.warn(
+    `[school-data-invariants] ${SCHEMA_SUMMARY_PATH} not found -- skipping schema summary freshness tests.`
+  )
+}
+
+interface SchemaField {
+  name: string
+  type: string
+  present: number
+  example: unknown
+}
+
+;(schemaSummaryAvailable ? describe : describe.skip)(
+  'schema summary freshness (data/schema-summary.json vs schools.json)',
+  () => {
+    const summary = schemaSummaryAvailable
+      ? JSON.parse(fs.readFileSync(SCHEMA_SUMMARY_PATH, 'utf-8'))
+      : null
+
+    const fieldNames = (entries: unknown): string[] =>
+      (Array.isArray(entries) ? (entries as SchemaField[]) : []).map((f) => f.name).sort()
+
+    it('has a school_count matching the real dataset', () => {
+      expect(summary.school_count).toBe(schools.length)
+    })
+
+    it('has a program_count matching the real dataset', () => {
+      const programCount = schools.reduce(
+        (n, s) => n + (Array.isArray(s.programs) ? (s.programs as unknown[]).length : 0),
+        0
+      )
+      expect(summary.program_count).toBe(programCount)
+    })
+
+    it('lists exactly the school-record fields present in the real dataset', () => {
+      const actual = new Set<string>()
+      schools.forEach((s) => Object.keys(s).forEach((k) => actual.add(k)))
+      expect(fieldNames(summary.school_fields)).toEqual(Array.from(actual).sort())
+    })
+
+    it('lists exactly the doe_data fields present in the real dataset', () => {
+      const actual = new Set<string>()
+      schools.forEach((s) => {
+        const doe = s.doe_data
+        if (doe && typeof doe === 'object') Object.keys(doe as Record<string, unknown>).forEach((k) => actual.add(k))
+      })
+      expect(fieldNames(summary.doe_data_fields)).toEqual(Array.from(actual).sort())
+    })
+
+    it('lists exactly the program-record fields present in the real dataset', () => {
+      const actual = new Set<string>()
+      schools.forEach((s) => {
+        const programs = Array.isArray(s.programs) ? (s.programs as Record<string, unknown>[]) : []
+        programs.forEach((p) => Object.keys(p).forEach((k) => actual.add(k)))
+      })
+      expect(fieldNames(summary.program_fields)).toEqual(Array.from(actual).sort())
+    })
+  }
+)
 
 // ── Corruption detection ─────────────────────────────────────────────────
 // Confirms the checks above actually catch bad data, using a small synthetic
