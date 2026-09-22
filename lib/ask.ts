@@ -64,9 +64,18 @@ export async function answerQuestion({
     .join("\n\n");
 
   // Step 3: Send to Claude with the retrieved context
+  //
+  // Issue #308: thinking is adaptive and on by default for claude-sonnet-5,
+  // and thinking tokens count against max_tokens. A 600-token budget could
+  // be entirely consumed by thinking before any answer text was produced,
+  // tripping the #257 empty-answer fallback. This task is a direct
+  // context-to-answer synthesis that doesn't need extended reasoning, so
+  // thinking is disabled outright; max_tokens is raised to give the answer
+  // itself headroom. Answer length/tone is controlled by SYSTEM_PROMPT.
   const message = await getAnthropicClient().messages.create({
     model: "claude-sonnet-5",
-    max_tokens: 600,
+    max_tokens: 1500,
+    thinking: { type: "disabled" },
     system: SYSTEM_PROMPT,
     messages: [
       {
