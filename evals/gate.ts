@@ -1,7 +1,7 @@
 /**
  * evals/gate.ts
  *
- * Issue #285: pure decision logic for the nightly/PR ask-eval gate, kept
+ * Issue #285: pure decision logic for the weekly/PR ask-eval gate, kept
  * separate from evals/langfuse-run.ts (the network calls) so it can be unit
  * tested without a Langfuse client.
  */
@@ -14,9 +14,9 @@ export interface ScorerSummary {
 
 export type RunSummary = Record<string, ScorerSummary>;
 
-export const NIGHTLY_RUN_PREFIX = "nightly-";
+export const WEEKLY_RUN_PREFIX = "weekly-";
 
-/** Percentage-point drop that fails a PR run relative to the last nightly run on main. */
+/** Percentage-point drop that fails a PR run relative to the last weekly run on main. */
 export const REGRESSION_THRESHOLD_POINTS = 10;
 
 /** Required for every eval:ask run, not just CI ones — the run must always be recorded. */
@@ -31,15 +31,15 @@ export function findMissingEnvKeys(env: Record<string, string | undefined>): str
   return REQUIRED_EVAL_ENV_KEYS.filter((key) => !env[key]);
 }
 
-export type EvalTrigger = "nightly" | "pull_request" | "manual";
+export type EvalTrigger = "weekly" | "pull_request" | "manual";
 
 export function resolveTrigger(rawTrigger: string | undefined): EvalTrigger {
-  if (rawTrigger === "nightly" || rawTrigger === "pull_request") return rawTrigger;
+  if (rawTrigger === "weekly" || rawTrigger === "pull_request") return rawTrigger;
   return "manual";
 }
 
 export function buildRunName(trigger: EvalTrigger, runId: string): string {
-  if (trigger === "nightly") return `${NIGHTLY_RUN_PREFIX}${runId}`;
+  if (trigger === "weekly") return `${WEEKLY_RUN_PREFIX}${runId}`;
   return `${trigger}-${runId}`;
 }
 
@@ -50,14 +50,14 @@ interface DatasetRunLike {
 }
 
 /**
- * The most recent nightly run's summary, or null if none exists yet (e.g.
- * the very first PR run before any nightly run has landed on main).
+ * The most recent weekly run's summary, or null if none exists yet (e.g.
+ * the very first PR run before any weekly run has landed on main).
  */
-export function pickLatestNightlyBaseline(runs: DatasetRunLike[]): RunSummary | null {
-  const nightlyRuns = runs.filter((r) => r.name.startsWith(NIGHTLY_RUN_PREFIX));
-  if (nightlyRuns.length === 0) return null;
+export function pickLatestWeeklyBaseline(runs: DatasetRunLike[]): RunSummary | null {
+  const weeklyRuns = runs.filter((r) => r.name.startsWith(WEEKLY_RUN_PREFIX));
+  if (weeklyRuns.length === 0) return null;
 
-  const latest = nightlyRuns.reduce((a, b) =>
+  const latest = weeklyRuns.reduce((a, b) =>
     new Date(a.createdAt).getTime() >= new Date(b.createdAt).getTime() ? a : b
   );
 
@@ -67,7 +67,7 @@ export function pickLatestNightlyBaseline(runs: DatasetRunLike[]): RunSummary | 
 
 /**
  * Scorers other than `excludeScorers` (the ones already gated at 100%) that
- * dropped more than REGRESSION_THRESHOLD_POINTS below the nightly baseline.
+ * dropped more than REGRESSION_THRESHOLD_POINTS below the weekly baseline.
  * Returns human-readable descriptions, one per regressed scorer.
  */
 export function computeRegressions(
@@ -86,7 +86,7 @@ export function computeRegressions(
     const dropPoints = (base.rate - stat.rate) * 100;
     if (dropPoints > REGRESSION_THRESHOLD_POINTS) {
       regressions.push(
-        `${name}: ${(stat.rate * 100).toFixed(1)}% vs nightly baseline ${(base.rate * 100).toFixed(1)}% ` +
+        `${name}: ${(stat.rate * 100).toFixed(1)}% vs weekly baseline ${(base.rate * 100).toFixed(1)}% ` +
           `(-${dropPoints.toFixed(1)} pts)`
       );
     }

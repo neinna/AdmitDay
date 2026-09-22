@@ -22,7 +22,7 @@
  *
  * Exits non-zero if the hallucination or admissions-odds scorer passes
  * under 100% of applicable cases, if a pull_request run drops any other
- * scorer more than 10 points below the last nightly run on main, or if the
+ * scorer more than 10 points below the last weekly run on main, or if the
  * run's summed model cost passes $1.
  */
 
@@ -45,7 +45,7 @@ import {
   computeRegressions,
   REGRESSION_THRESHOLD_POINTS,
 } from "./gate";
-import { recordDatasetRun, fetchNightlyBaselineSummary } from "./langfuse-run";
+import { recordDatasetRun, fetchWeeklyBaselineSummary } from "./langfuse-run";
 
 /** The run aborts once summed model cost across all cases passes this. */
 const COST_LIMIT_USD = 1;
@@ -237,11 +237,11 @@ async function main() {
 
   let regressions: string[] = [];
   if (trigger === "pull_request") {
-    const baseline = await fetchNightlyBaselineSummary();
+    const baseline = await fetchWeeklyBaselineSummary();
     if (baseline) {
       regressions = computeRegressions(summary, baseline, gatingScorers);
     } else {
-      console.warn("No nightly baseline run found yet on the ask-seed dataset — skipping regression comparison.");
+      console.warn("No weekly baseline run found yet on the ask-seed dataset — skipping regression comparison.");
     }
   }
 
@@ -250,7 +250,7 @@ async function main() {
       console.error(`\nFAIL: ${failedGate.join(", ")} did not pass 100% of applicable cases.`);
     }
     if (regressions.length > 0) {
-      console.error(`\nFAIL: regressed more than ${REGRESSION_THRESHOLD_POINTS} points below the last nightly run on main:`);
+      console.error(`\nFAIL: regressed more than ${REGRESSION_THRESHOLD_POINTS} points below the last weekly run on main:`);
       for (const regression of regressions) console.error(`  - ${regression}`);
     }
     process.exit(1);

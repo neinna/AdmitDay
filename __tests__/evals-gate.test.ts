@@ -2,7 +2,7 @@
  * __tests__/evals-gate.test.ts
  *
  * Issue #285: unit tests for the pure gating logic in evals/gate.ts —
- * missing-env detection, run naming, picking the last nightly baseline out
+ * missing-env detection, run naming, picking the last weekly baseline out
  * of a list of Langfuse dataset runs, and the >10-point regression check.
  * No network, no Langfuse client.
  */
@@ -11,7 +11,7 @@ import {
   findMissingEnvKeys,
   resolveTrigger,
   buildRunName,
-  pickLatestNightlyBaseline,
+  pickLatestWeeklyBaseline,
   computeRegressions,
   REQUIRED_EVAL_ENV_KEYS,
   REGRESSION_THRESHOLD_POINTS,
@@ -40,8 +40,8 @@ describe('findMissingEnvKeys', () => {
 })
 
 describe('resolveTrigger', () => {
-  it('recognizes nightly and pull_request', () => {
-    expect(resolveTrigger('nightly')).toBe('nightly')
+  it('recognizes weekly and pull_request', () => {
+    expect(resolveTrigger('weekly')).toBe('weekly')
     expect(resolveTrigger('pull_request')).toBe('pull_request')
   })
 
@@ -52,8 +52,8 @@ describe('resolveTrigger', () => {
 })
 
 describe('buildRunName', () => {
-  it('prefixes nightly runs with "nightly-"', () => {
-    expect(buildRunName('nightly', '123')).toBe('nightly-123')
+  it('prefixes weekly runs with "weekly-"', () => {
+    expect(buildRunName('weekly', '123')).toBe('weekly-123')
   })
 
   it('prefixes other triggers with their own name', () => {
@@ -62,27 +62,27 @@ describe('buildRunName', () => {
   })
 })
 
-describe('pickLatestNightlyBaseline', () => {
+describe('pickLatestWeeklyBaseline', () => {
   const summaryA = { hallucination: { passed: 30, total: 30, rate: 1 } }
   const summaryB = { hallucination: { passed: 28, total: 30, rate: 28 / 30 } }
 
-  it('returns null when there is no nightly run yet', () => {
+  it('returns null when there is no weekly run yet', () => {
     const runs = [{ name: 'pull_request-1', createdAt: '2026-09-20T06:00:00Z', metadata: { summary: summaryA } }]
-    expect(pickLatestNightlyBaseline(runs)).toBeNull()
+    expect(pickLatestWeeklyBaseline(runs)).toBeNull()
   })
 
-  it('picks the most recently created nightly run, ignoring PR runs', () => {
+  it('picks the most recently created weekly run, ignoring PR runs', () => {
     const runs = [
-      { name: 'nightly-1', createdAt: '2026-09-20T06:00:00Z', metadata: { summary: summaryA } },
+      { name: 'weekly-1', createdAt: '2026-09-20T06:00:00Z', metadata: { summary: summaryA } },
       { name: 'pull_request-2', createdAt: '2026-09-21T12:00:00Z', metadata: { summary: summaryB } },
-      { name: 'nightly-3', createdAt: '2026-09-21T06:00:00Z', metadata: { summary: summaryB } },
+      { name: 'weekly-3', createdAt: '2026-09-21T06:00:00Z', metadata: { summary: summaryB } },
     ]
-    expect(pickLatestNightlyBaseline(runs)).toEqual(summaryB)
+    expect(pickLatestWeeklyBaseline(runs)).toEqual(summaryB)
   })
 
-  it('returns null when the latest nightly run has no summary metadata', () => {
-    const runs = [{ name: 'nightly-1', createdAt: '2026-09-20T06:00:00Z', metadata: {} }]
-    expect(pickLatestNightlyBaseline(runs)).toBeNull()
+  it('returns null when the latest weekly run has no summary metadata', () => {
+    const runs = [{ name: 'weekly-1', createdAt: '2026-09-20T06:00:00Z', metadata: {} }]
+    expect(pickLatestWeeklyBaseline(runs)).toBeNull()
   })
 })
 
@@ -106,7 +106,7 @@ describe('computeRegressions', () => {
     expect(computeRegressions(current, baseline, gatingScorers)).toEqual([])
   })
 
-  it('flags a scorer that drops more than 10 points below the nightly baseline', () => {
+  it('flags a scorer that drops more than 10 points below the weekly baseline', () => {
     const baseline = { coverage: { passed: 30, total: 30, rate: 1 } }
     const current = { coverage: { passed: 26, total: 30, rate: 26 / 30 } }
     const regressions = computeRegressions(current, baseline, gatingScorers)

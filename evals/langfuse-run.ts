@@ -8,7 +8,7 @@
  * One dataset item per seed case, one trace + one score per scorer per case,
  * linked into the run via createDatasetRunItem. The run's own summary (the
  * per-scorer pass rates evals/run-ask-eval.ts already computed) is stored on
- * the run's metadata so a later PR run can read the last nightly run's
+ * the run's metadata so a later PR run can read the last weekly run's
  * numbers back without re-aggregating every trace's scores.
  *
  * Unlike lib/trace.ts, this is never fire-and-forget: a broken write here
@@ -18,7 +18,7 @@
 
 import type { Langfuse as LangfuseClient } from "langfuse";
 import type { EvalTrigger, RunSummary } from "./gate";
-import { pickLatestNightlyBaseline } from "./gate";
+import { pickLatestWeeklyBaseline } from "./gate";
 
 const DATASET_NAME = "ask-seed";
 
@@ -94,9 +94,9 @@ export async function recordDatasetRun(params: RecordRunParams): Promise<void> {
   await langfuse.flushAsync();
 }
 
-/** The last nightly run's per-scorer summary on main, or null if none has run yet. */
-export async function fetchNightlyBaselineSummary(): Promise<RunSummary | null> {
+/** The last weekly run's per-scorer summary on main, or null if none has run yet. */
+export async function fetchWeeklyBaselineSummary(): Promise<RunSummary | null> {
   const langfuse = getClient();
   const { data: runs } = await langfuse.getDatasetRuns(DATASET_NAME);
-  return pickLatestNightlyBaseline(runs);
+  return pickLatestWeeklyBaseline(runs);
 }

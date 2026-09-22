@@ -1,4 +1,4 @@
-# Issue #285: ask-box eval runner (npm run eval:ask), on a nightly schedule
+# Issue #285: ask-box eval runner (npm run eval:ask), on a weekly schedule
 # and on pull requests that touch the ask path. Each run is recorded to the
 # admitday-app Langfuse project as a dataset run on the "ask-seed" dataset
 # (see evals/langfuse-run.ts). The eval-ask job is a required-status
@@ -12,7 +12,7 @@ name: eval-ask
 
 on:
   schedule:
-    - cron: '0 6 * * *'
+    - cron: '0 6 * * 1'  # Mondays 06:00 UTC
   pull_request:
     paths:
       - 'lib/ask.ts'
@@ -42,5 +42,5 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.EVAL_OPENAI_API_KEY }}
           EVAL_LANGFUSE_PUBLIC_KEY: ${{ secrets.EVAL_LANGFUSE_PUBLIC_KEY }}
           EVAL_LANGFUSE_SECRET_KEY: ${{ secrets.EVAL_LANGFUSE_SECRET_KEY }}
-          EVAL_TRIGGER: ${{ github.event_name == 'schedule' && 'nightly' || github.event_name == 'pull_request' && 'pull_request' || 'manual' }}
+          EVAL_TRIGGER: ${{ github.event_name == 'schedule' && 'weekly' || github.event_name == 'pull_request' && 'pull_request' || 'manual' }}
         run: npm run eval:ask
