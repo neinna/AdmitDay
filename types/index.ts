@@ -60,6 +60,11 @@ export interface SchoolProgram {
   }
 }
 
+export interface GeoPoint {
+  lat: number
+  lng: number
+}
+
 export interface School {
   dbn: string
   name: string
@@ -73,6 +78,7 @@ export interface School {
   programs: SchoolProgram[]
   flags: SchoolFlags
   doe_data: DoeData
+  location?: GeoPoint | null
   sift_url: string
   last_verified: string
 }

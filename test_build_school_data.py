@@ -104,6 +104,7 @@ def test_build_school_json_excludes_school_with_no_myschools_programs(monkeypatc
         return (["Screened"], [_myschools_program()])
 
     monkeypatch.setattr(build_school_data, "fetch_myschools_program_detail", fake_fetch)
+    monkeypatch.setattr(build_school_data, "fetch_myschools_location", lambda dbn: None)
     monkeypatch.setattr(build_school_data.time, "sleep", lambda *_: None)
 
     sift_schools = [
@@ -124,6 +125,9 @@ def test_build_school_json_keeps_school_with_myschools_programs(monkeypatch):
         "fetch_myschools_program_detail",
         lambda dbn: (["Screened"], [_myschools_program()]),
     )
+    monkeypatch.setattr(
+        build_school_data, "fetch_myschools_location", lambda dbn: {"lat": 40.7, "lng": -73.9}
+    )
     monkeypatch.setattr(build_school_data.time, "sleep", lambda *_: None)
 
     sift_schools = [_sift_school("13K430", "Brooklyn Technical High School", borough="Brooklyn")]
@@ -133,6 +137,7 @@ def test_build_school_json_keeps_school_with_myschools_programs(monkeypatch):
     assert excluded_dbns == []
     assert len(schools) == 1
     assert schools[0]["programs"] == [_myschools_program()]
+    assert schools[0]["location"] == {"lat": 40.7, "lng": -73.9}
 
 
 def test_build_school_json_aborts_on_network_error_instead_of_excluding(monkeypatch):
@@ -222,3 +227,29 @@ def test_fetch_myschools_program_detail_raises_when_only_transfer(monkeypatch):
     import pytest
     with pytest.raises(build_school_data.MySchoolsNotAdmittingError):
         build_school_data.fetch_myschools_program_detail("13K430")
+
+
+# ── Issue #295: school.address.latitude/longitude from the MySchools record
+# becomes each school's `location`. ─────────────────────────────────────────
+
+def test_parse_school_location_reads_address_lat_lng():
+    from scripts.scrape_myschools import parse_school_location
+
+    raw = {"school": {"dbn": "13K430", "address": {"latitude": "40.694", "longitude": "-73.978"}}}
+    assert parse_school_location(raw) == {"lat": 40.694, "lng": -73.978}
+
+
+def test_parse_school_location_absent_when_coordinates_missing():
+    from scripts.scrape_myschools import parse_school_location
+
+    assert parse_school_location({"school": {"dbn": "13K430", "address": {}}}) is None
+    assert parse_school_location({"school": {"dbn": "13K430"}}) is None
+    assert parse_school_location({}) is None
+
+
+def test_fetch_myschools_location_returns_none_on_myschools_error(monkeypatch):
+    def raise_error(dbn, cache_dir=None):
+        raise build_school_data.MySchoolsError("boom")
+
+    monkeypatch.setattr(build_school_data, "scrape_school_location", raise_error)
+    assert build_school_data.fetch_myschools_location("13K430") is None

@@ -7,6 +7,7 @@ import { useAuth, useClerk } from '@clerk/nextjs'
 import { School } from '@/types'
 import { ADDED_SCHOOLS_KEY, trackLabel } from '@/lib/school-list-utils'
 import { PENDING_SAVE_KEY } from '@/components/PendingSaveSync'
+import { StartingPoint, loadStartingPoint, schoolDistanceMiles, formatMiles } from '@/lib/commute'
 import {
   StatCell,
   ShsatCutoffRow,
@@ -86,6 +87,13 @@ export default function SchoolDetailClient({
   const [hydrated, setHydrated] = useState(false)
   const [programsExpanded, setProgramsExpanded] = useState(false)
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({})
+  const [startingPoint, setStartingPoint] = useState<StartingPoint | null>(null)
+
+  // Issue #295: the starting point lives only in localStorage — read it
+  // client-side after mount so server-rendered markup never depends on it.
+  useEffect(() => {
+    setStartingPoint(loadStartingPoint())
+  }, [])
 
   // Issue #200/#240: saving a school requires an account, so the only saved
   // list is Postgres via /api/saved-schools. Signed out, there is no list —
@@ -154,6 +162,18 @@ export default function SchoolDetailClient({
   const address = school.doe_data?.address
     ? `${school.doe_data.address}, ${school.borough}${school.doe_data.zip ? ' NY ' + school.doe_data.zip : ''}`
     : null
+
+  // Google Maps link built client-side (issue #295): destination is always
+  // the school's address; the parent's own starting point is added to the
+  // URL only here, in their browser — it's never sent to our server.
+  const directionsHref = address
+    ? `https://www.google.com/maps/dir/?${new URLSearchParams({
+        api: '1',
+        destination: address,
+        ...(startingPoint ? { origin: startingPoint.label } : {}),
+      }).toString()}`
+    : null
+  const distanceMiles = startingPoint ? schoolDistanceMiles(school, startingPoint.point) : null
 
   return (
     <div className="max-w-[1120px] mx-auto bg-surface">
@@ -388,6 +408,9 @@ export default function SchoolDetailClient({
           <div className="px-[22px] min-[900px]:px-7 py-[26px] border-b border-rule flex flex-col gap-[14px]">
             <Eyebrow>Getting there</Eyebrow>
             <div className="flex flex-col gap-[11px]">
+              {distanceMiles != null && (
+                <div className="text-[13.5px] text-ink-2">{formatMiles(distanceMiles)} from your starting point</div>
+              )}
               {subwayLines.length > 0 && (
                 <div className="flex flex-col gap-[6px]">
                   <span className="text-[12.5px] text-faint">Subway</span>
@@ -421,6 +444,16 @@ export default function SchoolDetailClient({
               {address && <DefinitionRow labelWidth={92} label="Address" value={address} className="pt-[3px]" />}
               {notReportedTransitLabel && (
                 <NotReportedLine variant="reported">{notReportedTransitLabel}</NotReportedLine>
+              )}
+              {directionsHref && (
+                <a
+                  href={directionsHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[13.5px] text-accent"
+                >
+                  Open directions ↗
+                </a>
               )}
             </div>
           </div>

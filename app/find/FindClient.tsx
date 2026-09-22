@@ -28,6 +28,16 @@ import { extractFilters, QueryFilters, appliedSignals, removeSignal } from '@/li
 import { getUnmetCriteria } from '@/lib/soft-match'
 import { MAX_QUESTION_LENGTH } from '@/lib/ask-guardrails'
 import { buildFindRowSummary, MYSCHOOLS_URL } from '@/lib/school-detail-utils'
+import {
+  StartingPoint,
+  loadStartingPoint,
+  saveStartingPoint,
+  clearStartingPoint,
+  resolveStartingPointInput,
+  filterWithinMiles,
+  schoolDistanceMiles,
+  formatMiles,
+} from '@/lib/commute'
 import { Chip, Button, SchoolRow } from '@/components/ui'
 import FeedbackRow from '@/components/FeedbackRow'
 import FindRail from './FindRail'
@@ -90,6 +100,35 @@ export default function FindClient({ schools, initialFilters }: Props) {
   const [addedDbns, setAddedDbns] = useState<Set<string>>(new Set())
   const [hydrated, setHydrated] = useState(false)
 
+  // Starting point (issue #295) lives only in localStorage — never in the
+  // URL, a fetch body, or an analytics call. Read once on mount, after
+  // hydration, so the server-rendered markup never depends on it.
+  const [startingPoint, setStartingPoint] = useState<StartingPoint | null>(null)
+  const [startingPointError, setStartingPointError] = useState('')
+  const [withinMiles, setWithinMiles] = useState<number | null>(null)
+
+  useEffect(() => {
+    setStartingPoint(loadStartingPoint())
+  }, [])
+
+  function handleSetStartingPoint(input: string) {
+    const resolved = resolveStartingPointInput(input)
+    if (!resolved) {
+      setStartingPointError('Enter a NYC ZIP code or an exact subway station name.')
+      return
+    }
+    setStartingPointError('')
+    setStartingPoint(resolved)
+    saveStartingPoint(resolved)
+  }
+
+  function handleClearStartingPoint() {
+    clearStartingPoint()
+    setStartingPoint(null)
+    setStartingPointError('')
+    setWithinMiles(null)
+  }
+
   // Rail filters are a hard floor and live in the URL so a filtered /find
   // view is linkable — reloading the URL restores them (parsed server-side
   // in page.tsx and passed in as initialFilters).
@@ -144,9 +183,36 @@ export default function FindClient({ schools, initialFilters }: Props) {
       })),
     [hardFiltered, askFilters]
   )
+
+  // "Within" is a second hard floor, only in effect once a starting point is
+  // set — a school with no published location is excluded while it's on,
+  // never treated as "far away" while it's off.
+  const distanceFiltered = useMemo(
+    () =>
+      startingPoint
+        ? annotated.filter(({ school }) => {
+            const d = schoolDistanceMiles(school, startingPoint.point)
+            return d != null && (withinMiles == null || d <= withinMiles)
+          })
+        : annotated,
+    [annotated, startingPoint, withinMiles]
+  )
+
+  // Ask fit is the primary sort; a starting point breaks ties by distance
+  // (issue #295) so an unranked list still reads nearest-first.
   const ranked = useMemo(
-    () => [...annotated].sort((a, b) => a.missing.length - b.missing.length),
-    [annotated]
+    () =>
+      [...distanceFiltered].sort((a, b) => {
+        if (a.missing.length !== b.missing.length) return a.missing.length - b.missing.length
+        if (!startingPoint) return 0
+        const da = schoolDistanceMiles(a.school, startingPoint.point)
+        const db = schoolDistanceMiles(b.school, startingPoint.point)
+        if (da == null && db == null) return 0
+        if (da == null) return 1
+        if (db == null) return -1
+        return da - db
+      }),
+    [distanceFiltered, startingPoint]
   )
 
   const visible = ranked.slice(0, visibleCount)
@@ -363,6 +429,12 @@ export default function FindClient({ schools, initialFilters }: Props) {
               onToggleTrack={toggleTrack}
               onSizeChange={setSize}
               onReset={resetFilters}
+              startingPoint={startingPoint}
+              startingPointError={startingPointError}
+              withinMiles={withinMiles}
+              onSetStartingPoint={handleSetStartingPoint}
+              onClearStartingPoint={handleClearStartingPoint}
+              onWithinMilesChange={setWithinMiles}
             />
           </div>
         </div>
@@ -476,12 +548,12 @@ export default function FindClient({ schools, initialFilters }: Props) {
               </p>
             </div>
             <div className="font-mono text-[11.5px] tracking-[0.1em] uppercase text-faint">
-              Sorted by fit
+              {startingPoint ? 'Sorted by distance' : 'Sorted by fit'}
             </div>
           </div>
 
           <div className="flex flex-col">
-            {hardFiltered.length === 0 ? (
+            {distanceFiltered.length === 0 ? (
               <div className="px-9 py-10 text-[14px] text-muted">
                 No schools match the current filters — try loosening{' '}
                 {findFilterToLoosen(filters) ?? 'a filter'}.
@@ -493,6 +565,10 @@ export default function FindClient({ schools, initialFilters }: Props) {
                 const tracks = (school.admissions_types ?? []).map(trackLabel).join(', ') || '—'
                 const students =
                   school.total_students != null ? school.total_students.toLocaleString() : '—'
+                const distanceMiles = startingPoint ? schoolDistanceMiles(school, startingPoint.point) : null
+                const metadata = `${neighborhood} · ${tracks} · ${students} students${
+                  distanceMiles != null ? ` · ${formatMiles(distanceMiles)}` : ''
+                }`
 
                 // Carries the active rail filters + this row's rank + the
                 // ask-derived signals through to /school/[dbn] via the URL —
@@ -524,7 +600,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
                       posthog?.capture('school_detail_viewed', { dbn: school.dbn, from: 'find' })
                     }
                     isHiddenGem={school.flags.is_hidden_gem}
-                    metadata={`${neighborhood} · ${tracks} · ${students} students`}
+                    metadata={metadata}
                     rationale={buildFindRowSummary(school)}
                     statValue={
                       school.applicants_per_seat != null ? school.applicants_per_seat.toFixed(1) : '—'

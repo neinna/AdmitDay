@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { School } from '@/types'
 import { BOROUGH_ORDER } from '@/lib/school-list-utils'
 import {
@@ -8,6 +9,7 @@ import {
   splitTrackOptionsForRail,
   trackLabel,
 } from '@/lib/school-list-utils'
+import { StartingPoint, WITHIN_MILES_OPTIONS, suggestStationNames } from '@/lib/commute'
 import { Chip, SegmentedControl } from '@/components/ui'
 
 const BOROUGHS = Object.keys(BOROUGH_ORDER)
@@ -19,6 +21,13 @@ const SIZE_OPTIONS = [
   { label: 'Large', value: 'large' },
 ]
 
+const WITHIN_OPTIONS = [
+  { label: 'Any', value: '' },
+  ...WITHIN_MILES_OPTIONS.map((m) => ({ label: `${m} mi`, value: String(m) })),
+]
+
+const STATION_DATALIST_ID = 'admitday-subway-stations'
+
 interface Props {
   schools: School[]
   filters: FindFilters
@@ -27,6 +36,88 @@ interface Props {
   onToggleTrack: (track: string) => void
   onSizeChange: (size: string) => void
   onReset: () => void
+  startingPoint: StartingPoint | null
+  startingPointError: string
+  withinMiles: number | null
+  onSetStartingPoint: (input: string) => void
+  onClearStartingPoint: () => void
+  onWithinMilesChange: (miles: number | null) => void
+}
+
+function StartingFromField({
+  startingPoint,
+  startingPointError,
+  withinMiles,
+  onSetStartingPoint,
+  onClearStartingPoint,
+  onWithinMilesChange,
+}: Pick<
+  Props,
+  'startingPoint' | 'startingPointError' | 'withinMiles' | 'onSetStartingPoint' | 'onClearStartingPoint' | 'onWithinMilesChange'
+>) {
+  const [input, setInput] = useState('')
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="font-mono text-[11px] tracking-[0.12em] uppercase text-faint">Starting from</div>
+
+      {startingPoint ? (
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[14px] text-ink">{startingPoint.label}</span>
+          <button
+            type="button"
+            onClick={onClearStartingPoint}
+            className="text-[13px] text-accent underline underline-offset-[3px]"
+          >
+            Clear
+          </button>
+        </div>
+      ) : (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault()
+            onSetStartingPoint(input)
+          }}
+          className="flex flex-col gap-2"
+        >
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            list={STATION_DATALIST_ID}
+            placeholder="ZIP code or subway station"
+            aria-label="Starting from: ZIP code or subway station"
+            className="border border-border-strong px-[10px] py-[9px] text-[14px] text-ink outline-none placeholder:text-faint"
+          />
+          <datalist id={STATION_DATALIST_ID}>
+            {suggestStationNames(input).map((name) => (
+              <option key={name} value={name} />
+            ))}
+          </datalist>
+          <button type="submit" className="text-left text-[13px] text-accent underline underline-offset-[3px]">
+            Set
+          </button>
+        </form>
+      )}
+
+      {startingPointError && <p className="text-[12.5px] text-red-700">{startingPointError}</p>}
+
+      <p className="text-[12px] text-faint">
+        Stays on this device — never sent to AdmitDay.
+      </p>
+
+      {startingPoint && (
+        <div className="flex flex-col gap-2 pt-1">
+          <div className="font-mono text-[11px] tracking-[0.12em] uppercase text-faint">Within</div>
+          <SegmentedControl
+            options={WITHIN_OPTIONS}
+            value={withinMiles ? String(withinMiles) : ''}
+            onChange={(v) => onWithinMilesChange(v ? Number(v) : null)}
+          />
+        </div>
+      )}
+    </div>
+  )
 }
 
 function renderTrackButton(
@@ -62,11 +153,26 @@ export default function FindRail({
   onToggleTrack,
   onSizeChange,
   onReset,
+  startingPoint,
+  startingPointError,
+  withinMiles,
+  onSetStartingPoint,
+  onClearStartingPoint,
+  onWithinMilesChange,
 }: Props) {
   const { main: mainTrackOptions, iep: iepTrackOptions } = splitTrackOptionsForRail(trackOptions)
 
   return (
     <div className="flex flex-col gap-[30px] px-7 py-8 min-[900px]:border-r min-[900px]:border-rule">
+      <StartingFromField
+        startingPoint={startingPoint}
+        startingPointError={startingPointError}
+        withinMiles={withinMiles}
+        onSetStartingPoint={onSetStartingPoint}
+        onClearStartingPoint={onClearStartingPoint}
+        onWithinMilesChange={onWithinMilesChange}
+      />
+
       <div className="flex flex-col gap-3">
         <div className="flex items-baseline justify-between">
           <div className="font-mono text-[11px] tracking-[0.12em] uppercase text-faint">Borough</div>

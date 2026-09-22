@@ -444,6 +444,38 @@ def scrape_school_programs(
     return parse_programs(raw, url, fetched_at)
 
 
+def parse_school_location(raw: dict) -> Optional[dict]:
+    """Extracts {"lat": float, "lng": float} from a MySchools school record's
+    school.address.latitude/longitude (issue #295). None if either field is
+    missing or unparseable -- absent means absent, never a guessed 0,0."""
+    school = raw.get("school") if isinstance(raw, dict) else None
+    address = school.get("address") if isinstance(school, dict) else None
+    if not isinstance(address, dict):
+        return None
+    try:
+        lat = address.get("latitude")
+        lng = address.get("longitude")
+        if lat is None or lng is None:
+            return None
+        return {"lat": float(lat), "lng": float(lng)}
+    except (TypeError, ValueError):
+        return None
+
+
+def scrape_school_location(
+    dbn_or_url: str,
+    process_id: int = PROCESS_ID_HIGH_SCHOOL,
+    cache_dir: Optional[Path] = DEFAULT_CACHE_DIR,
+    **fetch_kwargs,
+) -> Optional[dict]:
+    """Fetch + parse in one call: given a DBN or MySchools school URL,
+    return that school's {"lat", "lng"} or None. Shares fetch_school's
+    on-disk cache, so calling this alongside scrape_school_programs for the
+    same school costs no extra network request."""
+    raw, _url, _fetched_at = fetch_school(dbn_or_url, process_id=process_id, cache_dir=cache_dir, **fetch_kwargs)
+    return parse_school_location(raw)
+
+
 def main(argv: list[str]) -> int:
     if not argv:
         print("Usage: scrape_myschools.py <DBN or MySchools school URL> [...]", file=sys.stderr)

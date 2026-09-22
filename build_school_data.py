@@ -26,7 +26,12 @@ from bs4 import BeautifulSoup
 from datetime import datetime, timezone
 from pathlib import Path
 
-from scripts.scrape_myschools import MySchoolsError, MySchoolsNotAdmittingError, scrape_school_programs
+from scripts.scrape_myschools import (
+    MySchoolsError,
+    MySchoolsNotAdmittingError,
+    scrape_school_programs,
+    scrape_school_location,
+)
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; AdmitDay/1.0; research tool)"
@@ -256,6 +261,17 @@ def fetch_myschools_program_detail(dbn):
     return admissions_types, enriched
 
 
+def fetch_myschools_location(dbn):
+    """{"lat", "lng"} from the same MySchools record fetch_myschools_program_detail
+    just fetched (issue #295) -- cached by fetch_school, so this is not an
+    extra network call. None on any MySchools error; a school missing its
+    location must not abort the refresh."""
+    try:
+        return scrape_school_location(dbn, cache_dir=MYSCHOOLS_CACHE_DIR)
+    except MySchoolsError:
+        return None
+
+
 def fetch_school_detail(dbn, sift_url):
     """
     NYC-SIFT uses div.NYCSF_twocolumn pairs for program data.
@@ -336,6 +352,7 @@ def build_school_json(sift_schools, doe_by_dbn):
             print(f"    {dbn} has no programs in this cycle's MySchools admissions -- excluding: {e}")
             excluded_dbns.append(dbn)
             continue
+        location = fetch_myschools_location(dbn)
         time.sleep(0.3)
 
         has_shsat = "SHSAT" in admissions_types
@@ -457,6 +474,7 @@ def build_school_json(sift_schools, doe_by_dbn):
                 "neighborhood": doe.get("neighborhood", ""),
                 "addtl_info": doe.get("addtl_info1", ""),
             },
+            "location": location,
             "sift_url": school["sift_url"],
             "last_verified": "2025-2026",
             "shsat_cutoff_score": SHSAT_CUTOFFS.get(dbn, {}).get(SHSAT_CUTOFFS_YEAR) if has_shsat else None,
