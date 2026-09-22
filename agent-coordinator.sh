@@ -362,6 +362,19 @@ PYEOF
   return 0
 }
 
+# lf_discard: drop this run's buffered phases without submitting a trace.
+# Used for the provider-halt path, where the model was never called — issue
+# #318: those no-op runs were still emitting a $0 "implement" observation,
+# diluting every cost/latency average on the agent-run dashboard 6:1. The
+# halt streak counter (record_provider_halt) and alert issue (#263/#301)
+# already record these events, so nothing is lost by not tracing them.
+lf_discard() {
+  local RUN_FILE="$LF_RUN_FILE"
+  LF_RUN_FILE=""
+  [ -n "$RUN_FILE" ] && rm -f "$RUN_FILE"
+  return 0
+}
+
 telegram() {
   local MSG=$(echo "$1" | tr '\n' ' ')
   curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
@@ -1358,7 +1371,7 @@ Instructions:
     [ $RC -eq 0 ] && resolve_provider_halt
 
     if [ $RC -ne 0 ] && claude_provider_unavailable "$CLAUDE_OUT"; then
-      OUTCOME="provider-unavailable"; GH_LABEL="$TRIGGER_LABEL"; PR_OUTCOME="not-attempted"
+      OUTCOME="provider-unavailable"
       log "Issue #${ISSUE_NUMBER}: provider unavailable (billing, rate limit, or API outage). Work was never attempted; restoring the issue to the queue."
       local STALL_REASON
       STALL_REASON=$(claude_json_field "$CLAUDE_OUT" "result")
@@ -1370,9 +1383,7 @@ Instructions:
       cd "$APP_DIR"
       git checkout main >> "$LOG_FILE" 2>&1
       git branch -D "$BRANCH" 2>/dev/null
-      lf_emit "$ISSUE_NUMBER" "$ISSUE_TITLE" "$BRANCH" "$OUTCOME" "$ATTEMPTS_USED" \
-        "$GH_LABEL" "$RUN_START" "$(lf_now_ns)" "$TEST_RESULT" "$BUILD_RESULT" \
-        "$REVIEWER_RESULT" "$PR_OUTCOME"
+      lf_discard
       rm -f "$CLAUDE_OUT" "$VERIFY_OUT"
       return 75
     fi

@@ -45,6 +45,18 @@ Every implementation run is capped by `CLAUDE_IMPLEMENT_MAX_USD` (currently \$5.
 
 The metric is **cost per merged PR**, not cost per attempt. On 2026-09-17 this repo spent roughly \$13 per merged PR across five runs. \$2–5 is the healthy range for a multi-file feature with tests; \$0.50–1.50 for a single-file change with an explicit spec.
 
+### Epics and children
+
+A conversation that produces more than one concern, or that needs any discovery, becomes an **epic** first, not an issue.
+
+- **The epic is a record, never a task.** Label it `epic`. It never gets `agent-ok`, and the coordinator never picks it up. It holds the decision, why it was made, what was discovered, and links to its children.
+- **Discovery happens before the children are filed, and its output lives in the epic.** Field names, sample records, column lists, API shapes, exact values. A child issue that still has to explore pays for that exploration inside a capped run, and re-reads the result on every later turn.
+- **One concern per child.** A scraper change and the screen that shows the new field are two children. A data migration and the cleanup that follows it are two children.
+- **Children carry the answer, not the pointer.** Exact values, exact file paths, exact thresholds, copied from the epic.
+- **Single-concern work skips the epic.** Filing one small, fully specified issue is cheaper than the overhead of a parent.
+
+Measured on 2026-09-22: five issues written as complete specifications rather than as sized children consumed $27 and merged nothing, while four properly sized issues cost $0.43-$2.43 each and merged on the first attempt. The difference was concerns per issue, not difficulty.
+
 When filing an issue for the agent:
 
 - **One concern per issue.** A new module, a new dependency, two route changes, and three test scenarios in one ticket is four issues.
