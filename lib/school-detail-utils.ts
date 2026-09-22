@@ -68,14 +68,7 @@ const STAT_FIELDS: StatField[] = [
     key: 'academicScore',
     gridLabel: 'Academic score',
     sentenceLabel: 'academic score',
-    get: (s) => s.academic_score_pct,
-    format: pct,
-  },
-  {
-    key: 'surveyScore',
-    gridLabel: 'Survey score',
-    sentenceLabel: 'survey score',
-    get: (s) => s.survey_score_pct,
+    get: (s) => s.sqr?.performance_pctl,
     format: pct,
   },
   {
@@ -266,7 +259,7 @@ const FIND_ROW_RATE_FACTS: {
 }[] = [
   {
     key: 'academicScore',
-    get: (s) => s.academic_score_pct,
+    get: (s) => s.sqr?.performance_pctl,
     format: (v) => `${pct(v)} academic score`,
   },
   {

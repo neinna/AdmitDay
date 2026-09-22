@@ -45,7 +45,7 @@ interface Props {
   notReportedTransitLabel: string | null
   provenanceRows: { key: string; label: string; value: string }[]
   dataVintageNote: string | null
-  sourceUrl: string
+  sourceUrl?: string
   myschoolsUrl: string
   backHref: string
   backLabel: string
@@ -187,7 +187,7 @@ export default function SchoolDetailClient({
                 {t}
               </span>
             ))}
-            {school.flags.is_hidden_gem && (
+            {school.flags.high_impact && (
               <span title="Under 5 applicants per seat and an academic score above 60% (NYC-SIFT)" className="font-mono text-[10.5px] tracking-[0.08em] uppercase text-gem bg-gem-bg border border-gem-border px-2 py-1">
                 Fewer applicants per seat, strong results
               </span>
@@ -451,9 +451,11 @@ export default function SchoolDetailClient({
                 <DefinitionRow key={row.key} labelWidth={92} label={row.label} value={row.value} />
               ))}
             </div>
-            <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[13.5px] text-accent">
-              View source record ↗
-            </a>
+            {sourceUrl && (
+              <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[13.5px] text-accent">
+                View source record ↗
+              </a>
+            )}
             {dataVintageNote && <p className="text-[13px] text-faint">{dataVintageNote}</p>}
           </div>
         </div>

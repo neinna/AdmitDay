@@ -40,8 +40,8 @@ export async function POST(request: NextRequest) {
     school.doe_data?.overview
       ? `Overview: ${String(school.doe_data.overview).slice(0, 300)}`
       : null,
-    school.academic_score_pct != null
-      ? `Academic score: ${school.academic_score_pct}%`
+    school.sqr?.performance_pctl != null
+      ? `Academic score: ${school.sqr.performance_pctl}%`
       : null,
     school.applicants_per_seat != null
       ? `Applicants per seat: ${school.applicants_per_seat}`
