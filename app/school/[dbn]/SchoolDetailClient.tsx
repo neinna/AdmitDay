@@ -257,6 +257,14 @@ export default function SchoolDetailClient({
                       {p.code && <span className="ml-2 font-mono text-[12px] text-faint">{p.code}</span>}
                     </span>
                     <span className="text-[13.5px] text-muted">{p.method}</span>
+                    {p.seatsLeftLastYear && (
+                      <span
+                        title={`Some seats were still open after last year's offers (MySchools${p.seatsLeftLastYear.cycle ? `, ${p.seatsLeftLastYear.cycle}` : ''}).`}
+                        className="col-span-1 min-[900px]:col-span-2 text-[12.5px] text-faint"
+                      >
+                        Seats left last year
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
