@@ -60,6 +60,10 @@ export interface SchoolProgram {
   grade_span?: string
   description?: string
   seats?: Record<string, unknown>
+  seats_filled_last_year?: {
+    general_education?: boolean
+    students_with_disabilities?: boolean
+  }
   eligibility?: Record<string, unknown>
   requirements?: Record<string, unknown>
   provenance?: {
