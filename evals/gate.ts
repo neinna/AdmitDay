@@ -16,6 +16,27 @@ export type RunSummary = Record<string, ScorerSummary>;
 
 export const WEEKLY_RUN_PREFIX = "weekly-";
 
+/** The eval run aborts once summed model cost across all cases passes this. */
+export const COST_LIMIT_USD = 3;
+
+/**
+ * Message logged when the running cost guard trips mid-run. Named as a pure
+ * function so the count-of-cases-run and dollar formatting can be unit
+ * tested without executing eval cases.
+ */
+export function buildCostGuardAbortMessage(params: {
+  lastCaseId: string;
+  casesRun: number;
+  totalCases: number;
+  totalCostUsd: number;
+}): string {
+  const { lastCaseId, casesRun, totalCases, totalCostUsd } = params;
+  return (
+    `FAIL: eval run aborted after ${casesRun} of ${totalCases} cases (last: ${lastCaseId}) — ` +
+    `summed model cost $${totalCostUsd.toFixed(2)} passed the $${COST_LIMIT_USD.toFixed(2)} guard.`
+  );
+}
+
 /** Percentage-point drop that fails a PR run relative to the last weekly run on main. */
 export const REGRESSION_THRESHOLD_POINTS = 10;
 

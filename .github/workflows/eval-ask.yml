@@ -7,6 +7,8 @@
 # EVAL_LANGFUSE_PUBLIC_KEY and EVAL_LANGFUSE_SECRET_KEY are set as repo
 # secrets. Missing secrets fail the run with a clear message
 # (evals/gate.ts findMissingEnvKeys) rather than running without them.
+# Pull requests from forks never get secrets, so the job is skipped for
+# those (see the job-level `if:` below) instead of failing on a missing one.
 
 name: eval-ask
 
@@ -25,6 +27,7 @@ on:
 jobs:
   eval-ask:
     runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - name: Checkout code
         uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
