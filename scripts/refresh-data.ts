@@ -8,8 +8,10 @@
  *   2. Validate the scrape (lib/validate-school-data.ts) -- fails loudly and
  *      exits without writing anything if the result looks broken.
  *   3. Write data/schools.json from the validated scrape.
- *   4. Re-embed school data (scripts/embed-schools.ts).
- *   5. Reseed the Postgres `schools` table (scripts/seed-schools.ts).
+ *   4. Regenerate data/schema-summary.json (build_schema_summary.py) so it
+ *      never trails schools.json.
+ *   5. Re-embed school data (scripts/embed-schools.ts).
+ *   6. Reseed the Postgres `schools` table (scripts/seed-schools.ts).
  *
  * Run:
  *   npm run refresh:data
@@ -142,7 +144,11 @@ async function main(): Promise<void> {
 
   fs.rmSync(scrapeTmpDir, { recursive: true, force: true })
 
-  // 4. Re-embed first so a provider/key failure cannot update Postgres while
+  // 4. Regenerate the schema summary from the freshly written root
+  // schools.json so it never trails the data it describes.
+  run('python3', ['scripts/build_schema_summary.py'])
+
+  // 5. Re-embed first so a provider/key failure cannot update Postgres while
   // leaving RAG on the previous data snapshot.
   run('npx', [
     'ts-node',
@@ -152,7 +158,7 @@ async function main(): Promise<void> {
     'scripts/embed-schools.ts',
   ])
 
-  // 5. Reseed Postgres unless this run is only preparing a reviewable data PR.
+  // 6. Reseed Postgres unless this run is only preparing a reviewable data PR.
   if (process.env.ADMITDAY_SKIP_POSTGRES_SEED === '1') {
     console.log('\nSkipping Postgres seed because ADMITDAY_SKIP_POSTGRES_SEED=1.')
   } else {

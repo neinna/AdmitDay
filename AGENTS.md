@@ -13,6 +13,7 @@ These are the shared rules for any coding agent working in this repo: Claude Cod
 - Treat GitHub `main` as the live code source of truth, Notion as the live roadmap/task source of truth, and local checkouts or local docs as caches unless explicitly refreshed from their source.
 - If GitHub, Notion, and local files disagree, state the conflict. Prefer GitHub for code state and Notion for roadmap/task state.
 - **Never modify `data/schools.json`.** It is curated source data.
+- The shape of the school data is in `data/schema-summary.json` (field names, types, presence counts, examples). Read that instead of opening `schools.json` or `data/school-embeddings.json` to find out what a field is called.
 - Filtering logic lives in `lib/school-list-utils.ts` — look there first for anything about school list filtering.
 - Tests live in `__tests__/`. **Add** new test files or cases; never overwrite or delete existing tests.
 - While working, run only the tests for what you changed (`npx jest __tests__/<file>`) and `npx tsc --noEmit`. Run the full `npm test` once before committing. Under the coordinator, do not run `npm run build`: the coordinator runs the full suite and the build after you finish and sends you any failure, and a build takes about 3 minutes on its 1-CPU server. Outside the coordinator, `npm test` and `npm run build` must both exit 0 before a change is done.
