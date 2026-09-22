@@ -4,25 +4,32 @@
  * Issue #284: runs every case in evals/ask-seed.json through
  * lib/ask.ts's answerQuestion() — the same retrieval, prompt, and
  * guardrails the /find ask box uses — against the committed schools.json
- * and data/school-embeddings.json (no Postgres, no rate limiting, no
- * Langfuse). Scores each answer with evals/scorers.ts and writes a
- * timestamped results file.
+ * and data/school-embeddings.json (no Postgres, no rate limiting). Scores
+ * each answer with evals/scorers.ts and writes a timestamped results file.
  *
- * Requires ANTHROPIC_API_KEY and OPENAI_API_KEY from the environment.
- * Deliberately never reads a .env file — the CI/production environment is
- * the only source of these keys here.
+ * Issue #285: also records the run to Langfuse as a dataset run
+ * (evals/langfuse-run.ts) and, on a pull_request trigger, gates on that
+ * history — see evals/gate.ts for the pass/fail rules.
+ *
+ * Requires ANTHROPIC_API_KEY, OPENAI_API_KEY, EVAL_LANGFUSE_PUBLIC_KEY and
+ * EVAL_LANGFUSE_SECRET_KEY from the environment — every run is recorded to
+ * Langfuse, so a missing key fails the run rather than silently skipping
+ * history. Deliberately never reads a .env file — the CI/production
+ * environment is the only source of these keys here.
  *
  * Run:
  *   npm run eval:ask
  *
  * Exits non-zero if the hallucination or admissions-odds scorer passes
- * under 100% of applicable cases — every other scorer is reported but does
- * not fail the run.
+ * under 100% of applicable cases, if a pull_request run drops any other
+ * scorer more than 10 points below the last weekly run on main, or if the
+ * run's summed model cost passes $1.
  */
 
 import fs from "fs";
 import path from "path";
 import { answerQuestion } from "../lib/ask";
+import { estimateCostUsd } from "../lib/model-cost";
 import {
   scoreNoBannedPhrases,
   scoreNoAdmissionsOddsLanguage,
@@ -31,6 +38,17 @@ import {
   scoreMissingDataNotShownAsZero,
   ScorerResult,
 } from "./scorers";
+import {
+  findMissingEnvKeys,
+  resolveTrigger,
+  buildRunName,
+  computeRegressions,
+  REGRESSION_THRESHOLD_POINTS,
+} from "./gate";
+import { recordDatasetRun, fetchWeeklyBaselineSummary } from "./langfuse-run";
+
+/** The run aborts once summed model cost across all cases passes this. */
+const COST_LIMIT_USD = 1;
 
 interface SeedCase {
   id: string;
@@ -54,9 +72,11 @@ interface CaseResult {
   id: string;
   kind: string;
   question: string;
+  filters?: SeedCase["filters"];
   guardrail: string;
   error?: string;
   scores: Record<string, ScorerResult & { skipped?: boolean }>;
+  costUsd?: number;
 }
 
 function loadSeedCases(): SeedCase[] {
@@ -96,8 +116,10 @@ async function runCase(seedCase: SeedCase, allSchoolNames: string[]): Promise<Ca
       id: seedCase.id,
       kind: seedCase.kind,
       question: seedCase.question,
+      filters: seedCase.filters,
       guardrail: result.guardrail,
       scores,
+      costUsd: estimateCostUsd(result.model, result.usage?.input_tokens, result.usage?.output_tokens),
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -108,6 +130,7 @@ async function runCase(seedCase: SeedCase, allSchoolNames: string[]): Promise<Ca
       id: seedCase.id,
       kind: seedCase.kind,
       question: seedCase.question,
+      filters: seedCase.filters,
       guardrail: "error",
       error: message,
       scores: {
@@ -145,21 +168,44 @@ function summarize(results: CaseResult[]): Record<string, { passed: number; tota
 }
 
 async function main() {
-  if (!process.env.ANTHROPIC_API_KEY || !process.env.OPENAI_API_KEY) {
-    console.error("eval:ask requires ANTHROPIC_API_KEY and OPENAI_API_KEY in the environment.");
+  const missingEnvKeys = findMissingEnvKeys(process.env);
+  if (missingEnvKeys.length > 0) {
+    console.error(`eval:ask requires ${missingEnvKeys.join(", ")} in the environment.`);
     process.exit(1);
+    return;
   }
+
+  const trigger = resolveTrigger(process.env.EVAL_TRIGGER);
+  const runName = buildRunName(trigger, process.env.GITHUB_RUN_ID ?? String(Date.now()));
+  const commitSha = process.env.GITHUB_SHA ?? "local";
 
   const cases = loadSeedCases();
   const allSchoolNames = loadAllSchoolNames();
 
-  console.log(`Running ${cases.length} ask-box eval cases...`);
+  console.log(`Running ${cases.length} ask-box eval cases (trigger=${trigger}, run=${runName})...`);
 
   const results: CaseResult[] = [];
+  let totalCostUsd = 0;
+  let aborted = false;
   for (const seedCase of cases) {
     const result = await runCase(seedCase, allSchoolNames);
     results.push(result);
+    totalCostUsd += result.costUsd ?? 0;
     console.log(`  ${result.error ? "ERROR" : "ok"} ${result.id} [${result.kind}] guardrail=${result.guardrail}`);
+
+    if (totalCostUsd > COST_LIMIT_USD) {
+      console.error(
+        `\nFAIL: eval run aborted after ${result.id} — summed model cost $${totalCostUsd.toFixed(2)} passed ` +
+          `the $${COST_LIMIT_USD.toFixed(2)} guard.`
+      );
+      aborted = true;
+      break;
+    }
+  }
+
+  if (aborted) {
+    process.exit(1);
+    return;
   }
 
   const summary = summarize(results);
@@ -173,24 +219,45 @@ async function main() {
       ])
     )
   );
+  console.log(`Summed model cost: $${totalCostUsd.toFixed(4)}`);
 
   const resultsDir = path.resolve(process.cwd(), "evals", "results");
   fs.mkdirSync(resultsDir, { recursive: true });
   const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
   const outPath = path.join(resultsDir, `${timestamp}.json`);
-  fs.writeFileSync(outPath, JSON.stringify({ timestamp, summary, results }, null, 2));
+  fs.writeFileSync(outPath, JSON.stringify({ timestamp, trigger, runName, summary, results }, null, 2));
   console.log(`\nWrote ${outPath}`);
+
+  console.log(`\nRecording dataset run "${runName}" to Langfuse (dataset: ask-seed)...`);
+  await recordDatasetRun({ runName, trigger, commitSha, results, summary });
+  console.log("Recorded.");
 
   const gatingScorers = ["hallucination", "noAdmissionsOddsLanguage"];
   const failedGate = gatingScorers.filter((name) => summary[name].rate < 1);
-  if (failedGate.length > 0) {
-    console.error(
-      `\nFAIL: ${failedGate.join(", ")} did not pass 100% of applicable cases.`
-    );
-    process.exit(1);
+
+  let regressions: string[] = [];
+  if (trigger === "pull_request") {
+    const baseline = await fetchWeeklyBaselineSummary();
+    if (baseline) {
+      regressions = computeRegressions(summary, baseline, gatingScorers);
+    } else {
+      console.warn("No weekly baseline run found yet on the ask-seed dataset — skipping regression comparison.");
+    }
   }
 
-  console.log("\nAll gating scorers passed 100%.");
+  if (failedGate.length > 0 || regressions.length > 0) {
+    if (failedGate.length > 0) {
+      console.error(`\nFAIL: ${failedGate.join(", ")} did not pass 100% of applicable cases.`);
+    }
+    if (regressions.length > 0) {
+      console.error(`\nFAIL: regressed more than ${REGRESSION_THRESHOLD_POINTS} points below the last weekly run on main:`);
+      for (const regression of regressions) console.error(`  - ${regression}`);
+    }
+    process.exit(1);
+    return;
+  }
+
+  console.log("\nAll gating checks passed.");
 }
 
 main().catch((err) => {
