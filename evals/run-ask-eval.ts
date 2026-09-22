@@ -23,7 +23,7 @@
  * Exits non-zero if the hallucination or admissions-odds scorer passes
  * under 100% of applicable cases, if a pull_request run drops any other
  * scorer more than 10 points below the last weekly run on main, or if the
- * run's summed model cost passes $1.
+ * run's summed model cost passes $3 (evals/gate.ts COST_LIMIT_USD).
  */
 
 import fs from "fs";
@@ -43,12 +43,11 @@ import {
   resolveTrigger,
   buildRunName,
   computeRegressions,
+  buildCostGuardAbortMessage,
   REGRESSION_THRESHOLD_POINTS,
+  COST_LIMIT_USD,
 } from "./gate";
 import { recordDatasetRun, fetchWeeklyBaselineSummary } from "./langfuse-run";
-
-/** The run aborts once summed model cost across all cases passes this. */
-const COST_LIMIT_USD = 1;
 
 interface SeedCase {
   id: string;
@@ -191,12 +190,19 @@ async function main() {
     const result = await runCase(seedCase, allSchoolNames);
     results.push(result);
     totalCostUsd += result.costUsd ?? 0;
-    console.log(`  ${result.error ? "ERROR" : "ok"} ${result.id} [${result.kind}] guardrail=${result.guardrail}`);
+    console.log(
+      `  ${result.error ? "ERROR" : "ok"} ${result.id} [${result.kind}] guardrail=${result.guardrail} ` +
+        `(running cost: $${totalCostUsd.toFixed(4)})`
+    );
 
     if (totalCostUsd > COST_LIMIT_USD) {
       console.error(
-        `\nFAIL: eval run aborted after ${result.id} — summed model cost $${totalCostUsd.toFixed(2)} passed ` +
-          `the $${COST_LIMIT_USD.toFixed(2)} guard.`
+        `\n${buildCostGuardAbortMessage({
+          lastCaseId: result.id,
+          casesRun: results.length,
+          totalCases: cases.length,
+          totalCostUsd,
+        })}`
       );
       aborted = true;
       break;
