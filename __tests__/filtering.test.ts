@@ -12,16 +12,18 @@ import { School, UserInputs } from '../types'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function makeSchool(overrides: Partial<School> & { dbn?: string }): School {
+function makeSchool(
+  overrides: Partial<Omit<School, 'sqr'>> & { dbn?: string; academic_score_pct?: number | null }
+): School {
+  const { academic_score_pct, ...schoolOverrides } = overrides
   return {
-    dbn: overrides.dbn ?? 'X000',
-    name: overrides.name ?? 'Test School',
-    borough: overrides.borough ?? 'Manhattan',
-    size: overrides.size ?? 'medium',
+    dbn: schoolOverrides.dbn ?? 'X000',
+    name: schoolOverrides.name ?? 'Test School',
+    borough: schoolOverrides.borough ?? 'Manhattan',
+    size: schoolOverrides.size ?? 'medium',
     total_students: null,
     applicants_per_seat: null,
-    academic_score_pct: overrides.academic_score_pct ?? null,
-    survey_score_pct: null,
+    sqr: academic_score_pct != null ? { performance_pctl: academic_score_pct } : undefined,
     admissions_types: [],
     programs: [],
     flags: {
@@ -30,10 +32,10 @@ function makeSchool(overrides: Partial<School> & { dbn?: string }): School {
       has_screened: false,
       has_open: false,
       has_borough_priority: false,
-      is_hidden_gem: false,
+      high_impact: false,
       has_consortium: false,
       has_ib: false,
-      ...overrides.flags,
+      ...schoolOverrides.flags,
     },
     doe_data: {
       overview: '',
@@ -43,11 +45,10 @@ function makeSchool(overrides: Partial<School> & { dbn?: string }): School {
       phone: '',
       address: '',
       zip: '',
-      ...overrides.doe_data,
+      ...schoolOverrides.doe_data,
     },
-    sift_url: '',
     last_verified: '',
-    ...overrides,
+    ...schoolOverrides,
   }
 }
 
@@ -130,14 +131,14 @@ describe('matchesAcademicRating', () => {
 
 describe('isEligible', () => {
   it('audition-only school + auditions=NO → false', () => {
-    const school = makeSchool({ flags: { has_audition: true, has_screened: false, has_shsat: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    const school = makeSchool({ flags: { has_audition: true, has_screened: false, has_shsat: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     const inputs = makeInputs({ auditions: false })
     expect(isEligible(school, inputs)).toBe(false)
   })
 
   it('screened+audition school + auditions=NO → true (eligible via screened)', () => {
     const school = makeSchool({
-      flags: { has_audition: true, has_screened: true, has_shsat: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false },
+      flags: { has_audition: true, has_screened: true, has_shsat: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false },
       academic_score_pct: 85,
     })
     const inputs = makeInputs({ auditions: false, academicRatings: ['strong'] })
@@ -145,21 +146,21 @@ describe('isEligible', () => {
   })
 
   it('SHSAT school + shsat=YES → true', () => {
-    const school = makeSchool({ flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    const school = makeSchool({ flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     const inputs = makeInputs({ shsat: true })
     expect(isEligible(school, inputs)).toBe(true)
   })
 
   it('SHSAT+audition school + auditions=NO → true (eligible via SHSAT)', () => {
     const school = makeSchool({
-      flags: { has_shsat: true, has_audition: true, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false },
+      flags: { has_shsat: true, has_audition: true, has_screened: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false },
     })
     const inputs = makeInputs({ shsat: true, auditions: false })
     expect(isEligible(school, inputs)).toBe(true)
   })
 
   it('open school → always true regardless of other inputs', () => {
-    const school = makeSchool({ flags: { has_open: true, has_audition: false, has_screened: false, has_shsat: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    const school = makeSchool({ flags: { has_open: true, has_audition: false, has_screened: false, has_shsat: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     expect(isEligible(school, makeInputs())).toBe(true)
     expect(isEligible(school, makeInputs({ auditions: false, shsat: false }))).toBe(true)
   })
@@ -174,7 +175,7 @@ describe('isEligible', () => {
     // academic_score_pct=95 so matchesAcademicRating fallback won't match above_average (50-69)
     const school = makeSchool({
       academic_score_pct: 95,
-      flags: { has_screened: true, has_audition: false, has_shsat: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false },
+      flags: { has_screened: true, has_audition: false, has_shsat: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false },
     })
     expect(isEligible(school, makeInputs({ academicRatings: ['exceptional'] }))).toBe(true)
     expect(isEligible(school, makeInputs({ academicRatings: ['strong'] }))).toBe(true)
@@ -185,9 +186,9 @@ describe('isEligible', () => {
 // ── applyFilters ─────────────────────────────────────────────────────────────
 
 describe('applyFilters', () => {
-  const manhattanOpen = makeSchool({ dbn: 'M001', borough: 'Manhattan', flags: { has_open: true, has_audition: false, has_screened: false, has_shsat: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
-  const brooklynOpen = makeSchool({ dbn: 'K001', borough: 'Brooklyn', flags: { has_open: true, has_audition: false, has_screened: false, has_shsat: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
-  const auditionOnly = makeSchool({ dbn: 'M002', borough: 'Manhattan', flags: { has_audition: true, has_open: false, has_screened: false, has_shsat: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+  const manhattanOpen = makeSchool({ dbn: 'M001', borough: 'Manhattan', flags: { has_open: true, has_audition: false, has_screened: false, has_shsat: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
+  const brooklynOpen = makeSchool({ dbn: 'K001', borough: 'Brooklyn', flags: { has_open: true, has_audition: false, has_screened: false, has_shsat: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
+  const auditionOnly = makeSchool({ dbn: 'M002', borough: 'Manhattan', flags: { has_audition: true, has_open: false, has_screened: false, has_shsat: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
 
   it('excludes ineligible schools (audition-only when auditions=NO)', () => {
     const result = applyFilters([manhattanOpen, auditionOnly], makeInputs({ auditions: false }), false)
@@ -215,7 +216,7 @@ describe('applyFilters', () => {
   })
 
   it('exceptional rating filter: only includes schools with score >= 90', () => {
-    const exceptional = makeSchool({ dbn: 'E001', academic_score_pct: 95, flags: { has_open: false, has_audition: false, has_screened: true, has_shsat: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    const exceptional = makeSchool({ dbn: 'E001', academic_score_pct: 95, flags: { has_open: false, has_audition: false, has_screened: true, has_shsat: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     const average = makeSchool({ dbn: 'A001', academic_score_pct: 60 })
     const inputs = makeInputs({ academicRatings: ['exceptional'] })
     const result = applyFilters([exceptional, average], inputs, false)
@@ -228,23 +229,23 @@ describe('applyFilters', () => {
 
 describe('getResults', () => {
   it('returns only eligible schools', () => {
-    const openSchool = makeSchool({ dbn: 'O001', flags: { has_open: true, has_audition: false, has_screened: false, has_shsat: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
-    const auditionOnly = makeSchool({ dbn: 'AU01', flags: { has_audition: true, has_open: false, has_screened: false, has_shsat: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    const openSchool = makeSchool({ dbn: 'O001', flags: { has_open: true, has_audition: false, has_screened: false, has_shsat: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
+    const auditionOnly = makeSchool({ dbn: 'AU01', flags: { has_audition: true, has_open: false, has_screened: false, has_shsat: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     const { results } = getResults([openSchool, auditionOnly], makeInputs({ auditions: false }))
     expect(results.map((s) => s.dbn)).toContain('O001')
     expect(results.map((s) => s.dbn)).not.toContain('AU01')
   })
 
   it('prioritizes large schools when size=large', () => {
-    const small = makeSchool({ dbn: 'S001', size: 'small', flags: { has_open: true, has_audition: false, has_screened: false, has_shsat: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
-    const large = makeSchool({ dbn: 'L001', size: 'large', flags: { has_open: true, has_audition: false, has_screened: false, has_shsat: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    const small = makeSchool({ dbn: 'S001', size: 'small', flags: { has_open: true, has_audition: false, has_screened: false, has_shsat: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
+    const large = makeSchool({ dbn: 'L001', size: 'large', flags: { has_open: true, has_audition: false, has_screened: false, has_shsat: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     const { results } = getResults([small, large], makeInputs({ size: 'large' }))
     expect(results[0].dbn).toBe('L001')
   })
 
   it('prioritizes home borough schools when single borough selected', () => {
-    const home = makeSchool({ dbn: 'H001', borough: 'Brooklyn', flags: { has_open: true, has_audition: false, has_screened: false, has_shsat: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
-    const away = makeSchool({ dbn: 'A001', borough: 'Manhattan', flags: { has_open: true, has_audition: false, has_screened: false, has_shsat: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    const home = makeSchool({ dbn: 'H001', borough: 'Brooklyn', flags: { has_open: true, has_audition: false, has_screened: false, has_shsat: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
+    const away = makeSchool({ dbn: 'A001', borough: 'Manhattan', flags: { has_open: true, has_audition: false, has_screened: false, has_shsat: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     const { results } = getResults([away, home], makeInputs({ boroughs: ['Brooklyn'] }))
     expect(results[0].dbn).toBe('H001')
   })
@@ -254,27 +255,27 @@ describe('getResults', () => {
 
 describe('getPrimarySection', () => {
   it('SHSAT school → shsat', () => {
-    const s = makeSchool({ flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    const s = makeSchool({ flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     expect(getPrimarySection(s)).toBe('shsat')
   })
 
   it('screened+audition school → screened (not audition)', () => {
-    const s = makeSchool({ flags: { has_audition: true, has_screened: true, has_shsat: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    const s = makeSchool({ flags: { has_audition: true, has_screened: true, has_shsat: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     expect(getPrimarySection(s)).toBe('screened')
   })
 
   it('audition-only school → audition', () => {
-    const s = makeSchool({ flags: { has_audition: true, has_screened: false, has_shsat: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    const s = makeSchool({ flags: { has_audition: true, has_screened: false, has_shsat: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     expect(getPrimarySection(s)).toBe('audition')
   })
 
   it('screened-only school → screened', () => {
-    const s = makeSchool({ flags: { has_screened: true, has_audition: false, has_shsat: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    const s = makeSchool({ flags: { has_screened: true, has_audition: false, has_shsat: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     expect(getPrimarySection(s)).toBe('screened')
   })
 
   it('open/lottery school → lottery', () => {
-    const s = makeSchool({ flags: { has_open: true, has_audition: false, has_screened: false, has_shsat: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    const s = makeSchool({ flags: { has_open: true, has_audition: false, has_screened: false, has_shsat: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     expect(getPrimarySection(s)).toBe('lottery')
   })
 
@@ -287,9 +288,9 @@ describe('getPrimarySection', () => {
 // ── selectSHSATSchools ───────────────────────────────────────────────────────
 
 describe('selectSHSATSchools', () => {
-  const shsatManhattan = makeSchool({ dbn: 'SM01', borough: 'Manhattan', flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
-  const shsatBrooklyn = makeSchool({ dbn: 'SK01', borough: 'Brooklyn', flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
-  const nonShsat = makeSchool({ dbn: 'O001', flags: { has_open: true, has_audition: false, has_screened: false, has_shsat: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+  const shsatManhattan = makeSchool({ dbn: 'SM01', borough: 'Manhattan', flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
+  const shsatBrooklyn = makeSchool({ dbn: 'SK01', borough: 'Brooklyn', flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
+  const nonShsat = makeSchool({ dbn: 'O001', flags: { has_open: true, has_audition: false, has_screened: false, has_shsat: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
 
   it('returns only SHSAT schools', () => {
     const result = selectSHSATSchools([shsatManhattan, shsatBrooklyn, nonShsat], makeInputs())
@@ -308,7 +309,7 @@ describe('selectSHSATSchools', () => {
   })
 
   it('multiple borough filter: returns SHSAT schools from selected boroughs only', () => {
-    const shsatBronx = makeSchool({ dbn: 'BX01', borough: 'Bronx', flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    const shsatBronx = makeSchool({ dbn: 'BX01', borough: 'Bronx', flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     const result = selectSHSATSchools(
       [shsatManhattan, shsatBrooklyn, shsatBronx],
       makeInputs({ boroughs: ['Manhattan', 'Brooklyn'] })
@@ -320,7 +321,7 @@ describe('selectSHSATSchools', () => {
 
   it('caps at 5 schools for single borough when home has enough', () => {
     const manyManhattan = Array.from({ length: 8 }, (_, i) =>
-      makeSchool({ dbn: `SM0${i}`, borough: 'Manhattan', flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+      makeSchool({ dbn: `SM0${i}`, borough: 'Manhattan', flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     )
     const result = selectSHSATSchools(manyManhattan, makeInputs({ boroughs: ['Manhattan'] }))
     expect(result.length).toBe(5)
@@ -343,18 +344,18 @@ describe('integration: list and requirements page produce identical results', ()
   // Audition-only schools that were incorrectly shown on requirements page
   const auditionOnly1 = makeSchool({
     dbn: 'AU01', name: 'Special Music School', borough: 'Manhattan',
-    flags: { has_audition: true, has_screened: false, has_shsat: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false },
+    flags: { has_audition: true, has_screened: false, has_shsat: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false },
     academic_score_pct: 95,
   })
   const auditionOnly2 = makeSchool({
     dbn: 'AU02', name: 'Fiorello LaGuardia', borough: 'Manhattan',
-    flags: { has_audition: true, has_screened: false, has_shsat: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false },
+    flags: { has_audition: true, has_screened: false, has_shsat: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false },
     academic_score_pct: 88,
   })
   // Audition+screened school (Gramercy Arts) — eligible via screened pathway
   const auditionAndScreened = makeSchool({
     dbn: 'AS01', name: 'Gramercy Arts High School', borough: 'Manhattan',
-    flags: { has_audition: true, has_screened: true, has_shsat: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false },
+    flags: { has_audition: true, has_screened: true, has_shsat: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false },
     academic_score_pct: 85,
   })
   const allSchools = [auditionOnly1, auditionOnly2, auditionAndScreened]
@@ -383,10 +384,10 @@ describe('integration: list and requirements page produce identical results', ()
 
 describe('groupSchools', () => {
   it('groups schools into correct sections', () => {
-    const shsat = makeSchool({ dbn: 'SH01', flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
-    const screened = makeSchool({ dbn: 'SC01', flags: { has_screened: true, has_audition: false, has_shsat: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
-    const audition = makeSchool({ dbn: 'AU01', flags: { has_audition: true, has_screened: false, has_shsat: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
-    const open = makeSchool({ dbn: 'OP01', flags: { has_open: true, has_audition: false, has_screened: false, has_shsat: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    const shsat = makeSchool({ dbn: 'SH01', flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
+    const screened = makeSchool({ dbn: 'SC01', flags: { has_screened: true, has_audition: false, has_shsat: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
+    const audition = makeSchool({ dbn: 'AU01', flags: { has_audition: true, has_screened: false, has_shsat: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
+    const open = makeSchool({ dbn: 'OP01', flags: { has_open: true, has_audition: false, has_screened: false, has_shsat: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
 
     const groups = groupSchools([shsat, screened, audition, open])
     const types = groups.map((g) => g.type)
@@ -397,7 +398,7 @@ describe('groupSchools', () => {
   })
 
   it('screened+audition school goes into screened section, not audition', () => {
-    const mixed = makeSchool({ dbn: 'MX01', flags: { has_screened: true, has_audition: true, has_shsat: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    const mixed = makeSchool({ dbn: 'MX01', flags: { has_screened: true, has_audition: true, has_shsat: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     const groups = groupSchools([mixed])
     const screenedGroup = groups.find((g) => g.type === 'screened')
     const auditionGroup = groups.find((g) => g.type === 'audition')
@@ -417,7 +418,7 @@ describe('issue #62: groupSchools produces identical grouping for list and requi
     const edopt = makeSchool({
       dbn: 'EO01',
       admissions_types: ['Educational Option'],
-      flags: { has_shsat: false, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false },
+      flags: { has_shsat: false, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false },
     })
     const groups = groupSchools([edopt])
     const lotteryGroup = groups.find((g) => g.type === 'lottery')
@@ -430,7 +431,7 @@ describe('issue #62: groupSchools produces identical grouping for list and requi
     const scrAssessment = makeSchool({
       dbn: 'SA01',
       admissions_types: ['Screened with Assessment'],
-      flags: { has_shsat: false, has_audition: false, has_screened: true, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false },
+      flags: { has_shsat: false, has_audition: false, has_screened: true, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false },
     })
     const groups = groupSchools([scrAssessment])
     const screenedGroup = groups.find((g) => g.type === 'screened')
@@ -440,10 +441,10 @@ describe('issue #62: groupSchools produces identical grouping for list and requi
   })
 
   it('section order matches list page: shsat, audition, screened, lottery', () => {
-    const shsat = makeSchool({ dbn: 'SH01', flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
-    const audition = makeSchool({ dbn: 'AU01', flags: { has_audition: true, has_screened: false, has_shsat: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
-    const screened = makeSchool({ dbn: 'SC01', flags: { has_screened: true, has_audition: false, has_shsat: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
-    const lottery = makeSchool({ dbn: 'LO01', flags: { has_open: true, has_audition: false, has_screened: false, has_shsat: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+    const shsat = makeSchool({ dbn: 'SH01', flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
+    const audition = makeSchool({ dbn: 'AU01', flags: { has_audition: true, has_screened: false, has_shsat: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
+    const screened = makeSchool({ dbn: 'SC01', flags: { has_screened: true, has_audition: false, has_shsat: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
+    const lottery = makeSchool({ dbn: 'LO01', flags: { has_open: true, has_audition: false, has_screened: false, has_shsat: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     const groups = groupSchools([shsat, audition, screened, lottery])
     const types = groups.map((g) => g.type)
     expect(types.indexOf('shsat')).toBeLessThan(types.indexOf('audition'))
@@ -455,7 +456,7 @@ describe('issue #62: groupSchools produces identical grouping for list and requi
     const mixedSchool = makeSchool({
       dbn: 'MX01',
       admissions_types: ['Screened', 'Screened with Assessment'],
-      flags: { has_shsat: false, has_audition: false, has_screened: true, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false },
+      flags: { has_shsat: false, has_audition: false, has_screened: true, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false },
     })
     const groups = groupSchools([mixedSchool])
     const allDbns = groups.flatMap((g) => g.schools.map((s) => s.dbn))

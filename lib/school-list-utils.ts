@@ -18,10 +18,12 @@ const CATEGORY_CAPS = { shsat: 3, audition: 3, screened: 5 }
 
 function sortByAcademicScore(schools: School[]): School[] {
   return [...schools].sort((a, b) => {
-    if (a.academic_score_pct === null && b.academic_score_pct === null) return 0
-    if (a.academic_score_pct === null) return 1
-    if (b.academic_score_pct === null) return -1
-    return b.academic_score_pct - a.academic_score_pct
+    const av = a.sqr?.performance_pctl
+    const bv = b.sqr?.performance_pctl
+    if (av == null && bv == null) return 0
+    if (av == null) return 1
+    if (bv == null) return -1
+    return bv - av
   })
 }
 
@@ -79,8 +81,8 @@ export function noBorough(boroughs: string[]): boolean {
 }
 
 export function matchesAcademicRating(school: School, ratings: string[]): boolean {
-  const score = school.academic_score_pct
-  if (score === null) {
+  const score = school.sqr?.performance_pctl
+  if (score == null) {
     return ratings.includes('above_average')
   }
   if (ratings.includes('exceptional') && score >= 90) return true
@@ -168,7 +170,7 @@ export function scoreSHSATSchool(school: School, inputs: UserInputs): number {
   for (const sport of inputs.sports) {
     if ((school.doe_data?.extracurriculars ?? '').toLowerCase().includes(sport.toLowerCase())) score += 2
   }
-  score += (school.academic_score_pct ?? 0) / 100
+  score += (school.sqr?.performance_pctl ?? 0) / 100
   return score
 }
 

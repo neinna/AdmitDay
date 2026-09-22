@@ -126,8 +126,6 @@ describe('Rule #127.3: no admissions-odds language anywhere', () => {
       size: 'medium',
       total_students: null,
       applicants_per_seat: null,
-      academic_score_pct: null,
-      survey_score_pct: null,
       admissions_types: [],
       programs: [],
       flags: {
@@ -136,12 +134,11 @@ describe('Rule #127.3: no admissions-odds language anywhere', () => {
         has_screened: false,
         has_open: false,
         has_borough_priority: false,
-        is_hidden_gem: false,
+        high_impact: false,
         has_consortium: false,
         has_ib: false,
       },
       doe_data: { overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '' },
-      sift_url: '',
       last_verified: '',
     }
   }

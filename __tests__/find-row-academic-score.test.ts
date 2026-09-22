@@ -12,28 +12,30 @@
 import { buildFindRowFacts, buildFindRowSummary } from '../lib/school-detail-utils'
 import { School } from '../types'
 
-function makeSchool(overrides: Partial<School> & { dbn?: string } = {}): School {
+function makeSchool(
+  overrides: Partial<Omit<School, 'sqr'>> & { dbn?: string; academic_score_pct?: number | null } = {}
+): School {
+  const { academic_score_pct, ...schoolOverrides } = overrides
   return {
-    dbn: overrides.dbn ?? 'X000',
-    name: overrides.name ?? 'Test School',
-    borough: overrides.borough ?? 'Brooklyn',
-    size: overrides.size ?? 'medium',
+    dbn: schoolOverrides.dbn ?? 'X000',
+    name: schoolOverrides.name ?? 'Test School',
+    borough: schoolOverrides.borough ?? 'Brooklyn',
+    size: schoolOverrides.size ?? 'medium',
     total_students: null,
     applicants_per_seat: null,
-    academic_score_pct: null,
-    survey_score_pct: null,
-    admissions_types: overrides.admissions_types ?? [],
-    programs: overrides.programs ?? [],
+    sqr: academic_score_pct != null ? { performance_pctl: academic_score_pct } : undefined,
+    admissions_types: schoolOverrides.admissions_types ?? [],
+    programs: schoolOverrides.programs ?? [],
     flags: {
       has_shsat: false,
       has_audition: false,
       has_screened: false,
       has_open: false,
       has_borough_priority: false,
-      is_hidden_gem: false,
+      high_impact: false,
       has_consortium: false,
       has_ib: false,
-      ...overrides.flags,
+      ...schoolOverrides.flags,
     },
     doe_data: {
       overview: '',
@@ -43,11 +45,10 @@ function makeSchool(overrides: Partial<School> & { dbn?: string } = {}): School 
       phone: '',
       address: '',
       zip: '',
-      ...overrides.doe_data,
+      ...schoolOverrides.doe_data,
     },
-    sift_url: '',
     last_verified: '',
-    ...overrides,
+    ...schoolOverrides,
   }
 }
 

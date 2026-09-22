@@ -128,7 +128,7 @@ export default async function SchoolDetailPage({
         notReportedTransitLabel={notReportedTransitLabel}
         provenanceRows={provenanceRows}
         dataVintageNote={dataVintageNote}
-        sourceUrl={school.sift_url}
+        sourceUrl={school.sqr?.source_url}
         myschoolsUrl={MYSCHOOLS_URL}
         backHref={backHref}
         backLabel={backLabel}

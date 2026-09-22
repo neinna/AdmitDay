@@ -523,7 +523,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
                     onNavigate={() =>
                       posthog?.capture('school_detail_viewed', { dbn: school.dbn, from: 'find' })
                     }
-                    isHiddenGem={school.flags.is_hidden_gem}
+                    isHiddenGem={school.flags.high_impact}
                     metadata={`${neighborhood} · ${tracks} · ${students} students`}
                     rationale={buildFindRowSummary(school)}
                     statValue={

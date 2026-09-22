@@ -73,8 +73,7 @@ interface MinimalSchool {
   name?: unknown
   borough?: unknown
   applicants_per_seat?: unknown
-  academic_score_pct?: unknown
-  survey_score_pct?: unknown
+  sqr?: { performance_pctl?: unknown; impact_pctl?: unknown }
   admissions_types?: unknown
   [key: string]: unknown
 }
@@ -139,11 +138,11 @@ function findNumericSanityViolations(schools: MinimalSchool[]): string[] {
         violations.push(`${label(s, i)}: applicants_per_seat is ${JSON.stringify(aps)}, expected a number >= 0`)
       }
     }
-    ;(['academic_score_pct', 'survey_score_pct'] as const).forEach((field) => {
-      const value = s[field]
+    ;(['performance_pctl', 'impact_pctl'] as const).forEach((field) => {
+      const value = s.sqr?.[field]
       if (value === null || value === undefined) return
       if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 100) {
-        violations.push(`${label(s, i)}: ${field} is ${JSON.stringify(value)}, expected a number between 0 and 100`)
+        violations.push(`${label(s, i)}: sqr.${field} is ${JSON.stringify(value)}, expected a number between 0 and 100`)
       }
     })
   })
@@ -245,8 +244,7 @@ function makeValidSchool(overrides: Partial<MinimalSchool> = {}, i = 0): Minimal
     name: `Test School ${i}`,
     borough: 'Brooklyn',
     applicants_per_seat: 2.5,
-    academic_score_pct: 75,
-    survey_score_pct: 80,
+    sqr: { performance_pctl: 75, impact_pctl: 80 },
     admissions_types: ['Screened'],
     ...overrides,
   }
@@ -312,9 +310,9 @@ describe('school data invariant checks (corruption detection, synthetic fixture)
 
   it('catches an out-of-range percentage field', () => {
     const schools = makeValidFixture(5)
-    schools[4] = { ...schools[4], academic_score_pct: 150 }
+    schools[4] = { ...schools[4], sqr: { ...schools[4].sqr, performance_pctl: 150 } }
     const violations = findNumericSanityViolations(schools)
-    expect(violations.some((v) => v.includes('academic_score_pct'))).toBe(true)
+    expect(violations.some((v) => v.includes('performance_pctl'))).toBe(true)
   })
 
   it('catches an unrecognized admissions track value', () => {

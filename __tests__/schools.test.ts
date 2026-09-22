@@ -931,7 +931,9 @@ describe('Issue #38: source — noBorough handles all 5 boroughs', () => {
 
 // ── Issue #40: Cap school list at 15, balance categories, sync requirements page ───
 
-function makeSchool(overrides: Partial<School> & { dbn: string }): School {
+function makeSchool(
+  overrides: Partial<Omit<School, 'sqr'>> & { dbn: string; academic_score_pct?: number | null }
+): School {
   return {
     dbn: overrides.dbn,
     name: overrides.name ?? `School ${overrides.dbn}`,
@@ -939,8 +941,7 @@ function makeSchool(overrides: Partial<School> & { dbn: string }): School {
     size: overrides.size ?? 'medium',
     total_students: null,
     applicants_per_seat: null,
-    academic_score_pct: overrides.academic_score_pct ?? null,
-    survey_score_pct: null,
+    sqr: overrides.academic_score_pct != null ? { performance_pctl: overrides.academic_score_pct } : undefined,
     admissions_types: overrides.admissions_types ?? ['Open'],
     programs: [],
     flags: {
@@ -949,12 +950,11 @@ function makeSchool(overrides: Partial<School> & { dbn: string }): School {
       has_screened: overrides.flags?.has_screened ?? false,
       has_open: overrides.flags?.has_open ?? true,
       has_borough_priority: false,
-      is_hidden_gem: false,
+      high_impact: false,
       has_consortium: false,
       has_ib: false,
     },
     doe_data: { overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '' },
-    sift_url: '',
     last_verified: '',
   }
 }
@@ -967,14 +967,14 @@ describe('Issue #40: capSchoolsByCategory', () => {
 
   it('caps total results at 15', () => {
     const schools = Array.from({ length: 30 }, (_, i) =>
-      makeSchool({ dbn: `x${i}`, flags: { has_shsat: false, has_audition: false, has_screened: false, has_open: true, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+      makeSchool({ dbn: `x${i}`, flags: { has_shsat: false, has_audition: false, has_screened: false, has_open: true, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     )
     expect(capSchoolsByCategory(schools).length).toBe(FREE_TIER_CAP)
   })
 
   it('caps SHSAT at 3 even when more are present', () => {
     const schools = Array.from({ length: 8 }, (_, i) =>
-      makeSchool({ dbn: `s${i}`, flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+      makeSchool({ dbn: `s${i}`, flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     )
     const result = capSchoolsByCategory(schools)
     expect(result.filter((s) => s.flags.has_shsat).length).toBe(3)
@@ -982,7 +982,7 @@ describe('Issue #40: capSchoolsByCategory', () => {
 
   it('caps Audition at 3 even when more are present', () => {
     const schools = Array.from({ length: 10 }, (_, i) =>
-      makeSchool({ dbn: `a${i}`, flags: { has_shsat: false, has_audition: true, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+      makeSchool({ dbn: `a${i}`, flags: { has_shsat: false, has_audition: true, has_screened: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     )
     const result = capSchoolsByCategory(schools)
     expect(result.filter((s) => s.flags.has_audition).length).toBe(3)
@@ -990,7 +990,7 @@ describe('Issue #40: capSchoolsByCategory', () => {
 
   it('caps Screened at 5 even when more are present', () => {
     const schools = Array.from({ length: 8 }, (_, i) =>
-      makeSchool({ dbn: `sc${i}`, flags: { has_shsat: false, has_audition: false, has_screened: true, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+      makeSchool({ dbn: `sc${i}`, flags: { has_shsat: false, has_audition: false, has_screened: true, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     )
     const result = capSchoolsByCategory(schools)
     expect(result.filter((s) => s.flags.has_screened).length).toBe(5)
@@ -999,10 +999,10 @@ describe('Issue #40: capSchoolsByCategory', () => {
   it('fills remainder with EdOpt/Lottery when some categories are absent (no SHSAT, no auditions → 12 edopt slots)', () => {
     // 0 SHSAT + 0 audition + 3 screened + 12 EdOpt = 15
     const screened = Array.from({ length: 3 }, (_, i) =>
-      makeSchool({ dbn: `sc${i}`, flags: { has_shsat: false, has_audition: false, has_screened: true, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+      makeSchool({ dbn: `sc${i}`, flags: { has_shsat: false, has_audition: false, has_screened: true, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     )
     const edopt = Array.from({ length: 20 }, (_, i) =>
-      makeSchool({ dbn: `e${i}`, flags: { has_shsat: false, has_audition: false, has_screened: false, has_open: true, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+      makeSchool({ dbn: `e${i}`, flags: { has_shsat: false, has_audition: false, has_screened: false, has_open: true, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     )
     const result = capSchoolsByCategory([...screened, ...edopt])
     expect(result.length).toBe(15)
@@ -1012,16 +1012,16 @@ describe('Issue #40: capSchoolsByCategory', () => {
 
   it('with all categories full: 3 SHSAT + 3 Audition + 5 Screened + 4 EdOpt/Lottery = 15', () => {
     const shsat = Array.from({ length: 5 }, (_, i) =>
-      makeSchool({ dbn: `sh${i}`, flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+      makeSchool({ dbn: `sh${i}`, flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     )
     const audition = Array.from({ length: 8 }, (_, i) =>
-      makeSchool({ dbn: `au${i}`, flags: { has_shsat: false, has_audition: true, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+      makeSchool({ dbn: `au${i}`, flags: { has_shsat: false, has_audition: true, has_screened: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     )
     const screened = Array.from({ length: 8 }, (_, i) =>
-      makeSchool({ dbn: `sc${i}`, flags: { has_shsat: false, has_audition: false, has_screened: true, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+      makeSchool({ dbn: `sc${i}`, flags: { has_shsat: false, has_audition: false, has_screened: true, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     )
     const edopt = Array.from({ length: 20 }, (_, i) =>
-      makeSchool({ dbn: `ed${i}`, flags: { has_shsat: false, has_audition: false, has_screened: false, has_open: true, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+      makeSchool({ dbn: `ed${i}`, flags: { has_shsat: false, has_audition: false, has_screened: false, has_open: true, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     )
     const result = capSchoolsByCategory([...shsat, ...audition, ...screened, ...edopt])
     expect(result.length).toBe(15)
@@ -1033,10 +1033,10 @@ describe('Issue #40: capSchoolsByCategory', () => {
 
   it('sorts within each category by academic_score_pct descending, null last', () => {
     const schools = [
-      makeSchool({ dbn: 'sh1', academic_score_pct: 60, flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } }),
-      makeSchool({ dbn: 'sh2', academic_score_pct: 95, flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } }),
-      makeSchool({ dbn: 'sh3', academic_score_pct: null, flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } }),
-      makeSchool({ dbn: 'sh4', academic_score_pct: 80, flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } }),
+      makeSchool({ dbn: 'sh1', academic_score_pct: 60, flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } }),
+      makeSchool({ dbn: 'sh2', academic_score_pct: 95, flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } }),
+      makeSchool({ dbn: 'sh3', academic_score_pct: null, flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } }),
+      makeSchool({ dbn: 'sh4', academic_score_pct: 80, flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } }),
     ]
     const result = capSchoolsByCategory(schools)
     const shsatResult = result.filter((s) => s.flags.has_shsat)
@@ -1048,8 +1048,8 @@ describe('Issue #40: capSchoolsByCategory', () => {
 
   it('returns fewer than 15 when total matching schools are fewer than 15', () => {
     const schools = [
-      makeSchool({ dbn: 'a1', flags: { has_shsat: false, has_audition: false, has_screened: false, has_open: true, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } }),
-      makeSchool({ dbn: 'a2', flags: { has_shsat: false, has_audition: false, has_screened: false, has_open: true, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } }),
+      makeSchool({ dbn: 'a1', flags: { has_shsat: false, has_audition: false, has_screened: false, has_open: true, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } }),
+      makeSchool({ dbn: 'a2', flags: { has_shsat: false, has_audition: false, has_screened: false, has_open: true, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } }),
     ]
     expect(capSchoolsByCategory(schools).length).toBe(2)
   })
@@ -1316,7 +1316,7 @@ describe('Issue #43: updated category caps (free tier)', () => {
 
   it('audition cap is now 3', () => {
     const schools = Array.from({ length: 8 }, (_, i) =>
-      makeSchool({ dbn: `aud${i}`, flags: { has_shsat: false, has_audition: true, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+      makeSchool({ dbn: `aud${i}`, flags: { has_shsat: false, has_audition: true, has_screened: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     )
     const result = capSchoolsByCategory(schools)
     expect(result.filter((s) => s.flags.has_audition).length).toBe(3)
@@ -1324,7 +1324,7 @@ describe('Issue #43: updated category caps (free tier)', () => {
 
   it('screened cap is now 5', () => {
     const schools = Array.from({ length: 10 }, (_, i) =>
-      makeSchool({ dbn: `scr${i}`, flags: { has_shsat: false, has_audition: false, has_screened: true, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+      makeSchool({ dbn: `scr${i}`, flags: { has_shsat: false, has_audition: false, has_screened: true, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     )
     const result = capSchoolsByCategory(schools)
     expect(result.filter((s) => s.flags.has_screened).length).toBe(5)
@@ -1332,16 +1332,16 @@ describe('Issue #43: updated category caps (free tier)', () => {
 
   it('lottery/edopt fills 4 slots when shsat=3, audition=3, screened=5 (total 15)', () => {
     const shsat = Array.from({ length: 5 }, (_, i) =>
-      makeSchool({ dbn: `sh${i}`, flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+      makeSchool({ dbn: `sh${i}`, flags: { has_shsat: true, has_audition: false, has_screened: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     )
     const audition = Array.from({ length: 5 }, (_, i) =>
-      makeSchool({ dbn: `au${i}`, flags: { has_shsat: false, has_audition: true, has_screened: false, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+      makeSchool({ dbn: `au${i}`, flags: { has_shsat: false, has_audition: true, has_screened: false, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     )
     const screened = Array.from({ length: 8 }, (_, i) =>
-      makeSchool({ dbn: `sc${i}`, flags: { has_shsat: false, has_audition: false, has_screened: true, has_open: false, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+      makeSchool({ dbn: `sc${i}`, flags: { has_shsat: false, has_audition: false, has_screened: true, has_open: false, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     )
     const lottery = Array.from({ length: 10 }, (_, i) =>
-      makeSchool({ dbn: `lt${i}`, flags: { has_shsat: false, has_audition: false, has_screened: false, has_open: true, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false } })
+      makeSchool({ dbn: `lt${i}`, flags: { has_shsat: false, has_audition: false, has_screened: false, has_open: true, has_borough_priority: false, high_impact: false, has_consortium: false, has_ib: false } })
     )
     const result = capSchoolsByCategory([...shsat, ...audition, ...screened, ...lottery])
     expect(result.length).toBe(15)
