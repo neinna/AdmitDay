@@ -4,9 +4,19 @@ export interface SchoolFlags {
   has_screened: boolean
   has_open: boolean
   has_borough_priority: boolean
-  is_hidden_gem: boolean
+  high_impact: boolean
   has_consortium: boolean
   has_ib: boolean
+}
+
+export interface SqrData {
+  performance_score?: number
+  impact_score?: number
+  rating?: string
+  performance_pctl?: number
+  impact_pctl?: number
+  year?: string
+  source_url?: string
 }
 
 export interface DoeData {
@@ -67,13 +77,11 @@ export interface School {
   size: string
   total_students: number | null
   applicants_per_seat: number | null
-  academic_score_pct: number | null
-  survey_score_pct: number | null
+  sqr?: SqrData
   admissions_types: string[]
   programs: SchoolProgram[]
   flags: SchoolFlags
   doe_data: DoeData
-  sift_url: string
   last_verified: string
 }
 

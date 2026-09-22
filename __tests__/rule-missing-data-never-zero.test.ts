@@ -16,16 +16,18 @@ import { School } from '../types'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function makeSchool(overrides: Partial<School> & { dbn?: string } = {}): School {
+function makeSchool(
+  overrides: Partial<Omit<School, 'sqr'>> & { dbn?: string; academic_score_pct?: number | null } = {}
+): School {
+  const { academic_score_pct, ...schoolOverrides } = overrides
   return {
-    dbn: overrides.dbn ?? 'X000',
-    name: overrides.name ?? 'Test School',
-    borough: overrides.borough ?? 'Brooklyn',
-    size: overrides.size ?? 'medium',
+    dbn: schoolOverrides.dbn ?? 'X000',
+    name: schoolOverrides.name ?? 'Test School',
+    borough: schoolOverrides.borough ?? 'Brooklyn',
+    size: schoolOverrides.size ?? 'medium',
     total_students: null,
     applicants_per_seat: null,
-    academic_score_pct: null,
-    survey_score_pct: null,
+    sqr: academic_score_pct != null ? { performance_pctl: academic_score_pct } : undefined,
     admissions_types: [],
     programs: [],
     flags: {
@@ -34,10 +36,10 @@ function makeSchool(overrides: Partial<School> & { dbn?: string } = {}): School 
       has_screened: false,
       has_open: false,
       has_borough_priority: false,
-      is_hidden_gem: false,
+      high_impact: false,
       has_consortium: false,
       has_ib: false,
-      ...overrides.flags,
+      ...schoolOverrides.flags,
     },
     doe_data: {
       overview: '',
@@ -47,11 +49,10 @@ function makeSchool(overrides: Partial<School> & { dbn?: string } = {}): School 
       phone: '',
       address: '',
       zip: '',
-      ...overrides.doe_data,
+      ...schoolOverrides.doe_data,
     },
-    sift_url: '',
     last_verified: '',
-    ...overrides,
+    ...schoolOverrides,
   }
 }
 
@@ -73,8 +74,7 @@ function assertNotZeroed(cells: StatCell[], label: string, fieldKey: string) {
 const ZERO_CASES: { key: string; label: string; overrides: Partial<School> }[] = [
   { key: 'applicantsPerSeat', label: 'Applicants per seat', overrides: { applicants_per_seat: 0 } },
   { key: 'totalStudents', label: 'Total students', overrides: { total_students: 0 } },
-  { key: 'academicScore', label: 'Academic score', overrides: { academic_score_pct: 0 } },
-  { key: 'surveyScore', label: 'Survey score', overrides: { survey_score_pct: 0 } },
+  { key: 'academicScore', label: 'Academic score', overrides: { sqr: { performance_pctl: 0 } } },
   {
     key: 'graduationRate',
     label: 'Graduation rate',
@@ -154,8 +154,7 @@ const realSchools: School[] = dataAvailable
       const fieldGetters: [string, (s: School) => number | null | undefined][] = [
         ['applicantsPerSeat', (s) => s.applicants_per_seat],
         ['totalStudents', (s) => s.total_students],
-        ['academicScore', (s) => s.academic_score_pct],
-        ['surveyScore', (s) => s.survey_score_pct],
+        ['academicScore', (s) => s.sqr?.performance_pctl],
         ['graduationRate', (s) => s.doe_data?.graduation_rate],
         ['attendanceRate', (s) => s.doe_data?.attendance_rate],
         ['collegeCareerRate', (s) => s.doe_data?.college_career_rate],
