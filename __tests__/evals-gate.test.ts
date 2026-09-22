@@ -13,8 +13,10 @@ import {
   buildRunName,
   pickLatestWeeklyBaseline,
   computeRegressions,
+  buildCostGuardAbortMessage,
   REQUIRED_EVAL_ENV_KEYS,
   REGRESSION_THRESHOLD_POINTS,
+  COST_LIMIT_USD,
 } from '../evals/gate'
 
 describe('findMissingEnvKeys', () => {
@@ -116,5 +118,36 @@ describe('computeRegressions', () => {
 
   it('uses the configured threshold constant', () => {
     expect(REGRESSION_THRESHOLD_POINTS).toBe(10)
+  })
+})
+
+describe('COST_LIMIT_USD', () => {
+  it('is raised to $3 (issue #309 — $1 was too low for a real 30-case run)', () => {
+    expect(COST_LIMIT_USD).toBe(3)
+  })
+})
+
+describe('buildCostGuardAbortMessage', () => {
+  it('names the last case, how many cases ran out of the total, and both dollar amounts', () => {
+    const message = buildCostGuardAbortMessage({
+      lastCaseId: 'ask-023',
+      casesRun: 23,
+      totalCases: 30,
+      totalCostUsd: 3.03,
+    })
+    expect(message).toBe(
+      'FAIL: eval run aborted after 23 of 30 cases (last: ask-023) — summed model cost $3.03 passed the $3.00 guard.'
+    )
+  })
+
+  it('formats dollar amounts to two decimal places', () => {
+    const message = buildCostGuardAbortMessage({
+      lastCaseId: 'ask-005',
+      casesRun: 5,
+      totalCases: 30,
+      totalCostUsd: 3.1,
+    })
+    expect(message).toContain('$3.10')
+    expect(message).toContain('$3.00 guard')
   })
 })
