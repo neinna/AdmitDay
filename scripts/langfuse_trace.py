@@ -158,6 +158,23 @@ def build_payload(raw):
     if t_end is None and ends:
         t_end = max(ends)
 
+    # Issue #312: dashboards here only offer an Observations view, not Traces,
+    # and no single phase span covers a whole run, so total run duration can't
+    # be charted. Add one span spanning the full run (same bounds as the trace
+    # itself) carrying just outcome/issue_number, no usage or cost, so per-phase
+    # cost totals don't double-count. Skip it for the reconcile sweep's
+    # near-zero-work traces (issue #262) — they aren't runs worth charting.
+    if trace.get("trace_name") != "agent-reconcile":
+        spans.append(
+            {
+                "name": "run-total",
+                "start_ns": t_start,
+                "end_ns": t_end,
+                "outcome": trace.get("outcome"),
+                "issue_number": trace.get("issue_number"),
+            }
+        )
+
     return trace, spans, t_start, t_end
 
 
@@ -270,7 +287,7 @@ def emit(raw):
             span_meta = {
                 "latency_ms": _ms(_int(span.get("start_ns")), _int(span.get("end_ns")))
             }
-            for key in ("attempt", "ok", "status"):
+            for key in ("attempt", "ok", "status", "outcome", "issue_number"):
                 if span.get(key) is not None:
                     span_meta[key] = span[key]
 
