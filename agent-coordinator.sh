@@ -1170,6 +1170,17 @@ TRIAGE: INFRA - <what broke outside the issue itself>"
   return 0
 }
 
+# workflow_files_changed: 0 (true) when the current branch's diff against
+# origin/main touches any path under .github/workflows/, 1 (false) otherwise.
+# The agent's GitHub token has the `workflow` scope so it can add or edit CI
+# workflow files; the repo is public and secrets live in Actions, so a
+# workflow change that self-merges is the one path where a mistake could
+# print a key into a public log (issue #306). Checked from run_agent after
+# the agent's commit, before auto-merge is ever considered.
+workflow_files_changed() {
+  git diff --name-only origin/main...HEAD | grep -q '^\.github/workflows/'
+}
+
 run_agent() {
   local ISSUE_NUMBER=$1
   local RUN_START
@@ -1476,12 +1487,20 @@ Instructions:
     SUMMARY=$(claude_json_field "$CLAUDE_OUT" "result")
     [ -z "$SUMMARY" ] && SUMMARY="(agent produced no summary)"
 
+    local WORKFLOW_CHANGED=0
+    workflow_files_changed && WORKFLOW_CHANGED=1
+
     local T0 T1
     T0=$(lf_now_ns)
     git push origin "$BRANCH" >> "$LOG_FILE" 2>&1
     local PR_BODY="${SUMMARY}
 
 Closes #${ISSUE_NUMBER}"
+    if [ "$WORKFLOW_CHANGED" -eq 1 ]; then
+      PR_BODY="${PR_BODY}
+
+This PR changes CI workflow files under \`.github/workflows/\`. It needs a human to review and merge — auto-merge was not enabled."
+    fi
     local PR_URL
     PR_URL=$(github_open_pr "$BRANCH" "$COMMIT_TITLE" "$PR_BODY")
     T1=$(lf_now_ns)
@@ -1489,24 +1508,34 @@ Closes #${ISSUE_NUMBER}"
     lf_record "pr" "$T0" "$T1" "$([ -n "$PR_URL" ] && echo 1 || echo 0)" "" "" "$PR_OUTCOME"
 
     if [ -n "$PR_URL" ]; then
-      if echo "$REVIEW_TEXT" | grep -q "RISK: LIVE-VERIFY-NEEDED" || [ "$REVIEW_RC" -eq 2 ]; then
-        # Escalate instead of auto-merging when either: the reviewer flagged
-        # the diff as unverifiable in CI (no live database), or the reviewer
-        # itself was unavailable — an unreviewed diff is the most extreme
-        # case of "can't truly verify" and must never auto-merge unattended.
-        local ESCALATION_REASON="flagged it as touching the database/connection layer, migrations, seeding, environment/secrets, or deploy/infra config (RISK: LIVE-VERIFY-NEEDED)"
-        [ "$REVIEW_RC" -eq 2 ] && ESCALATION_REASON="was unavailable, so this diff was never independently reviewed"
-        [ "$REVIEW_RC" -ne 2 ] && REVIEWER_RESULT="approved-live-verify-needed"
+      local PR_NUMBER="${PR_URL##*/}"
+      if echo "$REVIEW_TEXT" | grep -q "RISK: LIVE-VERIFY-NEEDED" || [ "$REVIEW_RC" -eq 2 ] || [ "$WORKFLOW_CHANGED" -eq 1 ]; then
+        # Escalate instead of auto-merging when any of: the reviewer flagged
+        # the diff as unverifiable in CI (no live database), the reviewer
+        # itself was unavailable, or the diff touches .github/workflows/ (the
+        # agent's token has the `workflow` scope and the repo is public with
+        # secrets living in Actions, so a self-merged CI change is the one
+        # path where a mistake could print a key into a public log).
+        local ESCALATION_REASON
+        if [ "$REVIEW_RC" -eq 2 ]; then
+          ESCALATION_REASON="was unavailable, so this diff was never independently reviewed"
+        elif [ "$WORKFLOW_CHANGED" -eq 1 ]; then
+          ESCALATION_REASON="changes CI workflow files under .github/workflows/"
+          echo "$REVIEW_TEXT" | grep -q "RISK: LIVE-VERIFY-NEEDED" && REVIEWER_RESULT="approved-live-verify-needed"
+        else
+          ESCALATION_REASON="flagged it as touching the database/connection layer, migrations, seeding, environment/secrets, or deploy/infra config (RISK: LIVE-VERIFY-NEEDED)"
+          REVIEWER_RESULT="approved-live-verify-needed"
+        fi
         github_comment "$ISSUE_NUMBER" "Agent opened a pull request for this issue: ${PR_URL}
 
 Tests and build verified green by the coordinator. The independent reviewer ${ESCALATION_REASON}. Auto-merge was NOT enabled — please verify before merging."
         github_label "$ISSUE_NUMBER" "needs-you"
+        github_label "$PR_NUMBER" "needs-you"
         github_remove_label "$ISSUE_NUMBER" "in-progress"
         OUTCOME="needs-review"; GH_LABEL="needs-you"; PR_OUTCOME="opened-escalated"
         log "Issue #${ISSUE_NUMBER}: PR opened at ${PR_URL}, escalated (${ESCALATION_REASON}), auto-merge NOT enabled"
         telegram "PR ready for issue #${ISSUE_NUMBER} but ESCALATED for human review: ${ISSUE_TITLE} — ${PR_URL}"
       else
-        local PR_NUMBER="${PR_URL##*/}"
         local PR_NODE_ID
         PR_NODE_ID=$(github_get_pr_node_id "$PR_NUMBER")
         if [ -n "$PR_NODE_ID" ] && github_enable_automerge "$PR_NODE_ID"; then
