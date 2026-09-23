@@ -1,7 +1,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 
-describe('/find ask API top-K (issue #70: reverted from 10 to 5)', () => {
+describe('/find ask API top-K (issue #328: raised from 5 to a named ASK_RETRIEVAL_COUNT = 20)', () => {
   // Issue #284: the searchSchools call moved from the route into
   // lib/ask.ts's answerQuestion() as part of extracting the ask logic for
   // the eval runner. Same assertions, new home for the call they check.
@@ -12,14 +12,18 @@ describe('/find ask API top-K (issue #70: reverted from 10 to 5)', () => {
     src = fs.readFileSync(routePath, 'utf-8')
   })
 
-  it('calls searchSchools with topK = 5', () => {
-    // issue #231: searchSchools also takes the active /find rail filters as a
-    // third argument, so this now tolerates trailing args after topK.
-    expect(src).toMatch(/searchSchools\(\s*question\s*,\s*5\s*[,)]/)
+  it('exports ASK_RETRIEVAL_COUNT = 20', () => {
+    expect(src).toMatch(/export const ASK_RETRIEVAL_COUNT\s*=\s*20/)
   })
 
-  it('no longer uses topK = 10', () => {
-    expect(src).not.toMatch(/searchSchools\(\s*question\s*,\s*10\s*[,)]/)
+  it('calls searchSchools with ASK_RETRIEVAL_COUNT, not a literal', () => {
+    // issue #231: searchSchools also takes the active /find rail filters as a
+    // third argument, so this now tolerates trailing args after the count.
+    expect(src).toMatch(/searchSchools\(\s*question\s*,\s*ASK_RETRIEVAL_COUNT\s*[,)]/)
+  })
+
+  it('no longer uses a hardcoded topK literal (5 or 10)', () => {
+    expect(src).not.toMatch(/searchSchools\(\s*question\s*,\s*(5|10)\s*[,)]/)
   })
 })
 
