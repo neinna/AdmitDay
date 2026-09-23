@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { answer, guardrail, retrieved, sources, model, usage, stopReason, contentBlockTypes } =
+    const { answer, guardrail, retrieved, sources, reasons, model, usage, stopReason, contentBlockTypes } =
       await answerQuestion({ question, filters: hardFilters });
 
     // Built once so the id returned to the client and the id attached to
@@ -110,6 +110,7 @@ export async function POST(request: NextRequest) {
         score: r.score,
         matchedOn: r.matchedChunkType,
       })),
+      reasons,
       traceId: randomUUID(),
     };
 
