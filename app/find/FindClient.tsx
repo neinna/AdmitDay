@@ -423,9 +423,21 @@ export default function FindClient({ schools, initialFilters }: Props) {
       next.delete(dbn)
       return next
     })
+    // Issue #363: which ordering produced this row, and where in it —
+    // evidence for whether #361's deferred sort-picker question needs
+    // answering. A boolean only (#295) — never the ZIP or coordinates
+    // themselves, computed outside the capture call so no commute value
+    // ever appears in its source text.
+    const commuteStartIsSet = startCoords != null
+    const rowPosition = visible.findIndex((row) => row.school.dbn === dbn) + 1
     posthog?.capture(adding ? 'school_saved' : 'school_removed', {
       dbn,
       list_size_after: next.size,
+      ...(adding && {
+        sort_basis: askReasons.length > 0 ? 'ask' : 'fit',
+        row_position: rowPosition,
+        has_starting_point: commuteStartIsSet,
+      }),
     })
   }
 
@@ -534,6 +546,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
         latency_ms: Date.now() - startedAt,
         source_count: sources.length,
         trace_id: typeof data.traceId === 'string' ? data.traceId : '',
+        sort_basis: reasons.length > 0 ? 'ask' : 'fit',
       })
     } catch (err) {
       setAskAnswerError('Something went wrong getting an answer. Please try again.')
