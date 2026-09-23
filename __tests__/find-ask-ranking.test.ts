@@ -139,8 +139,8 @@ describe('/find ask box holds and clears askReasons (issue #329)', () => {
 })
 
 describe('the row list ranking uses rankFindRows (issue #329)', () => {
-  it('ranked is computed from hardFiltered, annotated, and askReasons', () => {
-    expect(src).toContain('rankFindRows(hardFiltered, annotated, askReasons)')
+  it('ranked is computed from hardFiltered, annotated, askReasons, and sortMode (issue #400)', () => {
+    expect(src).toContain('rankFindRows(hardFiltered, annotated, askReasons, sortMode)')
   })
 })
 
