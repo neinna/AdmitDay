@@ -135,6 +135,117 @@ export function buildNotReportedStatsSentence(missingLabels: string[]): string |
   return `${list} ${verb} not published for this school. That is a gap in the DOE data, not a low result.`
 }
 
+// ── Results/Impact trend (issue #292) ───────────────────────────────────────
+//
+// The DOE School Quality Report results workbook is published once a cycle;
+// school.sqr_history holds one entry per year DOE actually reported a
+// numeric score for that school (a year it didn't is left out, never zeroed
+// -- same convention as buildStatCells above). This turns that history into
+// the small inline trend shown on the school page: a plain-language sentence
+// plus the points a sparkline draws, oldest year first.
+
+export interface TrendPoint {
+  year: string
+  pctl: number
+}
+
+export interface SqrTrendCell {
+  key: 'results' | 'impact'
+  label: string
+  points: TrendPoint[]
+  text: string
+  badge: string | null
+}
+
+/** "1st", "2nd", "3rd", "4th"...  "11th"/"12th"/"13th" are the exceptions to the mod-10 rule. */
+function ordinal(value: number): string {
+  const n = Math.round(value)
+  const mod100 = n % 100
+  if (mod100 >= 11 && mod100 <= 13) return `${n}th`
+  switch (n % 10) {
+    case 1:
+      return `${n}st`
+    case 2:
+      return `${n}nd`
+    case 3:
+      return `${n}rd`
+    default:
+      return `${n}th`
+  }
+}
+
+/** Oldest-year-first list of the years DOE published a numeric percentile for this metric. */
+export function buildTrendPoints(
+  history: School['sqr_history'],
+  metric: 'performance' | 'impact'
+): TrendPoint[] {
+  if (!history) return []
+  const key = metric === 'performance' ? 'performance_pctl' : 'impact_pctl'
+  return history
+    .filter((h) => isPresent(h[key]))
+    .map((h) => ({ year: h.year, pctl: h[key] as number }))
+}
+
+/**
+ * "Impact: 62nd → 89th percentile, 2021-22 to 2024-25" for two or more
+ * points -- a decline reads the same way, just with the arrow going the
+ * other numeric direction. A single point drops the arrow and range:
+ * "Impact: 64th percentile, 2024-25". Null when DOE never published this
+ * metric for the school.
+ */
+export function buildTrendText(points: TrendPoint[], label: string): string | null {
+  if (points.length === 0) return null
+  const first = points[0]
+  const last = points[points.length - 1]
+  if (points.length === 1) {
+    return `${label}: ${ordinal(first.pctl)} percentile, ${first.year}`
+  }
+  return `${label}: ${ordinal(first.pctl)} → ${ordinal(last.pctl)} percentile, ${first.year} to ${last.year}`
+}
+
+/**
+ * "Impact up 3 years running" -- only when the impact percentile rose in
+ * each of the last 3 steps between reported years AND rose by 10+ points
+ * total across those steps. Fewer than 4 points means fewer than 3 steps
+ * exist, so there is no badge. Never shown for Results.
+ */
+export function buildImpactBadge(points: TrendPoint[]): string | null {
+  if (points.length < 4) return null
+  const lastFour = points.slice(-4)
+  const steps: number[] = []
+  for (let i = 1; i < lastFour.length; i++) {
+    steps.push(lastFour[i].pctl - lastFour[i - 1].pctl)
+  }
+  const allRose = steps.every((step) => step > 0)
+  const totalRise = lastFour[lastFour.length - 1].pctl - lastFour[0].pctl
+  return allRose && totalRise >= 10 ? 'Impact up 3 years running' : null
+}
+
+/** The trend cells to render on the school page — only for metrics DOE actually published history for. */
+export function buildSqrTrends(school: School): SqrTrendCell[] {
+  const cells: SqrTrendCell[] = []
+
+  const resultsPoints = buildTrendPoints(school.sqr_history, 'performance')
+  const resultsText = buildTrendText(resultsPoints, 'Results')
+  if (resultsText) {
+    cells.push({ key: 'results', label: 'Results', points: resultsPoints, text: resultsText, badge: null })
+  }
+
+  const impactPoints = buildTrendPoints(school.sqr_history, 'impact')
+  const impactText = buildTrendText(impactPoints, 'Impact')
+  if (impactText) {
+    cells.push({
+      key: 'impact',
+      label: 'Impact',
+      points: impactPoints,
+      text: impactText,
+      badge: buildImpactBadge(impactPoints),
+    })
+  }
+
+  return cells
+}
+
 // ── SHSAT cutoffs ────────────────────────────────────────────────────────────
 
 export interface ShsatCutoffRow {

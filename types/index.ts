@@ -19,6 +19,18 @@ export interface SqrData {
   source_url?: string
 }
 
+// One school year's Performance/Impact scores from the DOE HS School Quality
+// Report results workbook (issue #292). A year the DOE didn't publish a
+// numeric score for is left out of the array entirely -- never a zeroed or
+// null entry.
+export interface SqrHistoryEntry {
+  year: string
+  performance_score?: number
+  performance_pctl?: number
+  impact_score?: number
+  impact_pctl?: number
+}
+
 export interface DoeData {
   overview: string
   language: string
@@ -82,6 +94,7 @@ export interface School {
   total_students: number | null
   applicants_per_seat: number | null
   sqr?: SqrData
+  sqr_history?: SqrHistoryEntry[]
   admissions_types: string[]
   programs: SchoolProgram[]
   flags: SchoolFlags
