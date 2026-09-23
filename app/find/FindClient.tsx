@@ -39,6 +39,43 @@ interface AskSource {
   score: number
 }
 
+interface AskReason {
+  dbn: string
+  reason: string
+}
+
+interface AnnotatedRow {
+  school: School
+  missing: string[]
+}
+
+interface RankedRow {
+  school: School
+  missing: string[]
+  reason?: string
+}
+
+// Issue #329: when the ask has returned per-school reasons, the row list is
+// the reasons' own order, restricted to DBNs the rail filters still allow
+// (hardFiltered) — the ask can annotate and reorder, but the rail is the hard
+// floor (issue #114/#231) so a school outside it must never surface here. With
+// no reasons yet (or the ask box cleared), fall back to the existing
+// missing-criteria fit ordering.
+export function rankFindRows(
+  hardFiltered: School[],
+  annotated: AnnotatedRow[],
+  askReasons: AskReason[]
+): RankedRow[] {
+  if (askReasons.length === 0) {
+    return [...annotated].sort((a, b) => a.missing.length - b.missing.length)
+  }
+  const allowedDbns = new Set(hardFiltered.map((s) => s.dbn))
+  const schoolByDbn = new Map(hardFiltered.map((s) => [s.dbn, s]))
+  return askReasons
+    .filter((r) => allowedDbns.has(r.dbn))
+    .map((r) => ({ school: schoolByDbn.get(r.dbn) as School, missing: [], reason: r.reason }))
+}
+
 function uniqueSorted(values: string[]): string[] {
   return Array.from(new Set(values)).sort((a, b) => a.localeCompare(b))
 }
@@ -85,6 +122,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
   const [askFilters, setAskFilters] = useState<QueryFilters | null>(null)
   const [askAnswer, setAskAnswer] = useState('')
   const [askSources, setAskSources] = useState<AskSource[]>([])
+  const [askReasons, setAskReasons] = useState<AskReason[]>([])
   const [askLoading, setAskLoading] = useState(false)
   const [askAnswerError, setAskAnswerError] = useState('')
   // Trace id of the answer currently on screen (issue #195) — cleared the
@@ -163,8 +201,8 @@ export default function FindClient({ schools, initialFilters }: Props) {
     [hardFiltered, askFilters]
   )
   const ranked = useMemo(
-    () => [...annotated].sort((a, b) => a.missing.length - b.missing.length),
-    [annotated]
+    () => rankFindRows(hardFiltered, annotated, askReasons),
+    [hardFiltered, annotated, askReasons]
   )
 
   const visible = ranked.slice(0, visibleCount)
@@ -335,6 +373,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
 
     // Soft annotation pass — deterministic, unchanged from #108.
     setAskFilters(extractFilters(askText))
+    setAskReasons([])
 
     if (!trimmed) return
 
@@ -378,6 +417,8 @@ export default function FindClient({ schools, initialFilters }: Props) {
       setAskAnswer(typeof data.answer === 'string' ? data.answer : '')
       const sources = Array.isArray(data.sources) ? data.sources : []
       setAskSources(sources)
+      const reasons: AskReason[] = Array.isArray(data.reasons) ? data.reasons : []
+      setAskReasons(reasons)
       setAskTraceId(typeof data.traceId === 'string' ? data.traceId : null)
       posthog?.capture('ask_answered', {
         latency_ms: Date.now() - startedAt,
@@ -525,31 +566,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
                   </p>
                 )}
                 {!askAnswerError && askAnswer && (
-                  <div>
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="text-[14px] text-ink-2 whitespace-pre-wrap leading-relaxed">
-                        {askAnswer}
-                      </p>
-                      <FeedbackRow key={askTraceId ?? 'no-trace'} screen="find_ask" traceId={askTraceId ?? undefined} />
-                    </div>
-                    {askSources.length > 0 && (
-                      <div className="mt-3">
-                        <h2 className="font-mono text-[11px] tracking-[0.1em] uppercase text-faint mb-1.5">
-                          Sources
-                        </h2>
-                        <ul className="flex flex-wrap gap-2">
-                          {askSources.map((s) => (
-                            <li
-                              key={s.dbn}
-                              className="text-[12px] px-2 py-1 bg-surface-2 text-ink-2 border border-rule"
-                            >
-                              {s.name} &middot; {s.borough}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
+                  <FeedbackRow key={askTraceId ?? 'no-trace'} screen="find_ask" traceId={askTraceId ?? undefined} />
                 )}
               </div>
             )}
@@ -581,7 +598,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
                 {findFilterToLoosen(filters) ?? 'a filter'}.
               </div>
             ) : (
-              visible.map(({ school }, i) => {
+              visible.map(({ school, reason }, i) => {
                 const added = addedDbns.has(school.dbn)
                 const neighborhood = school.doe_data?.neighborhood || school.borough
                 const tracks = (school.admissions_types ?? []).map(trackLabel).join(', ') || '—'
@@ -625,8 +642,9 @@ export default function FindClient({ schools, initialFilters }: Props) {
                     }
                     statLabel="Apps/seat"
                     evidence={
-                      (percentile != null || methods.length > 0) && (
+                      (reason || percentile != null || methods.length > 0) && (
                         <>
+                          {reason && <p className="text-[12.5px] text-faint">{reason}</p>}
                           {percentile != null && (
                             <p className="text-[12.5px] text-faint">
                               more applicants per seat than{' '}
