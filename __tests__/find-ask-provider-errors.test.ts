@@ -90,6 +90,8 @@ describe('/api/find/ask provider failure handling (issue #128)', () => {
     expect(typeof body.answer).toBe('string')
     expect(body.answer.length).toBeGreaterThan(0)
     expect(body.sources).toHaveLength(1)
+
+    expect(mockCaptureException).toHaveBeenCalledWith(upstreamError)
   })
 
   it('returns a plain-language unavailable response for a provider outage (5xx)', async () => {

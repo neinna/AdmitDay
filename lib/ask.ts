@@ -9,6 +9,7 @@
  * around this call.
  */
 
+import * as Sentry from "@sentry/nextjs";
 import Anthropic from "@anthropic-ai/sdk";
 import { searchSchools, HardFilters, SearchResult } from "./rag";
 import {
@@ -127,7 +128,13 @@ export async function answerQuestion({
     // with the schools already retrieved, instead of the call failing
     // outright and losing them. Any other provider failure (rate limit,
     // outage, timeout) is rethrown for the route's existing handling.
+    //
+    // This path answers successfully rather than throwing, so it never
+    // reaches the route's catch block — the real error (with the "regain
+    // access on ..." date) is logged here instead, so the existing Sentry
+    // alert this issue relies on still fires.
     if (classifyProviderError(err).classification === "usage_limit") {
+      Sentry.captureException(err);
       return {
         answer: PROVIDER_LIMIT,
         guardrail: "provider_limit",

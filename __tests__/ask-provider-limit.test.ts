@@ -94,6 +94,15 @@ describe('lib/ask.ts answerQuestion() on a usage-limit 400 (issue #354)', () => 
     expect(result.answer).not.toContain('invalid_request_error')
   })
 
+  it('still logs the real error to Sentry even though the parent gets PROVIDER_LIMIT', async () => {
+    const err = usageLimitError()
+    mockCreate.mockRejectedValue(err)
+
+    await answerQuestion({ question: 'Which schools have small classes?' })
+
+    expect(mockCaptureException).toHaveBeenCalledWith(err)
+  })
+
   it('still throws for a generic provider error, unchanged', async () => {
     const err = new Error('Internal server error')
     ;(err as unknown as { status: number }).status = 529
@@ -132,6 +141,15 @@ describe('/api/find/ask on a usage-limit 400 (issue #354)', () => {
     const event = mockRecordLlmTrace.mock.calls[0][0]
     expect(event.outcome).toBe('provider_limit')
     expect(event.guardrail).toBe('provider_limit')
+  })
+
+  it('still reaches Sentry through the route, even though the response is a 200', async () => {
+    const err = usageLimitError()
+    mockCreate.mockRejectedValue(err)
+
+    await POST(fakeAskRequest('Which schools have small classes?', '10.20.0.4'))
+
+    expect(mockCaptureException).toHaveBeenCalledWith(err)
   })
 
   it('a generic provider error (no usage-limit wording) still takes the existing provider_error path unchanged', async () => {
