@@ -115,6 +115,7 @@ def test_build_school_json_excludes_school_with_no_myschools_programs(monkeypatc
         return (["Screened"], [_myschools_program()])
 
     monkeypatch.setattr(build_school_data, "fetch_myschools_program_detail", fake_fetch)
+    monkeypatch.setattr(build_school_data, "fetch_myschools_school_location", lambda dbn: None)
     monkeypatch.setattr(build_school_data.time, "sleep", lambda *_: None)
 
     school_list = [
@@ -135,6 +136,7 @@ def test_build_school_json_keeps_school_with_myschools_programs(monkeypatch):
         "fetch_myschools_program_detail",
         lambda dbn: (["Screened"], [_myschools_program()]),
     )
+    monkeypatch.setattr(build_school_data, "fetch_myschools_school_location", lambda dbn: None)
     monkeypatch.setattr(build_school_data.time, "sleep", lambda *_: None)
 
     school_list = [_directory_school("13K430", "Brooklyn Technical High School", borough="Brooklyn")]
@@ -320,3 +322,61 @@ def test_fetch_myschools_program_detail_raises_when_only_transfer(monkeypatch):
     import pytest
     with pytest.raises(build_school_data.MySchoolsNotAdmittingError):
         build_school_data.fetch_myschools_program_detail("13K430")
+
+
+# ── Issue #342: each school's coordinates from MySchools ────────────────────
+
+
+def _raw_with_address(latitude, longitude):
+    return {
+        "school": {"dbn": "02M475", "address": {"latitude": latitude, "longitude": longitude}},
+        "programs": [],
+    }
+
+
+def test_fetch_myschools_school_location_maps_lat_lng(monkeypatch):
+    raw = _raw_with_address("40.71336", "-73.986058")
+    monkeypatch.setattr(build_school_data, "fetch_school", lambda dbn, cache_dir=None: (raw, "url", "2026-09-18T00:00:00+00:00"))
+
+    location = build_school_data.fetch_myschools_school_location("02M475")
+
+    assert location == {"lat": 40.71336, "lng": -73.986058}
+
+
+def test_fetch_myschools_school_location_absent_when_latitude_non_numeric(monkeypatch):
+    raw = _raw_with_address("not-a-number", "-73.986058")
+    monkeypatch.setattr(build_school_data, "fetch_school", lambda dbn, cache_dir=None: (raw, "url", "2026-09-18T00:00:00+00:00"))
+
+    assert build_school_data.fetch_myschools_school_location("02M475") is None
+
+
+def test_build_school_json_carries_location_onto_the_school_when_present(monkeypatch):
+    monkeypatch.setattr(
+        build_school_data,
+        "fetch_myschools_program_detail",
+        lambda dbn: (["Screened"], [_myschools_program()]),
+    )
+    monkeypatch.setattr(
+        build_school_data, "fetch_myschools_school_location", lambda dbn: {"lat": 40.71336, "lng": -73.986058}
+    )
+    monkeypatch.setattr(build_school_data.time, "sleep", lambda *_: None)
+
+    school_list = [_directory_school("13K430", "Brooklyn Technical High School", borough="Brooklyn")]
+    schools, _ = build_school_data.build_school_json(school_list, {})
+
+    assert schools[0]["location"] == {"lat": 40.71336, "lng": -73.986058}
+
+
+def test_build_school_json_omits_location_key_when_absent(monkeypatch):
+    monkeypatch.setattr(
+        build_school_data,
+        "fetch_myschools_program_detail",
+        lambda dbn: (["Screened"], [_myschools_program()]),
+    )
+    monkeypatch.setattr(build_school_data, "fetch_myschools_school_location", lambda dbn: None)
+    monkeypatch.setattr(build_school_data.time, "sleep", lambda *_: None)
+
+    school_list = [_directory_school("13K430", "Brooklyn Technical High School", borough="Brooklyn")]
+    schools, _ = build_school_data.build_school_json(school_list, {})
+
+    assert "location" not in schools[0]

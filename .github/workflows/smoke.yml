@@ -34,3 +34,29 @@ jobs:
 
       - name: Smoke test production
         run: npm run smoke
+
+      # Issue #286: one Playwright pass through the signed-out parent flow —
+      # the ask box is excluded (paid model, rate-limited; #284/#285 cover
+      # it). Not part of the required PR `test` check for the same reason
+      # the rest of this workflow isn't: it hits the live site, so wiring it
+      # into PR gating would make CI flaky and block unrelated work.
+      - name: Cache Playwright browser
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser test the signed-out parent flow
+        run: npm run e2e
+
+      - name: Upload Playwright trace and screenshot on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-trace
+          path: test-results/
+          retention-days: 7
