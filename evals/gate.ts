@@ -17,7 +17,7 @@ export type RunSummary = Record<string, ScorerSummary>;
 export const WEEKLY_RUN_PREFIX = "weekly-";
 
 /** The eval run aborts once summed model cost across all cases passes this. */
-export const COST_LIMIT_USD = 3;
+export const COST_LIMIT_USD = 6;
 
 /**
  * Message logged when the running cost guard trips mid-run. Named as a pure

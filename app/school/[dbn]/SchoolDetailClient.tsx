@@ -5,7 +5,14 @@ import Link from 'next/link'
 import { usePostHog } from 'posthog-js/react'
 import { useAuth, useClerk } from '@clerk/nextjs'
 import { School } from '@/types'
-import { ADDED_SCHOOLS_KEY, trackLabel } from '@/lib/school-list-utils'
+import {
+  ADDED_SCHOOLS_KEY,
+  trackLabel,
+  StartingPoint,
+  loadStartingPoint,
+  distanceMiles,
+  formatMiles,
+} from '@/lib/school-list-utils'
 import { PENDING_SAVE_KEY } from '@/components/PendingSaveSync'
 import {
   StatCell,
@@ -89,6 +96,14 @@ export default function SchoolDetailClient({
   const [hydrated, setHydrated] = useState(false)
   const [programsExpanded, setProgramsExpanded] = useState(false)
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({})
+  // Issue #375: the starting point lives only in localStorage — reading it
+  // during render (rather than after mount) would produce a hydration
+  // mismatch, since server-rendered markup can't know its value.
+  const [startingPoint, setStartingPoint] = useState<StartingPoint | null>(null)
+
+  useEffect(() => {
+    setStartingPoint(loadStartingPoint())
+  }, [])
 
   // Issue #200/#240: saving a school requires an account, so the only saved
   // list is Postgres via /api/saved-schools. Signed out, there is no list —
@@ -156,6 +171,20 @@ export default function SchoolDetailClient({
 
   const address = school.doe_data?.address
     ? `${school.doe_data.address}, ${school.borough}${school.doe_data.zip ? ' NY ' + school.doe_data.zip : ''}`
+    : null
+
+  const distance =
+    startingPoint && school.location ? distanceMiles(school.location, startingPoint.point) : null
+
+  // The parent's origin is added only here, in the browser, from state that
+  // never leaves it — never part of a server-rendered href, a fetch, or an
+  // analytics property (issue #375).
+  const directionsHref = address
+    ? `https://www.google.com/maps/dir/?${new URLSearchParams({
+        api: '1',
+        destination: address,
+        ...(startingPoint ? { origin: startingPoint.label } : {}),
+      }).toString()}`
     : null
 
   return (
@@ -456,8 +485,23 @@ export default function SchoolDetailClient({
                 </div>
               )}
               {address && <DefinitionRow labelWidth={92} label="Address" value={address} className="pt-[3px]" />}
+              {distance != null && (
+                <div className="text-[13.5px] text-ink-2">
+                  {formatMiles(distance)} from your starting point
+                </div>
+              )}
               {notReportedTransitLabel && (
                 <NotReportedLine variant="reported">{notReportedTransitLabel}</NotReportedLine>
+              )}
+              {directionsHref && (
+                <a
+                  href={directionsHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[13.5px] text-accent"
+                >
+                  Open directions ↗
+                </a>
               )}
             </div>
           </div>

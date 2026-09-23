@@ -14,7 +14,11 @@ import {
   INITIAL_COUNT,
   PAGE_SIZE,
   ADDED_SCHOOLS_KEY,
-  START_ZIP_KEY,
+  StartingPoint,
+  loadStartingPoint,
+  saveStartingPoint,
+  resolveStartingPointInput,
+  suggestStationNames,
   applyFindFilters,
   countActiveFindFilters,
   describeFindFilters,
@@ -24,7 +28,6 @@ import {
   citywidePercentile,
   admissionMethods,
   admissionMethodCopy,
-  lookupZipCentroid,
   distanceMiles,
   applyRadiusFilter,
   countHiddenForNoLocation,
@@ -52,9 +55,10 @@ interface AskReason {
 interface AnnotatedRow {
   school: School
   missing: string[]
-  // Distance from the "Starting from" ZIP (issue #343), in miles — null with
-  // no starting point or no school.location. Only ever used to break a fit
-  // tie below; it never becomes a sort of its own (issue #344/#361).
+  // Distance from the "Starting from" point (a ZIP or subway station, issue
+  // #343/#374), in miles — null with no starting point or no school.location.
+  // Only ever used to break a fit tie below; it never becomes a sort of its
+  // own (issue #344/#361).
   distance?: number | null
 }
 
@@ -158,50 +162,58 @@ export default function FindClient({ schools, initialFilters }: Props) {
   const [shortlistLoadFailed, setShortlistLoadFailed] = useState(false)
   const [saveErrorDbns, setSaveErrorDbns] = useState<Set<string>>(new Set())
 
-  // "Starting from" ZIP (issue #343) — a client-only convenience for reading
-  // distance on each row. Persisted to localStorage so it survives a reload;
-  // it must never leave the browser (no fetch body, no analytics event).
-  const [startZip, setStartZip] = useState('')
+  // "Starting from" ZIP or subway station (issue #343/#374) — a client-only
+  // convenience for reading distance on each row. Persisted to localStorage
+  // so it survives a reload; it must never leave the browser (no fetch body,
+  // no analytics event).
+  const [startingPointInput, setStartingPointInput] = useState('')
+  const [startingPoint, setStartingPoint] = useState<StartingPoint | null>(null)
 
-  // "Within" radius (issue #344) — client-only like startZip, never persisted
-  // or sent anywhere. Clearing the ZIP clears it too, since a radius means
-  // nothing without a starting point.
+  // "Within" radius (issue #344) — client-only like the starting point, never
+  // persisted or sent anywhere. Clearing the field clears it too, since a
+  // radius means nothing without a starting point.
   const [radiusMiles, setRadiusMiles] = useState<number | null>(null)
 
   useEffect(() => {
-    if (!startZip) setRadiusMiles(null)
-  }, [startZip])
+    if (!startingPointInput) setRadiusMiles(null)
+  }, [startingPointInput])
 
   function handleRadiusChange(value: string) {
     setRadiusMiles(value ? Number(value) : null)
   }
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(START_ZIP_KEY)
-      if (saved) setStartZip(saved)
-    } catch {
-      // ignore
+    const loaded = loadStartingPoint()
+    if (loaded) {
+      setStartingPoint(loaded)
+      setStartingPointInput(loaded.label)
     }
   }, [])
 
-  useEffect(() => {
-    try {
-      if (startZip) localStorage.setItem(START_ZIP_KEY, startZip)
-      else localStorage.removeItem(START_ZIP_KEY)
-    } catch {
-      // ignore
-    }
-  }, [startZip])
-
-  const startCoords = useMemo(
-    () => (startZip.length === 5 ? lookupZipCentroid(startZip) : null),
-    [startZip]
+  const startCoords = startingPoint?.point ?? null
+  // Neither a ZIP nor a station means the field shows the not-found message
+  // and any already-resolved starting point is left untouched (issue #374).
+  const startNotFound =
+    startingPointInput.trim() !== '' && resolveStartingPointInput(startingPointInput) == null
+  const startingPointSuggestions = useMemo(
+    () => suggestStationNames(startingPointInput),
+    [startingPointInput]
   )
-  const zipNotFound = startZip.length === 5 && startCoords == null
 
-  function handleStartZipChange(value: string) {
-    setStartZip(value.replace(/\D/g, '').slice(0, 5))
+  function handleStartingPointInputChange(value: string) {
+    setStartingPointInput(value)
+    if (value.trim() === '') {
+      setStartingPoint(null)
+      saveStartingPoint(null)
+      return
+    }
+    const resolved = resolveStartingPointInput(value)
+    if (resolved) {
+      setStartingPoint(resolved)
+      saveStartingPoint(resolved)
+    }
+    // Neither a ZIP nor a station resolves — leave the existing starting
+    // point (and storage) untouched; only the not-found message reacts.
   }
 
   // Rail filters are a hard floor and live in the URL so a filtered /find
@@ -579,14 +591,15 @@ export default function FindClient({ schools, initialFilters }: Props) {
               schools={schools}
               filters={filters}
               trackOptions={trackOptions}
-              startZip={startZip}
-              zipNotFound={zipNotFound}
+              startingPointInput={startingPointInput}
+              startingPointNotFound={startNotFound}
+              startingPointSuggestions={startingPointSuggestions}
               radiusValue={radiusMiles != null ? String(radiusMiles) : ''}
               radiusDisabled={!startCoords}
               onToggleBorough={toggleBorough}
               onToggleTrack={toggleTrack}
               onSizeChange={setSize}
-              onStartZipChange={handleStartZipChange}
+              onStartingPointInputChange={handleStartingPointInputChange}
               onRadiusChange={handleRadiusChange}
               onReset={resetFilters}
             />
@@ -684,7 +697,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
                 </span>
                 <span className="text-[14px] text-muted">
                   match{ranked.length === 1 ? '' : 'es'} {describeFindFilters(filters)}
-                  {startCoords ? ` · starting from ${startZip}` : ''}
+                  {startingPoint ? ` · starting from ${startingPoint.label}` : ''}
                   {radiusMiles != null && hiddenForNoLocation > 0
                     ? ` · ${hiddenForNoLocation} hidden for no location on file`
                     : ''}
