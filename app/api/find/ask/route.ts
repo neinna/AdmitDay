@@ -130,7 +130,10 @@ export async function POST(request: NextRequest) {
       outputTokens: usage?.output_tokens,
       latencyMs: Date.now() - startedAt,
       costUsd: estimateCostUsd(model, usage?.input_tokens, usage?.output_tokens),
-      outcome: "ok",
+      // Issue #354: a usage-limit hit answers successfully (PROVIDER_LIMIT +
+      // sources) so it never reaches the catch block below, but it must
+      // still show up distinctly from an ordinary "ok" answer in Langfuse.
+      outcome: guardrail === "provider_limit" ? "provider_limit" : "ok",
       guardrail,
       stopReason,
       contentBlockTypes,

@@ -33,7 +33,7 @@ import type { Langfuse as LangfuseClient } from "langfuse"
 const WATCHDOG_MS = 3000
 const REQUEST_TIMEOUT_MS = 2000
 
-export type TraceOutcome = "ok" | "provider_error" | "rate_limited" | "bad_request"
+export type TraceOutcome = "ok" | "provider_error" | "rate_limited" | "bad_request" | "provider_limit"
 
 export interface RetrievedSchool {
   dbn: string
