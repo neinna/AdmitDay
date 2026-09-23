@@ -23,7 +23,7 @@
  * Exits non-zero if the hallucination or admissions-odds scorer passes
  * under 100% of applicable cases, if a pull_request run drops any other
  * scorer more than 10 points below the last weekly run on main, or if the
- * run's summed model cost passes $3 (evals/gate.ts COST_LIMIT_USD).
+ * run's summed model cost passes $6 (evals/gate.ts COST_LIMIT_USD).
  */
 
 import fs from "fs";
