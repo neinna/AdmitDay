@@ -62,12 +62,12 @@ describe('rankFindRows (issue #329)', () => {
     { school: C, missing: ['neighborhood', 'sport'] },
   ]
 
-  it('with no ask reasons, falls back to the Results sort (issue #400), not the removed fit ordering', () => {
-    // None of A/B/C has sqr data, so the Results sort (performance_pctl) ties
-    // for all three and the input order is preserved — it must NOT reorder by
-    // missing.length, which #400 established was a no-op the whole list long.
+  it('with no ask reasons, falls back to the existing fit ordering unchanged', () => {
     const ranked = rankFindRows(hardFiltered, annotated, [])
-    expect(ranked.map((r) => r.school.dbn)).toEqual(['A', 'B', 'C'])
+    expect(ranked).toEqual(
+      [...annotated].sort((a, b) => a.missing.length - b.missing.length)
+    )
+    expect(ranked.map((r) => r.school.dbn)).toEqual(['B', 'A', 'C'])
     expect(ranked.length).toBe(hardFiltered.length)
   })
 

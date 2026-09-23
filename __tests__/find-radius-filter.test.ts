@@ -156,13 +156,13 @@ describe('rankFindRows distance tiebreak (issue #344)', () => {
     expect(ranked.map((r) => r.school.dbn)).toEqual(['FAR', 'NEAR', 'NOLOC'])
   })
 
-  it('neither school has sqr data, so the Results sort ties and distance breaks it (issue #400 removed the missing-based fit sort)', () => {
+  it('unequal fit still wins over distance', () => {
     const annotated = [
       { school: far, missing: [], distance: 1.1 },
       { school: near, missing: ['sport'], distance: 0.1 },
     ]
     const ranked = rankFindRows([far, near], annotated, [])
-    expect(ranked.map((r) => r.school.dbn)).toEqual(['NEAR', 'FAR'])
+    expect(ranked.map((r) => r.school.dbn)).toEqual(['FAR', 'NEAR'])
   })
 
   it('with an ask active, distance does not reorder anything — the reasons order wins regardless of distance', () => {

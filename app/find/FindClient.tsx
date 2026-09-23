@@ -105,8 +105,12 @@ function compareBySortMode(a: School, b: School, sortMode: FindSortMode): number
 // the reasons' own order, restricted to DBNs the rail filters still allow
 // (hardFiltered) — the ask can annotate and reorder, but the rail is the hard
 // floor (issue #114/#231) so a school outside it must never surface here. With
-// no reasons yet (or the ask box cleared), sort by sortMode (issue #400),
-// with distance breaking ties (issue #344).
+// no reasons yet (or the ask box cleared), fall back to the existing
+// missing-criteria fit ordering, then sortMode (issue #400), with distance
+// breaking ties (issue #344). missing.length is still real whenever
+// askFilters is set without askReasons (loading, failure, empty reasons, or a
+// removed signal chip) — sortMode only decides among schools tied on it,
+// which is every school when there is no ask at all.
 export function rankFindRows(
   hardFiltered: School[],
   annotated: AnnotatedRow[],
@@ -115,6 +119,8 @@ export function rankFindRows(
 ): RankedRow[] {
   if (askReasons.length === 0) {
     return [...annotated].sort((a, b) => {
+      const missingDiff = a.missing.length - b.missing.length
+      if (missingDiff !== 0) return missingDiff
       const diff = compareBySortMode(a.school, b.school, sortMode)
       if (diff !== 0) return diff
       return compareDistanceTiebreak(a.distance, b.distance)
