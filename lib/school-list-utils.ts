@@ -477,3 +477,40 @@ export function distanceMiles(a: LatLng, b: LatLng): number {
   const h = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2
   return 2 * EARTH_RADIUS_MI * Math.asin(Math.sqrt(h))
 }
+
+// ── /find "Within" radius filter (issue #344) ────────────────────────────────
+// #361 decided distance never becomes a sort: the ask orders the list when
+// active, fit orders it otherwise, and distance only breaks ties (see
+// rankFindRows in FindClient). A parent expresses how much commute matters
+// through this radius, which filters before ranking runs at all.
+
+/**
+ * Hides schools farther than radiusMiles from startCoords. A no-op until both
+ * a starting point and a radius are chosen. A school with no `location` can't
+ * be measured against the radius, so it's hidden along with the too-far ones
+ * whenever a radius is active — see countHiddenForNoLocation for the count
+ * the scope line reports for that specific reason.
+ */
+export function applyRadiusFilter(
+  schools: School[],
+  startCoords: LatLng | null,
+  radiusMiles: number | null
+): School[] {
+  if (startCoords == null || radiusMiles == null) return schools
+  return schools.filter(
+    (s) => s.location != null && distanceMiles(s.location, startCoords) <= radiusMiles
+  )
+}
+
+/**
+ * Of `schools`, how many applyRadiusFilter hides purely for lacking a
+ * `location` (not for being too far) — zero whenever no radius is active.
+ */
+export function countHiddenForNoLocation(
+  schools: School[],
+  startCoords: LatLng | null,
+  radiusMiles: number | null
+): number {
+  if (startCoords == null || radiusMiles == null) return 0
+  return schools.filter((s) => s.location == null).length
+}

@@ -19,16 +19,28 @@ const SIZE_OPTIONS = [
   { label: 'Large', value: 'large' },
 ]
 
+// Within radius options for issue #344 — Any plus the four fixed distances.
+const RADIUS_OPTIONS = [
+  { label: 'Any', value: '' },
+  { label: '1 mi', value: '1' },
+  { label: '3 mi', value: '3' },
+  { label: '5 mi', value: '5' },
+  { label: '10 mi', value: '10' },
+]
+
 interface Props {
   schools: School[]
   filters: FindFilters
   trackOptions: string[]
   startZip: string
   zipNotFound: boolean
+  radiusValue: string
+  radiusDisabled: boolean
   onToggleBorough: (borough: string) => void
   onToggleTrack: (track: string) => void
   onSizeChange: (size: string) => void
   onStartZipChange: (zip: string) => void
+  onRadiusChange: (value: string) => void
   onReset: () => void
 }
 
@@ -63,10 +75,13 @@ export default function FindRail({
   trackOptions,
   startZip,
   zipNotFound,
+  radiusValue,
+  radiusDisabled,
   onToggleBorough,
   onToggleTrack,
   onSizeChange,
   onStartZipChange,
+  onRadiusChange,
   onReset,
 }: Props) {
   const { main: mainTrackOptions, iep: iepTrackOptions } = splitTrackOptionsForRail(trackOptions)
@@ -85,6 +100,12 @@ export default function FindRail({
           className="border border-border-strong px-[13px] py-[9px] text-[14px] text-ink outline-none placeholder:text-faint bg-transparent"
         />
         {zipNotFound && <div className="text-[12.5px] text-faint">Not a NYC ZIP code</div>}
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <div className="font-mono text-[11px] tracking-[0.12em] uppercase text-faint">Within</div>
+        <SegmentedControl options={RADIUS_OPTIONS} value={radiusValue} onChange={onRadiusChange} disabled={radiusDisabled} />
+        {radiusDisabled && <div className="text-[12.5px] text-faint">Add a starting ZIP</div>}
       </div>
 
       <div className="flex flex-col gap-3">

@@ -26,6 +26,8 @@ import {
   admissionMethodCopy,
   lookupZipCentroid,
   distanceMiles,
+  applyRadiusFilter,
+  countHiddenForNoLocation,
 } from '@/lib/school-list-utils'
 import { extractFilters, QueryFilters, appliedSignals, removeSignal } from '@/lib/query-filters'
 import { getUnmetCriteria } from '@/lib/soft-match'
@@ -50,6 +52,10 @@ interface AskReason {
 interface AnnotatedRow {
   school: School
   missing: string[]
+  // Distance from the "Starting from" ZIP (issue #343), in miles — null with
+  // no starting point or no school.location. Only ever used to break a fit
+  // tie below; it never becomes a sort of its own (issue #344/#361).
+  distance?: number | null
 }
 
 interface RankedRow {
@@ -58,19 +64,34 @@ interface RankedRow {
   reason?: string
 }
 
+// Issue #344/#361: distance never becomes a sort — it only breaks ties inside
+// the no-ask fit order below, nearest first, with no-location schools last.
+// A no-op (0) when either side has no distance, so the fit order is otherwise
+// unchanged with no starting point.
+function compareDistanceTiebreak(a: number | null | undefined, b: number | null | undefined): number {
+  if (a == null && b == null) return 0
+  if (a == null) return 1
+  if (b == null) return -1
+  return a - b
+}
+
 // Issue #329: when the ask has returned per-school reasons, the row list is
 // the reasons' own order, restricted to DBNs the rail filters still allow
 // (hardFiltered) — the ask can annotate and reorder, but the rail is the hard
 // floor (issue #114/#231) so a school outside it must never surface here. With
 // no reasons yet (or the ask box cleared), fall back to the existing
-// missing-criteria fit ordering.
+// missing-criteria fit ordering, with distance breaking ties (issue #344).
 export function rankFindRows(
   hardFiltered: School[],
   annotated: AnnotatedRow[],
   askReasons: AskReason[]
 ): RankedRow[] {
   if (askReasons.length === 0) {
-    return [...annotated].sort((a, b) => a.missing.length - b.missing.length)
+    return [...annotated].sort((a, b) => {
+      const missingDiff = a.missing.length - b.missing.length
+      if (missingDiff !== 0) return missingDiff
+      return compareDistanceTiebreak(a.distance, b.distance)
+    })
   }
   const allowedDbns = new Set(hardFiltered.map((s) => s.dbn))
   const schoolByDbn = new Map(hardFiltered.map((s) => [s.dbn, s]))
@@ -141,6 +162,19 @@ export default function FindClient({ schools, initialFilters }: Props) {
   // distance on each row. Persisted to localStorage so it survives a reload;
   // it must never leave the browser (no fetch body, no analytics event).
   const [startZip, setStartZip] = useState('')
+
+  // "Within" radius (issue #344) — client-only like startZip, never persisted
+  // or sent anywhere. Clearing the ZIP clears it too, since a radius means
+  // nothing without a starting point.
+  const [radiusMiles, setRadiusMiles] = useState<number | null>(null)
+
+  useEffect(() => {
+    if (!startZip) setRadiusMiles(null)
+  }, [startZip])
+
+  function handleRadiusChange(value: string) {
+    setRadiusMiles(value ? Number(value) : null)
+  }
 
   useEffect(() => {
     try {
@@ -222,19 +256,33 @@ export default function FindClient({ schools, initialFilters }: Props) {
     [schools]
   )
 
-  // Hard filter — the rail excludes schools. This is the hard floor.
-  const hardFiltered = useMemo(() => applyFindFilters(schools, filters), [schools, filters])
+  // Rail filter — the borough/track/size controls exclude schools.
+  const railFiltered = useMemo(() => applyFindFilters(schools, filters), [schools, filters])
+
+  // Within-radius filter (issue #344), layered on top of the rail — together
+  // they're the hard floor: hides schools farther than radiusMiles, plus any
+  // school with no `location` (it can't be measured), for as long as a radius
+  // is active.
+  const hardFiltered = useMemo(
+    () => applyRadiusFilter(railFiltered, startCoords, radiusMiles),
+    [railFiltered, startCoords, radiusMiles]
+  )
+  const hiddenForNoLocation = useMemo(
+    () => countHiddenForNoLocation(railFiltered, startCoords, radiusMiles),
+    [railFiltered, startCoords, radiusMiles]
+  )
 
   // Soft annotation pass from the ask box — never removes a school from
   // hardFiltered, only ranks it. Schools satisfying more (or all) of the ask
-  // criteria float up.
+  // criteria float up; distance (issue #344) only breaks a fit tie.
   const annotated = useMemo(
     () =>
       hardFiltered.map((school) => ({
         school,
         missing: askFilters ? getUnmetCriteria(school, askFilters) : [],
+        distance: startCoords && school.location ? distanceMiles(school.location, startCoords) : null,
       })),
-    [hardFiltered, askFilters]
+    [hardFiltered, askFilters, startCoords]
   )
   const ranked = useMemo(
     () => rankFindRows(hardFiltered, annotated, askReasons),
@@ -519,10 +567,13 @@ export default function FindClient({ schools, initialFilters }: Props) {
               trackOptions={trackOptions}
               startZip={startZip}
               zipNotFound={zipNotFound}
+              radiusValue={radiusMiles != null ? String(radiusMiles) : ''}
+              radiusDisabled={!startCoords}
               onToggleBorough={toggleBorough}
               onToggleTrack={toggleTrack}
               onSizeChange={setSize}
               onStartZipChange={handleStartZipChange}
+              onRadiusChange={handleRadiusChange}
               onReset={resetFilters}
             />
           </div>
@@ -620,6 +671,9 @@ export default function FindClient({ schools, initialFilters }: Props) {
                 <span className="text-[14px] text-muted">
                   match{ranked.length === 1 ? '' : 'es'} {describeFindFilters(filters)}
                   {startCoords ? ` · starting from ${startZip}` : ''}
+                  {radiusMiles != null && hiddenForNoLocation > 0
+                    ? ` · ${hiddenForNoLocation} hidden for no location on file`
+                    : ''}
                 </span>
               </div>
               <p className="text-[12.5px] text-faint mt-1">
