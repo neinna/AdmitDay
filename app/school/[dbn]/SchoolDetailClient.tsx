@@ -242,6 +242,14 @@ export default function SchoolDetailClient({
       <div className="px-5 min-[900px]:px-9 pt-[26px] pb-7 border-b border-rule">
         <Eyebrow className="pb-[14px]">The numbers</Eyebrow>
         <StatGrid stats={statCells} />
+        {school.sqr && (
+          <div className="pt-3 text-[13px] text-ink-2">
+            <a href={school.sqr.source_url} target="_blank" rel="noopener noreferrer" className="text-accent">
+              DOE rating
+            </a>
+            : {school.sqr.rating} · {school.sqr.year}
+          </div>
+        )}
         {notReportedStatsSentence && (
           <NotReportedLine variant="reported" className="pt-3">
             {notReportedStatsSentence}
