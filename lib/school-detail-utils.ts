@@ -552,7 +552,7 @@ export function buildRequirementBlocks(school: School): RequirementBlock[] {
 
 // ── Provenance ───────────────────────────────────────────────────────────────
 
-export const PROVENANCE_SOURCE = 'NYC-SIFT + NYC DOE Open Data'
+export const PROVENANCE_SOURCE = 'MySchools + NYC DOE Open Data'
 
 // No fallback deep-link format is confirmed for myschools.nyc, and a guessed
 // per-school URL that 404s would undermine the "always leave with a working
