@@ -5,19 +5,24 @@
 
 import * as Sentry from "@sentry/nextjs";
 
-Sentry.init({
-  dsn: "https://50b3b81955c8e03faf9108c48d32b64a@o4511185594744832.ingest.us.sentry.io/4511185656741888",
+// Only Vercel deployments should report to Sentry. Without this guard, the
+// coding agent's own VPS checkout — which deliberately has no secrets (#232)
+// and throws on every run — reports those throws into the production project.
+if (process.env.VERCEL) {
+  Sentry.init({
+    dsn: "https://50b3b81955c8e03faf9108c48d32b64a@o4511185594744832.ingest.us.sentry.io/4511185656741888",
 
-  // Vercel sets NODE_ENV to "production" for preview deploys too, so without
-  // this, preview and production events are indistinguishable in Sentry.
-  environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV,
+    // Vercel sets NODE_ENV to "production" for preview deploys too, so without
+    // this, preview and production events are indistinguishable in Sentry.
+    environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV,
 
-  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 1,
+    // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
+    tracesSampleRate: 1,
 
-  // Enable logs to be sent to Sentry
-  enableLogs: true,
+    // Enable logs to be sent to Sentry
+    enableLogs: true,
 
-  // See instrumentation-client.ts: PII is deliberately not sent anywhere.
-  sendDefaultPii: false,
-});
+    // See instrumentation-client.ts: PII is deliberately not sent anywhere.
+    sendDefaultPii: false,
+  });
+}
