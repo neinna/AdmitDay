@@ -7,6 +7,10 @@ import * as Sentry from "@sentry/nextjs";
 Sentry.init({
   dsn: "https://50b3b81955c8e03faf9108c48d32b64a@o4511185594744832.ingest.us.sentry.io/4511185656741888",
 
+  // Vercel sets NODE_ENV to "production" for preview deploys too, so without
+  // this, preview and production events are indistinguishable in Sentry.
+  environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV,
+
   // Add optional integrations for additional features
   // Replay masking is pinned explicitly rather than left to the SDK default.
   // These are the defaults today, but this product records sessions of parents
