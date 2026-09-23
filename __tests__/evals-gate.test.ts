@@ -122,8 +122,8 @@ describe('computeRegressions', () => {
 })
 
 describe('COST_LIMIT_USD', () => {
-  it('is raised to $3 (issue #309 — $1 was too low for a real 30-case run)', () => {
-    expect(COST_LIMIT_USD).toBe(3)
+  it('is raised to $6 (issue #382 — $3 was below the cost of the 30-case seed set)', () => {
+    expect(COST_LIMIT_USD).toBe(6)
   })
 })
 
@@ -136,7 +136,7 @@ describe('buildCostGuardAbortMessage', () => {
       totalCostUsd: 3.03,
     })
     expect(message).toBe(
-      'FAIL: eval run aborted after 23 of 30 cases (last: ask-023) — summed model cost $3.03 passed the $3.00 guard.'
+      'FAIL: eval run aborted after 23 of 30 cases (last: ask-023) — summed model cost $3.03 passed the $6.00 guard.'
     )
   })
 
@@ -148,6 +148,6 @@ describe('buildCostGuardAbortMessage', () => {
       totalCostUsd: 3.1,
     })
     expect(message).toContain('$3.10')
-    expect(message).toContain('$3.00 guard')
+    expect(message).toContain('$6.00 guard')
   })
 })
