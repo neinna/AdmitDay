@@ -74,7 +74,8 @@ function assertNotZeroed(cells: StatCell[], label: string, fieldKey: string) {
 const ZERO_CASES: { key: string; label: string; overrides: Partial<School> }[] = [
   { key: 'applicantsPerSeat', label: 'Applicants per seat', overrides: { applicants_per_seat: 0 } },
   { key: 'totalStudents', label: 'Total students', overrides: { total_students: 0 } },
-  { key: 'academicScore', label: 'Academic score', overrides: { sqr: { performance_pctl: 0 } } },
+  { key: 'results', label: 'Results', overrides: { sqr: { performance_pctl: 0 } } },
+  { key: 'impact', label: 'Impact', overrides: { sqr: { impact_pctl: 0 } } },
   {
     key: 'graduationRate',
     label: 'Graduation rate',
@@ -154,7 +155,8 @@ const realSchools: School[] = dataAvailable
       const fieldGetters: [string, (s: School) => number | null | undefined][] = [
         ['applicantsPerSeat', (s) => s.applicants_per_seat],
         ['totalStudents', (s) => s.total_students],
-        ['academicScore', (s) => s.sqr?.performance_pctl],
+        ['results', (s) => s.sqr?.performance_pctl],
+        ['impact', (s) => s.sqr?.impact_pctl],
         ['graduationRate', (s) => s.doe_data?.graduation_rate],
         ['attendanceRate', (s) => s.doe_data?.attendance_rate],
         ['collegeCareerRate', (s) => s.doe_data?.college_career_rate],
