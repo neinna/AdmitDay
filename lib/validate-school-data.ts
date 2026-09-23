@@ -50,9 +50,9 @@ export const MAX_DROP_VS_PREVIOUS = 0.1
 
 /**
  * MySchools no longer lists every school still in the high-school admissions
- * process (issue #189). A bounded number of schools falling back to NYC-SIFT
- * detail (marked with provenance.source "NYC-SIFT") is tolerated -- only a
- * genuine coverage collapse fails the refresh.
+ * process (issue #189). A bounded number of schools missing a MySchools-
+ * sourced program is tolerated -- only a genuine coverage collapse fails the
+ * refresh.
  */
 export const MYSCHOOLS_COVERAGE_THRESHOLD = 0.95
 
@@ -71,14 +71,10 @@ function hasEmptyString(value: unknown): boolean {
 
 /**
  * Validates a school's `programs` array and reports whether it has at least
- * one program actually sourced from MySchools (as opposed to a school that
- * fell back to NYC-SIFT detail because MySchools no longer lists it -- see
- * `myschools_status: "not_listed"` and provenance.source "NYC-SIFT").
+ * one program actually sourced from MySchools.
  *
- * A recognized fallback (provenance.source "NYC-SIFT") is valid at the
- * per-school level; it just never counts toward MySchools coverage. Only a
- * program with no recognized provenance source at all -- the old
- * NYC-SIFT-shaped rows this replaced -- is flagged invalid.
+ * Only a program carrying a recognized MySchools provenance source counts;
+ * any other source is flagged invalid.
  */
 function validateMySchoolsPrograms(record: RawSchoolRecord): { reasons: string[]; hasMySchoolsProgram: boolean } {
   const reasons: string[] = []
@@ -103,10 +99,10 @@ function validateMySchoolsPrograms(record: RawSchoolRecord): { reasons: string[]
     if (!name) reasons.push(`program[${programIndex}] missing program name`)
     if (hasEmptyString(p)) reasons.push(`program[${programIndex}] contains empty string; omit missing fields instead`)
 
-    if (provenanceSource === 'MySchools' || provenanceSource === 'NYC-SIFT') {
+    if (provenanceSource === 'MySchools') {
       if (!provenanceUrl) reasons.push(`program[${programIndex}] missing provenance url`)
       if (!fetchedAt) reasons.push(`program[${programIndex}] missing provenance fetched_at`)
-      if (provenanceSource === 'MySchools' && code) hasMySchoolsProgram = true
+      if (code) hasMySchoolsProgram = true
     } else {
       reasons.push(`program[${programIndex}] missing MySchools provenance source`)
       reasons.push(`program[${programIndex}] missing provenance url`)
