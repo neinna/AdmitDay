@@ -27,7 +27,19 @@ export const BLOCKED_FALLBACK =
 export const NO_ANSWER =
   "We couldn't write an answer for this question. The schools below matched it; open any of them for the details.";
 
-export type Guardrail = "none" | "prediction_preface" | "blocked" | "off_topic" | "too_long" | "empty";
+// Issue #354: shown instead of a raw Anthropic usage-limit error. Same
+// contract as NO_ANSWER — the retrieved sources still go out alongside it.
+export const PROVIDER_LIMIT =
+  "The ask box is temporarily unavailable. The schools below still match your filters — open any of them for the details.";
+
+export type Guardrail =
+  | "none"
+  | "prediction_preface"
+  | "blocked"
+  | "off_topic"
+  | "too_long"
+  | "empty"
+  | "provider_limit";
 
 // Signals a parent is asking for an odds/prediction-style answer.
 // Deliberately not the bare words reach, safety, or target — NYC parents

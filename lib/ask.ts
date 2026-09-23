@@ -9,16 +9,19 @@
  * around this call.
  */
 
+import * as Sentry from "@sentry/nextjs";
 import Anthropic from "@anthropic-ai/sdk";
 import { searchSchools, HardFilters, SearchResult } from "./rag";
 import {
   PREDICTION_PREFACE,
   OFF_TOPIC,
   NO_ANSWER,
+  PROVIDER_LIMIT,
   type Guardrail,
   isPredictionRequest,
   guardAnswer,
 } from "./ask-guardrails";
+import { classifyProviderError } from "./provider-error";
 
 let anthropicClient: Anthropic | null = null;
 
@@ -43,7 +46,8 @@ export interface AnswerQuestionResult {
   sources: SearchResult[];
   /** One short reason per retrieved school, keyed by DBN, in ranked order. */
   reasons: { dbn: string; reason: string }[];
-  model: string;
+  /** Absent when the answer came back before a model call completed (e.g. PROVIDER_LIMIT). */
+  model?: string;
   usage?: { input_tokens?: number; output_tokens?: number };
   stopReason?: string;
   contentBlockTypes?: string[];
@@ -102,20 +106,45 @@ export async function answerQuestion({
   // context-to-answer synthesis that doesn't need extended reasoning, so
   // thinking is disabled outright; max_tokens is raised to give the answer
   // itself headroom. Answer length/tone is controlled by SYSTEM_PROMPT.
-  const message = await getAnthropicClient().messages.create({
-    model: "claude-sonnet-5",
-    max_tokens: 1500,
-    thinking: { type: "disabled" },
-    system: SYSTEM_PROMPT,
-    messages: [
-      {
-        role: "user",
-        content:
-          `Here are the most relevant schools for this question:\n\n${schoolContext}\n\n` +
-          `Parent's question: <question>${question}</question>`,
-      },
-    ],
-  });
+  let message: Anthropic.Message;
+  try {
+    message = await getAnthropicClient().messages.create({
+      model: "claude-sonnet-5",
+      max_tokens: 1500,
+      thinking: { type: "disabled" },
+      system: SYSTEM_PROMPT,
+      messages: [
+        {
+          role: "user",
+          content:
+            `Here are the most relevant schools for this question:\n\n${schoolContext}\n\n` +
+            `Parent's question: <question>${question}</question>`,
+        },
+      ],
+    });
+  } catch (err) {
+    // Issue #354: an Anthropic account usage-limit hit is a known, distinct
+    // shape of failure — the parent gets the approved PROVIDER_LIMIT copy
+    // with the schools already retrieved, instead of the call failing
+    // outright and losing them. Any other provider failure (rate limit,
+    // outage, timeout) is rethrown for the route's existing handling.
+    //
+    // This path answers successfully rather than throwing, so it never
+    // reaches the route's catch block — the real error (with the "regain
+    // access on ..." date) is logged here instead, so the existing Sentry
+    // alert this issue relies on still fires.
+    if (classifyProviderError(err).classification === "usage_limit") {
+      Sentry.captureException(err);
+      return {
+        answer: PROVIDER_LIMIT,
+        guardrail: "provider_limit",
+        retrieved: results,
+        sources: results,
+        reasons: [],
+      };
+    }
+    throw err;
+  }
 
   const rawAnswer = message.content
     .filter((block): block is Anthropic.TextBlock => block.type === "text")
