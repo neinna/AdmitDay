@@ -62,12 +62,12 @@ describe('rankFindRows (issue #329)', () => {
     { school: C, missing: ['neighborhood', 'sport'] },
   ]
 
-  it('with no ask reasons, falls back to the existing fit ordering unchanged', () => {
+  it('with no ask reasons, falls back to the Results sort (issue #400), not the removed fit ordering', () => {
+    // None of A/B/C has sqr data, so the Results sort (performance_pctl) ties
+    // for all three and the input order is preserved — it must NOT reorder by
+    // missing.length, which #400 established was a no-op the whole list long.
     const ranked = rankFindRows(hardFiltered, annotated, [])
-    expect(ranked).toEqual(
-      [...annotated].sort((a, b) => a.missing.length - b.missing.length)
-    )
-    expect(ranked.map((r) => r.school.dbn)).toEqual(['B', 'A', 'C'])
+    expect(ranked.map((r) => r.school.dbn)).toEqual(['A', 'B', 'C'])
     expect(ranked.length).toBe(hardFiltered.length)
   })
 
@@ -139,8 +139,8 @@ describe('/find ask box holds and clears askReasons (issue #329)', () => {
 })
 
 describe('the row list ranking uses rankFindRows (issue #329)', () => {
-  it('ranked is computed from hardFiltered, annotated, and askReasons', () => {
-    expect(src).toContain('rankFindRows(hardFiltered, annotated, askReasons)')
+  it('ranked is computed from hardFiltered, annotated, askReasons, and sortMode (issue #400)', () => {
+    expect(src).toContain('rankFindRows(hardFiltered, annotated, askReasons, sortMode)')
   })
 })
 
