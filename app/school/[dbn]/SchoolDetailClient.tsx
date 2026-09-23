@@ -13,9 +13,10 @@ import {
   ActivityGroup,
   ProgramRow,
   RequirementBlock,
+  SqrTrendCell,
   chipIsMatched,
 } from '@/lib/school-detail-utils'
-import { Eyebrow, DefinitionRow, NotReportedLine, StatGrid } from '@/components/ui'
+import { Eyebrow, DefinitionRow, NotReportedLine, StatGrid, TrendSparkline } from '@/components/ui'
 import SiteHeader from './SiteHeader'
 
 const PROGRAMS_CAP = 6
@@ -33,6 +34,7 @@ interface Props {
   tracks: string[]
   statCells: StatCell[]
   notReportedStatsSentence: string | null
+  sqrTrends: SqrTrendCell[]
   shsatCutoffRows: ShsatCutoffRow[]
   programs: ProgramRow[]
   requirementBlocks: RequirementBlock[]
@@ -60,6 +62,7 @@ export default function SchoolDetailClient({
   tracks,
   statCells,
   notReportedStatsSentence,
+  sqrTrends,
   shsatCutoffRows,
   programs,
   requirementBlocks,
@@ -223,6 +226,21 @@ export default function SchoolDetailClient({
           <NotReportedLine variant="reported" className="pt-3">
             {notReportedStatsSentence}
           </NotReportedLine>
+        )}
+        {sqrTrends.length > 0 && (
+          <div className="flex flex-col gap-2 pt-4">
+            {sqrTrends.map((trend) => (
+              <div key={trend.key} className="flex flex-wrap items-center gap-3">
+                <TrendSparkline points={trend.points} />
+                <span className="text-[13px] text-ink-2">{trend.text}</span>
+                {trend.badge && (
+                  <span className="font-mono text-[10.5px] tracking-[0.08em] uppercase text-gem bg-gem-bg border border-gem-border px-2 py-1">
+                    {trend.badge}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
         )}
         {shsatCutoffRows.length > 0 && (
           <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 pt-4">
