@@ -25,6 +25,9 @@ def test_nycsift_functions_removed():
 
 
 def _directory_row(dbn, school_name, boro, total_students=500):
+    # dbn, school_name, boro, and total_students are real columns in the
+    # Fall 2025 HS Directory's Data sheet -- confirmed 2026-09-23 against the
+    # live workbook, not guessed (see build_school_list_from_directory).
     return {
         "dbn": dbn,
         "school_name": school_name,
@@ -177,6 +180,51 @@ def test_build_school_json_has_no_sift_url_and_no_nycsift_provenance(monkeypatch
 
     assert "sift_url" not in schools[0]
     assert all(p["provenance"]["source"] != "NYC-SIFT" for p in schools[0]["programs"])
+
+
+def test_build_school_json_has_no_applicants_per_seat_or_academic_score_source(monkeypatch):
+    # NYC-SIFT was the only source of these two fields (issue #336). Neither
+    # the DOE directory nor MySchools replaces them, so a school built from
+    # the directory must come out with both None -- and degrade gracefully
+    # (no crash, hidden-gem flag simply off) rather than a fabricated value.
+    monkeypatch.setattr(
+        build_school_data,
+        "fetch_myschools_program_detail",
+        lambda dbn: (["Screened"], [_myschools_program()]),
+    )
+    monkeypatch.setattr(build_school_data.time, "sleep", lambda *_: None)
+
+    school_list = [_directory_school("13K430", "Brooklyn Technical High School", borough="Brooklyn")]
+
+    schools, _ = build_school_data.build_school_json(school_list, {})
+
+    assert schools[0]["applicants_per_seat"] is None
+    assert schools[0]["academic_score_pct"] is None
+    assert schools[0]["flags"]["is_hidden_gem"] is False
+
+
+def test_validate_reports_missing_applicants_per_seat_and_academic_score(capsys):
+    school = {
+        "admissions_types": ["Screened"],
+        "flags": {
+            "has_shsat": False,
+            "has_audition": False,
+            "has_screened": True,
+            "has_open": False,
+            "is_hidden_gem": False,
+            "has_consortium": False,
+            "has_ib": False,
+        },
+        "borough": "Brooklyn",
+        "applicants_per_seat": None,
+        "academic_score_pct": None,
+    }
+
+    build_school_data.validate([school], excluded_dbns=[])
+
+    out = capsys.readouterr().out
+    assert "Missing applicants/seat data:   1" in out
+    assert "Missing academic score data:    1" in out
 
 
 def test_build_school_json_merges_doe_directory_data(monkeypatch):

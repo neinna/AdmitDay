@@ -19,7 +19,12 @@ Both are public domain / open data. Safe to use with attribution.
 
 NYC-SIFT (https://nycsift.com) was dropped as a source (issue #336): its
 terms of use, updated 2026-08-28, forbid scraping the site and using its
-data in an AI application.
+data in an AI application. NYC-SIFT was the only source of
+applicants_per_seat and academic_score_pct; neither the DOE directory nor
+MySchools supplies a replacement, so both fields are now always None. A
+replacement source (e.g. a MySchools-derived demand ratio or a DOE School
+Quality Report score) is a separate, not-yet-scoped follow-up -- see the
+"Missing applicants/seat data" line in this script's own validation report.
 """
 
 import json
@@ -85,7 +90,15 @@ def _clean_directory_school_name(name, dbn):
 
 def build_school_list_from_directory(doe_by_dbn):
     """The base school list -- dbn, name, borough, enrollment -- now comes
-    from the DOE Fall 2025 HS Directory instead of NYC-SIFT (issue #336)."""
+    from the DOE Fall 2025 HS Directory instead of NYC-SIFT (issue #336).
+
+    `school_name`, `boro`, and `total_students` are real columns in that
+    directory's `Data` sheet (confirmed 2026-09-23 by downloading the live
+    workbook from DIRECTORY_XLSX_URL in scripts/enrich_doe_directory.py and
+    inspecting its header row directly -- not guessed). `boro` is always
+    present and always one of BORO_CODE_TO_NAME's five single-letter codes;
+    `total_students` is blank ('.') for a small minority of rows, handled
+    below the same way the rest of this file treats a blank directory cell."""
     schools = []
     for dbn, row in doe_by_dbn.items():
         total_students = row.get("total_students")
@@ -398,6 +411,11 @@ def validate(schools, excluded_dbns=None):
     print(f"Consortium schools:     {sum(1 for s in schools if s['flags']['has_consortium'])}")
     print(f"IB schools:             {sum(1 for s in schools if s['flags']['has_ib'])}")
     print(f"Missing admissions:     {sum(1 for s in schools if not s['admissions_types'])}")
+    # Neither field has a source since NYC-SIFT was dropped (issue #336) --
+    # surfaced here so a refresh never silently ships data with a field that
+    # quietly went from populated to always-empty.
+    print(f"Missing applicants/seat data:   {sum(1 for s in schools if s['applicants_per_seat'] is None)}")
+    print(f"Missing academic score data:    {sum(1 for s in schools if s['academic_score_pct'] is None)}")
     print(f"Excluded (no programs in this cycle's MySchools admissions): {len(excluded_dbns)}")
     if excluded_dbns:
         print(f"  {', '.join(excluded_dbns)}")
