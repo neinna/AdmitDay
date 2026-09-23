@@ -177,7 +177,7 @@ export default function ShortlistClient({ index, initialOrder, signedIn }: Props
           onClick={() => window.print()}
           className="bg-ink text-white text-[14px] font-medium px-5 py-[11px] hover:opacity-90 transition-opacity duration-[120ms] ease-out"
         >
-          Export list
+          Print
         </button>
       </div>
 
