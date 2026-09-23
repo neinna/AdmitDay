@@ -46,7 +46,7 @@ function makeFlags(overrides: Partial<SchoolFlags> = {}): SchoolFlags {
 }
 
 function makeSchool(
-  overrides: Omit<Partial<School>, 'flags' | 'sqr'> & {
+  overrides: Omit<Partial<School>, 'flags'> & {
     dbn?: string
     flags?: Partial<SchoolFlags>
     academic_score_pct?: number | null
@@ -213,27 +213,71 @@ describe('buildStatCells', () => {
   it('does render a genuine DOE-reported 0 (not the same as missing)', () => {
     const school = makeSchool({ academic_score_pct: 0 })
     const cells = buildStatCells(school)
-    expect(cells.find((c) => c.label === 'Academic score')?.value).toBe('0%')
+    expect(cells.find((c) => c.label === 'Results')?.value).toBe('better than 0% of NYC high schools')
   })
 
-  it('returns every field when all six stats are present', () => {
+  it('returns every field when all seven stats are present', () => {
     const school = makeSchool({
       applicants_per_seat: 4.1,
       total_students: 5900,
-      academic_score_pct: 94,
+      sqr: { performance_pctl: 94, impact_pctl: 88 },
       doe_data: {
         overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '',
         graduation_rate: 0.96, attendance_rate: 0.95, college_career_rate: 0.91,
       },
     })
-    expect(buildStatCells(school)).toHaveLength(6)
+    expect(buildStatCells(school)).toHaveLength(7)
+  })
+})
+
+// ── Results/Impact stats replace the old "Academic score" (issue #333) ─────
+
+describe('buildStatCells — Results and Impact (issue #333)', () => {
+  it('renders both stats with their new labels and copy for a school with sqr', () => {
+    const school = makeSchool({ sqr: { performance_pctl: 72, impact_pctl: 41 } })
+    const cells = buildStatCells(school)
+    expect(cells.find((c) => c.label === 'Results')?.value).toBe('better than 72% of NYC high schools')
+    expect(cells.find((c) => c.label === 'Impact')?.value).toBe('grow more than at 41% of schools')
+  })
+
+  it('renders neither Results nor Impact when sqr is absent', () => {
+    const school = makeSchool({})
+    const cells = buildStatCells(school)
+    expect(cells.some((c) => c.label === 'Results')).toBe(false)
+    expect(cells.some((c) => c.label === 'Impact')).toBe(false)
+  })
+
+  it('no longer has a survey score stat', () => {
+    const school = makeSchool({ sqr: { performance_pctl: 72, impact_pctl: 41 } })
+    const cells = buildStatCells(school)
+    expect(cells.some((c) => c.label === 'Survey score')).toBe(false)
+    expect(cells.some((c) => c.key === 'surveyScore')).toBe(false)
+    expect(getMissingStatLabels(makeSchool({}))).not.toContain('survey score')
+  })
+})
+
+describe('SchoolDetailClient — DOE rating line (issue #333)', () => {
+  const src = readSource('app/school/[dbn]/SchoolDetailClient.tsx')
+
+  it('only renders the rating line when school.sqr is present', () => {
+    expect(src).toMatch(/school\.sqr\s*&&/)
+  })
+
+  it('links "DOE rating" to sqr.source_url in a new tab', () => {
+    expect(src).toMatch(
+      /<a\s+href=\{school\.sqr\.source_url\}[\s\S]{0,80}target="_blank"[\s\S]{0,80}rel="noopener noreferrer"[\s\S]{0,40}>\s*DOE rating\s*<\/a>/
+    )
+  })
+
+  it('shows the rating and year next to the link', () => {
+    expect(src).toMatch(/DOE rating[\s\S]{0,120}\{school\.sqr\.rating\}[\s\S]{0,20}·[\s\S]{0,20}\{school\.sqr\.year\}/)
   })
 })
 
 describe('getMissingStatLabels + buildNotReportedStatsSentence (NOT REPORTED — issue #116)', () => {
   it('returns an empty list and a null sentence when nothing is missing', () => {
     const school = makeSchool({
-      applicants_per_seat: 1, total_students: 1, academic_score_pct: 1,
+      applicants_per_seat: 1, total_students: 1, sqr: { performance_pctl: 1, impact_pctl: 1 },
       doe_data: {
         overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '',
         graduation_rate: 1, attendance_rate: 1, college_career_rate: 1,
@@ -255,7 +299,7 @@ describe('getMissingStatLabels + buildNotReportedStatsSentence (NOT REPORTED —
     })
     const sentence = buildNotReportedStatsSentence(getMissingStatLabels(school))
     expect(sentence).toBe(
-      'Applicants per seat, academic score, and college & career rate are not published for this school. That is a gap in the DOE data, not a low result.'
+      'Applicants per seat, results percentile, impact percentile, and college & career rate are not published for this school. That is a gap in the DOE data, not a low result.'
     )
   })
 

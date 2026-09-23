@@ -65,11 +65,18 @@ const STAT_FIELDS: StatField[] = [
     format: (v) => v.toLocaleString(),
   },
   {
-    key: 'academicScore',
-    gridLabel: 'Academic score',
-    sentenceLabel: 'academic score',
+    key: 'results',
+    gridLabel: 'Results',
+    sentenceLabel: 'results percentile',
     get: (s) => s.sqr?.performance_pctl,
-    format: pct,
+    format: (v) => `better than ${Math.round(v)}% of NYC high schools`,
+  },
+  {
+    key: 'impact',
+    gridLabel: 'Impact',
+    sentenceLabel: 'impact percentile',
+    get: (s) => s.sqr?.impact_pctl,
+    format: (v) => `grow more than at ${Math.round(v)}% of schools`,
   },
   {
     key: 'graduationRate',
