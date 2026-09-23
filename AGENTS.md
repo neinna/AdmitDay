@@ -71,7 +71,7 @@ When filing an issue for the agent:
 
 The coordinator picks up `agent-ok` issues in ascending issue-number order. File issues in the order they should be built.
 
-An issue whose body contains a line `Blocked by #N` is skipped while issue #N is still open.
+An issue whose body contains a line `Blocked by #N` is skipped while issue #N is still open. The line must be **exactly** `Blocked by #N` — the `#` is required and nothing else may share the line. `Blocked by 336.` does not match, the gate stays silent, and the child runs before its blocker.
 
 ## Design System
 
