@@ -8,17 +8,26 @@ import * as path from 'path'
 // indistinguishable in the dashboard. Source-level, because importing the
 // configs would call Sentry.init() in the test process.
 
-const CONFIGS = [
-  'instrumentation-client.ts',
-  'sentry.server.config.ts',
-  'sentry.edge.config.ts',
-]
+// Next.js only inlines NEXT_PUBLIC_* vars (and NODE_ENV) into the browser
+// bundle, so the client config must read NEXT_PUBLIC_VERCEL_ENV rather than
+// VERCEL_ENV, which is server/edge-only.
+const SERVER_CONFIGS = ['sentry.server.config.ts', 'sentry.edge.config.ts']
 
 describe('Sentry environment tagging', () => {
-  it.each(CONFIGS)('%s passes environment to Sentry.init', (file) => {
+  it.each(SERVER_CONFIGS)('%s passes environment to Sentry.init', (file) => {
     const source = fs.readFileSync(path.join(__dirname, '..', file), 'utf8')
     expect(source).toContain(
       'environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV',
+    )
+  })
+
+  it('instrumentation-client.ts passes environment to Sentry.init using NEXT_PUBLIC_VERCEL_ENV', () => {
+    const source = fs.readFileSync(
+      path.join(__dirname, '..', 'instrumentation-client.ts'),
+      'utf8',
+    )
+    expect(source).toContain(
+      'environment: process.env.NEXT_PUBLIC_VERCEL_ENV ?? process.env.NODE_ENV',
     )
   })
 })

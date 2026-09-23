@@ -9,7 +9,10 @@ Sentry.init({
 
   // Vercel sets NODE_ENV to "production" for preview deploys too, so without
   // this, preview and production events are indistinguishable in Sentry.
-  environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV,
+  // VERCEL_ENV itself isn't in the browser bundle (only NEXT_PUBLIC_* vars
+  // and NODE_ENV are) — Vercel mirrors it as NEXT_PUBLIC_VERCEL_ENV for
+  // exactly this case.
+  environment: process.env.NEXT_PUBLIC_VERCEL_ENV ?? process.env.NODE_ENV,
 
   // Add optional integrations for additional features
   // Replay masking is pinned explicitly rather than left to the SDK default.
