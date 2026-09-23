@@ -32,14 +32,15 @@ interface Props {
   schools: School[]
   filters: FindFilters
   trackOptions: string[]
-  startZip: string
-  zipNotFound: boolean
+  startingPointInput: string
+  startingPointNotFound: boolean
+  startingPointSuggestions: string[]
   radiusValue: string
   radiusDisabled: boolean
   onToggleBorough: (borough: string) => void
   onToggleTrack: (track: string) => void
   onSizeChange: (size: string) => void
-  onStartZipChange: (zip: string) => void
+  onStartingPointInputChange: (value: string) => void
   onRadiusChange: (value: string) => void
   onReset: () => void
 }
@@ -73,14 +74,15 @@ export default function FindRail({
   schools,
   filters,
   trackOptions,
-  startZip,
-  zipNotFound,
+  startingPointInput,
+  startingPointNotFound,
+  startingPointSuggestions,
   radiusValue,
   radiusDisabled,
   onToggleBorough,
   onToggleTrack,
   onSizeChange,
-  onStartZipChange,
+  onStartingPointInputChange,
   onRadiusChange,
   onReset,
 }: Props) {
@@ -92,20 +94,27 @@ export default function FindRail({
         <div className="font-mono text-[11px] tracking-[0.12em] uppercase text-faint">Starting from</div>
         <input
           type="text"
-          inputMode="numeric"
-          value={startZip}
-          onChange={(e) => onStartZipChange(e.target.value)}
-          placeholder="ZIP code"
-          aria-label="Starting from ZIP code"
+          list="starting-point-suggestions"
+          value={startingPointInput}
+          onChange={(e) => onStartingPointInputChange(e.target.value)}
+          placeholder="ZIP code or subway station"
+          aria-label="Starting from ZIP code or subway station"
           className="border border-border-strong px-[13px] py-[9px] text-[14px] text-ink outline-none placeholder:text-faint bg-transparent"
         />
-        {zipNotFound && <div className="text-[12.5px] text-faint">Not a NYC ZIP code</div>}
+        <datalist id="starting-point-suggestions">
+          {startingPointSuggestions.map((name) => (
+            <option key={name} value={name} />
+          ))}
+        </datalist>
+        {startingPointNotFound && (
+          <div className="text-[12.5px] text-faint">Not a NYC ZIP code or subway station</div>
+        )}
       </div>
 
       <div className="flex flex-col gap-3">
         <div className="font-mono text-[11px] tracking-[0.12em] uppercase text-faint">Within</div>
         <SegmentedControl options={RADIUS_OPTIONS} value={radiusValue} onChange={onRadiusChange} disabled={radiusDisabled} />
-        {radiusDisabled && <div className="text-[12.5px] text-faint">Add a starting ZIP</div>}
+        {radiusDisabled && <div className="text-[12.5px] text-faint">Add a starting point</div>}
       </div>
 
       <div className="flex flex-col gap-3">

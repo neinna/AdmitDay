@@ -5,10 +5,10 @@
  * even when an active ask (issue #329) reorders the list by its own reasons
  * instead. This exercises app/find/FindClient.tsx's two text changes: the
  * sort label now reflects which ordering is actually in effect, and the
- * count line names the commute constraint (the "Starting from" ZIP, issue
- * #343) when one is set. This repo's jest config runs under plain node with
- * no jsdom (see __tests__/find-row-affordance.test.ts's convention), so both
- * are covered with source-text assertions.
+ * count line names the commute constraint (the "Starting from" ZIP or subway
+ * station, issue #343/#374) when one is set. This repo's jest config runs
+ * under plain node with no jsdom (see __tests__/find-row-affordance.test.ts's
+ * convention), so both are covered with source-text assertions.
  */
 
 import * as fs from 'fs'
@@ -36,22 +36,25 @@ describe('the sort label reflects the active ordering (issue #362)', () => {
     expect(src).not.toContain('Sorted by fit\n')
   })
 
-  it('does not gate the label on startCoords/startZip — a starting point with no ask still reads "fit"', () => {
+  it('does not gate the label on the starting point — a starting point with no ask still reads "fit"', () => {
     const labelIdx = src.indexOf("Sorted by {askReasons.length > 0 ? 'your ask' : 'fit'}")
     const labelLine = src.slice(labelIdx - 5, labelIdx + 60)
-    expect(labelLine).not.toMatch(/startCoords|startZip/)
+    expect(labelLine).not.toMatch(/startCoords|startingPoint/)
   })
 })
 
-describe('the count line carries the commute constraint (issue #362)', () => {
-  it('appends the starting ZIP only when startCoords resolves', () => {
-    expect(src).toContain('{startCoords ? ` · starting from ${startZip}` : \'\'}')
+// Issue #374 generalized the appended text from a bare ZIP (`startZip`) to a
+// resolved starting point's label (ZIP or station name); these two
+// assertions are updated in place to track that rename.
+describe('the count line carries the commute constraint (issue #362/#374)', () => {
+  it('appends the starting point label only when it resolves', () => {
+    expect(src).toContain('{startingPoint ? ` · starting from ${startingPoint.label}` : \'\'}')
   })
 
   it('the append sits in the same sentence as the existing describeFindFilters count text', () => {
     const describeIdx = src.indexOf('{describeFindFilters(filters)}')
     expect(describeIdx).toBeGreaterThan(-1)
     const after = src.slice(describeIdx, describeIdx + 120)
-    expect(after).toContain('{startCoords ? ` · starting from ${startZip}` : \'\'}')
+    expect(after).toContain('{startingPoint ? ` · starting from ${startingPoint.label}` : \'\'}')
   })
 })
