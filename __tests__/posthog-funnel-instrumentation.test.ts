@@ -240,6 +240,69 @@ describe('SchoolDetailClient — save and MySchools-link events (issue #196)', (
   })
 })
 
+// ── FindClient: list_viewed (issue #372) ────────────────────────────────────
+
+describe('FindClient — list_viewed (issue #372)', () => {
+  const src = readSource('app/find/FindClient.tsx')
+
+  it('captures list_viewed with results_count and filters_active', () => {
+    const idx = src.indexOf("posthog?.capture('list_viewed'")
+    expect(idx).toBeGreaterThan(-1)
+    const block = src.slice(idx, idx + 200)
+    expect(block).toContain('results_count: ranked.length')
+    expect(block).toContain('filters_active: countActiveFindFilters(filters)')
+  })
+
+  it('fires from a mount effect with an empty dependency list, guarded against Strict Mode double-invoke', () => {
+    const idx = src.indexOf("posthog?.capture('list_viewed'")
+    const effectStart = src.lastIndexOf('useEffect(() => {', idx)
+    expect(effectStart).toBeGreaterThan(-1)
+    const effectEnd = src.indexOf('}, [', idx)
+    const effectBody = src.slice(effectStart, effectEnd + 20)
+    expect(effectBody).toContain('listViewedRef.current')
+    expect(effectBody).toMatch(/\},\s*\[\]\)/)
+  })
+
+  it('does not fire from a render path or a filter-change handler (toggleBorough/toggleTrack/setSize)', () => {
+    for (const fn of ['function toggleBorough', 'function toggleTrack', 'function setSize']) {
+      const start = src.indexOf(fn)
+      const end = src.indexOf('\n  }\n', start)
+      const body = src.slice(start, end)
+      expect(body).not.toContain('list_viewed')
+    }
+  })
+
+  it('does not include any free-text field', () => {
+    const idx = src.indexOf("posthog?.capture('list_viewed'")
+    const block = src.slice(idx, src.indexOf('})', idx) + 2)
+    expect(block).not.toMatch(/question|answer|school_name|child/i)
+  })
+})
+
+// ── SchoolDetailClient: view_requirements_clicked (issue #372) ─────────────
+
+describe('SchoolDetailClient — view_requirements_clicked (issue #372)', () => {
+  const src = readSource('app/school/[dbn]/SchoolDetailClient.tsx')
+
+  it('captures view_requirements_clicked with dbn only, on the requirements-block MySchools link', () => {
+    const idx = src.indexOf("posthog?.capture('view_requirements_clicked'")
+    expect(idx).toBeGreaterThan(-1)
+    expect(src.slice(idx, idx + 70)).toContain("{ dbn: school.dbn }")
+
+    // It shares a click handler with the requirements-block myschools_link_clicked
+    // call, not the header button's.
+    const linkStart = src.lastIndexOf('onClick={() => {', idx)
+    const linkBody = src.slice(linkStart, idx + 70)
+    expect(linkBody).toContain("posthog?.capture('myschools_link_clicked', { dbn: school.dbn })")
+  })
+
+  it('does not include any free-text field', () => {
+    const idx = src.indexOf("posthog?.capture('view_requirements_clicked'")
+    const block = src.slice(idx, src.indexOf(')', idx) + 1)
+    expect(block).not.toMatch(/question|answer|school_name|child/i)
+  })
+})
+
 // ── No PII leaks into any new capture call across the funnel ────────────────
 
 describe('No PII in any funnel event payload (issue #196)', () => {

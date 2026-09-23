@@ -362,7 +362,10 @@ export default function SchoolDetailClient({
                 href={myschoolsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={() => posthog?.capture('myschools_link_clicked', { dbn: school.dbn })}
+                onClick={() => {
+                  posthog?.capture('myschools_link_clicked', { dbn: school.dbn })
+                  posthog?.capture('view_requirements_clicked', { dbn: school.dbn })
+                }}
                 className="text-[13.5px] font-medium border border-accent px-[14px] py-2 whitespace-nowrap text-accent hover:bg-accent hover:text-white transition-colors duration-[120ms] ease-out"
               >
                 Open in MySchools ↗
