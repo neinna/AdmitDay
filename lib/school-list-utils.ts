@@ -593,6 +593,11 @@ export function distanceMiles(a: LatLng, b: LatLng): number {
   return 2 * EARTH_RADIUS_MI * Math.asin(Math.sqrt(h))
 }
 
+/** Formats a distance in miles to one decimal place with a "mi" suffix (issue #375). */
+export function formatMiles(miles: number): string {
+  return `${miles.toFixed(1)} mi`
+}
+
 // ── /find "Within" radius filter (issue #344) ────────────────────────────────
 // #361 decided distance never becomes a sort: the ask orders the list when
 // active, fit orders it otherwise, and distance only breaks ties (see
