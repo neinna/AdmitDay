@@ -10,6 +10,7 @@
     "test": "jest",
     "refresh:data": "ts-node --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' --transpile-only scripts/refresh-data.ts",
     "smoke": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/smoke.ts",
+    "e2e": "playwright test",
     "eval:ask": "ts-node --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' --transpile-only evals/run-ask-eval.ts"
   },
   "dependencies": {
@@ -25,6 +26,7 @@
     "react-dom": "^18"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/jest": "^29.5.14",
     "@types/js-yaml": "^4.0.9",

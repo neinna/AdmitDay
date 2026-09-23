@@ -13,6 +13,7 @@ import pytest
 from scrape_myschools import (
     MySchoolsParseError,
     parse_programs,
+    parse_school_location,
 )
 
 FIXTURES = Path(__file__).parent / "myschools_fixtures"
@@ -246,3 +247,38 @@ def test_seats_filled_last_year_absent_when_no_demand_data():
     serialized = programs[0].to_dict()
 
     assert "seats_filled_last_year" not in serialized
+
+
+# ── location (issue #342) ────────────────────────────────────────────────────
+
+
+def test_school_location_parses_string_coordinates_from_the_fixture():
+    raw = load_fixture("single_program_02M047.json")
+    # Fixture: school.address.latitude/longitude are published as strings.
+    assert raw["school"]["address"]["latitude"] == "40.738482"
+
+    assert parse_school_location(raw) == {"lat": 40.738482, "lng": -73.981358}
+
+
+def test_school_location_parses_numeric_coordinates():
+    raw = {"school": {"address": {"latitude": 40.71336, "longitude": -73.986058}}}
+    assert parse_school_location(raw) == {"lat": 40.71336, "lng": -73.986058}
+
+
+def test_school_location_absent_when_latitude_missing():
+    raw = {"school": {"address": {"longitude": "-73.986058"}}}
+    assert parse_school_location(raw) is None
+
+
+def test_school_location_absent_when_latitude_non_numeric():
+    raw = {"school": {"address": {"latitude": "unknown", "longitude": "-73.986058"}}}
+    assert parse_school_location(raw) is None
+
+
+def test_school_location_absent_when_no_address():
+    raw = {"school": {"dbn": "99X999"}}
+    assert parse_school_location(raw) is None
+
+
+def test_school_location_absent_when_no_school_key():
+    assert parse_school_location({}) is None
