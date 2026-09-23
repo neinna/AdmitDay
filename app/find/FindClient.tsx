@@ -304,6 +304,20 @@ export default function FindClient({ schools, initialFilters }: Props) {
   const visible = ranked.slice(0, visibleCount)
   const remaining = ranked.length - visible.length
 
+  // Issue #372: fires once when /find mounts, not on every filter change or
+  // re-render — the ref guards against React 18 Strict Mode double-invoking
+  // the effect in dev (same pattern as shortlist_viewed, issue #196).
+  const listViewedRef = useRef(false)
+  useEffect(() => {
+    if (listViewedRef.current) return
+    listViewedRef.current = true
+    posthog?.capture('list_viewed', {
+      results_count: ranked.length,
+      filters_active: countActiveFindFilters(filters),
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const signals = useMemo(() => (askFilters ? appliedSignals(askFilters) : []), [askFilters])
 
   // Filter changes are computed from the current `filters` closure (not a
