@@ -198,9 +198,12 @@ describe('FindRail "Within" control (issue #344)', () => {
     expect(src).toContain("{ label: '10 mi', value: '10' }")
   })
 
-  it('is disabled until a starting point exists, with the "Add a starting point" hint', () => {
+  it('is disabled until a starting point exists', () => {
     expect(src).toContain('disabled={radiusDisabled}')
-    expect(src).toContain('{radiusDisabled && <div className="text-[12.5px] text-faint">Add a starting point</div>}')
+  })
+
+  it('does not show a hint line when the radius control is disabled (issue #394)', () => {
+    expect(src).not.toContain('Add a starting point')
   })
 })
 
@@ -232,5 +235,16 @@ describe('no Distance option is added to the sort control (issue #344/#361)', ()
   it('neither file introduces a "Distance" sort option', () => {
     expect(findClientSrc).not.toMatch(/Sorted by[\s\S]{0,80}Distance/)
     expect(findRailSrc).not.toContain('Distance')
+  })
+})
+
+// ── FindRail: instruction lines removed (issue #394) ──────────────────────────
+
+describe('FindRail has no instruction lines parents will not read (issue #394)', () => {
+  const src = readSource('app/find/FindRail.tsx')
+
+  it('does not show the "Boroughs and tracks are multi-select" hint', () => {
+    expect(src).not.toContain('Boroughs and tracks are multi-select')
+    expect(src).not.toContain('Cleared filters return all')
   })
 })
