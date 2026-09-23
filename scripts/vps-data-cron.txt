@@ -15,11 +15,11 @@
 # Runs in /root/admitday-data, a dedicated AdmitDay checkout. /root/app on
 # this server is a different app (hs-navigator); never point these at it.
 
-# Admissions season (September - March): every Monday, open a data PR at
-# 12:00 UTC, then merge it at 12:30 UTC (only if CI's "test" check is green and the
-# PR changes exactly the two data files).
-0 12 * 9-12,1-3 1 cd /root/admitday-data && APP_DIR=/root/admitday-data ./scripts/vps-data-refresh.sh pr
-30 12 * 9-12,1-3 1 cd /root/admitday-data && APP_DIR=/root/admitday-data ./scripts/vps-data-refresh.sh merge
+# Admissions season (September - March): every Monday and Thursday, open a
+# data PR at 12:00 UTC, then merge it at 12:30 UTC (only if CI's "test" check
+# is green and the PR changes exactly the two data files).
+0 12 * 9-12,1-3 1,4 cd /root/admitday-data && APP_DIR=/root/admitday-data ./scripts/vps-data-refresh.sh pr
+30 12 * 9-12,1-3 1,4 cd /root/admitday-data && APP_DIR=/root/admitday-data ./scripts/vps-data-refresh.sh merge
 
 # Off-season (April - August): same pr/merge pair, but only on the first
 # Monday of the month. Cron's day-of-month and day-of-week fields are OR'd

@@ -206,3 +206,119 @@ resolve_provider_halt
     expect(state).toBeNull()
   })
 })
+
+// ── Coordinator's own halt log line names the provider's actual error ───────
+// Issue #370: the coordinator's halt log line was a fixed sentence — "provider
+// unavailable (billing, rate limit, or API outage)" — naming three possible
+// causes and distinguishing none of them. On 2026-09-23 this line repeated 69
+// times over ~12 hours while the real cause (a $160/$160 monthly spend cap,
+// reported by the API as a 400 with a specific error.message) sat unlogged.
+// The alert-issue comment path (#301) already carries the real reason and is
+// untouched; this only covers the coordinator's own log() line.
+describe('agent-coordinator.sh: provider error detail in the halt log line (issue #370)', () => {
+  it('the provider-unavailable branch logs claude_provider_error_detail, not only the generic sentence unconditionally', () => {
+    const fn = extractFunction('run_agent')
+    expect(fn).toContain('claude_provider_error_detail')
+    expect(fn).toMatch(/provider unavailable — \$\{PROVIDER_DETAIL\}/)
+  })
+
+  function runDetail(jsonBody: string, apiKey = 'sk-ant-test-secret-key'): string {
+    const fn = extractFunction('claude_provider_error_detail')
+    dir = fs.mkdtempSync(path.join(os.tmpdir(), 'coord-detail-'))
+    const outFile = path.join(dir, 'claude-out.json')
+    fs.writeFileSync(outFile, jsonBody)
+    const script = `
+${fn}
+ANTHROPIC_API_KEY="${apiKey}"
+claude_provider_error_detail "${outFile}"
+`
+    const result = execFileSync('bash', ['-c', script], { encoding: 'utf-8' })
+    fs.rmSync(dir, { recursive: true, force: true })
+    return result.trim()
+  }
+
+  let dir: string
+
+  afterEach(() => {
+    if (dir && fs.existsSync(dir)) fs.rmSync(dir, { recursive: true, force: true })
+  })
+
+  it('includes the captured HTTP status and the provider message verbatim, not just the generic sentence', () => {
+    const detail = runDetail(
+      JSON.stringify({
+        is_error: true,
+        terminal_reason: 'api_error',
+        api_error_status: 400,
+        result:
+          'API Error: 400 You have reached your specified API usage limits. You will regain access on 2026-10-01 at 00:00 UTC.',
+      })
+    )
+    expect(detail).toBe(
+      'HTTP 400: You have reached your specified API usage limits. You will regain access on 2026-10-01 at 00:00 UTC.'
+    )
+    expect(detail).not.toMatch(/billing, rate limit, or API outage/)
+  })
+
+  it('extracts error.message verbatim out of an embedded raw provider JSON body', () => {
+    const rawBody = JSON.stringify({
+      type: 'error',
+      error: {
+        type: 'invalid_request_error',
+        message: 'You have reached your specified API usage limits. You will regain access on 2026-10-01 at 00:00 UTC.',
+      },
+    })
+    const detail = runDetail(
+      JSON.stringify({
+        is_error: true,
+        terminal_reason: 'api_error',
+        api_error_status: 400,
+        result: `API Error: 400 ${rawBody} request_id: req_abc123`,
+      })
+    )
+    expect(detail).toBe(
+      'HTTP 400: You have reached your specified API usage limits. You will regain access on 2026-10-01 at 00:00 UTC.'
+    )
+  })
+
+  it('truncates the provider message at 300 characters', () => {
+    const longMessage = 'x'.repeat(400)
+    const detail = runDetail(
+      JSON.stringify({
+        is_error: true,
+        terminal_reason: 'api_error',
+        api_error_status: 429,
+        result: `API Error: 429 ${longMessage}`,
+      })
+    )
+    const message = detail.replace(/^HTTP 429: /, '')
+    expect(message.length).toBe(300)
+    expect(message).toBe('x'.repeat(300))
+  })
+
+  it('never logs the API key, even when it appears verbatim in the captured output', () => {
+    const apiKey = 'sk-ant-super-secret-value'
+    const detail = runDetail(
+      JSON.stringify({
+        is_error: true,
+        result: `API Error: 400 leaked key ${apiKey} in the message text`,
+      }),
+      apiKey
+    )
+    expect(detail).not.toContain(apiKey)
+  })
+
+  it('falls back to a raw excerpt (not the generic sentence, not empty) when the body cannot be parsed as JSON', () => {
+    const raw = 'not json at all — connection reset by peer while reading response body ' + 'z'.repeat(400)
+    const detail = runDetail(raw)
+    expect(detail.length).toBeGreaterThan(0)
+    expect(detail.length).toBeLessThanOrEqual(300)
+    expect(detail).not.toMatch(/billing, rate limit, or API outage/)
+    expect(detail).toMatch(/^not json at all/)
+  })
+
+  it('redacts the API key even in the raw-excerpt fallback for an unparseable body', () => {
+    const apiKey = 'sk-ant-super-secret-value'
+    const detail = runDetail(`not valid json, but it leaks ${apiKey} anyway`, apiKey)
+    expect(detail).not.toContain(apiKey)
+  })
+})

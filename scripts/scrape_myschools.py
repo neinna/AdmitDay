@@ -481,6 +481,33 @@ def parse_programs(raw: dict, url: str, fetched_at: str) -> list[Program]:
     return programs
 
 
+def parse_school_meta(raw: dict, fetched_at: str) -> dict:
+    """Open-house text, hours, and independent website MySchools publishes
+    directly on the school record (issue #346) -- distinct from `Program`,
+    which is per-program. Most schools publish none of this today; each of
+    the three keys is present only if its source value is non-blank, never
+    an empty string or a partially-filled placeholder.
+    """
+    if not isinstance(raw, dict):
+        return {}
+
+    out: dict = {}
+
+    open_house_text = raw.get("open_house_information")
+    if not _is_absent(open_house_text):
+        out["open_house"] = {"text": open_house_text, "fetched_at": fetched_at}
+
+    hours = _drop_absent({"start": raw.get("start_time"), "end": raw.get("end_time")})
+    if hours:
+        out["hours"] = hours
+
+    website = raw.get("independent_website")
+    if not _is_absent(website):
+        out["school_website"] = website
+
+    return out
+
+
 def scrape_school_programs(
     dbn_or_url: str,
     process_id: int = PROCESS_ID_HIGH_SCHOOL,
@@ -491,6 +518,23 @@ def scrape_school_programs(
     return that school's Program records."""
     raw, url, fetched_at = fetch_school(dbn_or_url, process_id=process_id, cache_dir=cache_dir, **fetch_kwargs)
     return parse_programs(raw, url, fetched_at)
+
+
+def scrape_school_meta(
+    dbn_or_url: str,
+    process_id: int = PROCESS_ID_HIGH_SCHOOL,
+    cache_dir: Optional[Path] = DEFAULT_CACHE_DIR,
+    **fetch_kwargs,
+) -> dict:
+    """Fetch + parse in one call: given a DBN or MySchools school URL,
+    return that school's open-house/hours/website meta (issue #346).
+
+    Shares `fetch_school`'s on-disk cache with `scrape_school_programs`, so
+    calling both for the same school after the first fetch costs a cache
+    read, not a second network request.
+    """
+    raw, _url, fetched_at = fetch_school(dbn_or_url, process_id=process_id, cache_dir=cache_dir, **fetch_kwargs)
+    return parse_school_meta(raw, fetched_at)
 
 
 def main(argv: list[str]) -> int:

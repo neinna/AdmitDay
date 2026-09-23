@@ -35,6 +35,7 @@ from pathlib import Path
 from scripts.scrape_myschools import (
     MySchoolsError,
     MySchoolsNotAdmittingError,
+    scrape_school_meta,
     fetch_school,
     parse_school_location,
     scrape_school_programs,
@@ -215,6 +216,8 @@ def normalize_myschools_admissions_method(text):
 
 def fetch_myschools_program_detail(dbn):
     programs = [p.to_dict() for p in scrape_school_programs(dbn, cache_dir=MYSCHOOLS_CACHE_DIR)]
+    # Same cached response scrape_school_programs just fetched -- issue #346.
+    school_meta = scrape_school_meta(dbn, cache_dir=MYSCHOOLS_CACHE_DIR)
     enriched = []
     admissions_types = []
 
@@ -241,7 +244,7 @@ def fetch_myschools_program_detail(dbn):
     if len(enriched) == 0:
         raise MySchoolsNotAdmittingError(f"{dbn} returned no MySchools programs")
 
-    return admissions_types, enriched
+    return admissions_types, enriched, school_meta
 
 
 def fetch_myschools_school_location(dbn):
@@ -273,7 +276,7 @@ def build_school_json(school_list, doe_by_dbn):
 
         print(f"  [{i+1}/{len(school_list)}] {school['name'][:50]}")
         try:
-            admissions_types, programs = fetch_myschools_program_detail(dbn)
+            admissions_types, programs, school_meta = fetch_myschools_program_detail(dbn)
         except MySchoolsNotAdmittingError as e:
             # Only an empty MySchools listing excludes a school. A network
             # failure or shape change (any other MySchoolsError) propagates and
@@ -370,6 +373,7 @@ def build_school_json(school_list, doe_by_dbn):
             "survey_score_pct": None,
             "admissions_types": admissions_types,
             "programs": programs,
+            **school_meta,
             "flags": {
                 "has_shsat": has_shsat,
                 "has_audition": has_audition,

@@ -93,31 +93,35 @@ describe('lookupZipCentroid (issue #343)', () => {
 
 // ── FindRail: field, validation message, localStorage key ───────────────────
 
-describe('FindRail "Starting from" field (issue #343)', () => {
+// Issue #374 generalized the field from a ZIP-only input to a ZIP-or-station
+// input, so the prop names and persisted key changed — see
+// __tests__/find-starting-point.test.ts for full coverage of the new
+// behavior. These two describe blocks are updated in place (not deleted) to
+// track that rename rather than assert now-superseded behavior.
+describe('FindRail "Starting from" field (issue #343/#374)', () => {
   const src = readSource('app/find/FindRail.tsx')
 
   it('adds a Starting from field', () => {
     expect(src).toContain('Starting from')
-    expect(src).toContain('onStartZipChange')
+    expect(src).toContain('onStartingPointInputChange')
   })
 
-  it('shows the not-a-NYC-ZIP message driven by a prop, not by refetching', () => {
-    expect(src).toContain('zipNotFound')
+  it('shows the not-found message driven by a prop, not by refetching', () => {
+    expect(src).toContain('startingPointNotFound')
     expect(src).toContain('Not a NYC ZIP code')
   })
 })
 
-describe('FindClient "Starting from" ZIP state (issue #343)', () => {
+describe('FindClient "Starting from" state (issue #343/#374)', () => {
   const src = readSource('app/find/FindClient.tsx')
 
-  it('persists the ZIP under the documented localStorage key and restores it on load', () => {
-    expect(src).toContain('START_ZIP_KEY')
-    expect(src).toContain('localStorage.getItem(START_ZIP_KEY)')
-    expect(src).toContain('localStorage.setItem(START_ZIP_KEY')
+  it('persists the starting point via the shared lib helpers and restores it on load', () => {
+    expect(src).toContain('loadStartingPoint()')
+    expect(src).toContain('saveStartingPoint(')
   })
 
-  it('clears localStorage when the field is cleared', () => {
-    expect(src).toContain('localStorage.removeItem(START_ZIP_KEY)')
+  it('clears the starting point when the field is cleared', () => {
+    expect(src).toContain('saveStartingPoint(null)')
   })
 
   it('computes each row distance with distanceMiles from school.location to the ZIP centroid', () => {

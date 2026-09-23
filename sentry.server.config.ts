@@ -4,39 +4,44 @@
 
 import * as Sentry from "@sentry/nextjs";
 
-Sentry.init({
-  dsn: "https://50b3b81955c8e03faf9108c48d32b64a@o4511185594744832.ingest.us.sentry.io/4511185656741888",
+// Only Vercel deployments should report to Sentry. Without this guard, the
+// coding agent's own VPS checkout — which deliberately has no secrets (#232)
+// and throws on every run — reports those throws into the production project.
+if (process.env.VERCEL) {
+  Sentry.init({
+    dsn: "https://50b3b81955c8e03faf9108c48d32b64a@o4511185594744832.ingest.us.sentry.io/4511185656741888",
 
-  // Vercel sets NODE_ENV to "production" for preview deploys too, so without
-  // this, preview and production events are indistinguishable in Sentry.
-  environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV,
+    // Vercel sets NODE_ENV to "production" for preview deploys too, so without
+    // this, preview and production events are indistinguishable in Sentry.
+    environment: process.env.VERCEL_ENV ?? process.env.NODE_ENV,
 
-  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 0.1,
+    // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
+    tracesSampleRate: 0.1,
 
-  // Enable logs to be sent to Sentry
-  enableLogs: true,
+    // Enable logs to be sent to Sentry
+    enableLogs: true,
 
-  // Enable sending user PII (Personally Identifiable Information)
-  // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-  sendDefaultPii: false,
+    // Enable sending user PII (Personally Identifiable Information)
+    // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
+    sendDefaultPii: false,
 
-  // Filter out a false-positive error from Next.js internals:
-  // When a POST request hits a statically pre-rendered page (e.g. form submit
-  // before JS hydrates), Next.js calls renderError(null, …) for the 405
-  // response. The null propagates into createErrorHandler which does
-  // `if (!err.digest)` and throws:
-  //   TypeError: Cannot read properties of null (reading 'digest')
-  // This is a Next.js bug — the stack trace contains no app code — so we
-  // drop these events rather than alerting on them.
-  beforeSend(event, hint) {
-    const err = hint?.originalException;
-    if (
-      err instanceof TypeError &&
-      err.message === "Cannot read properties of null (reading 'digest')"
-    ) {
-      return null;
-    }
-    return event;
-  },
-});
+    // Filter out a false-positive error from Next.js internals:
+    // When a POST request hits a statically pre-rendered page (e.g. form submit
+    // before JS hydrates), Next.js calls renderError(null, …) for the 405
+    // response. The null propagates into createErrorHandler which does
+    // `if (!err.digest)` and throws:
+    //   TypeError: Cannot read properties of null (reading 'digest')
+    // This is a Next.js bug — the stack trace contains no app code — so we
+    // drop these events rather than alerting on them.
+    beforeSend(event, hint) {
+      const err = hint?.originalException;
+      if (
+        err instanceof TypeError &&
+        err.message === "Cannot read properties of null (reading 'digest')"
+      ) {
+        return null;
+      }
+      return event;
+    },
+  });
+}
