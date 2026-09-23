@@ -14,6 +14,7 @@ import {
   INITIAL_COUNT,
   PAGE_SIZE,
   ADDED_SCHOOLS_KEY,
+  START_ZIP_KEY,
   applyFindFilters,
   countActiveFindFilters,
   describeFindFilters,
@@ -23,6 +24,8 @@ import {
   citywidePercentile,
   admissionMethods,
   admissionMethodCopy,
+  lookupZipCentroid,
+  distanceMiles,
 } from '@/lib/school-list-utils'
 import { extractFilters, QueryFilters, appliedSignals, removeSignal } from '@/lib/query-filters'
 import { getUnmetCriteria } from '@/lib/soft-match'
@@ -133,6 +136,39 @@ export default function FindClient({ schools, initialFilters }: Props) {
   const [hydrated, setHydrated] = useState(false)
   const [shortlistLoadFailed, setShortlistLoadFailed] = useState(false)
   const [saveErrorDbns, setSaveErrorDbns] = useState<Set<string>>(new Set())
+
+  // "Starting from" ZIP (issue #343) — a client-only convenience for reading
+  // distance on each row. Persisted to localStorage so it survives a reload;
+  // it must never leave the browser (no fetch body, no analytics event).
+  const [startZip, setStartZip] = useState('')
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(START_ZIP_KEY)
+      if (saved) setStartZip(saved)
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
+      if (startZip) localStorage.setItem(START_ZIP_KEY, startZip)
+      else localStorage.removeItem(START_ZIP_KEY)
+    } catch {
+      // ignore
+    }
+  }, [startZip])
+
+  const startCoords = useMemo(
+    () => (startZip.length === 5 ? lookupZipCentroid(startZip) : null),
+    [startZip]
+  )
+  const zipNotFound = startZip.length === 5 && startCoords == null
+
+  function handleStartZipChange(value: string) {
+    setStartZip(value.replace(/\D/g, '').slice(0, 5))
+  }
 
   // Rail filters are a hard floor and live in the URL so a filtered /find
   // view is linkable — reloading the URL restores them (parsed server-side
@@ -481,9 +517,12 @@ export default function FindClient({ schools, initialFilters }: Props) {
               schools={schools}
               filters={filters}
               trackOptions={trackOptions}
+              startZip={startZip}
+              zipNotFound={zipNotFound}
               onToggleBorough={toggleBorough}
               onToggleTrack={toggleTrack}
               onSizeChange={setSize}
+              onStartZipChange={handleStartZipChange}
               onReset={resetFilters}
             />
           </div>
@@ -580,6 +619,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
                 </span>
                 <span className="text-[14px] text-muted">
                   match{ranked.length === 1 ? '' : 'es'} {describeFindFilters(filters)}
+                  {startCoords ? ` · starting from ${startZip}` : ''}
                 </span>
               </div>
               <p className="text-[12.5px] text-faint mt-1">
@@ -587,7 +627,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
               </p>
             </div>
             <div className="font-mono text-[11.5px] tracking-[0.1em] uppercase text-faint">
-              Sorted by fit
+              Sorted by {askReasons.length > 0 ? 'your ask' : 'fit'}
             </div>
           </div>
 
@@ -604,6 +644,10 @@ export default function FindClient({ schools, initialFilters }: Props) {
                 const tracks = (school.admissions_types ?? []).map(trackLabel).join(', ') || '—'
                 const students =
                   school.total_students != null ? school.total_students.toLocaleString() : '—'
+                const distance =
+                  startCoords && school.location
+                    ? `${distanceMiles(school.location, startCoords).toFixed(1)} mi`
+                    : null
 
                 // Carries the active rail filters + this row's rank + the
                 // ask-derived signals through to /school/[dbn] via the URL —
@@ -635,7 +679,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
                       posthog?.capture('school_detail_viewed', { dbn: school.dbn, from: 'find' })
                     }
                     isHiddenGem={school.flags.high_impact}
-                    metadata={`${neighborhood} · ${tracks} · ${students} students`}
+                    metadata={`${neighborhood} · ${tracks} · ${students} students${distance ? ` · ${distance}` : ''}`}
                     rationale={buildFindRowSummary(school)}
                     statValue={
                       school.applicants_per_seat != null ? school.applicants_per_seat.toFixed(1) : '—'
