@@ -175,7 +175,13 @@ describe('validateSchoolData', () => {
   })
 })
 
-// ── Issue #189: bounded MySchools fallback shouldn't abort the refresh ─────
+// ── Issue #189: MySchools coverage threshold ────────────────────────────────
+// Issue #337 removed the NYC-SIFT fallback: a program with any provenance
+// source other than "MySchools" is now flagged invalid outright, rather than
+// tolerated as a recognized fallback. A MySchools program without a
+// program_code still counts as a valid record -- it just doesn't count
+// toward coverage -- which is what these fixtures use to test the threshold
+// math without tripping per-record validation.
 
 function makeMySchoolsProgram(dbn: string) {
   return {
@@ -190,14 +196,13 @@ function makeMySchoolsProgram(dbn: string) {
   }
 }
 
-function makeFallbackProgram(sift_url: string) {
+function makeUncodedMySchoolsProgram(dbn: string) {
   return {
     program_name: 'Screened',
     admissions_type: 'Screened',
-    raw_method: 'Screened',
     provenance: {
-      source: 'NYC-SIFT',
-      url: sift_url,
+      source: 'MySchools',
+      url: `https://www.myschools.nyc/en/api/v2/schools/process/1/${dbn}/`,
       fetched_at: '2026-09-12T00:00:00+00:00',
     },
   }
@@ -211,12 +216,9 @@ function makeSchoolsWithMySchoolsCoverage(total: number, myschoolsCount: number)
       name: `Test School ${i}`,
       borough: 'Brooklyn',
     }
-    if (i < myschoolsCount) {
-      school.programs = [makeMySchoolsProgram(dbn)]
-    } else {
-      school.myschools_status = 'not_listed'
-      school.programs = [makeFallbackProgram(`https://nycsift.com/school.phtml?id=${dbn}`)]
-    }
+    school.programs = [
+      i < myschoolsCount ? makeMySchoolsProgram(dbn) : makeUncodedMySchoolsProgram(dbn),
+    ]
     return school
   })
 }
@@ -236,26 +238,55 @@ describe('validateSchoolData MySchools coverage threshold (issue #189)', () => {
     expect(result.errors.some((e) => e.includes('MySchools coverage 400/457'))).toBe(true)
   })
 
-  it('marks a fallback school and never reports it as MySchools-sourced', () => {
+  it('marks an uncoded program valid but never reports it as MySchools-sourced', () => {
     const schools = makeSchoolsWithMySchoolsCoverage(457, 448)
-    const fallbackSchool = schools[456] as Record<string, unknown>
-    expect(fallbackSchool.myschools_status).toBe('not_listed')
+    const uncodedSchool = schools[456] as Record<string, unknown>
 
-    // The fallback school itself is not flagged invalid -- NYC-SIFT provenance
-    // is recognized -- so it must not appear in invalidRecords.
+    // The uncoded-program school itself is not flagged invalid -- MySchools
+    // provenance is present -- so it must not appear in invalidRecords.
     const result = validateSchoolData(schools, null, { requireMySchoolsPrograms: true })
-    const fallbackRecord = result.invalidRecords.find((r) => r.dbn === fallbackSchool.dbn)
-    expect(fallbackRecord).toBeUndefined()
+    const uncodedRecord = result.invalidRecords.find((r) => r.dbn === uncodedSchool.dbn)
+    expect(uncodedRecord).toBeUndefined()
 
     // A threshold between 448/457 (actual coverage) and 449/457 fails only if
-    // the fallback school is correctly excluded from the MySchools count --
-    // proving it is never reported as MySchools-sourced.
+    // the uncoded-program school is correctly excluded from the MySchools
+    // count -- proving it is never reported as MySchools-sourced.
     const strict = validateSchoolData(schools, null, {
       requireMySchoolsPrograms: true,
       myschoolsCoverageThreshold: 0.981,
     })
     expect(strict.valid).toBe(false)
     expect(strict.errors.some((e) => e.includes('MySchools coverage 448/457'))).toBe(true)
+  })
+
+  it('flags a program with an unrecognized provenance source as invalid (NYC-SIFT is no longer tolerated)', () => {
+    const schools = makeValidSchools(1) as any[]
+    schools[0].programs = [
+      {
+        program_name: 'Screened',
+        admissions_type: 'Screened',
+        provenance: {
+          source: 'NYC-SIFT',
+          url: 'https://example.com/school.phtml?id=00X100',
+          fetched_at: '2026-09-12T00:00:00+00:00',
+        },
+      },
+    ]
+
+    const result = validateSchoolData(schools, null, {
+      expectedCount: 1,
+      countTolerance: 0,
+      requireMySchoolsPrograms: true,
+    })
+
+    expect(result.valid).toBe(false)
+    expect(result.invalidRecords[0].reasons).toEqual(
+      expect.arrayContaining([
+        'program[0] missing MySchools provenance source',
+        'program[0] missing provenance url',
+        'program[0] missing provenance fetched_at',
+      ])
+    )
   })
 
   it('respects a custom myschoolsCoverageThreshold', () => {

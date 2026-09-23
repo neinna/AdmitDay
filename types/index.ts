@@ -108,7 +108,20 @@ export interface School {
   flags: SchoolFlags
   doe_data: DoeData
   last_verified: string
+  // MySchools open-house text, school hours, and independent website
+  // (issue #346). Omitted entirely when MySchools doesn't publish a value --
+  // never an empty string.
+  open_house?: {
+    text: string
+    fetched_at: string
+  }
+  hours?: {
+    start?: string
+    end?: string
+  }
+  school_website?: string
   location?: SchoolLocation
+
 }
 
 export type SectionType = 'shsat' | 'audition' | 'screened' | 'edopt' | 'lottery'

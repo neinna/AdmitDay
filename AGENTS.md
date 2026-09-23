@@ -73,6 +73,8 @@ The coordinator picks up `agent-ok` issues in ascending issue-number order. File
 
 An issue whose body contains a line `Blocked by #N` is skipped while issue #N is still open. The line must be **exactly** `Blocked by #N` — the `#` is required and nothing else may share the line. `Blocked by 336.` does not match, the gate stays silent, and the child runs before its blocker.
 
+The line must be exactly `Blocked by #N` — the `#` is required, and no other text may share the line. `Blocked by 336.` does not match and the gate will not hold.
+
 ## Design System
 
 Design lives in `design/`.

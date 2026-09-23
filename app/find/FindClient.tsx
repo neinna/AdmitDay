@@ -14,7 +14,11 @@ import {
   INITIAL_COUNT,
   PAGE_SIZE,
   ADDED_SCHOOLS_KEY,
-  START_ZIP_KEY,
+  StartingPoint,
+  loadStartingPoint,
+  saveStartingPoint,
+  resolveStartingPointInput,
+  suggestStationNames,
   applyFindFilters,
   countActiveFindFilters,
   describeFindFilters,
@@ -24,8 +28,9 @@ import {
   citywidePercentile,
   admissionMethods,
   admissionMethodCopy,
-  lookupZipCentroid,
   distanceMiles,
+  applyRadiusFilter,
+  countHiddenForNoLocation,
 } from '@/lib/school-list-utils'
 import { extractFilters, QueryFilters, appliedSignals, removeSignal } from '@/lib/query-filters'
 import { getUnmetCriteria } from '@/lib/soft-match'
@@ -50,6 +55,11 @@ interface AskReason {
 interface AnnotatedRow {
   school: School
   missing: string[]
+  // Distance from the "Starting from" point (a ZIP or subway station, issue
+  // #343/#374), in miles — null with no starting point or no school.location.
+  // Only ever used to break a fit tie below; it never becomes a sort of its
+  // own (issue #344/#361).
+  distance?: number | null
 }
 
 interface RankedRow {
@@ -58,19 +68,34 @@ interface RankedRow {
   reason?: string
 }
 
+// Issue #344/#361: distance never becomes a sort — it only breaks ties inside
+// the no-ask fit order below, nearest first, with no-location schools last.
+// A no-op (0) when either side has no distance, so the fit order is otherwise
+// unchanged with no starting point.
+function compareDistanceTiebreak(a: number | null | undefined, b: number | null | undefined): number {
+  if (a == null && b == null) return 0
+  if (a == null) return 1
+  if (b == null) return -1
+  return a - b
+}
+
 // Issue #329: when the ask has returned per-school reasons, the row list is
 // the reasons' own order, restricted to DBNs the rail filters still allow
 // (hardFiltered) — the ask can annotate and reorder, but the rail is the hard
 // floor (issue #114/#231) so a school outside it must never surface here. With
 // no reasons yet (or the ask box cleared), fall back to the existing
-// missing-criteria fit ordering.
+// missing-criteria fit ordering, with distance breaking ties (issue #344).
 export function rankFindRows(
   hardFiltered: School[],
   annotated: AnnotatedRow[],
   askReasons: AskReason[]
 ): RankedRow[] {
   if (askReasons.length === 0) {
-    return [...annotated].sort((a, b) => a.missing.length - b.missing.length)
+    return [...annotated].sort((a, b) => {
+      const missingDiff = a.missing.length - b.missing.length
+      if (missingDiff !== 0) return missingDiff
+      return compareDistanceTiebreak(a.distance, b.distance)
+    })
   }
   const allowedDbns = new Set(hardFiltered.map((s) => s.dbn))
   const schoolByDbn = new Map(hardFiltered.map((s) => [s.dbn, s]))
@@ -137,37 +162,58 @@ export default function FindClient({ schools, initialFilters }: Props) {
   const [shortlistLoadFailed, setShortlistLoadFailed] = useState(false)
   const [saveErrorDbns, setSaveErrorDbns] = useState<Set<string>>(new Set())
 
-  // "Starting from" ZIP (issue #343) — a client-only convenience for reading
-  // distance on each row. Persisted to localStorage so it survives a reload;
-  // it must never leave the browser (no fetch body, no analytics event).
-  const [startZip, setStartZip] = useState('')
+  // "Starting from" ZIP or subway station (issue #343/#374) — a client-only
+  // convenience for reading distance on each row. Persisted to localStorage
+  // so it survives a reload; it must never leave the browser (no fetch body,
+  // no analytics event).
+  const [startingPointInput, setStartingPointInput] = useState('')
+  const [startingPoint, setStartingPoint] = useState<StartingPoint | null>(null)
+
+  // "Within" radius (issue #344) — client-only like the starting point, never
+  // persisted or sent anywhere. Clearing the field clears it too, since a
+  // radius means nothing without a starting point.
+  const [radiusMiles, setRadiusMiles] = useState<number | null>(null)
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(START_ZIP_KEY)
-      if (saved) setStartZip(saved)
-    } catch {
-      // ignore
+    if (!startingPointInput) setRadiusMiles(null)
+  }, [startingPointInput])
+
+  function handleRadiusChange(value: string) {
+    setRadiusMiles(value ? Number(value) : null)
+  }
+
+  useEffect(() => {
+    const loaded = loadStartingPoint()
+    if (loaded) {
+      setStartingPoint(loaded)
+      setStartingPointInput(loaded.label)
     }
   }, [])
 
-  useEffect(() => {
-    try {
-      if (startZip) localStorage.setItem(START_ZIP_KEY, startZip)
-      else localStorage.removeItem(START_ZIP_KEY)
-    } catch {
-      // ignore
-    }
-  }, [startZip])
-
-  const startCoords = useMemo(
-    () => (startZip.length === 5 ? lookupZipCentroid(startZip) : null),
-    [startZip]
+  const startCoords = startingPoint?.point ?? null
+  // Neither a ZIP nor a station means the field shows the not-found message
+  // and any already-resolved starting point is left untouched (issue #374).
+  const startNotFound =
+    startingPointInput.trim() !== '' && resolveStartingPointInput(startingPointInput) == null
+  const startingPointSuggestions = useMemo(
+    () => suggestStationNames(startingPointInput),
+    [startingPointInput]
   )
-  const zipNotFound = startZip.length === 5 && startCoords == null
 
-  function handleStartZipChange(value: string) {
-    setStartZip(value.replace(/\D/g, '').slice(0, 5))
+  function handleStartingPointInputChange(value: string) {
+    setStartingPointInput(value)
+    if (value.trim() === '') {
+      setStartingPoint(null)
+      saveStartingPoint(null)
+      return
+    }
+    const resolved = resolveStartingPointInput(value)
+    if (resolved) {
+      setStartingPoint(resolved)
+      saveStartingPoint(resolved)
+    }
+    // Neither a ZIP nor a station resolves — leave the existing starting
+    // point (and storage) untouched; only the not-found message reacts.
   }
 
   // Rail filters are a hard floor and live in the URL so a filtered /find
@@ -222,19 +268,33 @@ export default function FindClient({ schools, initialFilters }: Props) {
     [schools]
   )
 
-  // Hard filter — the rail excludes schools. This is the hard floor.
-  const hardFiltered = useMemo(() => applyFindFilters(schools, filters), [schools, filters])
+  // Rail filter — the borough/track/size controls exclude schools.
+  const railFiltered = useMemo(() => applyFindFilters(schools, filters), [schools, filters])
+
+  // Within-radius filter (issue #344), layered on top of the rail — together
+  // they're the hard floor: hides schools farther than radiusMiles, plus any
+  // school with no `location` (it can't be measured), for as long as a radius
+  // is active.
+  const hardFiltered = useMemo(
+    () => applyRadiusFilter(railFiltered, startCoords, radiusMiles),
+    [railFiltered, startCoords, radiusMiles]
+  )
+  const hiddenForNoLocation = useMemo(
+    () => countHiddenForNoLocation(railFiltered, startCoords, radiusMiles),
+    [railFiltered, startCoords, radiusMiles]
+  )
 
   // Soft annotation pass from the ask box — never removes a school from
   // hardFiltered, only ranks it. Schools satisfying more (or all) of the ask
-  // criteria float up.
+  // criteria float up; distance (issue #344) only breaks a fit tie.
   const annotated = useMemo(
     () =>
       hardFiltered.map((school) => ({
         school,
         missing: askFilters ? getUnmetCriteria(school, askFilters) : [],
+        distance: startCoords && school.location ? distanceMiles(school.location, startCoords) : null,
       })),
-    [hardFiltered, askFilters]
+    [hardFiltered, askFilters, startCoords]
   )
   const ranked = useMemo(
     () => rankFindRows(hardFiltered, annotated, askReasons),
@@ -243,6 +303,20 @@ export default function FindClient({ schools, initialFilters }: Props) {
 
   const visible = ranked.slice(0, visibleCount)
   const remaining = ranked.length - visible.length
+
+  // Issue #372: fires once when /find mounts, not on every filter change or
+  // re-render — the ref guards against React 18 Strict Mode double-invoking
+  // the effect in dev (same pattern as shortlist_viewed, issue #196).
+  const listViewedRef = useRef(false)
+  useEffect(() => {
+    if (listViewedRef.current) return
+    listViewedRef.current = true
+    posthog?.capture('list_viewed', {
+      results_count: ranked.length,
+      filters_active: countActiveFindFilters(filters),
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const signals = useMemo(() => (askFilters ? appliedSignals(askFilters) : []), [askFilters])
 
@@ -349,9 +423,21 @@ export default function FindClient({ schools, initialFilters }: Props) {
       next.delete(dbn)
       return next
     })
+    // Issue #363: which ordering produced this row, and where in it —
+    // evidence for whether #361's deferred sort-picker question needs
+    // answering. A boolean only (#295) — never the ZIP or coordinates
+    // themselves, computed outside the capture call so no commute value
+    // ever appears in its source text.
+    const commuteStartIsSet = startCoords != null
+    const rowPosition = visible.findIndex((row) => row.school.dbn === dbn) + 1
     posthog?.capture(adding ? 'school_saved' : 'school_removed', {
       dbn,
       list_size_after: next.size,
+      ...(adding && {
+        sort_basis: askReasons.length > 0 ? 'ask' : 'fit',
+        row_position: rowPosition,
+        has_starting_point: commuteStartIsSet,
+      }),
     })
   }
 
@@ -460,6 +546,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
         latency_ms: Date.now() - startedAt,
         source_count: sources.length,
         trace_id: typeof data.traceId === 'string' ? data.traceId : '',
+        sort_basis: reasons.length > 0 ? 'ask' : 'fit',
       })
     } catch (err) {
       setAskAnswerError('Something went wrong getting an answer. Please try again.')
@@ -517,12 +604,16 @@ export default function FindClient({ schools, initialFilters }: Props) {
               schools={schools}
               filters={filters}
               trackOptions={trackOptions}
-              startZip={startZip}
-              zipNotFound={zipNotFound}
+              startingPointInput={startingPointInput}
+              startingPointNotFound={startNotFound}
+              startingPointSuggestions={startingPointSuggestions}
+              radiusValue={radiusMiles != null ? String(radiusMiles) : ''}
+              radiusDisabled={!startCoords}
               onToggleBorough={toggleBorough}
               onToggleTrack={toggleTrack}
               onSizeChange={setSize}
-              onStartZipChange={handleStartZipChange}
+              onStartingPointInputChange={handleStartingPointInputChange}
+              onRadiusChange={handleRadiusChange}
               onReset={resetFilters}
             />
           </div>
@@ -619,6 +710,10 @@ export default function FindClient({ schools, initialFilters }: Props) {
                 </span>
                 <span className="text-[14px] text-muted">
                   match{ranked.length === 1 ? '' : 'es'} {describeFindFilters(filters)}
+                  {startingPoint ? ` · starting from ${startingPoint.label}` : ''}
+                  {radiusMiles != null && hiddenForNoLocation > 0
+                    ? ` · ${hiddenForNoLocation} hidden for no location on file`
+                    : ''}
                 </span>
               </div>
               <p className="text-[12.5px] text-faint mt-1">
@@ -626,7 +721,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
               </p>
             </div>
             <div className="font-mono text-[11.5px] tracking-[0.1em] uppercase text-faint">
-              Sorted by fit
+              Sorted by {askReasons.length > 0 ? 'your ask' : 'fit'}
             </div>
           </div>
 

@@ -6,23 +6,27 @@
  * typed string, not a derived fact — it would have read "2025-2026" no matter
  * how old the underlying data was.
  *
- * The dataset is really two datasets with different vintages:
+ * The dataset draws on three sources with different vintages:
  *
- *   NYC-SIFT            — actively maintained; school list, sizes, applicants
- *                         per seat, academic/survey scores, admissions tracks.
- *   DOE HS Directory    — the Fall 2025 InfoHub HS directory, with School
- *                         Quality Reports 2024-25 (NYC Open Data `dnpx-dfnc`)
- *                         filling in attendance rate (blank in the directory)
- *                         and the small number of graduation rates the
- *                         directory has none for. Everything under `doe_data`
- *                         comes from here: overview, interests, PSAL sports, AP
- *                         courses, languages, extracurriculars, requirements,
- *                         transit, and the graduation/attendance/college rates.
+ *   MySchools            — the live public directory; school list, sizes,
+ *                         applicants per seat, programs, and admissions
+ *                         tracks. We do not record a fetch date, so its
+ *                         vintage is unknown rather than guessed.
+ *   DOE HS Directory     — the Fall 2025 InfoHub HS directory. Everything
+ *                         under `doe_data` comes from here: overview,
+ *                         interests, PSAL sports, AP courses, languages,
+ *                         extracurriculars, requirements, transit, and most
+ *                         graduation rates.
  *
  *                         Issue #289 replaced the prior source here, NYC Open
  *                         Data `uq7m-95z8` (the 2019 DOE High School
  *                         Directory, dated 2018-08-16), whose graduation and
  *                         attendance numbers were six admissions cycles stale.
+ *   DOE School Quality   — NYC Open Data `dnpx-dfnc`, 2024-25. Fills in
+ *   Reports                attendance rate (blank in the directory) and the
+ *                         small number of graduation rates the directory has
+ *                         none for; also the source of `sqr` performance and
+ *                         impact scores (issue #302).
  *
  * Telling a family that stale requirements were verified for the current cycle
  * is the one failure mode that can actually harm them — they could prepare for
@@ -30,16 +34,14 @@
  * what each source is and when it was published, and we say nothing we can't
  * support.
  *
- * `publishedLabel` is null when we genuinely don't know. We do not record a
- * fetch date at scrape time yet; when the scraper starts capturing one (see
- * issue #135), fill it in here and the UI follows automatically. The point of
- * this module is that the date is *derived from the source*, never typed into
- * a component.
+ * `publishedLabel` is null when we genuinely don't know. The point of this
+ * module is that the date is *derived from the source*, never typed into a
+ * component.
  */
 
 export type SourceProvenance = {
   /** Stable key for tests and rendering. */
-  key: 'sift' | 'doe-directory'
+  key: 'myschools' | 'doe-directory' | 'sqr'
   /** Source name as shown to a family. */
   label: string
   /** Plain-language description of what this source supplies. */
@@ -55,10 +57,11 @@ export type SourceProvenance = {
 /**
  * Identifying slug for the DOE directory source, drawn from its InfoHub
  * filename since (unlike the dataset it replaced) it isn't published on NYC
- * Open Data. School Quality Reports 2024-25, the fallback for attendance and
- * graduation rate, is NYC Open Data dataset `dnpx-dfnc`.
+ * Open Data.
  */
 export const DOE_DATASET_ID = 'fall-2025---hs-directory'
+
+/** NYC Open Data dataset id for School Quality Reports 2024-25. */
 export const SQR_DATASET_ID = 'dnpx-dfnc'
 
 /**
@@ -68,26 +71,35 @@ export const SQR_DATASET_ID = 'dnpx-dfnc'
  */
 export const DOE_DATASET_PUBLISHED = 'Fall 2025'
 
+/** School Quality Reports publish once a cycle, dated by school year. */
+export const SQR_DATASET_PUBLISHED = '2024-25'
+
 export const DATA_SOURCES: readonly SourceProvenance[] = [
   {
-    key: 'sift',
-    label: 'NYC-SIFT',
-    covers: 'School list, size, applicants per seat, academic and survey scores, admissions tracks',
+    key: 'myschools',
+    label: 'MySchools',
+    covers: 'School list, size, applicants per seat, programs, and admissions tracks',
     // We do not record a scrape date yet, so we claim none.
     publishedLabel: null,
-    url: 'https://nycsift.com',
+    url: 'https://www.myschools.nyc',
   },
   {
     key: 'doe-directory',
     label: 'DOE High School Directory, Fall 2025 admissions',
-    covers:
-      'Programs, requirements, activities, transit, and graduation and attendance rates ' +
-      '(attendance, and the small number of missing graduation rates, filled in from ' +
-      'NYC DOE School Quality Reports 2024-25)',
+    covers: 'Programs, requirements, activities, transit, and graduation rates',
     publishedLabel: DOE_DATASET_PUBLISHED,
     url:
       'https://infohub.nyced.org/docs/default-source/default-document-library/ose/' +
       `${DOE_DATASET_ID}-datab85f64a0-05b9-439a-8e29-052ce60a5d86.xlsx`,
+  },
+  {
+    key: 'sqr',
+    label: 'DOE School Quality Reports, 2024-25',
+    covers:
+      'Performance and impact scores, attendance rate, and the small number of ' +
+      'graduation rates the directory has none for',
+    publishedLabel: SQR_DATASET_PUBLISHED,
+    url: `https://data.cityofnewyork.us/resource/${SQR_DATASET_ID}.json`,
   },
 ] as const
 

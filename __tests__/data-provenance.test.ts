@@ -4,6 +4,8 @@ import {
   DATA_SOURCES,
   DOE_DATASET_ID,
   DOE_DATASET_PUBLISHED,
+  SQR_DATASET_ID,
+  SQR_DATASET_PUBLISHED,
   buildProvenanceRows,
   summariseDataVintage,
   type SourceProvenance,
@@ -22,6 +24,10 @@ import {
  * Issue #289 replaced that 2018 dataset with the Fall 2025 InfoHub HS
  * directory (plus School Quality Reports 2024-25 for attendance and a
  * graduation-rate fallback); the literal vintage asserted below moved with it.
+ *
+ * Issue #337 removed NYC-SIFT as a source entirely; the remaining sources are
+ * MySchools, the DOE HS Directory (Fall 2025), and the DOE School Quality
+ * Reports (2024-25).
  */
 
 describe('data provenance — sources', () => {
@@ -33,15 +39,23 @@ describe('data provenance — sources', () => {
     expect(doe!.url).toContain(DOE_DATASET_ID)
   })
 
-  it('claims no vintage for NYC-SIFT, because no fetch date is recorded yet', () => {
-    const sift = DATA_SOURCES.find((s) => s.key === 'sift')
-    expect(sift).toBeDefined()
-    // Honest absence: we do not capture a scrape date, so we assert none.
-    expect(sift!.publishedLabel).toBeNull()
+  it('describes the School Quality Reports with their real published year', () => {
+    const sqr = DATA_SOURCES.find((s) => s.key === 'sqr')
+    expect(sqr).toBeDefined()
+    expect(sqr!.publishedLabel).toBe(SQR_DATASET_PUBLISHED)
+    expect(SQR_DATASET_PUBLISHED).toBe('2024-25')
+    expect(sqr!.url).toContain(SQR_DATASET_ID)
   })
 
-  it('covers both halves of the record, so neither is silently unattributed', () => {
-    expect(DATA_SOURCES).toHaveLength(2)
+  it('claims no vintage for MySchools, because no fetch date is recorded yet', () => {
+    const myschools = DATA_SOURCES.find((s) => s.key === 'myschools')
+    expect(myschools).toBeDefined()
+    // Honest absence: we do not capture a scrape date, so we assert none.
+    expect(myschools!.publishedLabel).toBeNull()
+  })
+
+  it('covers the whole record across its three sources, so nothing is silently unattributed', () => {
+    expect(DATA_SOURCES).toHaveLength(3)
     const covers = DATA_SOURCES.map((s) => s.covers.toLowerCase()).join(' ')
     expect(covers).toContain('requirements')
     expect(covers).toContain('applicants per seat')
@@ -52,15 +66,17 @@ describe('data provenance — rendered rows', () => {
   it('renders one row per source, naming what each supplies', () => {
     const rows = buildProvenanceRows()
     expect(rows).toHaveLength(DATA_SOURCES.length)
-    expect(rows.map((r) => r.key).sort()).toEqual(['doe-directory', 'sift'])
+    expect(rows.map((r) => r.key).sort()).toEqual(['doe-directory', 'myschools', 'sqr'])
   })
 
-  it('shows a published year only for the source that has one', () => {
+  it('shows a published year only for the sources that have one', () => {
     const rows = buildProvenanceRows()
     const doe = rows.find((r) => r.key === 'doe-directory')!
-    const sift = rows.find((r) => r.key === 'sift')!
+    const sqr = rows.find((r) => r.key === 'sqr')!
+    const myschools = rows.find((r) => r.key === 'myschools')!
     expect(doe.value).toContain('published Fall 2025')
-    expect(sift.value).not.toMatch(/published/i)
+    expect(sqr.value).toContain('published 2024-25')
+    expect(myschools.value).not.toMatch(/published/i)
   })
 
   it('never presents the current admissions cycle as a verification date', () => {
@@ -75,7 +91,7 @@ describe('data provenance — rendered rows', () => {
 describe('data provenance — summary line', () => {
   it('reports the oldest known vintage, since that is the honest summary', () => {
     const note = summariseDataVintage()
-    expect(note).toContain('Fall 2025')
+    expect(note).toContain('2024-25')
     expect(note).toMatch(/confirm at MySchools/i)
   })
 
@@ -86,7 +102,7 @@ describe('data provenance — summary line', () => {
 
   it('renders nothing rather than hedging when no vintage is known', () => {
     const unknown: SourceProvenance[] = [
-      { key: 'sift', label: 'X', covers: 'y', publishedLabel: null, url: 'https://example.com' },
+      { key: 'myschools', label: 'X', covers: 'y', publishedLabel: null, url: 'https://example.com' },
     ]
     expect(summariseDataVintage(unknown)).toBeNull()
   })
