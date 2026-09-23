@@ -8,7 +8,7 @@ interface Props {
   isHiddenGem?: boolean
   metadata: string
   rationale: string
-  statValue: string | number
+  statValue: ReactNode
   statLabel: string
   evidence?: ReactNode
   action: ReactNode
