@@ -133,6 +133,15 @@ export function rankFindRows(
     .map((r) => ({ school: schoolByDbn.get(r.dbn) as School, missing: [], reason: r.reason }))
 }
 
+// Issue #403: the citywide applicants-per-seat percentile (already computed
+// for the row) also picks the row's dot colour — a glance-able direction
+// instead of the raw ratio or a repeated sentence.
+export function applicantsPerSeatDotColor(percentile: number): string {
+  if (percentile < 34) return 'bg-green-600'
+  if (percentile <= 66) return 'bg-amber-500'
+  return 'bg-red-600'
+}
+
 function uniqueSorted(values: string[]): string[] {
   return Array.from(new Set(values)).sort((a, b) => a.localeCompare(b))
 }
@@ -656,11 +665,14 @@ export default function FindClient({ schools, initialFilters }: Props) {
           <div className="flex flex-col gap-[18px] px-9 pt-[34px] pb-[26px] border-b border-rule">
             <div className="flex flex-col gap-2">
               <h1 className="font-display font-bold text-[44px] leading-[1.02] tracking-[-0.038em] text-ink">
-                Find schools
+                Find Schools
               </h1>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <div className="font-mono text-[11px] tracking-[0.12em] uppercase text-faint">Add Details</div>
               <p className="text-[15.5px] text-muted max-w-[560px]" style={{ textWrap: 'pretty' }}>
-                Filters set the floor. The ask box adds what a filter can&rsquo;t — &ldquo;strong CS,
-                a real soccer team, walkable from Sunset Park.&rdquo;
+                Anything the filters can&rsquo;t capture — in your own words.
               </p>
             </div>
 
@@ -674,7 +686,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
                   onPaste={handleAskPaste}
                   onKeyDown={handleAskKeyDown}
                   aria-label="Describe what you're looking for"
-                  placeholder="Strong CS, a soccer team, small classes"
+                  placeholder="She wants a strong CS program and a real soccer team, and we're in Sunset Park."
                   disabled={askLoading}
                   maxLength={MAX_QUESTION_LENGTH}
                   rows={3}
@@ -682,7 +694,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
                 />
               </div>
               <Button type="submit" disabled={askLoading}>
-                Ask
+                Refine list
               </Button>
             </form>
             <div className="flex items-center gap-3">
@@ -833,20 +845,24 @@ export default function FindClient({ schools, initialFilters }: Props) {
                     metadata={`${neighborhood} · ${tracks} · ${students} students${distance ? ` · ${distance}` : ''}`}
                     rationale={buildFindRowSummary(school)}
                     statValue={
-                      school.applicants_per_seat != null ? school.applicants_per_seat.toFixed(1) : '—'
+                      <span className="inline-flex items-center gap-1.5">
+                        {school.applicants_per_seat != null
+                          ? school.applicants_per_seat.toFixed(1)
+                          : '—'}
+                        {percentile != null && (
+                          <span
+                            className={`inline-block h-2 w-2 rounded-full ${applicantsPerSeatDotColor(percentile)}`}
+                            title={`More applicants per seat than ${percentile}% of NYC high schools`}
+                            aria-label={`More applicants per seat than ${percentile}% of NYC high schools`}
+                          />
+                        )}
+                      </span>
                     }
                     statLabel="Apps/seat"
                     evidence={
-                      (reason || percentile != null || methods.length > 0) && (
+                      (reason || methods.length > 0) && (
                         <>
                           {reason && <p className="text-[12.5px] text-faint">{reason}</p>}
-                          {percentile != null && (
-                            <p className="text-[12.5px] text-faint">
-                              more applicants per seat than{' '}
-                              <span className="font-mono text-ink-2">{percentile}%</span> of NYC high
-                              schools
-                            </p>
-                          )}
                           {methods.length > 0 && (
                             <p className="text-[13px] text-muted" style={{ textWrap: 'pretty' }}>
                               {methods.map((method, methodIndex) => (
