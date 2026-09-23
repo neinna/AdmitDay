@@ -18,16 +18,19 @@ describe('/find ask API system prompt (issue #69)', () => {
     )
   })
 
-  it('instructs to describe every school provided', () => {
-    expect(src).toContain('Describe every school provided. Do not skip any.')
+  it('instructs one "DBN | reason" line per school, in order, nothing else (issue #328)', () => {
+    expect(src).toContain(
+      'output exactly one line in the form DBN | reason'
+    )
+    expect(src).toContain('Output one line per school provided, in the order provided, and nothing else')
   })
 
   it('forbids hedging language', () => {
     expect(src).toContain("Never say 'appears to', 'seems to'")
   })
 
-  it('requires a 1-2 sentence summary at the end', () => {
-    expect(src).toContain(
+  it('no longer asks for a prose summary after describing all schools (issue #328)', () => {
+    expect(src).not.toContain(
       'After describing all schools, provide a 1-2 sentence summary.'
     )
   })
