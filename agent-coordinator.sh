@@ -787,6 +787,69 @@ except Exception:
 "
 }
 
+claude_provider_error_detail() {
+  # claude_provider_error_detail FILE
+  # Extracts the provider's own HTTP status and error.message out of a
+  # failed claude invocation's JSON result, for the coordinator's log line
+  # (issue #370: the old sentence named three possible causes — billing,
+  # rate limit, API outage — and distinguished none of them). Falls back
+  # to a raw excerpt of the file when nothing parses, rather than nothing
+  # at all. The API key is scrubbed either way and the result is capped
+  # at 300 characters.
+  python3 - "$1" "${ANTHROPIC_API_KEY:-}" << 'PYEOF'
+import json
+import re
+import sys
+
+path = sys.argv[1]
+api_key = sys.argv[2] if len(sys.argv) > 2 else ""
+MAX_LEN = 300
+
+def scrub(s):
+    return s.replace(api_key, "[REDACTED]") if api_key else s
+
+def cap(s):
+    return s[:MAX_LEN]
+
+try:
+    raw = open(path, "r", errors="replace").read()
+except Exception:
+    print("")
+    sys.exit(0)
+
+try:
+    data = json.loads(raw)
+except Exception:
+    print(cap(scrub(raw)).strip())
+    sys.exit(0)
+
+status = data.get("api_error_status")
+result_text = str(data.get("result") or "")
+
+message = None
+m = re.search(r'"message"\s*:\s*"((?:[^"\\]|\\.)*)"', result_text)
+if m:
+    try:
+        message = json.loads('"' + m.group(1) + '"')
+    except Exception:
+        message = m.group(1)
+
+if not message:
+    message = re.sub(r'^\s*API Error:\s*\d+\s*', '', result_text).strip()
+
+if not message:
+    print(cap(scrub(raw)).strip())
+    sys.exit(0)
+
+message = cap(scrub(message))
+
+if status is not None:
+    print(f"HTTP {status}: {message}")
+else:
+    print(message)
+PYEOF
+}
+
 claude_provider_unavailable() {
   # claude_provider_unavailable FILE
   # Returns 0 when the claude JSON result represents provider/billing/rate-limit
@@ -1396,7 +1459,13 @@ Instructions:
 
     if [ $RC -ne 0 ] && claude_provider_unavailable "$CLAUDE_OUT"; then
       OUTCOME="provider-unavailable"
-      log "Issue #${ISSUE_NUMBER}: provider unavailable (billing, rate limit, or API outage). Work was never attempted; restoring the issue to the queue."
+      local PROVIDER_DETAIL
+      PROVIDER_DETAIL=$(claude_provider_error_detail "$CLAUDE_OUT")
+      if [ -n "$PROVIDER_DETAIL" ]; then
+        log "Issue #${ISSUE_NUMBER}: provider unavailable — ${PROVIDER_DETAIL} Work was never attempted; restoring the issue to the queue."
+      else
+        log "Issue #${ISSUE_NUMBER}: provider unavailable (billing, rate limit, or API outage). Work was never attempted; restoring the issue to the queue."
+      fi
       local STALL_REASON
       STALL_REASON=$(claude_json_field "$CLAUDE_OUT" "result")
       [ -z "$STALL_REASON" ] && STALL_REASON="(no error text captured on issue #${ISSUE_NUMBER})"
