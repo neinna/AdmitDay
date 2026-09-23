@@ -198,21 +198,24 @@ describe('FindRail "Within" control (issue #344)', () => {
     expect(src).toContain("{ label: '10 mi', value: '10' }")
   })
 
-  it('is disabled until a starting point exists, with the "Add a starting ZIP" hint', () => {
+  it('is disabled until a starting point exists, with the "Add a starting point" hint', () => {
     expect(src).toContain('disabled={radiusDisabled}')
-    expect(src).toContain('{radiusDisabled && <div className="text-[12.5px] text-faint">Add a starting ZIP</div>}')
+    expect(src).toContain('{radiusDisabled && <div className="text-[12.5px] text-faint">Add a starting point</div>}')
   })
 })
 
-describe('FindClient wires radiusDisabled off startCoords, not startZip (issue #344)', () => {
+// Issue #374 generalized the field's backing state from a bare `startZip`
+// string to `startingPointInput`/`startCoords` (ZIP or station) — these two
+// assertions are updated in place to track that rename.
+describe('FindClient wires radiusDisabled off startCoords, not the raw input (issue #344/#374)', () => {
   const src = readSource('app/find/FindClient.tsx')
 
-  it('disables the Within control when no ZIP has resolved to coordinates', () => {
+  it('disables the Within control when no starting point has resolved to coordinates', () => {
     expect(src).toContain('radiusDisabled={!startCoords}')
   })
 
-  it('clears the radius when the ZIP is cleared', () => {
-    expect(src).toContain('if (!startZip) setRadiusMiles(null)')
+  it('clears the radius when the starting point field is cleared', () => {
+    expect(src).toContain('if (!startingPointInput) setRadiusMiles(null)')
   })
 })
 
