@@ -138,9 +138,21 @@ describe('/find ask box holds and clears askReasons (issue #329)', () => {
   })
 })
 
-describe('the row list ranking uses rankFindRows (issue #329)', () => {
-  it('ranked is computed from hardFiltered, annotated, and askReasons', () => {
-    expect(src).toContain('rankFindRows(hardFiltered, annotated, askReasons)')
+describe('the row list ranking uses rankFindRows (issue #329, arguments updated by #361)', () => {
+  it('ranked is computed by rankFindRows', () => {
+    expect(src).toContain('rankFindRows(')
+    expect(src).toContain('askReasons,')
+  })
+
+  // Issue #361: the ask orders the list, fit orders it otherwise, and distance
+  // only breaks ties. The commute radius is a hard floor for the ask too, so
+  // the distance-filtered rows are both the allowed set and the annotated set.
+  it('passes the distance-filtered rows, so the radius constrains ask results too', () => {
+    expect(src).toContain('distanceFiltered.map((r) => r.school)')
+  })
+
+  it('passes the starting point as the tiebreak origin', () => {
+    expect(src).toContain('startingPoint?.point ?? null')
   })
 })
 
