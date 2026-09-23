@@ -24,8 +24,6 @@ function makeSchool(overrides: Partial<School> & { dbn?: string } = {}): School 
     size: overrides.size ?? 'medium',
     total_students: null,
     applicants_per_seat: null,
-    academic_score_pct: null,
-    survey_score_pct: null,
     admissions_types: overrides.admissions_types ?? [],
     programs: [],
     flags: {
@@ -34,7 +32,7 @@ function makeSchool(overrides: Partial<School> & { dbn?: string } = {}): School 
       has_screened: false,
       has_open: false,
       has_borough_priority: false,
-      is_hidden_gem: false,
+      high_impact: false,
       has_consortium: false,
       has_ib: false,
       ...overrides.flags,
@@ -49,7 +47,6 @@ function makeSchool(overrides: Partial<School> & { dbn?: string } = {}): School 
       zip: '',
       ...overrides.doe_data,
     },
-    sift_url: '',
     last_verified: '',
     ...overrides,
   }

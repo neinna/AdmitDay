@@ -158,6 +158,23 @@ def build_payload(raw):
     if t_end is None and ends:
         t_end = max(ends)
 
+    # Issue #312: dashboards here only offer an Observations view, not Traces,
+    # and no single phase span covers a whole run, so total run duration can't
+    # be charted. Add one span spanning the full run (same bounds as the trace
+    # itself) carrying just outcome/issue_number, no usage or cost, so per-phase
+    # cost totals don't double-count. Skip it for the reconcile sweep's
+    # near-zero-work traces (issue #262) — they aren't runs worth charting.
+    if trace.get("trace_name") != "agent-reconcile":
+        spans.append(
+            {
+                "name": "run-total",
+                "start_ns": t_start,
+                "end_ns": t_end,
+                "outcome": trace.get("outcome"),
+                "issue_number": trace.get("issue_number"),
+            }
+        )
+
     return trace, spans, t_start, t_end
 
 
@@ -226,6 +243,8 @@ def emit(raw):
     # Tags are what make the UI answer "which model, and did it work" in one
     # click, and later "did routing change the mix" without a query.
     tags = ["outcome:%s" % trace_meta["outcome"]] + ["model:%s" % m for m in models]
+    if issue_number is not None:
+        tags.append("issue-%s" % issue_number)
 
     def new_span(name, start_ns, parent_ctx, cls, **kwargs):
         """Create a span with a backdated start time.
@@ -257,6 +276,23 @@ def emit(raw):
         root = new_span(trace_name, t_start, None, LangfuseSpan)
         root.update(metadata=metadata, output={"outcome": trace_meta["outcome"]})
 
+        # Issue #211: Observations/Scores are what dashboard widgets here can
+        # chart; trace metadata is not. Attach outcome/merged/attempt as real
+        # scores on every agent-run trace so "cost per merged PR" and "money
+        # spent on runs that merged nothing" are chartable without a manual
+        # API query. Reconcile sweeps carry no scores (issue #262: they aren't
+        # runs worth charting).
+        if trace_name != "agent-reconcile":
+            root.score_trace(name="outcome", value=trace_meta["outcome"], data_type="CATEGORICAL")
+            root.score_trace(
+                name="merged",
+                value=1.0 if trace_meta.get("pr_outcome") == "opened-auto-merge-enabled" else 0.0,
+                data_type="NUMERIC",
+            )
+            attempts = _int(trace_meta.get("attempts"))
+            if attempts is not None:
+                root.score_trace(name="attempt", value=float(attempts), data_type="NUMERIC")
+
         # Nest the phases under the run. If the SDK ever stops exposing the
         # underlying otel span, fall back to a flat trace rather than no trace.
         root_otel = getattr(root, "_otel_span", None)
@@ -270,7 +306,7 @@ def emit(raw):
             span_meta = {
                 "latency_ms": _ms(_int(span.get("start_ns")), _int(span.get("end_ns")))
             }
-            for key in ("attempt", "ok", "status"):
+            for key in ("attempt", "ok", "status", "outcome", "issue_number"):
                 if span.get(key) is not None:
                     span_meta[key] = span[key]
 

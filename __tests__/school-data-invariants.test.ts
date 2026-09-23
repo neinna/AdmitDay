@@ -41,6 +41,7 @@ import fs from 'fs'
 import path from 'path'
 
 const SCHOOLS_PATH = path.resolve(__dirname, '../schools.json')
+const SCHEMA_SUMMARY_PATH = path.resolve(__dirname, '../data/schema-summary.json')
 
 const KNOWN_BOROUGHS = new Set(['Manhattan', 'Brooklyn', 'Queens', 'Bronx', 'Staten Island'])
 
@@ -73,8 +74,7 @@ interface MinimalSchool {
   name?: unknown
   borough?: unknown
   applicants_per_seat?: unknown
-  academic_score_pct?: unknown
-  survey_score_pct?: unknown
+  sqr?: { performance_pctl?: unknown; impact_pctl?: unknown }
   admissions_types?: unknown
   [key: string]: unknown
 }
@@ -139,11 +139,11 @@ function findNumericSanityViolations(schools: MinimalSchool[]): string[] {
         violations.push(`${label(s, i)}: applicants_per_seat is ${JSON.stringify(aps)}, expected a number >= 0`)
       }
     }
-    ;(['academic_score_pct', 'survey_score_pct'] as const).forEach((field) => {
-      const value = s[field]
+    ;(['performance_pctl', 'impact_pctl'] as const).forEach((field) => {
+      const value = s.sqr?.[field]
       if (value === null || value === undefined) return
       if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 100) {
-        violations.push(`${label(s, i)}: ${field} is ${JSON.stringify(value)}, expected a number between 0 and 100`)
+        violations.push(`${label(s, i)}: sqr.${field} is ${JSON.stringify(value)}, expected a number between 0 and 100`)
       }
     })
   })
@@ -186,11 +186,13 @@ if (!dataAvailable) {
   )
 }
 
-;(dataAvailable ? describe : describe.skip)('school data invariants (real dataset)', () => {
-  // describe.skip still evaluates this body (it just skips the `it`s), so
-  // guard the read -- it must not throw when the file is absent.
-  const schools: MinimalSchool[] = dataAvailable ? JSON.parse(fs.readFileSync(SCHOOLS_PATH, 'utf-8')) : []
+// Loaded once at module scope (not just inside the first describe) so the
+// schema summary freshness checks below can reuse it. Guarded the same way:
+// describe.skip still evaluates this body, so the read must not throw when
+// the file is absent.
+const schools: MinimalSchool[] = dataAvailable ? JSON.parse(fs.readFileSync(SCHOOLS_PATH, 'utf-8')) : []
 
+;(dataAvailable ? describe : describe.skip)('school data invariants (real dataset)', () => {
   it('loads as a non-empty array', () => {
     expect(Array.isArray(schools)).toBe(true)
     expect(schools.length).toBeGreaterThan(0)
@@ -234,6 +236,85 @@ if (!dataAvailable) {
   })
 })
 
+// ── Schema summary freshness (issue #321) ───────────────────────────────
+// data/schema-summary.json exists so nobody has to open the 4 MB
+// schools.json to learn its shape (scripts/build_schema_summary.py, wired
+// into scripts/refresh-data.ts). If schools.json changes -- a field added or
+// removed, the school/program count shifting -- without regenerating the
+// summary, it silently goes stale and starts lying about the data.
+//
+// A raw file-mtime comparison ("is the summary older than schools.json?")
+// is not reliable here: a fresh CI checkout stamps every file with the
+// checkout time rather than its original commit time, so which of two
+// tracked files ends up with the later mtime is checkout-order noise, not
+// signal. Comparing content instead is a strictly stronger check anyway --
+// it catches the actual failure mode (summary doesn't match the data)
+// rather than a proxy for it.
+
+const schemaSummaryAvailable = dataAvailable && fs.existsSync(SCHEMA_SUMMARY_PATH)
+
+if (dataAvailable && !schemaSummaryAvailable) {
+  // eslint-disable-next-line no-console
+  console.warn(
+    `[school-data-invariants] ${SCHEMA_SUMMARY_PATH} not found -- skipping schema summary freshness tests.`
+  )
+}
+
+interface SchemaField {
+  name: string
+  type: string
+  present: number
+  example: unknown
+}
+
+;(schemaSummaryAvailable ? describe : describe.skip)(
+  'schema summary freshness (data/schema-summary.json vs schools.json)',
+  () => {
+    const summary = schemaSummaryAvailable
+      ? JSON.parse(fs.readFileSync(SCHEMA_SUMMARY_PATH, 'utf-8'))
+      : null
+
+    const fieldNames = (entries: unknown): string[] =>
+      (Array.isArray(entries) ? (entries as SchemaField[]) : []).map((f) => f.name).sort()
+
+    it('has a school_count matching the real dataset', () => {
+      expect(summary.school_count).toBe(schools.length)
+    })
+
+    it('has a program_count matching the real dataset', () => {
+      const programCount = schools.reduce(
+        (n, s) => n + (Array.isArray(s.programs) ? (s.programs as unknown[]).length : 0),
+        0
+      )
+      expect(summary.program_count).toBe(programCount)
+    })
+
+    it('lists exactly the school-record fields present in the real dataset', () => {
+      const actual = new Set<string>()
+      schools.forEach((s) => Object.keys(s).forEach((k) => actual.add(k)))
+      expect(fieldNames(summary.school_fields)).toEqual(Array.from(actual).sort())
+    })
+
+    it('lists exactly the doe_data fields present in the real dataset', () => {
+      const actual = new Set<string>()
+      schools.forEach((s) => {
+        const doe = s.doe_data
+        if (doe && typeof doe === 'object') Object.keys(doe as Record<string, unknown>).forEach((k) => actual.add(k))
+      })
+      expect(fieldNames(summary.doe_data_fields)).toEqual(Array.from(actual).sort())
+    })
+
+    it('lists exactly the program-record fields present in the real dataset', () => {
+      const actual = new Set<string>()
+      schools.forEach((s) => {
+        const programs = Array.isArray(s.programs) ? (s.programs as Record<string, unknown>[]) : []
+        programs.forEach((p) => Object.keys(p).forEach((k) => actual.add(k)))
+      })
+      expect(fieldNames(summary.program_fields)).toEqual(Array.from(actual).sort())
+    })
+  }
+)
+
 // ── Corruption detection ─────────────────────────────────────────────────
 // Confirms the checks above actually catch bad data, using a small synthetic
 // base fixture so these tests run regardless of whether schools.json is
@@ -245,8 +326,7 @@ function makeValidSchool(overrides: Partial<MinimalSchool> = {}, i = 0): Minimal
     name: `Test School ${i}`,
     borough: 'Brooklyn',
     applicants_per_seat: 2.5,
-    academic_score_pct: 75,
-    survey_score_pct: 80,
+    sqr: { performance_pctl: 75, impact_pctl: 80 },
     admissions_types: ['Screened'],
     ...overrides,
   }
@@ -312,9 +392,9 @@ describe('school data invariant checks (corruption detection, synthetic fixture)
 
   it('catches an out-of-range percentage field', () => {
     const schools = makeValidFixture(5)
-    schools[4] = { ...schools[4], academic_score_pct: 150 }
+    schools[4] = { ...schools[4], sqr: { ...schools[4].sqr, performance_pctl: 150 } }
     const violations = findNumericSanityViolations(schools)
-    expect(violations.some((v) => v.includes('academic_score_pct'))).toBe(true)
+    expect(violations.some((v) => v.includes('performance_pctl'))).toBe(true)
   })
 
   it('catches an unrecognized admissions track value', () => {

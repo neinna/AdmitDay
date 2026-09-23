@@ -4,9 +4,31 @@ export interface SchoolFlags {
   has_screened: boolean
   has_open: boolean
   has_borough_priority: boolean
-  is_hidden_gem: boolean
+  high_impact: boolean
   has_consortium: boolean
   has_ib: boolean
+}
+
+export interface SqrData {
+  performance_score?: number
+  impact_score?: number
+  rating?: string
+  performance_pctl?: number
+  impact_pctl?: number
+  year?: string
+  source_url?: string
+}
+
+// One school year's Performance/Impact scores from the DOE HS School Quality
+// Report results workbook (issue #292). A year the DOE didn't publish a
+// numeric score for is left out of the array entirely -- never a zeroed or
+// null entry.
+export interface SqrHistoryEntry {
+  year: string
+  performance_score?: number
+  performance_pctl?: number
+  impact_score?: number
+  impact_pctl?: number
 }
 
 export interface DoeData {
@@ -50,6 +72,10 @@ export interface SchoolProgram {
   grade_span?: string
   description?: string
   seats?: Record<string, unknown>
+  seats_filled_last_year?: {
+    general_education?: boolean
+    students_with_disabilities?: boolean
+  }
   eligibility?: Record<string, unknown>
   requirements?: Record<string, unknown>
   provenance?: {
@@ -72,14 +98,13 @@ export interface School {
   size: string
   total_students: number | null
   applicants_per_seat: number | null
-  academic_score_pct: number | null
-  survey_score_pct: number | null
+  sqr?: SqrData
+  sqr_history?: SqrHistoryEntry[]
   admissions_types: string[]
   programs: SchoolProgram[]
   flags: SchoolFlags
   doe_data: DoeData
   location?: GeoPoint | null
-  sift_url: string
   last_verified: string
 }
 

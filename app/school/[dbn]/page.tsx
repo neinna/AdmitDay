@@ -9,6 +9,7 @@ import {
   buildStatCells,
   getMissingStatLabels,
   buildNotReportedStatsSentence,
+  buildSqrTrends,
   buildShsatCutoffRows,
   buildActivityGroups,
   getMissingActivityLabels,
@@ -70,6 +71,7 @@ export default async function SchoolDetailPage({
 
   const statCells = buildStatCells(school)
   const notReportedStatsSentence = buildNotReportedStatsSentence(getMissingStatLabels(school))
+  const sqrTrends = buildSqrTrends(school)
   const shsatCutoffRows = buildShsatCutoffRows(school)
 
   const activityGroupsRaw = buildActivityGroups(school)
@@ -116,6 +118,7 @@ export default async function SchoolDetailPage({
         tracks={tracks}
         statCells={statCells}
         notReportedStatsSentence={notReportedStatsSentence}
+        sqrTrends={sqrTrends}
         shsatCutoffRows={shsatCutoffRows}
         programs={programs}
         requirementBlocks={requirementBlocks}
@@ -128,7 +131,7 @@ export default async function SchoolDetailPage({
         notReportedTransitLabel={notReportedTransitLabel}
         provenanceRows={provenanceRows}
         dataVintageNote={dataVintageNote}
-        sourceUrl={school.sift_url}
+        sourceUrl={school.sqr?.source_url}
         myschoolsUrl={MYSCHOOLS_URL}
         backHref={backHref}
         backLabel={backLabel}

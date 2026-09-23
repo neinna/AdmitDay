@@ -1,0 +1,643 @@
+{
+  "generated_at": "2026-09-22T23:31:38.496528+00:00",
+  "school_count": 426,
+  "school_fields": [
+    {
+      "name": "admissions_types",
+      "type": "array",
+      "present": 426,
+      "example": [
+        "Educational Option"
+      ]
+    },
+    {
+      "name": "applicants_per_seat",
+      "type": "number",
+      "present": 415,
+      "example": 0.7
+    },
+    {
+      "name": "borough",
+      "type": "string",
+      "present": 426,
+      "example": "Manhattan"
+    },
+    {
+      "name": "dbn",
+      "type": "string",
+      "present": 426,
+      "example": "01M292"
+    },
+    {
+      "name": "doe_data",
+      "type": "object",
+      "present": 426,
+      "example": {
+        "overview": "Orchard Collegiate Academy (OCA) is a supportive, high-quality community school with a focus on college and career readiness. At OCA, our mission is to educate the whole child, exposing them to an arr\u2026",
+        "language": "Spanish",
+        "extracurriculars": "Gender Sexuality Alliance (GSA)",
+        "website": "www.orchardcollegiateacademy.org",
+        "phone": "212-406-9411",
+        "address": "220 Henry Street",
+        "zip": "10002",
+        "academic_opportunities": "Robust arts program Advanced Placement Courses Available",
+        "prgdesc": "Our rigorous academic curriculum and robust arts program prepares students to succeed in college and beyond. With our diverse course offerings, including five Advanced Placement Courses, we empower ou\u2026",
+        "requirements": {},
+        "audition_information": [],
+        "interests": [
+          "Humanities & Interdisciplinary"
+        ],
+        "subway": "F to East Broadway; J, M, Z to Essex St",
+        "bus": "B39, M14A-SBS, M14D-SBS, M15, M15-SBS, M21, M22, M9, X37, X38",
+        "psal_sports_boys": "Volleyball",
+        "psal_sports_girls": "Volleyball",
+        "psal_sports_coed": "",
+        "advancedplacement_courses": "Algebra II (Advanced Math),AP Biology,AP English Literature and Composition,AP United States History,Chemistry (Advanced Science),World Languages (Advanced World Languages)",
+        "diplomaendorsements": "",
+        "neighborhood": "Lower East Side",
+        "addtl_info": "College Trips,Community School,Extended Day Program,Health Center,Online Grading System,Orientation,Summer Internships,Summer Orientation,Weekend Programs",
+        "graduation_rate": 0.93,
+        "attendance_rate": 0.818,
+        "college_career_rate": 0.71
+      }
+    },
+    {
+      "name": "flags",
+      "type": "object",
+      "present": 426,
+      "example": {
+        "has_shsat": false,
+        "has_audition": false,
+        "has_screened": false,
+        "has_open": true,
+        "has_borough_priority": false,
+        "has_consortium": false,
+        "has_ib": false,
+        "high_impact": false
+      }
+    },
+    {
+      "name": "last_verified",
+      "type": "string",
+      "present": 426,
+      "example": "2025-2026"
+    },
+    {
+      "name": "name",
+      "type": "string",
+      "present": 426,
+      "example": "Orchard Collegiate Academy"
+    },
+    {
+      "name": "programs",
+      "type": "array",
+      "present": 426,
+      "example": [
+        {
+          "dbn": "01M292",
+          "school_name": "Orchard Collegiate Academy (01M292)",
+          "program_name": "Orchard Collegiate Academy",
+          "program_code": "M46X",
+          "admissions_method": "Ed. Opt.",
+          "admissions_method_description": "Ed. Opt. programs admit students across all academic levels. Students are grouped into Low, Middle, and High categories based on a composite of their academic data. One-third of offers are made to stu\u2026",
+          "grade_span": "9 to 12",
+          "seats": {
+            "general_education": {
+              "seats": 70,
+              "applicants": 49,
+              "applications_per_seat": 1
+            },
+            "students_with_disabilities": {
+              "seats": 20,
+              "applicants": 26,
+              "applications_per_seat": 1
+            },
+            "tenth_grade": {
+              "number": 0
+            }
+          },
+          "eligibility": {
+            "priority_groups": [
+              {
+                "id": 567119,
+                "order": 1,
+                "name": "Manhattan students or residents",
+                "ge_priority_group_description": "There were about 40 applicants in this group and all received offers last year.",
+                "swd_priority_group_description": "There were about 20 applicants in this group and all received offers last year."
+              },
+              {
+                "id": 567120,
+                "order": 2,
+                "name": "New York City residents",
+                "ge_priority_group_description": "There were fewer than 10 applicants in this group and all received offers last year.",
+                "swd_priority_group_description": "There were fewer than 10 applicants in this group and fewer than 10 received offers last year."
+              }
+            ]
+          },
+          "description": "Our rigorous academic curriculum and robust arts program prepares students to succeed in college and beyond. With our diverse course offerings, including five Advanced Placement Courses, we empower ou\u2026",
+          "provenance": {
+            "source": "MySchools",
+            "url": "https://www.myschools.nyc/en/api/v2/schools/process/1/01M292/",
+            "fetched_at": "2026-09-18T19:59:59.944769+00:00",
+            "admissions_cycle": "2025-26 School Year"
+          },
+          "program": "Orchard Collegiate Academy",
+          "admissions_type": "Educational Option",
+          "raw_method": "Ed. Opt."
+        }
+      ]
+    },
+    {
+      "name": "shsat_cutoff_score",
+      "type": "number|null",
+      "present": 8,
+      "example": 561
+    },
+    {
+      "name": "shsat_cutoff_year",
+      "type": "string|null",
+      "present": 8,
+      "example": "2026"
+    },
+    {
+      "name": "size",
+      "type": "string",
+      "present": 426,
+      "example": "small"
+    },
+    {
+      "name": "sqr",
+      "type": "object",
+      "present": 412,
+      "example": {
+        "performance_score": 0.57,
+        "performance_pctl": 67,
+        "impact_score": 0.56,
+        "impact_pctl": 64,
+        "rating": "Fair",
+        "year": "2024-25",
+        "source_url": "https://infohub.nyced.org/docs/default-source/default-document-library/202425-hs-sqr-results.xlsx"
+      }
+    },
+    {
+      "name": "total_students",
+      "type": "number",
+      "present": 426,
+      "example": 258
+    }
+  ],
+  "doe_data_fields": [
+    {
+      "name": "academic_opportunities",
+      "type": "string",
+      "present": 426,
+      "example": "Robust arts program Advanced Placement Courses Available"
+    },
+    {
+      "name": "address",
+      "type": "string",
+      "present": 426,
+      "example": "220 Henry Street"
+    },
+    {
+      "name": "addtl_info",
+      "type": "string",
+      "present": 426,
+      "example": "College Trips,Community School,Extended Day Program,Health Center,Online Grading System,Orientation,Summer Internships,Summer Orientation,Weekend Programs"
+    },
+    {
+      "name": "advancedplacement_courses",
+      "type": "string",
+      "present": 426,
+      "example": "Algebra II (Advanced Math),AP Biology,AP English Literature and Composition,AP United States History,Chemistry (Advanced Science),World Languages (Advanced World Languages)"
+    },
+    {
+      "name": "attendance_rate",
+      "type": "number",
+      "present": 419,
+      "example": 0.818
+    },
+    {
+      "name": "audition_information",
+      "type": "array",
+      "present": 426,
+      "example": []
+    },
+    {
+      "name": "bus",
+      "type": "string",
+      "present": 426,
+      "example": "B39, M14A-SBS, M14D-SBS, M15, M15-SBS, M21, M22, M9, X37, X38"
+    },
+    {
+      "name": "college_career_rate",
+      "type": "number",
+      "present": 409,
+      "example": 0.71
+    },
+    {
+      "name": "diplomaendorsements",
+      "type": "string",
+      "present": 426,
+      "example": ""
+    },
+    {
+      "name": "extracurriculars",
+      "type": "string",
+      "present": 426,
+      "example": "Gender Sexuality Alliance (GSA)"
+    },
+    {
+      "name": "graduation_rate",
+      "type": "number",
+      "present": 412,
+      "example": 0.93
+    },
+    {
+      "name": "interests",
+      "type": "array",
+      "present": 426,
+      "example": [
+        "Humanities & Interdisciplinary"
+      ]
+    },
+    {
+      "name": "language",
+      "type": "string",
+      "present": 426,
+      "example": "Spanish"
+    },
+    {
+      "name": "neighborhood",
+      "type": "string",
+      "present": 426,
+      "example": "Lower East Side"
+    },
+    {
+      "name": "overview",
+      "type": "string",
+      "present": 426,
+      "example": "Orchard Collegiate Academy (OCA) is a supportive, high-quality community school with a focus on college and career readiness. At OCA, our mission is to educate the whole child, exposing them to an arr\u2026"
+    },
+    {
+      "name": "phone",
+      "type": "string",
+      "present": 426,
+      "example": "212-406-9411"
+    },
+    {
+      "name": "prgdesc",
+      "type": "string",
+      "present": 426,
+      "example": "Our rigorous academic curriculum and robust arts program prepares students to succeed in college and beyond. With our diverse course offerings, including five Advanced Placement Courses, we empower ou\u2026"
+    },
+    {
+      "name": "psal_sports_boys",
+      "type": "string",
+      "present": 426,
+      "example": "Volleyball"
+    },
+    {
+      "name": "psal_sports_coed",
+      "type": "string",
+      "present": 426,
+      "example": ""
+    },
+    {
+      "name": "psal_sports_girls",
+      "type": "string",
+      "present": 426,
+      "example": "Volleyball"
+    },
+    {
+      "name": "requirements",
+      "type": "object",
+      "present": 426,
+      "example": {}
+    },
+    {
+      "name": "subway",
+      "type": "string",
+      "present": 426,
+      "example": "F to East Broadway; J, M, Z to Essex St"
+    },
+    {
+      "name": "website",
+      "type": "string",
+      "present": 426,
+      "example": "www.orchardcollegiateacademy.org"
+    },
+    {
+      "name": "zip",
+      "type": "string",
+      "present": 426,
+      "example": "10002"
+    }
+  ],
+  "program_fields": [
+    {
+      "name": "admissions_method",
+      "type": "string",
+      "present": 923,
+      "example": "Ed. Opt."
+    },
+    {
+      "name": "admissions_method_description",
+      "type": "string",
+      "present": 814,
+      "example": "Ed. Opt. programs admit students across all academic levels. Students are grouped into Low, Middle, and High categories based on a composite of their academic data. One-third of offers are made to stu\u2026"
+    },
+    {
+      "name": "admissions_type",
+      "type": "string",
+      "present": 923,
+      "example": "Educational Option"
+    },
+    {
+      "name": "dbn",
+      "type": "string",
+      "present": 923,
+      "example": "01M292"
+    },
+    {
+      "name": "description",
+      "type": "string",
+      "present": 725,
+      "example": "Our rigorous academic curriculum and robust arts program prepares students to succeed in college and beyond. With our diverse course offerings, including five Advanced Placement Courses, we empower ou\u2026"
+    },
+    {
+      "name": "eligibility",
+      "type": "object",
+      "present": 923,
+      "example": {
+        "priority_groups": [
+          {
+            "id": 567119,
+            "order": 1,
+            "name": "Manhattan students or residents",
+            "ge_priority_group_description": "There were about 40 applicants in this group and all received offers last year.",
+            "swd_priority_group_description": "There were about 20 applicants in this group and all received offers last year."
+          },
+          {
+            "id": 567120,
+            "order": 2,
+            "name": "New York City residents",
+            "ge_priority_group_description": "There were fewer than 10 applicants in this group and all received offers last year.",
+            "swd_priority_group_description": "There were fewer than 10 applicants in this group and fewer than 10 received offers last year."
+          }
+        ]
+      }
+    },
+    {
+      "name": "grade_span",
+      "type": "string",
+      "present": 923,
+      "example": "9 to 12"
+    },
+    {
+      "name": "program",
+      "type": "string",
+      "present": 923,
+      "example": "Orchard Collegiate Academy"
+    },
+    {
+      "name": "program_code",
+      "type": "string",
+      "present": 923,
+      "example": "M46X"
+    },
+    {
+      "name": "program_name",
+      "type": "string",
+      "present": 923,
+      "example": "Orchard Collegiate Academy"
+    },
+    {
+      "name": "provenance",
+      "type": "object",
+      "present": 923,
+      "example": {
+        "source": "MySchools",
+        "url": "https://www.myschools.nyc/en/api/v2/schools/process/1/01M292/",
+        "fetched_at": "2026-09-18T19:59:59.944769+00:00",
+        "admissions_cycle": "2025-26 School Year"
+      }
+    },
+    {
+      "name": "raw_method",
+      "type": "string",
+      "present": 923,
+      "example": "Ed. Opt."
+    },
+    {
+      "name": "requirements",
+      "type": "object",
+      "present": 27,
+      "example": {
+        "selection_criteria": [
+          {
+            "name": "Essay - 100%",
+            "order": 1
+          }
+        ]
+      }
+    },
+    {
+      "name": "school_name",
+      "type": "string",
+      "present": 923,
+      "example": "Orchard Collegiate Academy (01M292)"
+    },
+    {
+      "name": "seats",
+      "type": "object",
+      "present": 923,
+      "example": {
+        "general_education": {
+          "seats": 70,
+          "applicants": 49,
+          "applications_per_seat": 1
+        },
+        "students_with_disabilities": {
+          "seats": 20,
+          "applicants": 26,
+          "applications_per_seat": 1
+        },
+        "tenth_grade": {
+          "number": 0
+        }
+      }
+    }
+  ],
+  "program_count": 923,
+  "programs_per_school": {
+    "min": 1,
+    "median": 1,
+    "max": 11
+  },
+  "admissions_methods": [
+    {
+      "value": "Ed. Opt.",
+      "count": 413
+    },
+    {
+      "value": "Screened",
+      "count": 133
+    },
+    {
+      "value": "Audition",
+      "count": 75
+    },
+    {
+      "value": "Open",
+      "count": 74
+    },
+    {
+      "value": "D75 Special Education Inclusive Services",
+      "count": 62
+    },
+    {
+      "value": "Language Criteria",
+      "count": 51
+    },
+    {
+      "value": "ASD/ACES Program",
+      "count": 47
+    },
+    {
+      "value": "Screened With Assessment",
+      "count": 27
+    },
+    {
+      "value": "Zoned Guarantee",
+      "count": 22
+    },
+    {
+      "value": "Test",
+      "count": 8
+    },
+    {
+      "value": "Zoned Priority",
+      "count": 6
+    },
+    {
+      "value": "Screened: Language & Academics",
+      "count": 5
+    }
+  ],
+  "sample_school": {
+    "dbn": "01M292",
+    "name": "Orchard Collegiate Academy",
+    "borough": "Manhattan",
+    "size": "small",
+    "total_students": 258,
+    "applicants_per_seat": 0.7,
+    "admissions_types": [
+      "Educational Option"
+    ],
+    "programs": [
+      {
+        "dbn": "01M292",
+        "school_name": "Orchard Collegiate Academy (01M292)",
+        "program_name": "Orchard Collegiate Academy",
+        "program_code": "M46X",
+        "admissions_method": "Ed. Opt.",
+        "admissions_method_description": "Ed. Opt. programs admit students across all academic levels. Students are grouped into Low, Middle, and High categories based on a composite of their academic data. One-third of offers are made to stu\u2026",
+        "grade_span": "9 to 12",
+        "seats": {
+          "general_education": {
+            "seats": 70,
+            "applicants": 49,
+            "applications_per_seat": 1
+          },
+          "students_with_disabilities": {
+            "seats": 20,
+            "applicants": 26,
+            "applications_per_seat": 1
+          },
+          "tenth_grade": {
+            "number": 0
+          }
+        },
+        "eligibility": {
+          "priority_groups": [
+            {
+              "id": 567119,
+              "order": 1,
+              "name": "Manhattan students or residents",
+              "ge_priority_group_description": "There were about 40 applicants in this group and all received offers last year.",
+              "swd_priority_group_description": "There were about 20 applicants in this group and all received offers last year."
+            },
+            {
+              "id": 567120,
+              "order": 2,
+              "name": "New York City residents",
+              "ge_priority_group_description": "There were fewer than 10 applicants in this group and all received offers last year.",
+              "swd_priority_group_description": "There were fewer than 10 applicants in this group and fewer than 10 received offers last year."
+            }
+          ]
+        },
+        "description": "Our rigorous academic curriculum and robust arts program prepares students to succeed in college and beyond. With our diverse course offerings, including five Advanced Placement Courses, we empower ou\u2026",
+        "provenance": {
+          "source": "MySchools",
+          "url": "https://www.myschools.nyc/en/api/v2/schools/process/1/01M292/",
+          "fetched_at": "2026-09-18T19:59:59.944769+00:00",
+          "admissions_cycle": "2025-26 School Year"
+        },
+        "program": "Orchard Collegiate Academy",
+        "admissions_type": "Educational Option",
+        "raw_method": "Ed. Opt."
+      }
+    ],
+    "flags": {
+      "has_shsat": false,
+      "has_audition": false,
+      "has_screened": false,
+      "has_open": true,
+      "has_borough_priority": false,
+      "has_consortium": false,
+      "has_ib": false,
+      "high_impact": false
+    },
+    "doe_data": {
+      "overview": "Orchard Collegiate Academy (OCA) is a supportive, high-quality community school with a focus on college and career readiness. At OCA, our mission is to educate the whole child, exposing them to an arr\u2026",
+      "language": "Spanish",
+      "extracurriculars": "Gender Sexuality Alliance (GSA)",
+      "website": "www.orchardcollegiateacademy.org",
+      "phone": "212-406-9411",
+      "address": "220 Henry Street",
+      "zip": "10002",
+      "academic_opportunities": "Robust arts program Advanced Placement Courses Available",
+      "prgdesc": "Our rigorous academic curriculum and robust arts program prepares students to succeed in college and beyond. With our diverse course offerings, including five Advanced Placement Courses, we empower ou\u2026",
+      "requirements": {},
+      "audition_information": [],
+      "interests": [
+        "Humanities & Interdisciplinary"
+      ],
+      "subway": "F to East Broadway; J, M, Z to Essex St",
+      "bus": "B39, M14A-SBS, M14D-SBS, M15, M15-SBS, M21, M22, M9, X37, X38",
+      "psal_sports_boys": "Volleyball",
+      "psal_sports_girls": "Volleyball",
+      "psal_sports_coed": "",
+      "advancedplacement_courses": "Algebra II (Advanced Math),AP Biology,AP English Literature and Composition,AP United States History,Chemistry (Advanced Science),World Languages (Advanced World Languages)",
+      "diplomaendorsements": "",
+      "neighborhood": "Lower East Side",
+      "addtl_info": "College Trips,Community School,Extended Day Program,Health Center,Online Grading System,Orientation,Summer Internships,Summer Orientation,Weekend Programs",
+      "graduation_rate": 0.93,
+      "attendance_rate": 0.818,
+      "college_career_rate": 0.71
+    },
+    "last_verified": "2025-2026",
+    "shsat_cutoff_score": null,
+    "shsat_cutoff_year": null,
+    "sqr": {
+      "performance_score": 0.57,
+      "performance_pctl": 67,
+      "impact_score": 0.56,
+      "impact_pctl": 64,
+      "rating": "Fair",
+      "year": "2024-25",
+      "source_url": "https://infohub.nyced.org/docs/default-source/default-document-library/202425-hs-sqr-results.xlsx"
+    }
+  }
+}

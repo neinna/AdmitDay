@@ -1,0 +1,50 @@
+# Issue #285: ask-box eval runner (npm run eval:ask), on a weekly schedule
+# and on pull requests that touch the ask path. Each run is recorded to the
+# admitday-app Langfuse project as a dataset run on the "ask-seed" dataset
+# (see evals/langfuse-run.ts). The eval-ask job is a required-status
+# candidate for pull requests touching the ask path — add it to branch
+# protection once EVAL_ANTHROPIC_API_KEY, EVAL_OPENAI_API_KEY,
+# EVAL_LANGFUSE_PUBLIC_KEY and EVAL_LANGFUSE_SECRET_KEY are set as repo
+# secrets. Missing secrets fail the run with a clear message
+# (evals/gate.ts findMissingEnvKeys) rather than running without them.
+# Pull requests from forks never get secrets, so the job is skipped for
+# those (see the job-level `if:` below) instead of failing on a missing one.
+
+name: eval-ask
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'  # Mondays 06:00 UTC
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'lib/ask.ts'
+      - 'lib/rag.ts'
+      - 'lib/ask-guardrails.ts'
+      - 'lib/query-filters.ts'
+      - 'app/api/find/ask/**'
+
+jobs:
+  eval-ask:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610 # v3
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ask evals
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.EVAL_ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.EVAL_OPENAI_API_KEY }}
+          EVAL_LANGFUSE_PUBLIC_KEY: ${{ secrets.EVAL_LANGFUSE_PUBLIC_KEY }}
+          EVAL_LANGFUSE_SECRET_KEY: ${{ secrets.EVAL_LANGFUSE_SECRET_KEY }}
+          EVAL_TRIGGER: ${{ github.event_name == 'schedule' && 'weekly' || github.event_name == 'pull_request' && 'pull_request' || 'manual' }}
+        run: npm run eval:ask

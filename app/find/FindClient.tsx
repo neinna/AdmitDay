@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { usePostHog } from 'posthog-js/react'
@@ -88,6 +88,10 @@ export default function FindClient({ schools, initialFilters }: Props) {
   const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT)
 
   const [askText, setAskText] = useState('')
+  // Set only when a paste is clipped to MAX_QUESTION_LENGTH (issue #325);
+  // cleared on the next real edit so the notice doesn't linger forever.
+  const [pasteWasTrimmed, setPasteWasTrimmed] = useState(false)
+  const askTextareaRef = useRef<HTMLTextAreaElement>(null)
   const [askFilters, setAskFilters] = useState<QueryFilters | null>(null)
   const [askAnswer, setAskAnswer] = useState('')
   const [askSources, setAskSources] = useState<AskSource[]>([])
@@ -99,6 +103,8 @@ export default function FindClient({ schools, initialFilters }: Props) {
 
   const [addedDbns, setAddedDbns] = useState<Set<string>>(new Set())
   const [hydrated, setHydrated] = useState(false)
+  const [shortlistLoadFailed, setShortlistLoadFailed] = useState(false)
+  const [saveErrorDbns, setSaveErrorDbns] = useState<Set<string>>(new Set())
 
   // Starting point (issue #295) lives only in localStorage — never in the
   // URL, a fetch body, or an analytics call. Read once on mount, after
@@ -146,9 +152,21 @@ export default function FindClient({ schools, initialFilters }: Props) {
     if (!isLoaded) return
     if (isSignedIn) {
       fetch('/api/saved-schools')
-        .then((res) => (res.ok ? res.json() : { dbns: [] }))
-        .then((data) => setAddedDbns(new Set(Array.isArray(data.dbns) ? data.dbns : [])))
-        .catch(() => setAddedDbns(new Set()))
+        .then((res) => {
+          if (!res.ok) throw new Error('failed to load saved schools')
+          return res.json()
+        })
+        .then((data) => {
+          setAddedDbns(new Set(Array.isArray(data.dbns) ? data.dbns : []))
+          setShortlistLoadFailed(false)
+        })
+        .catch(() => {
+          // A failed load must never look like a parent who has saved
+          // nothing — keep the set empty but flag it as a load failure so
+          // the nav can say so instead of showing "0 saved".
+          setAddedDbns(new Set())
+          setShortlistLoadFailed(true)
+        })
         .finally(() => setHydrated(true))
       return
     }
@@ -290,22 +308,39 @@ export default function FindClient({ schools, initialFilters }: Props) {
       return
     }
 
-    const next = new Set(addedDbns)
-    const adding = !next.has(dbn)
+    const previous = addedDbns
+    const adding = !previous.has(dbn)
+    const next = new Set(previous)
     if (adding) next.add(dbn)
     else next.delete(dbn)
     setAddedDbns(next)
 
+    let ok: boolean
     try {
-      await fetch('/api/saved-schools', {
+      const res = await fetch('/api/saved-schools', {
         method: adding ? 'POST' : 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ dbn }),
       })
+      ok = res.ok
     } catch {
-      // ignore
+      ok = false
     }
 
+    if (!ok) {
+      // Roll back the optimistic update — a failed save must never be
+      // shown to the parent as added (or a failed remove as gone).
+      setAddedDbns(previous)
+      setSaveErrorDbns((prev) => new Set(prev).add(dbn))
+      return
+    }
+
+    setSaveErrorDbns((prev) => {
+      if (!prev.has(dbn)) return prev
+      const next = new Set(prev)
+      next.delete(dbn)
+      return next
+    })
     posthog?.capture(adding ? 'school_saved' : 'school_removed', {
       dbn,
       list_size_after: next.size,
@@ -316,6 +351,48 @@ export default function FindClient({ schools, initialFilters }: Props) {
     // Pure edit of the already-extracted filters — re-ranks without ever
     // calling the model again. Only a new ask (handleAskSubmit) does that.
     setAskFilters((prev) => (prev ? removeSignal(prev, kind, value) : prev))
+  }
+
+  // Auto-grows the textarea with content (3 rows at rest) up to the
+  // max-h-[11rem] cap in its className, where overflow-y-auto takes over.
+  useEffect(() => {
+    const el = askTextareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [askText])
+
+  function handleAskChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    setAskText(e.target.value)
+    setPasteWasTrimmed(false)
+  }
+
+  // Intercepts paste ourselves instead of letting the browser insert-then-
+  // truncate via maxLength: that path fires its own onChange right after,
+  // which would immediately clear the trimmed notice before anyone saw it.
+  function handleAskPaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+    const pasted = e.clipboardData.getData('text')
+    const target = e.currentTarget
+    const start = target.selectionStart ?? askText.length
+    const end = target.selectionEnd ?? askText.length
+    const nextValue = askText.slice(0, start) + pasted + askText.slice(end)
+
+    if (nextValue.length > MAX_QUESTION_LENGTH) {
+      e.preventDefault()
+      setAskText(nextValue.slice(0, MAX_QUESTION_LENGTH))
+      setPasteWasTrimmed(true)
+    } else {
+      setPasteWasTrimmed(false)
+    }
+  }
+
+  // Enter submits, Shift+Enter inserts a newline; ignore Enter while an IME
+  // composition is still open so confirming a candidate doesn't submit.
+  function handleAskKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault()
+      e.currentTarget.form?.requestSubmit()
+    }
   }
 
   async function handleAskSubmit(e: React.FormEvent) {
@@ -404,7 +481,11 @@ export default function FindClient({ schools, initialFilters }: Props) {
             <span className="text-ink font-medium border-b-2 border-accent pb-[3px]">Find</span>
             <Link href="/shortlist" className="hover:text-ink transition-colors duration-[120ms] ease-out">
               Shortlist
-              {addedCount > 0 && <span className="font-mono text-accent ml-1">{addedCount}</span>}
+              {hydrated && shortlistLoadFailed ? (
+                <span className="text-faint ml-1">Couldn&rsquo;t load your shortlist.</span>
+              ) : (
+                addedCount > 0 && <span className="font-mono text-accent ml-1">{addedCount}</span>
+              )}
             </Link>
           </nav>
           <AuthControls />
@@ -451,29 +532,42 @@ export default function FindClient({ schools, initialFilters }: Props) {
               </p>
             </div>
 
-            <form onSubmit={handleAskSubmit} className="flex gap-[10px]">
-              <div className="flex-1 flex items-center gap-[10px] border border-border-strong px-[15px] py-[13px]">
-                <span className="font-mono text-[13px] text-accent">›</span>
-                <input
-                  type="text"
+            <form onSubmit={handleAskSubmit} className="flex gap-[10px] items-start">
+              <div className="flex-1 flex items-start gap-[10px] border border-border-strong px-[15px] py-[13px]">
+                <span className="font-mono text-[13px] text-accent pt-[2px]">›</span>
+                <textarea
+                  ref={askTextareaRef}
                   value={askText}
-                  onChange={(e) => setAskText(e.target.value)}
+                  onChange={handleAskChange}
+                  onPaste={handleAskPaste}
+                  onKeyDown={handleAskKeyDown}
                   aria-label="Describe what you're looking for"
                   placeholder="Strong CS, a soccer team, small classes"
                   disabled={askLoading}
                   maxLength={MAX_QUESTION_LENGTH}
-                  className="flex-1 text-[15px] text-ink outline-none placeholder:text-faint bg-transparent"
+                  rows={3}
+                  className="flex-1 text-[15px] text-ink outline-none placeholder:text-faint bg-transparent resize-none max-h-[11rem] overflow-y-auto"
                 />
               </div>
               <Button type="submit" disabled={askLoading}>
                 Ask
               </Button>
             </form>
-            {MAX_QUESTION_LENGTH - askText.length <= 50 && (
-              <p className="font-mono text-[12px] text-faint">
-                {MAX_QUESTION_LENGTH - askText.length} characters left
+            <div className="flex items-center gap-3">
+              <p
+                className={`font-mono text-[12px] ${
+                  MAX_QUESTION_LENGTH - askText.length <= 50 ? 'text-red-700' : 'text-faint'
+                }`}
+                aria-live={MAX_QUESTION_LENGTH - askText.length <= 50 ? 'polite' : undefined}
+              >
+                {askText.length} / {MAX_QUESTION_LENGTH}
               </p>
-            )}
+              {pasteWasTrimmed && (
+                <p role="status" className="font-mono text-[12px] text-faint">
+                  Pasted text was trimmed to {MAX_QUESTION_LENGTH} characters.
+                </p>
+              )}
+            </div>
             {askLoading && (
               <p className="font-mono text-[12px] text-faint">Searching schools and generating an answer…</p>
             )}
@@ -599,8 +693,8 @@ export default function FindClient({ schools, initialFilters }: Props) {
                     onNavigate={() =>
                       posthog?.capture('school_detail_viewed', { dbn: school.dbn, from: 'find' })
                     }
-                    isHiddenGem={school.flags.is_hidden_gem}
-                    metadata={metadata}
+                    isHiddenGem={school.flags.high_impact}
+                    metadata={`${neighborhood} · ${tracks} · ${students} students`}
                     rationale={buildFindRowSummary(school)}
                     statValue={
                       school.applicants_per_seat != null ? school.applicants_per_seat.toFixed(1) : '—'
@@ -637,16 +731,23 @@ export default function FindClient({ schools, initialFilters }: Props) {
                       )
                     }
                     action={
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => toggleAdded(school.dbn)}
-                        className={`w-24 max-[899px]:w-full text-center hover:bg-ink hover:text-white ${
-                          added ? 'bg-ink text-white' : ''
-                        }`}
-                      >
-                        {added ? 'Remove' : 'Add'}
-                      </Button>
+                      <div className="flex flex-col gap-1 items-center max-[899px]:items-stretch">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => toggleAdded(school.dbn)}
+                          className={`w-24 max-[899px]:w-full text-center hover:bg-ink hover:text-white ${
+                            added ? 'bg-ink text-white' : ''
+                          }`}
+                        >
+                          {added ? 'Remove' : 'Add'}
+                        </Button>
+                        {saveErrorDbns.has(school.dbn) && (
+                          <p className="text-[12.5px] text-faint text-center max-[899px]:text-left">
+                            Couldn&rsquo;t save — try again.
+                          </p>
+                        )}
+                      </div>
                     }
                   />
                 )

@@ -33,9 +33,14 @@ export function formatMiles(miles: number): string {
 
 // ── ZIP centroids ────────────────────────────────────────────────────────────
 // data/nyc-zip-centroids.json: NYC ZIP -> {lat, lng}, from the public 2023
-// Census Gazetteer ZCTA centroids, filtered to NYC's 178 ZIP codes.
+// Census Gazetteer ZCTA centroids, filtered to NYC's ZIP codes (222 entries, the table PR #340 landed on main).
 
-const ZIP_CENTROIDS: Record<string, GeoPoint> = zipCentroids
+const ZIP_CENTROIDS: Record<string, GeoPoint> = Object.fromEntries(
+  (zipCentroids as Array<{ zip: string; lat: number; lng: number }>).map((z) => [
+    z.zip,
+    { lat: z.lat, lng: z.lng },
+  ]),
+)
 const ZIP_RE = /^\d{5}$/
 
 export function isNycZip(zip: string): boolean {

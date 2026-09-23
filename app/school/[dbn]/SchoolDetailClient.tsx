@@ -14,9 +14,10 @@ import {
   ActivityGroup,
   ProgramRow,
   RequirementBlock,
+  SqrTrendCell,
   chipIsMatched,
 } from '@/lib/school-detail-utils'
-import { Eyebrow, DefinitionRow, NotReportedLine, StatGrid } from '@/components/ui'
+import { Eyebrow, DefinitionRow, NotReportedLine, StatGrid, TrendSparkline } from '@/components/ui'
 import SiteHeader from './SiteHeader'
 
 const PROGRAMS_CAP = 6
@@ -34,6 +35,7 @@ interface Props {
   tracks: string[]
   statCells: StatCell[]
   notReportedStatsSentence: string | null
+  sqrTrends: SqrTrendCell[]
   shsatCutoffRows: ShsatCutoffRow[]
   programs: ProgramRow[]
   requirementBlocks: RequirementBlock[]
@@ -46,7 +48,7 @@ interface Props {
   notReportedTransitLabel: string | null
   provenanceRows: { key: string; label: string; value: string }[]
   dataVintageNote: string | null
-  sourceUrl: string
+  sourceUrl?: string
   myschoolsUrl: string
   backHref: string
   backLabel: string
@@ -61,6 +63,7 @@ export default function SchoolDetailClient({
   tracks,
   statCells,
   notReportedStatsSentence,
+  sqrTrends,
   shsatCutoffRows,
   programs,
   requirementBlocks,
@@ -207,7 +210,7 @@ export default function SchoolDetailClient({
                 {t}
               </span>
             ))}
-            {school.flags.is_hidden_gem && (
+            {school.flags.high_impact && (
               <span title="Under 5 applicants per seat and an academic score above 60% (NYC-SIFT)" className="font-mono text-[10.5px] tracking-[0.08em] uppercase text-gem bg-gem-bg border border-gem-border px-2 py-1">
                 Fewer applicants per seat, strong results
               </span>
@@ -244,6 +247,21 @@ export default function SchoolDetailClient({
             {notReportedStatsSentence}
           </NotReportedLine>
         )}
+        {sqrTrends.length > 0 && (
+          <div className="flex flex-col gap-2 pt-4">
+            {sqrTrends.map((trend) => (
+              <div key={trend.key} className="flex flex-wrap items-center gap-3">
+                <TrendSparkline points={trend.points} />
+                <span className="text-[13px] text-ink-2">{trend.text}</span>
+                {trend.badge && (
+                  <span className="font-mono text-[10.5px] tracking-[0.08em] uppercase text-gem bg-gem-bg border border-gem-border px-2 py-1">
+                    {trend.badge}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
         {shsatCutoffRows.length > 0 && (
           <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1 pt-4">
             <span className="text-[12.5px] text-faint">SHSAT offer cutoff, by year</span>
@@ -277,6 +295,14 @@ export default function SchoolDetailClient({
                       {p.code && <span className="ml-2 font-mono text-[12px] text-faint">{p.code}</span>}
                     </span>
                     <span className="text-[13.5px] text-muted">{p.method}</span>
+                    {p.seatsLeftLastYear && (
+                      <span
+                        title={`Some seats were still open after last year's offers (MySchools${p.seatsLeftLastYear.cycle ? `, ${p.seatsLeftLastYear.cycle}` : ''}).`}
+                        className="col-span-1 min-[900px]:col-span-2 text-[12.5px] text-faint"
+                      >
+                        Seats left last year
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
@@ -484,9 +510,11 @@ export default function SchoolDetailClient({
                 <DefinitionRow key={row.key} labelWidth={92} label={row.label} value={row.value} />
               ))}
             </div>
-            <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[13.5px] text-accent">
-              View source record ↗
-            </a>
+            {sourceUrl && (
+              <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[13.5px] text-accent">
+                View source record ↗
+              </a>
+            )}
             {dataVintageNote && <p className="text-[13px] text-faint">{dataVintageNote}</p>}
           </div>
         </div>

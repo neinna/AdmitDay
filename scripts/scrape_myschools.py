@@ -171,6 +171,7 @@ class Program:
     admissions_method_description: Optional[str] = None
     grade_span: Optional[str] = None
     seats: Optional[dict] = None
+    seats_filled_last_year: Optional[dict] = None
     eligibility: Optional[dict] = None
     requirements: Optional[dict] = None
     description: Optional[str] = None
@@ -186,6 +187,7 @@ class Program:
                 "admissions_method_description": self.admissions_method_description,
                 "grade_span": self.grade_span,
                 "seats": self.seats,
+                "seats_filled_last_year": self.seats_filled_last_year,
                 "eligibility": self.eligibility,
                 "requirements": self.requirements,
                 "description": self.description,
@@ -340,6 +342,25 @@ def _program_seats(program: dict) -> Optional[dict]:
     return seats or None
 
 
+def _program_seats_filled_last_year(program: dict) -> Optional[dict]:
+    """Whether last year's offers filled every seat, per category (issue #304).
+
+    `all_seats_filled: false` is the fact AdmitDay surfaces as "seats left
+    last year" -- a real chance signal. `true` is the opposite claim (every
+    seat filled) and is deliberately not something the app ever shows, so
+    this only captures the raw booleans; the UI decides what to do with
+    them."""
+    demand = program.get("demand_last_year") or {}
+    general_education = demand.get("general_education") or {}
+    students_with_disabilities = demand.get("students_with_disabilities") or {}
+    return _drop_absent(
+        {
+            "general_education": general_education.get("all_seats_filled"),
+            "students_with_disabilities": students_with_disabilities.get("all_seats_filled"),
+        }
+    ) or None
+
+
 def _program_eligibility(program: dict, response: dict) -> Optional[dict]:
     return _drop_absent(
         {
@@ -423,6 +444,7 @@ def parse_programs(raw: dict, url: str, fetched_at: str) -> list[Program]:
                 admissions_method_description=method.get("description"),
                 grade_span=_program_grade_span(entry, raw),
                 seats=_program_seats(entry),
+                seats_filled_last_year=_program_seats_filled_last_year(entry),
                 eligibility=_program_eligibility(entry, raw),
                 requirements=_program_requirements(entry),
                 description=entry.get("description"),

@@ -208,3 +208,41 @@ def test_priority_groups_omitted_entirely_when_every_group_is_empty():
 
     eligibility = serialized.get("eligibility", {})
     assert "priority_groups" not in eligibility
+
+
+# ── seats_filled_last_year (issue #304) ──────────────────────────────────────
+
+
+def test_seats_filled_last_year_captures_ge_and_swd_booleans():
+    raw = load_fixture("single_program_02M047.json")
+    programs = parse_programs(raw, FAKE_URL, FAKE_FETCHED_AT)
+    serialized = programs[0].to_dict()
+
+    # Fixture: general_education.all_seats_filled is false, students_with_disabilities
+    # is true.
+    assert serialized["seats_filled_last_year"] == {
+        "general_education": False,
+        "students_with_disabilities": True,
+    }
+
+
+def test_seats_filled_last_year_false_is_kept_not_dropped_as_falsy():
+    raw = load_fixture("laguardia_03M485.json")
+    programs = parse_programs(raw, FAKE_URL, FAKE_FETCHED_AT)
+    dance = next(p for p in programs if p.program_name == "Dance")
+    serialized = dance.to_dict()
+
+    # false is a real, meaningful value here (seats were left open) -- the
+    # general _drop_absent/_is_absent convention must not treat it as absent.
+    assert serialized["seats_filled_last_year"] == {
+        "general_education": False,
+        "students_with_disabilities": False,
+    }
+
+
+def test_seats_filled_last_year_absent_when_no_demand_data():
+    raw = _raw_with_priority_groups([])
+    programs = parse_programs(raw, FAKE_URL, FAKE_FETCHED_AT)
+    serialized = programs[0].to_dict()
+
+    assert "seats_filled_last_year" not in serialized

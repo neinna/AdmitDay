@@ -45,6 +45,18 @@ SQR_SCHOOL_YEAR = "2024"
 SQR_METRIC_GRADUATION = "grad_pct_4_all"
 SQR_METRIC_ATTENDANCE = "attendance_hs_all"
 
+# The HS School Quality Report *results* workbook (issue #290) -- a different
+# publication from the long-format Open Data SQR rows above. This is the
+# per-school Performance/Impact score sheet InfoHub publishes once a cycle;
+# it replaces NYC-SIFT's academic score, which its 2026-08-28 terms now
+# forbid scraping and using in an AI app.
+SQR_RESULTS_XLSX_URL = (
+    "https://infohub.nyced.org/docs/default-source/default-document-library/"
+    "202425-hs-sqr-results.xlsx"
+)
+SQR_RESULTS_SHEET_NAME = "Summary"
+SQR_RESULTS_YEAR = "2024-25"
+
 # The directory (and, for genuinely missing text, School Quality Reports) use
 # '.' or '' to mean "unknown" -- never treat either as a real value.
 ABSENT_MARKERS = {"", "."}
@@ -226,6 +238,184 @@ def enrich_schools_json(schools_path="schools.json", directory_by_dbn=None, sqr_
     path.write_text(json.dumps(schools, indent=2) + "\n")
     print(f"Enriched doe_data for {len(schools)} schools in {path}")
     return schools
+
+
+# ── School Quality Report Performance/Impact scores (issue #290) ───────────
+
+
+def download_sqr_results_workbook(url=SQR_RESULTS_XLSX_URL):
+    r = requests.get(url, headers=HEADERS, timeout=60)
+    r.raise_for_status()
+    return r.content
+
+
+def parse_sqr_results_rows(xlsx_bytes, sheet_name=SQR_RESULTS_SHEET_NAME):
+    """Returns {dbn: {column_name: raw_value}} from the Summary sheet. The
+    sheet has title/blank rows before the real header, so this scans for the
+    first row containing a "DBN" cell rather than assuming a fixed offset."""
+    wb = openpyxl.load_workbook(io.BytesIO(xlsx_bytes), read_only=True, data_only=True)
+    ws = wb[sheet_name]
+    header = None
+    by_dbn = {}
+    for values in ws.iter_rows(values_only=True):
+        cleaned = [str(v).strip() if v is not None else "" for v in values]
+        if header is None:
+            if "DBN" in cleaned:
+                header = cleaned
+            continue
+        record = dict(zip(header, values))
+        dbn = clean_text(record.get("DBN"))
+        if dbn:
+            by_dbn[dbn] = record
+    return by_dbn
+
+
+def sqr_number(value):
+    """Numeric SQR score/percentile -- '.', blank, and non-numeric mean
+    absent, never 0 (same convention as percent_to_fraction above)."""
+    if value is None:
+        return None
+    if isinstance(value, str) and value.strip() in ABSENT_MARKERS:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def compute_percentile(value, all_values):
+    """Percentile rank of `value` among every numeric value in `all_values`
+    (all high schools in the SQR results file, not only ours, per issue
+    #290): the percentage of schools scoring at or below it, 0-100, rounded
+    to the nearest integer. None (never 0) when either input is absent."""
+    if value is None:
+        return None
+    valid = [v for v in all_values if v is not None]
+    if not valid:
+        return None
+    at_or_below = sum(1 for v in valid if v <= value)
+    return round(100 * at_or_below / len(valid))
+
+
+def build_sqr_scores(sqr_results_by_dbn, source_url=SQR_RESULTS_XLSX_URL, year=SQR_RESULTS_YEAR):
+    """Maps the Summary sheet onto each school's `sqr` object: performance
+    and impact scores/percentiles and the Instruction and Performance rating.
+    Percentiles are computed against every high school in the file. A school
+    with no numeric score and no rating gets no `sqr` key at all (issue #290:
+    "missing or non-numeric means the key is absent, never 0")."""
+    performance_values = [sqr_number(row.get("Performance Score")) for row in sqr_results_by_dbn.values()]
+    impact_values = [sqr_number(row.get("Impact Score")) for row in sqr_results_by_dbn.values()]
+
+    by_dbn = {}
+    for dbn, row in sqr_results_by_dbn.items():
+        performance = sqr_number(row.get("Performance Score"))
+        impact = sqr_number(row.get("Impact Score"))
+        rating = clean_text(row.get("Instruction and Performance - Rating"))
+
+        sqr = {}
+        if performance is not None:
+            sqr["performance_score"] = performance
+            pctl = compute_percentile(performance, performance_values)
+            if pctl is not None:
+                sqr["performance_pctl"] = pctl
+        if impact is not None:
+            sqr["impact_score"] = impact
+            pctl = compute_percentile(impact, impact_values)
+            if pctl is not None:
+                sqr["impact_pctl"] = pctl
+        if rating:
+            sqr["rating"] = rating
+
+        if sqr:
+            sqr["year"] = year
+            sqr["source_url"] = source_url
+            by_dbn[dbn] = sqr
+
+    return by_dbn
+
+
+def fetch_sqr_scores():
+    return build_sqr_scores(parse_sqr_results_rows(download_sqr_results_workbook()))
+
+
+# ── School Quality Report 4-year history (issue #292) ───────────────────────
+
+# One results workbook per admissions cycle, oldest first. Percentiles are
+# computed within each year's own file (issue #292), so this reuses
+# sqr_number/compute_percentile per year rather than pooling scores across
+# years.
+SQR_HISTORY_YEARS = [
+    (
+        "2021-22",
+        "https://infohub.nyced.org/docs/default-source/default-document-library/"
+        "202122-hs-sqr-results.xlsx",
+    ),
+    (
+        "2022-23",
+        "https://infohub.nyced.org/docs/default-source/default-document-library/"
+        "202223-hs-sqr-results.xlsx",
+    ),
+    (
+        "2023-24",
+        "https://infohub.nyced.org/docs/default-source/default-document-library/"
+        "202324-hs-sqr-results.xlsx",
+    ),
+    (SQR_RESULTS_YEAR, SQR_RESULTS_XLSX_URL),
+]
+
+
+def build_sqr_history_entries(sqr_results_by_dbn):
+    """One year's Summary-sheet rows -> {dbn: entry}, entry has performance/
+    impact score+percentile for whichever of the two DOE published (mirrors
+    build_sqr_scores, minus rating/year/source_url which belong on `sqr`, not
+    a history entry). A dbn with neither score numeric gets no entry."""
+    performance_values = [sqr_number(row.get("Performance Score")) for row in sqr_results_by_dbn.values()]
+    impact_values = [sqr_number(row.get("Impact Score")) for row in sqr_results_by_dbn.values()]
+
+    by_dbn = {}
+    for dbn, row in sqr_results_by_dbn.items():
+        performance = sqr_number(row.get("Performance Score"))
+        impact = sqr_number(row.get("Impact Score"))
+
+        entry = {}
+        if performance is not None:
+            entry["performance_score"] = performance
+            pctl = compute_percentile(performance, performance_values)
+            if pctl is not None:
+                entry["performance_pctl"] = pctl
+        if impact is not None:
+            entry["impact_score"] = impact
+            pctl = compute_percentile(impact, impact_values)
+            if pctl is not None:
+                entry["impact_pctl"] = pctl
+
+        if entry:
+            by_dbn[dbn] = entry
+
+    return by_dbn
+
+
+def build_sqr_history(results_by_year, years=SQR_HISTORY_YEARS):
+    """results_by_year: {year_label: sqr_results_by_dbn} for whichever years
+    were downloaded. Returns {dbn: [{"year": ..., "performance_score": ...,
+    ...}, ...]}, oldest year first. A year missing from results_by_year, or
+    where a given dbn has no numeric score, is skipped for that dbn -- never
+    inserted as a zero or null entry (issue #292)."""
+    by_dbn = {}
+    for year, _url in years:
+        results = results_by_year.get(year)
+        if not results:
+            continue
+        for dbn, entry in build_sqr_history_entries(results).items():
+            by_dbn.setdefault(dbn, []).append({"year": year, **entry})
+    return by_dbn
+
+
+def fetch_sqr_history(years=SQR_HISTORY_YEARS):
+    results_by_year = {
+        year: parse_sqr_results_rows(download_sqr_results_workbook(url)) for year, url in years
+    }
+    return build_sqr_history(results_by_year, years)
 
 
 def main():

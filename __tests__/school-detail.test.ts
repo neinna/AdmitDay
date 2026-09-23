@@ -38,25 +38,31 @@ function makeFlags(overrides: Partial<SchoolFlags> = {}): SchoolFlags {
     has_screened: false,
     has_open: false,
     has_borough_priority: false,
-    is_hidden_gem: false,
+    high_impact: false,
     has_consortium: false,
     has_ib: false,
     ...overrides,
   }
 }
 
-function makeSchool(overrides: Omit<Partial<School>, 'flags'> & { dbn?: string; flags?: Partial<SchoolFlags> } = {}): School {
+function makeSchool(
+  overrides: Omit<Partial<School>, 'flags' | 'sqr'> & {
+    dbn?: string
+    flags?: Partial<SchoolFlags>
+    academic_score_pct?: number | null
+  } = {}
+): School {
+  const { academic_score_pct, ...schoolOverrides } = overrides
   return {
-    dbn: overrides.dbn ?? 'X000',
-    name: overrides.name ?? 'Test School',
-    borough: overrides.borough ?? 'Brooklyn',
-    size: overrides.size ?? 'medium',
+    dbn: schoolOverrides.dbn ?? 'X000',
+    name: schoolOverrides.name ?? 'Test School',
+    borough: schoolOverrides.borough ?? 'Brooklyn',
+    size: schoolOverrides.size ?? 'medium',
     total_students: null,
     applicants_per_seat: null,
-    academic_score_pct: null,
-    survey_score_pct: null,
-    admissions_types: overrides.admissions_types ?? [],
-    programs: overrides.programs ?? [],
+    sqr: academic_score_pct != null ? { performance_pctl: academic_score_pct } : undefined,
+    admissions_types: schoolOverrides.admissions_types ?? [],
+    programs: schoolOverrides.programs ?? [],
     doe_data: {
       overview: '',
       language: '',
@@ -65,12 +71,11 @@ function makeSchool(overrides: Omit<Partial<School>, 'flags'> & { dbn?: string; 
       phone: '',
       address: '',
       zip: '',
-      ...overrides.doe_data,
+      ...schoolOverrides.doe_data,
     },
-    sift_url: '',
     last_verified: '',
-    ...overrides,
-    flags: makeFlags(overrides.flags),
+    ...schoolOverrides,
+    flags: makeFlags(schoolOverrides.flags),
   }
 }
 
@@ -88,7 +93,7 @@ describe('makeSchool flags fixture', () => {
       has_screened: false,
       has_open: false,
       has_borough_priority: false,
-      is_hidden_gem: false,
+      high_impact: false,
       has_consortium: false,
       has_ib: false,
     })
@@ -159,7 +164,6 @@ describe('buildStatCells', () => {
       applicants_per_seat: 4.1,
       total_students: 5900,
       academic_score_pct: null,
-      survey_score_pct: null,
       doe_data: {
         overview: '',
         language: '',
@@ -212,25 +216,24 @@ describe('buildStatCells', () => {
     expect(cells.find((c) => c.label === 'Academic score')?.value).toBe('0%')
   })
 
-  it('returns every field when all seven stats are present', () => {
+  it('returns every field when all six stats are present', () => {
     const school = makeSchool({
       applicants_per_seat: 4.1,
       total_students: 5900,
       academic_score_pct: 94,
-      survey_score_pct: 88,
       doe_data: {
         overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '',
         graduation_rate: 0.96, attendance_rate: 0.95, college_career_rate: 0.91,
       },
     })
-    expect(buildStatCells(school)).toHaveLength(7)
+    expect(buildStatCells(school)).toHaveLength(6)
   })
 })
 
 describe('getMissingStatLabels + buildNotReportedStatsSentence (NOT REPORTED — issue #116)', () => {
   it('returns an empty list and a null sentence when nothing is missing', () => {
     const school = makeSchool({
-      applicants_per_seat: 1, total_students: 1, academic_score_pct: 1, survey_score_pct: 1,
+      applicants_per_seat: 1, total_students: 1, academic_score_pct: 1,
       doe_data: {
         overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '',
         graduation_rate: 1, attendance_rate: 1, college_career_rate: 1,
@@ -240,12 +243,11 @@ describe('getMissingStatLabels + buildNotReportedStatsSentence (NOT REPORTED —
     expect(buildNotReportedStatsSentence(getMissingStatLabels(school))).toBeNull()
   })
 
-  it('produces the required "gap in the DOE data, not a low result" sentence, matching the design\'s 4-missing-field example', () => {
+  it('produces the required "gap in the DOE data, not a low result" sentence for multiple missing stats', () => {
     const school = makeSchool({
       applicants_per_seat: null,
       total_students: 320,
       academic_score_pct: null,
-      survey_score_pct: null,
       doe_data: {
         overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '',
         graduation_rate: 0.71, attendance_rate: 0.88, college_career_rate: null,
@@ -253,7 +255,7 @@ describe('getMissingStatLabels + buildNotReportedStatsSentence (NOT REPORTED —
     })
     const sentence = buildNotReportedStatsSentence(getMissingStatLabels(school))
     expect(sentence).toBe(
-      'Applicants per seat, academic score, survey score, and college & career rate are not published for this school. That is a gap in the DOE data, not a low result.'
+      'Applicants per seat, academic score, and college & career rate are not published for this school. That is a gap in the DOE data, not a low result.'
     )
   })
 

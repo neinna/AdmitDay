@@ -13,6 +13,7 @@ These are the shared rules for any coding agent working in this repo: Claude Cod
 - Treat GitHub `main` as the live code source of truth, Notion as the live roadmap/task source of truth, and local checkouts or local docs as caches unless explicitly refreshed from their source.
 - If GitHub, Notion, and local files disagree, state the conflict. Prefer GitHub for code state and Notion for roadmap/task state.
 - **Never modify `data/schools.json`.** It is curated source data.
+- The shape of the school data is in `data/schema-summary.json` (field names, types, presence counts, examples). Read that instead of opening `schools.json` or `data/school-embeddings.json` to find out what a field is called.
 - Filtering logic lives in `lib/school-list-utils.ts` — look there first for anything about school list filtering.
 - Tests live in `__tests__/`. **Add** new test files or cases; never overwrite or delete existing tests.
 - While working, run only the tests for what you changed (`npx jest __tests__/<file>`) and `npx tsc --noEmit`. Run the full `npm test` once before committing. Under the coordinator, do not run `npm run build`: the coordinator runs the full suite and the build after you finish and sends you any failure, and a build takes about 3 minutes on its 1-CPU server. Outside the coordinator, `npm test` and `npm run build` must both exit 0 before a change is done.
@@ -43,6 +44,18 @@ Rules:
 Every implementation run is capped by `CLAUDE_IMPLEMENT_MAX_USD` (currently \$5.00). An issue that cannot be finished inside one capped run is not a hard issue — it is a badly sized one, and it will consume the whole cap and produce nothing.
 
 The metric is **cost per merged PR**, not cost per attempt. On 2026-09-17 this repo spent roughly \$13 per merged PR across five runs. \$2–5 is the healthy range for a multi-file feature with tests; \$0.50–1.50 for a single-file change with an explicit spec.
+
+### Epics and children
+
+A conversation that produces more than one concern, or that needs any discovery, becomes an **epic** first, not an issue.
+
+- **The epic is a record, never a task.** Label it `epic`. It never gets `agent-ok`, and the coordinator never picks it up. It holds the decision, why it was made, what was discovered, and links to its children.
+- **Discovery happens before the children are filed, and its output lives in the epic.** Field names, sample records, column lists, API shapes, exact values. A child issue that still has to explore pays for that exploration inside a capped run, and re-reads the result on every later turn.
+- **One concern per child.** A scraper change and the screen that shows the new field are two children. A data migration and the cleanup that follows it are two children.
+- **Children carry the answer, not the pointer.** Exact values, exact file paths, exact thresholds, copied from the epic.
+- **Single-concern work skips the epic.** Filing one small, fully specified issue is cheaper than the overhead of a parent.
+
+Measured on 2026-09-22: five issues written as complete specifications rather than as sized children consumed $27 and merged nothing, while four properly sized issues cost $0.43-$2.43 each and merged on the first attempt. The difference was concerns per issue, not difficulty.
 
 When filing an issue for the agent:
 

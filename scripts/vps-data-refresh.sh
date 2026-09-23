@@ -11,7 +11,8 @@ ROOT_ENV_FILE="${ROOT_ENV_FILE:-/root/.env.local}"
 AGENT_ENV_FILE="${AGENT_ENV_FILE:-/root/.env.agents}"
 BRANCH="${DATA_REFRESH_BRANCH:-data/weekly-refresh}"
 REPO="${GITHUB_REPO:-neinna/AdmitDay}"
-EXPECTED_DATA_FILES="data/school-embeddings.json
+EXPECTED_DATA_FILES="data/schema-summary.json
+data/school-embeddings.json
 schools.json"
 
 load_env_file() {
@@ -156,7 +157,7 @@ open_refresh_pr() {
   cat "$refresh_log"
   rm -f "$refresh_log"
 
-  git add schools.json data/school-embeddings.json
+  git add schools.json data/schema-summary.json data/school-embeddings.json
   if git diff --cached --quiet; then
     echo "No tracked data changes to commit."
     rm -f "$previous_schools"
