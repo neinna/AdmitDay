@@ -101,8 +101,8 @@ describe('lookupZipCentroid (issue #343)', () => {
 describe('FindRail "Starting from" field (issue #343/#374)', () => {
   const src = readSource('app/find/FindRail.tsx')
 
-  it('adds a Starting from field', () => {
-    expect(src).toContain('Starting from')
+  it('adds a Location field', () => {
+    expect(src).toContain('Location')
     expect(src).toContain('onStartingPointInputChange')
   })
 
