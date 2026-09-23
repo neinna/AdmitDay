@@ -11,7 +11,7 @@ import path from 'path'
 
 const ROOT = path.resolve(__dirname, '..')
 const SCAN_DIRS = ['scripts', 'lib', 'app', 'components']
-const EXTENSIONS = new Set(['.ts', '.tsx'])
+const EXTENSIONS = new Set(['.ts', '.tsx', '.sh', '.py'])
 const NYC_SIFT_PATTERN = /nyc-sift|nycsift/i
 
 function collectFiles(dir: string): string[] {
@@ -23,9 +23,30 @@ function collectFiles(dir: string): string[] {
   })
 }
 
-/** Strips // line comments and /* block comments (including JSDoc) so a
- * historical mention of NYC-SIFT in prose doesn't trip the live-code check. */
-function stripComments(source: string): string {
+/** Strips comments for the given file's language so a historical mention of
+ * NYC-SIFT in prose doesn't trip the live-code check: // and JSDoc-style /*
+ * blocks for TS, # line comments plus triple-quoted docstrings for Python,
+ * and # line comments for shell. */
+function stripComments(source: string, extension: string): string {
+  if (extension === '.py') {
+    const withoutDocstrings = source.replace(/("""[\s\S]*?"""|'''[\s\S]*?''')/g, '')
+    return withoutDocstrings
+      .split('\n')
+      .map((line) => {
+        const idx = line.indexOf('#')
+        return idx === -1 ? line : line.slice(0, idx)
+      })
+      .join('\n')
+  }
+  if (extension === '.sh') {
+    return source
+      .split('\n')
+      .map((line) => {
+        const idx = line.indexOf('#')
+        return idx === -1 ? line : line.slice(0, idx)
+      })
+      .join('\n')
+  }
   const withoutBlocks = source.replace(/\/\*[\s\S]*?\*\//g, '')
   return withoutBlocks
     .split('\n')
@@ -48,7 +69,7 @@ describe('no live NYC-SIFT references remain (issue #337)', () => {
 
   it.each(files.map((f) => path.relative(ROOT, f)))('%s', (relativePath) => {
     const source = fs.readFileSync(path.join(ROOT, relativePath), 'utf-8')
-    const code = stripComments(source)
+    const code = stripComments(source, path.extname(relativePath))
     expect(code).not.toMatch(NYC_SIFT_PATTERN)
   })
 })

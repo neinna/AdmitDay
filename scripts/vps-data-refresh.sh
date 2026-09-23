@@ -125,7 +125,7 @@ build_refresh_pr_body() {
 - Fetched at: ${fetchedAt}
 
 This run used the validated refresh pipeline:
-- scrape NYC-SIFT, DOE Open Data, and MySchools program data
+- scrape DOE Open Data and MySchools program data
 - validate school count, required fields, and MySchools program provenance
 - rebuild RAG embeddings
 
