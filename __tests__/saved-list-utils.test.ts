@@ -28,7 +28,6 @@ function school(over: Partial<School> & { dbn: string }): School {
     programs: [],
     flags: {} as School['flags'],
     doe_data: {} as School['doe_data'],
-    sift_url: 'https://nycsift.com/x',
     last_verified: '2025-2026',
     ...over,
   } as School
