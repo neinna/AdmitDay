@@ -190,17 +190,20 @@ describe('FindClient computes each annotated row\'s distance the same way as the
 describe('FindRail "Within" control (issue #344)', () => {
   const src = readSource('app/find/FindRail.tsx')
 
-  it('adds a Within control with the 1/3/5/10 mile + Any options', () => {
-    expect(src).toContain('Within')
+  it('adds a Distance control with the 1/3/5/10 mile + Any options', () => {
+    expect(src).toContain('Distance')
     expect(src).toContain("{ label: '1 mi', value: '1' }")
     expect(src).toContain("{ label: '3 mi', value: '3' }")
     expect(src).toContain("{ label: '5 mi', value: '5' }")
     expect(src).toContain("{ label: '10 mi', value: '10' }")
   })
 
-  it('is disabled until a starting point exists, with the "Add a starting point" hint', () => {
+  it('is disabled until a starting point exists', () => {
     expect(src).toContain('disabled={radiusDisabled}')
-    expect(src).toContain('{radiusDisabled && <div className="text-[12.5px] text-faint">Add a starting point</div>}')
+  })
+
+  it('does not show a hint line when the radius control is disabled (issue #394)', () => {
+    expect(src).not.toContain('Add a starting point')
   })
 })
 
@@ -220,17 +223,38 @@ describe('FindClient wires radiusDisabled off startCoords, not the raw input (is
 })
 
 // ── No Distance sort option (issue #344 supersedes an earlier ask for one) ──
+//
+// Issue #395 renamed FindRail's radius label from "Within" to "Distance", so
+// the sort-control check below is scoped to FindClient's "Sorted by" text
+// (the only place a sort option would appear) rather than FindRail's source.
+//
+// Issue #400 replaced the old "Sorted by fit" label (a claim the old
+// comparator never actually delivered — see find-sort-toggle.test.ts) with a
+// real Results / Fewest applicants toggle. Distance still never becomes a
+// sort option of its own.
 
-describe('no Distance option is added to the sort control (issue #344/#361)', () => {
+describe('no Distance option is added to the sort control (issue #344/#361/#395/#400)', () => {
   const findClientSrc = readSource('app/find/FindClient.tsx')
-  const findRailSrc = readSource('app/find/FindRail.tsx')
 
-  it('the sort label expression is unchanged — still only "your ask" or "fit"', () => {
-    expect(findClientSrc).toContain("Sorted by {askReasons.length > 0 ? 'your ask' : 'fit'}")
+  it('the ask-reasons label is unchanged — still "Sorted by your ask"', () => {
+    expect(findClientSrc).toContain("'Sorted by your ask'")
   })
 
-  it('neither file introduces a "Distance" sort option', () => {
-    expect(findClientSrc).not.toMatch(/Sorted by[\s\S]{0,80}Distance/)
-    expect(findRailSrc).not.toContain('Distance')
+  it('FindClient does not introduce a "Distance" sort option', () => {
+    const startIdx = findClientSrc.indexOf('Sorted by your ask')
+    const endIdx = findClientSrc.indexOf('</div>', findClientSrc.indexOf('Fewest applicants', startIdx))
+    const sortControlBlock = findClientSrc.slice(startIdx, endIdx)
+    expect(sortControlBlock).not.toContain('Distance')
+  })
+})
+
+// ── FindRail: instruction lines removed (issue #394) ──────────────────────────
+
+describe('FindRail has no instruction lines parents will not read (issue #394)', () => {
+  const src = readSource('app/find/FindRail.tsx')
+
+  it('does not show the "Boroughs and tracks are multi-select" hint', () => {
+    expect(src).not.toContain('Boroughs and tracks are multi-select')
+    expect(src).not.toContain('Cleared filters return all')
   })
 })
