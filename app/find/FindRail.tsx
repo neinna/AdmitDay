@@ -90,6 +90,8 @@ export default function FindRail({
 
   return (
     <div className="flex flex-col gap-[30px] px-7 py-8 min-[900px]:border-r min-[900px]:border-rule">
+      <h2 className="text-[15px] font-bold text-ink">Non-Negotiables</h2>
+
       <div className="flex flex-col gap-3">
         <div className="font-mono text-[11px] tracking-[0.12em] uppercase text-faint">Location</div>
         <input
