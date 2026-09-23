@@ -13,6 +13,7 @@ import pytest
 from scrape_myschools import (
     MySchoolsParseError,
     parse_programs,
+    parse_school_meta,
 )
 
 FIXTURES = Path(__file__).parent / "myschools_fixtures"
@@ -246,3 +247,70 @@ def test_seats_filled_last_year_absent_when_no_demand_data():
     serialized = programs[0].to_dict()
 
     assert "seats_filled_last_year" not in serialized
+
+
+# ── parse_school_meta: open house / hours / website (issue #346) ────────────
+
+
+def test_all_four_fixtures_have_no_open_house_text_today():
+    # Confirms the "most schools are empty today" premise against real
+    # fixtures pulled from MySchools -- an empty open_house key here is
+    # expected, not a sign parse_school_meta is broken.
+    for name in (
+        "laguardia_03M485.json",
+        "malformed_missing_programs.json",
+        "mixed_methods_gramercy_02M374.json",
+        "single_program_02M047.json",
+    ):
+        raw = load_fixture(name)
+        meta = parse_school_meta(raw, FAKE_FETCHED_AT)
+        assert "open_house" not in meta
+
+
+def test_hours_and_website_map_through_from_a_real_fixture():
+    raw = load_fixture("laguardia_03M485.json")
+    meta = parse_school_meta(raw, FAKE_FETCHED_AT)
+
+    assert meta["hours"] == {"start": "08:00am", "end": "03:35pm"}
+    assert meta["school_website"] == "https://www.laguardiahs.org/"
+    assert "open_house" not in meta
+
+
+def test_open_house_text_maps_through_verbatim_with_fetched_at():
+    raw = load_fixture("laguardia_03M485.json")
+    raw = {**raw, "open_house_information": "Wed Oct 15, 6:00pm - 8:00pm"}
+    meta = parse_school_meta(raw, FAKE_FETCHED_AT)
+
+    assert meta["open_house"] == {
+        "text": "Wed Oct 15, 6:00pm - 8:00pm",
+        "fetched_at": FAKE_FETCHED_AT,
+    }
+
+
+def test_whitespace_only_open_house_text_is_absent_not_kept():
+    raw = load_fixture("laguardia_03M485.json")
+    raw = {**raw, "open_house_information": "   "}
+    meta = parse_school_meta(raw, FAKE_FETCHED_AT)
+
+    assert "open_house" not in meta
+
+
+def test_empty_hours_and_missing_website_produce_no_keys():
+    raw = load_fixture("laguardia_03M485.json")
+    raw = {**raw, "start_time": "", "end_time": "   ", "independent_website": None}
+    meta = parse_school_meta(raw, FAKE_FETCHED_AT)
+
+    assert "hours" not in meta
+    assert "school_website" not in meta
+
+
+def test_hours_keeps_whichever_side_is_present():
+    raw = load_fixture("laguardia_03M485.json")
+    raw = {**raw, "start_time": "08:00am", "end_time": ""}
+    meta = parse_school_meta(raw, FAKE_FETCHED_AT)
+
+    assert meta["hours"] == {"start": "08:00am"}
+
+
+def test_parse_school_meta_returns_empty_dict_for_non_dict_input():
+    assert parse_school_meta(["not", "a", "dict"], FAKE_FETCHED_AT) == {}
