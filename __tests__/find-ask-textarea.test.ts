@@ -38,16 +38,18 @@ describe('/find ask box is a multi-line textarea (issue #325)', () => {
     const closeIdx = src.indexOf('/>', textareaIdx)
     const textareaTag = src.slice(textareaIdx, closeIdx)
     expect(textareaTag).toContain(`aria-label="Describe what you're looking for"`)
-    expect(textareaTag).toContain('placeholder="Strong CS, a soccer team, small classes"')
+    expect(textareaTag).toContain(
+      'placeholder="She wants a strong CS program and a real soccer team, and we\'re in Sunset Park."'
+    )
     expect(textareaTag).toContain('disabled={askLoading}')
     expect(textareaTag).toContain('maxLength={MAX_QUESTION_LENGTH}')
   })
 
-  it('keeps the bordered container, the › accent glyph, and the Ask button', () => {
+  it('keeps the bordered container, the › accent glyph, and the submit button', () => {
     expect(src).toContain('border border-border-strong')
     expect(src).toContain('font-mono text-[13px] text-accent')
     expect(src).toContain('›')
-    expect(src).toMatch(/<Button type="submit" disabled=\{askLoading\}>\s*Ask/)
+    expect(src).toMatch(/<Button type="submit" disabled=\{askLoading\}>\s*Refine list/)
   })
 
   it('auto-grows the textarea height from its scrollHeight as askText changes', () => {

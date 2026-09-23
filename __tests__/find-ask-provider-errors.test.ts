@@ -8,6 +8,11 @@
  * These tests mock the Anthropic call to fail in each of the ways a
  * provider can fail, and assert the client only ever sees one of the
  * small set of plain-language responses — never the upstream error.
+ *
+ * Issue #354: that exact usage-limit message recurred in production and
+ * is now its own outcome (PROVIDER_LIMIT + sources) rather than the
+ * generic unavailable response — see the first case below and
+ * __tests__/ask-provider-limit.test.ts for the fuller coverage.
  */
 
 import type { NextRequest } from 'next/server'
@@ -64,7 +69,10 @@ beforeEach(() => {
 })
 
 describe('/api/find/ask provider failure handling (issue #128)', () => {
-  it('returns a plain-language unavailable response for a usage-limit error, and logs the real error to Sentry', async () => {
+  // Issue #354: this exact usage-limit error is now its own outcome — the
+  // parent gets the approved PROVIDER_LIMIT copy with sources instead of a
+  // generic unavailable response (see __tests__/ask-provider-limit.test.ts).
+  it('returns the PROVIDER_LIMIT copy with sources for a usage-limit error, never the vendor message', async () => {
     const upstreamError = new Error(
       '400 {"type":"error","error":{"type":"invalid_request_error","message":"You have reached your specified API usage limits. You will regain access on 2026-08-01 at 00:00 UTC."}}, "request_id": "req_abc123"'
     )
@@ -72,15 +80,16 @@ describe('/api/find/ask provider failure handling (issue #128)', () => {
     mockCreate.mockRejectedValue(upstreamError)
 
     const res = await POST(fakeAskRequest('Which schools have strong STEM?', '10.0.0.1'))
-    expect(res.status).toBe(503)
+    expect(res.status).toBe(200)
 
     const bodyText = await res.text()
     for (const forbidden of FORBIDDEN_SUBSTRINGS) {
       expect(bodyText.toLowerCase()).not.toContain(forbidden)
     }
     const body = JSON.parse(bodyText)
-    expect(typeof body.error).toBe('string')
-    expect(body.error.length).toBeGreaterThan(0)
+    expect(typeof body.answer).toBe('string')
+    expect(body.answer.length).toBeGreaterThan(0)
+    expect(body.sources).toHaveLength(1)
 
     expect(mockCaptureException).toHaveBeenCalledWith(upstreamError)
   })

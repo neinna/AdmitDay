@@ -79,21 +79,50 @@ function compareDistanceTiebreak(a: number | null | undefined, b: number | null 
   return a - b
 }
 
+export type FindSortMode = 'results' | 'fewest_applicants'
+
+// Issue #400: with no ask reasons, the list sorts by one of two real fields
+// instead of the old always-zero "fit" comparator. A school missing the
+// sorted field sorts last in either mode.
+function compareBySortMode(a: School, b: School, sortMode: FindSortMode): number {
+  if (sortMode === 'fewest_applicants') {
+    const av = a.applicants_per_seat
+    const bv = b.applicants_per_seat
+    if (av == null && bv == null) return 0
+    if (av == null) return 1
+    if (bv == null) return -1
+    return av - bv
+  }
+  const ap = a.sqr?.performance_pctl
+  const bp = b.sqr?.performance_pctl
+  if (ap == null && bp == null) return 0
+  if (ap == null) return 1
+  if (bp == null) return -1
+  return bp - ap
+}
+
 // Issue #329: when the ask has returned per-school reasons, the row list is
 // the reasons' own order, restricted to DBNs the rail filters still allow
 // (hardFiltered) — the ask can annotate and reorder, but the rail is the hard
 // floor (issue #114/#231) so a school outside it must never surface here. With
 // no reasons yet (or the ask box cleared), fall back to the existing
-// missing-criteria fit ordering, with distance breaking ties (issue #344).
+// missing-criteria fit ordering, then sortMode (issue #400), with distance
+// breaking ties (issue #344). missing.length is still real whenever
+// askFilters is set without askReasons (loading, failure, empty reasons, or a
+// removed signal chip) — sortMode only decides among schools tied on it,
+// which is every school when there is no ask at all.
 export function rankFindRows(
   hardFiltered: School[],
   annotated: AnnotatedRow[],
-  askReasons: AskReason[]
+  askReasons: AskReason[],
+  sortMode: FindSortMode = 'results'
 ): RankedRow[] {
   if (askReasons.length === 0) {
     return [...annotated].sort((a, b) => {
       const missingDiff = a.missing.length - b.missing.length
       if (missingDiff !== 0) return missingDiff
+      const diff = compareBySortMode(a.school, b.school, sortMode)
+      if (diff !== 0) return diff
       return compareDistanceTiebreak(a.distance, b.distance)
     })
   }
@@ -173,6 +202,10 @@ export default function FindClient({ schools, initialFilters }: Props) {
   // persisted or sent anywhere. Clearing the field clears it too, since a
   // radius means nothing without a starting point.
   const [radiusMiles, setRadiusMiles] = useState<number | null>(null)
+
+  // Sort toggle (issue #400) — only consulted when the ask hasn't produced
+  // reasons yet (rankFindRows ignores it otherwise). Defaults to Results.
+  const [sortMode, setSortMode] = useState<FindSortMode>('results')
 
   useEffect(() => {
     if (!startingPointInput) setRadiusMiles(null)
@@ -297,8 +330,8 @@ export default function FindClient({ schools, initialFilters }: Props) {
     [hardFiltered, askFilters, startCoords]
   )
   const ranked = useMemo(
-    () => rankFindRows(hardFiltered, annotated, askReasons),
-    [hardFiltered, annotated, askReasons]
+    () => rankFindRows(hardFiltered, annotated, askReasons, sortMode),
+    [hardFiltered, annotated, askReasons, sortMode]
   )
 
   const visible = ranked.slice(0, visibleCount)
@@ -623,11 +656,14 @@ export default function FindClient({ schools, initialFilters }: Props) {
           <div className="flex flex-col gap-[18px] px-9 pt-[34px] pb-[26px] border-b border-rule">
             <div className="flex flex-col gap-2">
               <h1 className="font-display font-bold text-[44px] leading-[1.02] tracking-[-0.038em] text-ink">
-                Find schools
+                Find Schools
               </h1>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <div className="font-mono text-[11px] tracking-[0.12em] uppercase text-faint">Add Details</div>
               <p className="text-[15.5px] text-muted max-w-[560px]" style={{ textWrap: 'pretty' }}>
-                Filters set the floor. The ask box adds what a filter can&rsquo;t — &ldquo;strong CS,
-                a real soccer team, walkable from Sunset Park.&rdquo;
+                Anything the filters can&rsquo;t capture — in your own words.
               </p>
             </div>
 
@@ -641,7 +677,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
                   onPaste={handleAskPaste}
                   onKeyDown={handleAskKeyDown}
                   aria-label="Describe what you're looking for"
-                  placeholder="Strong CS, a soccer team, small classes"
+                  placeholder="She wants a strong CS program and a real soccer team, and we're in Sunset Park."
                   disabled={askLoading}
                   maxLength={MAX_QUESTION_LENGTH}
                   rows={3}
@@ -649,7 +685,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
                 />
               </div>
               <Button type="submit" disabled={askLoading}>
-                Ask
+                Refine list
               </Button>
             </form>
             <div className="flex items-center gap-3">
@@ -721,7 +757,31 @@ export default function FindClient({ schools, initialFilters }: Props) {
               </p>
             </div>
             <div className="font-mono text-[11.5px] tracking-[0.1em] uppercase text-faint">
-              Sorted by {askReasons.length > 0 ? 'your ask' : 'fit'}
+              {askReasons.length > 0 ? (
+                'Sorted by your ask'
+              ) : (
+                <span className="inline-flex items-center gap-3">
+                  <span>Sort</span>
+                  <button
+                    type="button"
+                    onClick={() => setSortMode('results')}
+                    aria-pressed={sortMode === 'results'}
+                    className={sortMode === 'results' ? 'text-ink' : 'text-faint hover:text-ink-3'}
+                  >
+                    Results
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSortMode('fewest_applicants')}
+                    aria-pressed={sortMode === 'fewest_applicants'}
+                    className={
+                      sortMode === 'fewest_applicants' ? 'text-ink' : 'text-faint hover:text-ink-3'
+                    }
+                  >
+                    Fewest applicants
+                  </button>
+                </span>
+              )}
             </div>
           </div>
 
@@ -817,7 +877,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
                           variant="outline"
                           onClick={() => toggleAdded(school.dbn)}
                           className={`w-24 max-[899px]:w-full text-center hover:bg-ink hover:text-white ${
-                            added ? 'bg-ink text-white' : ''
+                            added ? '!bg-ink !text-white' : ''
                           }`}
                         >
                           {added ? 'Remove' : 'Add'}

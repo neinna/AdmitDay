@@ -22,11 +22,19 @@ export const GENERIC_MESSAGE = "Something went wrong. Please try again."
 const UNAVAILABLE_PATTERN =
   /usage limit|credit|quota|regain access|overloaded|unavailable|timed? ?out|ETIMEDOUT|ECONNRESET|ECONNREFUSED/i
 
+// Issue #354: the Anthropic account hitting its own usage limit — an
+// invalid_request_error 400 with this exact wording — is a distinct,
+// known-shape outcome from a generic outage, and callers that can still
+// offer retrieved schools (the ask box) need to tell it apart from an
+// ordinary provider failure. Checked ahead of UNAVAILABLE_PATTERN, which
+// would otherwise also match on "usage limit".
+const USAGE_LIMIT_PATTERN = /reached your specified API usage limits/i
+
 // A coarse label for *why* a call failed, safe to attach to internal
 // observability (e.g. a Langfuse trace) alongside the client-facing status.
 // Never derived from vendor text — only from the same branch that already
 // decided the client-safe message.
-export type ProviderErrorClassification = "rate_limited" | "unavailable" | "generic"
+export type ProviderErrorClassification = "rate_limited" | "unavailable" | "usage_limit" | "generic"
 
 export interface ClientSafeError {
   status: number
@@ -46,6 +54,10 @@ export function classifyProviderError(err: unknown): ClientSafeError {
 
   if (status === 429) {
     return { status: 429, body: { error: RATE_LIMIT_MESSAGE }, classification: "rate_limited" }
+  }
+
+  if (status === 400 && USAGE_LIMIT_PATTERN.test(message)) {
+    return { status: 503, body: { error: UNAVAILABLE_MESSAGE }, classification: "usage_limit" }
   }
 
   if ((status !== undefined && status >= 500) || UNAVAILABLE_PATTERN.test(message)) {
