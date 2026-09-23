@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { usePostHog } from 'posthog-js/react'
@@ -78,6 +78,10 @@ export default function FindClient({ schools, initialFilters }: Props) {
   const [visibleCount, setVisibleCount] = useState(INITIAL_COUNT)
 
   const [askText, setAskText] = useState('')
+  // Set only when a paste is clipped to MAX_QUESTION_LENGTH (issue #325);
+  // cleared on the next real edit so the notice doesn't linger forever.
+  const [pasteWasTrimmed, setPasteWasTrimmed] = useState(false)
+  const askTextareaRef = useRef<HTMLTextAreaElement>(null)
   const [askFilters, setAskFilters] = useState<QueryFilters | null>(null)
   const [askAnswer, setAskAnswer] = useState('')
   const [askSources, setAskSources] = useState<AskSource[]>([])
@@ -252,6 +256,48 @@ export default function FindClient({ schools, initialFilters }: Props) {
     setAskFilters((prev) => (prev ? removeSignal(prev, kind, value) : prev))
   }
 
+  // Auto-grows the textarea with content (3 rows at rest) up to the
+  // max-h-[11rem] cap in its className, where overflow-y-auto takes over.
+  useEffect(() => {
+    const el = askTextareaRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [askText])
+
+  function handleAskChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    setAskText(e.target.value)
+    setPasteWasTrimmed(false)
+  }
+
+  // Intercepts paste ourselves instead of letting the browser insert-then-
+  // truncate via maxLength: that path fires its own onChange right after,
+  // which would immediately clear the trimmed notice before anyone saw it.
+  function handleAskPaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+    const pasted = e.clipboardData.getData('text')
+    const target = e.currentTarget
+    const start = target.selectionStart ?? askText.length
+    const end = target.selectionEnd ?? askText.length
+    const nextValue = askText.slice(0, start) + pasted + askText.slice(end)
+
+    if (nextValue.length > MAX_QUESTION_LENGTH) {
+      e.preventDefault()
+      setAskText(nextValue.slice(0, MAX_QUESTION_LENGTH))
+      setPasteWasTrimmed(true)
+    } else {
+      setPasteWasTrimmed(false)
+    }
+  }
+
+  // Enter submits, Shift+Enter inserts a newline; ignore Enter while an IME
+  // composition is still open so confirming a candidate doesn't submit.
+  function handleAskKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault()
+      e.currentTarget.form?.requestSubmit()
+    }
+  }
+
   async function handleAskSubmit(e: React.FormEvent) {
     e.preventDefault()
     const trimmed = askText.trim()
@@ -379,29 +425,42 @@ export default function FindClient({ schools, initialFilters }: Props) {
               </p>
             </div>
 
-            <form onSubmit={handleAskSubmit} className="flex gap-[10px]">
-              <div className="flex-1 flex items-center gap-[10px] border border-border-strong px-[15px] py-[13px]">
-                <span className="font-mono text-[13px] text-accent">›</span>
-                <input
-                  type="text"
+            <form onSubmit={handleAskSubmit} className="flex gap-[10px] items-start">
+              <div className="flex-1 flex items-start gap-[10px] border border-border-strong px-[15px] py-[13px]">
+                <span className="font-mono text-[13px] text-accent pt-[2px]">›</span>
+                <textarea
+                  ref={askTextareaRef}
                   value={askText}
-                  onChange={(e) => setAskText(e.target.value)}
+                  onChange={handleAskChange}
+                  onPaste={handleAskPaste}
+                  onKeyDown={handleAskKeyDown}
                   aria-label="Describe what you're looking for"
                   placeholder="Strong CS, a soccer team, small classes"
                   disabled={askLoading}
                   maxLength={MAX_QUESTION_LENGTH}
-                  className="flex-1 text-[15px] text-ink outline-none placeholder:text-faint bg-transparent"
+                  rows={3}
+                  className="flex-1 text-[15px] text-ink outline-none placeholder:text-faint bg-transparent resize-none max-h-[11rem] overflow-y-auto"
                 />
               </div>
               <Button type="submit" disabled={askLoading}>
                 Ask
               </Button>
             </form>
-            {MAX_QUESTION_LENGTH - askText.length <= 50 && (
-              <p className="font-mono text-[12px] text-faint">
-                {MAX_QUESTION_LENGTH - askText.length} characters left
+            <div className="flex items-center gap-3">
+              <p
+                className={`font-mono text-[12px] ${
+                  MAX_QUESTION_LENGTH - askText.length <= 50 ? 'text-red-700' : 'text-faint'
+                }`}
+                aria-live={MAX_QUESTION_LENGTH - askText.length <= 50 ? 'polite' : undefined}
+              >
+                {askText.length} / {MAX_QUESTION_LENGTH}
               </p>
-            )}
+              {pasteWasTrimmed && (
+                <p role="status" className="font-mono text-[12px] text-faint">
+                  Pasted text was trimmed to {MAX_QUESTION_LENGTH} characters.
+                </p>
+              )}
+            </div>
             {askLoading && (
               <p className="font-mono text-[12px] text-faint">Searching schools and generating an answer…</p>
             )}
