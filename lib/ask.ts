@@ -145,15 +145,10 @@ export async function answerQuestion({
     sourcesForResponse = [];
   } else {
     const reasons = parseReasons(rawAnswer, results);
-    // A model reply that didn't follow the "DBN | reason" format yields no
-    // parsed reasons — fall back to the raw text so guardAnswer still has
-    // something to check and the parent isn't left with an empty answer.
-    const joinedAnswer =
-      reasons.length > 0
-        ? reasons
-            .map((r) => `${results.find((s) => s.dbn === r.dbn)?.name ?? r.dbn} — ${r.reason}`)
-            .join("\n")
-        : rawAnswer;
+    const dbnToName = new Map(results.map((r) => [r.dbn, r.name]));
+    const joinedAnswer = reasons
+      .map((r) => `${dbnToName.get(r.dbn) ?? r.dbn} — ${r.reason}`)
+      .join("\n");
 
     const guarded = guardAnswer(joinedAnswer);
     if (guarded.blocked) {

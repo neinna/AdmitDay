@@ -105,6 +105,17 @@ describe('parsing "DBN | reason" lines (issue #328)', () => {
   })
 })
 
+describe('no fallback to raw model output (issue #328)', () => {
+  it('returns an empty joined answer, not the raw text, when no line parses', async () => {
+    mockCreate.mockResolvedValue(textMessage('This is a prose reply with no DBN separators at all.'))
+    const result = await answerQuestion({ question: 'Which schools fit us?' })
+
+    expect(result.reasons).toEqual([])
+    expect(result.answer).toBe('')
+    expect(result.answer).not.toContain('prose reply')
+  })
+})
+
 describe('guardrails still gate the parsed answer (issue #328)', () => {
   it('returns OFF_TOPIC with empty sources and empty reasons', async () => {
     mockCreate.mockResolvedValue(textMessage('OFF_TOPIC'))
