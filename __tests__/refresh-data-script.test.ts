@@ -66,6 +66,13 @@ describe('scripts/refresh-data.ts', () => {
     expect(scriptSource).toContain("from '../lib/validate-school-data'")
   })
 
+  // Issue #336: NYC-SIFT was dropped as a data source -- its terms of use,
+  // updated 2026-08-28, forbid scraping the site and using its data in an
+  // AI application. The scrape step and its NYC-SIFT fallback are gone.
+  it('no longer references NYC-SIFT', () => {
+    expect(scriptSource.toLowerCase()).not.toContain('sift')
+  })
+
   // Issue #255: schools with no programs in this cycle's MySchools admissions
   // are excluded by build_school_data.py rather than falling back to
   // NYC-SIFT detail, so they never appear in the scraped array itself --

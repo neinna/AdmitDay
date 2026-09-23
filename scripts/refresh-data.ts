@@ -4,7 +4,7 @@
  * The one entry point for refreshing NYC school data for a new admissions
  * cycle. Runs the existing pieces in order and writes data/schools.json:
  *
- *   1. Scrape current DOE / NYC-SIFT data (build_school_data.py) -> schools.json
+ *   1. Scrape current DOE + MySchools data (build_school_data.py) -> schools.json
  *   2. Validate the scrape (lib/validate-school-data.ts) -- fails loudly and
  *      exits without writing anything if the result looks broken.
  *   3. Write data/schools.json from the validated scrape.
@@ -85,9 +85,9 @@ async function main(): Promise<void> {
   // 1. Scrape to a temp file so validation failure cannot overwrite the
   // previous known-good root schools.json. ADMITDAY_ALLOW_MYSCHOOLS_FALLBACK
   // is passed explicitly (rather than relying on the scrape's own default) so
-  // a bounded number of MySchools misses fall back to NYC-SIFT detail per
-  // school instead of aborting the whole run; validateSchoolData below is
-  // what fails the refresh if too many schools fall back.
+  // a bounded number of MySchools misses are excluded from schools.json
+  // instead of aborting the whole run; validateSchoolData below is what
+  // fails the refresh if too many schools are excluded.
   run('python3', ['build_school_data.py'], {
     ADMITDAY_SCHOOLS_OUTPUT: scrapedPath,
     ADMITDAY_ALLOW_MYSCHOOLS_FALLBACK: '1',

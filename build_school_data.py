@@ -1,41 +1,46 @@
 #!/usr/bin/env python3
 """
 AdmitDay - School Data Builder
-Pulls all NYC public high schools from NYC-SIFT, the DOE HS Directory, and
-current per-program admissions data from MySchools.
+Pulls all NYC public high schools and their current per-program admissions
+data from MySchools, plus the DOE HS Directory.
 Run this on your VPS: python3 build_school_data.py
 Outputs: schools.json (used directly by the app)
 
 Sources:
-  - NYC-SIFT: https://nycsift.com (aggregates DOE data, public domain)
   - DOE HS Directory: Fall 2025 InfoHub HS directory + School Quality Reports
     2024-25 (NYC Open Data `dnpx-dfnc`) -- see scripts/enrich_doe_directory.py.
     Previously NYC Open Data `uq7m-95z8`, the 2019 DOE High School Directory,
     replaced under issue #289 because it had gone six admissions cycles stale.
-  - MySchools: https://www.myschools.nyc (current public program pages)
+    Supplies the school list (name, borough, enrollment) and doe_data.
+  - MySchools: https://www.myschools.nyc (current public program pages).
+    Supplies per-program admissions data.
 
 Both are public domain / open data. Safe to use with attribution.
+
+NYC-SIFT (https://nycsift.com) was dropped as a source (issue #336): its
+terms of use, updated 2026-08-28, forbid scraping the site and using its
+data in an AI application. NYC-SIFT was the only source of
+applicants_per_seat and academic_score_pct; neither the DOE directory nor
+MySchools supplies a replacement, so both fields are now always None. A
+replacement source (e.g. a MySchools-derived demand ratio or a DOE School
+Quality Report score) is a separate, not-yet-scoped follow-up -- see the
+"Missing applicants/seat data" line in this script's own validation report.
 """
 
-import requests
 import json
 import os
 import time
-import re
-from bs4 import BeautifulSoup
-from datetime import datetime, timezone
 from pathlib import Path
 
 from scripts.scrape_myschools import (
     MySchoolsError,
     MySchoolsNotAdmittingError,
     scrape_school_meta,
+    fetch_school,
+    parse_school_location,
     scrape_school_programs,
 )
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (compatible; AdmitDay/1.0; research tool)"
-}
 MYSCHOOLS_CACHE_DIR = Path("scripts") / ".myschools_cache"
 
 # MySchools no longer lists every school that's still in the high-school
@@ -70,73 +75,52 @@ SHSAT_CUTOFFS: dict[str, dict[str, int]] = {
 # Latest offer year with published cutoff data across all specialized schools.
 SHSAT_CUTOFFS_YEAR = "2026"
 
-def fetch_nycsift_schools():
-    print("Fetching school list from NYC-SIFT...")
-    url = "https://nycsift.com/data-all.phtml?type=s"
-    r = requests.get(url, headers=HEADERS, timeout=30)
-    r.raise_for_status()
-    soup = BeautifulSoup(r.text, "html.parser")
+BORO_CODE_TO_NAME = {
+    "M": "Manhattan",
+    "K": "Brooklyn",
+    "Q": "Queens",
+    "X": "Bronx",
+    "R": "Staten Island",
+}
 
+
+def _clean_directory_school_name(name, dbn):
+    """The Fall 2025 HS Directory's school_name column carries the dbn as a
+    trailing parenthetical, e.g. "Brooklyn Technical High School (13K430)" --
+    strip it so the app displays the plain school name."""
+    name = (name or "").strip()
+    suffix = f"({dbn})"
+    if name.endswith(suffix):
+        name = name[: -len(suffix)].strip()
+    return name
+
+
+def build_school_list_from_directory(doe_by_dbn):
+    """The base school list -- dbn, name, borough, enrollment -- now comes
+    from the DOE Fall 2025 HS Directory instead of NYC-SIFT (issue #336).
+
+    `school_name`, `boro`, and `total_students` are real columns in that
+    directory's `Data` sheet (confirmed 2026-09-23 by downloading the live
+    workbook from DIRECTORY_XLSX_URL in scripts/enrich_doe_directory.py and
+    inspecting its header row directly -- not guessed). `boro` is always
+    present and always one of BORO_CODE_TO_NAME's five single-letter codes;
+    `total_students` is blank ('.') for a small minority of rows, handled
+    below the same way the rest of this file treats a blank directory cell."""
     schools = []
-    rows = soup.select("table tr")
-    for row in rows:
-        cells = row.find_all("td")
-        if len(cells) < 4:
-            continue
-        link = cells[0].find("a")
-        if not link:
-            continue
-
-        name = link.get_text(strip=True)
-        href = link.get("href", "")
-        dbn_match = re.search(r'id=(\w+)', href)
-        dbn = dbn_match.group(1) if dbn_match else ""
-
-        location_text = cells[0].get_text(" ", strip=True)
-        borough = extract_borough(location_text)
-
+    for dbn, row in doe_by_dbn.items():
+        total_students = row.get("total_students")
         try:
-            total_students = cells[1].get_text(strip=True).replace(",", "")
-            total_students = int(total_students) if total_students.isdigit() else None
-        except:
+            total_students = int(total_students) if total_students not in (None, "") else None
+        except (TypeError, ValueError):
             total_students = None
 
-        try:
-            aps_text = cells[2].get_text(strip=True)
-            aps_match = re.search(r'([\d.]+)\s*aps', aps_text)
-            applicants_per_seat = float(aps_match.group(1)) if aps_match else None
-        except:
-            applicants_per_seat = None
-
-        try:
-            academic_score = cells[3].get_text(strip=True).replace("%", "")
-            academic_score = float(academic_score) if academic_score else None
-        except:
-            academic_score = None
-
-        school = {
+        schools.append({
             "dbn": dbn,
-            "name": name,
-            "borough": borough,
+            "name": _clean_directory_school_name(row.get("school_name"), dbn),
+            "borough": BORO_CODE_TO_NAME.get(row.get("boro"), "Unknown"),
             "total_students": total_students,
-            "applicants_per_seat": applicants_per_seat,
-            "academic_score_pct": academic_score,
-            "sift_url": f"https://nycsift.com/{href}",
-        }
-        schools.append(school)
-
-    print(f"  Found {len(schools)} schools from NYC-SIFT")
+        })
     return schools
-
-
-def extract_borough(text):
-    text = text.lower()
-    if "manhattan" in text: return "Manhattan"
-    if "brooklyn" in text: return "Brooklyn"
-    if "queens" in text: return "Queens"
-    if "bronx" in text: return "Bronx"
-    if "staten island" in text: return "Staten Island"
-    return "Unknown"
 
 
 def fetch_doe_directory():
@@ -263,62 +247,22 @@ def fetch_myschools_program_detail(dbn):
     return admissions_types, enriched, school_meta
 
 
-def fetch_school_detail(dbn, sift_url):
-    """
-    NYC-SIFT uses div.NYCSF_twocolumn pairs for program data.
-    Each pair has two child divs: first is the label (e.g. Method:),
-    second is the value (e.g. Ed. Opt.).
-    """
-    try:
-        r = requests.get(sift_url, headers=HEADERS, timeout=15)
-        r.raise_for_status()
-        soup = BeautifulSoup(r.text, "html.parser")
+def fetch_myschools_school_location(dbn):
+    """This school's MySchools coordinates, if published (issue #342).
 
-        admissions_types = set()
-        programs = []
-        seen_program_keys = set()
-        fetched_at = datetime.now(timezone.utc).isoformat()
-
-        for col_div in soup.find_all("div", class_="NYCSF_twocolumn"):
-            children = [c for c in col_div.children if getattr(c, "name", None) == "div"]
-            if len(children) < 2:
-                continue
-            label = children[0].get_text(strip=True)
-            if label == "Method:":
-                value = children[1].get_text(strip=True)
-                method = classify_admissions(value)
-                if method:
-                    admissions_types.add(method)
-                    # NYC-SIFT fallback rows have no program name, only a
-                    # method -- de-dupe on (method, raw value) so a school
-                    # listing the same method twice doesn't produce two
-                    # identical, unnamed program rows (issue #252).
-                    program_key = (method, value)
-                    if program_key in seen_program_keys:
-                        continue
-                    seen_program_keys.add(program_key)
-                    programs.append({
-                        "program_name": value,
-                        "admissions_type": method,
-                        "raw_method": value,
-                        "provenance": {
-                            "source": "NYC-SIFT",
-                            "url": sift_url,
-                            "fetched_at": fetched_at,
-                        },
-                    })
-
-        return list(admissions_types), programs
-    except Exception as e:
-        return [], []
+    Reuses the on-disk cache fetch_myschools_program_detail already
+    populated for this dbn earlier in the same run, so this is a cache
+    read, not a second network request."""
+    raw, _url, _fetched_at = fetch_school(dbn, cache_dir=MYSCHOOLS_CACHE_DIR)
+    return parse_school_location(raw)
 
 
-def build_school_json(sift_schools, doe_by_dbn):
+def build_school_json(school_list, doe_by_dbn):
     print("Merging data sources and fetching school details...")
     final = []
     excluded_dbns = []
 
-    for i, school in enumerate(sift_schools):
+    for i, school in enumerate(school_list):
         dbn = school["dbn"]
         doe = doe_by_dbn.get(dbn, {})
 
@@ -330,7 +274,7 @@ def build_school_json(sift_schools, doe_by_dbn):
         else:
             size = "medium"
 
-        print(f"  [{i+1}/{len(sift_schools)}] {school['name'][:50]}")
+        print(f"  [{i+1}/{len(school_list)}] {school['name'][:50]}")
         try:
             admissions_types, programs, school_meta = fetch_myschools_program_detail(dbn)
         except MySchoolsNotAdmittingError as e:
@@ -343,6 +287,7 @@ def build_school_json(sift_schools, doe_by_dbn):
             print(f"    {dbn} has no programs in this cycle's MySchools admissions -- excluding: {e}")
             excluded_dbns.append(dbn)
             continue
+        location = fetch_myschools_school_location(dbn)
         time.sleep(0.3)
 
         has_shsat = "SHSAT" in admissions_types
@@ -465,11 +410,12 @@ def build_school_json(sift_schools, doe_by_dbn):
                 "neighborhood": doe.get("neighborhood", ""),
                 "addtl_info": doe.get("addtl_info1", ""),
             },
-            "sift_url": school["sift_url"],
             "last_verified": "2025-2026",
             "shsat_cutoff_score": SHSAT_CUTOFFS.get(dbn, {}).get(SHSAT_CUTOFFS_YEAR) if has_shsat else None,
             "shsat_cutoff_year": SHSAT_CUTOFFS_YEAR if has_shsat and SHSAT_CUTOFFS.get(dbn, {}).get(SHSAT_CUTOFFS_YEAR) else None,
         }
+        if location:
+            merged["location"] = location
         final.append(merged)
 
     return final, excluded_dbns
@@ -488,6 +434,11 @@ def validate(schools, excluded_dbns=None):
     print(f"Consortium schools:     {sum(1 for s in schools if s['flags']['has_consortium'])}")
     print(f"IB schools:             {sum(1 for s in schools if s['flags']['has_ib'])}")
     print(f"Missing admissions:     {sum(1 for s in schools if not s['admissions_types'])}")
+    # Neither field has a source since NYC-SIFT was dropped (issue #336) --
+    # surfaced here so a refresh never silently ships data with a field that
+    # quietly went from populated to always-empty.
+    print(f"Missing applicants/seat data:   {sum(1 for s in schools if s['applicants_per_seat'] is None)}")
+    print(f"Missing academic score data:    {sum(1 for s in schools if s['academic_score_pct'] is None)}")
     print(f"Excluded (no programs in this cycle's MySchools admissions): {len(excluded_dbns)}")
     if excluded_dbns:
         print(f"  {', '.join(excluded_dbns)}")
@@ -504,13 +455,13 @@ def validate(schools, excluded_dbns=None):
 
 if __name__ == "__main__":
     print("AdmitDay - School Data Builder")
-    print("Sources: NYC-SIFT + NYC Open Data (DOE)")
+    print("Sources: MySchools + NYC Open Data (DOE)")
     print("Both are public domain / open data. Safe to use with attribution.")
     print()
 
-    sift_schools = fetch_nycsift_schools()
     doe_by_dbn = fetch_doe_directory()
-    schools, excluded_dbns = build_school_json(sift_schools, doe_by_dbn)
+    school_list = build_school_list_from_directory(doe_by_dbn)
+    schools, excluded_dbns = build_school_json(school_list, doe_by_dbn)
     validate(schools, excluded_dbns)
 
     output_path = os.environ.get("ADMITDAY_SCHOOLS_OUTPUT", "schools.json")

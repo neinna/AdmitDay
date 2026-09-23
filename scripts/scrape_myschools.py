@@ -393,6 +393,33 @@ def _program_requirements(program: dict) -> Optional[dict]:
     ) or None
 
 
+def _parse_coordinate(value: Any) -> Optional[float]:
+    if value is None:
+        return None
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def parse_school_location(raw: dict) -> Optional[dict]:
+    """Extract {"lat": ..., "lng": ...} from a raw MySchools school-detail
+    response's school.address.latitude/longitude (issue #342).
+
+    Returns None -- never a placeholder like 0 -- when the response has no
+    address, or either coordinate is missing or not a valid number (e.g.
+    school.address.latitude is a non-numeric string)."""
+    school = raw.get("school") if isinstance(raw, dict) else None
+    address = school.get("address") if isinstance(school, dict) else None
+    if not isinstance(address, dict):
+        return None
+    lat = _parse_coordinate(address.get("latitude"))
+    lng = _parse_coordinate(address.get("longitude"))
+    if lat is None or lng is None:
+        return None
+    return {"lat": lat, "lng": lng}
+
+
 def parse_programs(raw: dict, url: str, fetched_at: str) -> list[Program]:
     """Parse a raw MySchools school-detail JSON response into Program records.
 

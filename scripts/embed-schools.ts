@@ -38,15 +38,22 @@ const CHUNK_THRESHOLD = 800;
 // Types
 // ---------------------------------------------------------------------------
 
-interface SchoolFlags {
+export interface SchoolFlags {
   has_shsat: boolean;
   has_audition: boolean;
   has_screened: boolean;
   has_open: boolean;
   has_borough_priority: boolean;
-  is_hidden_gem: boolean;
+  high_impact: boolean;
   has_consortium: boolean;
   has_ib: boolean;
+}
+
+export interface SqrData {
+  performance_pctl?: number;
+  impact_pctl?: number;
+  rating?: string;
+  year?: string;
 }
 
 interface SchoolProgram {
@@ -70,7 +77,7 @@ interface SchoolProgram {
   };
 }
 
-interface DoeData {
+export interface DoeData {
   overview: string;
   language: string;
   extracurriculars: string;
@@ -93,15 +100,14 @@ interface DoeData {
   [key: string]: unknown;
 }
 
-interface School {
+export interface School {
   dbn: string;
   name: string;
   borough: string;
   size: string;
   total_students: number;
   applicants_per_seat: number;
-  academic_score_pct: number;
-  survey_score_pct: number | null;
+  sqr?: SqrData;
   admissions_types: string[];
   programs: SchoolProgram[];
   flags: SchoolFlags;
@@ -122,7 +128,7 @@ export interface SchoolEmbedding {
     size: string;
     total_students: number;
     applicants_per_seat: number;
-    academic_score_pct: number;
+    sqr?: SqrData;
     neighborhood: string;
     admissions_types: string[];
     program_codes: string[];
@@ -169,7 +175,7 @@ function identityPrefix(school: School): string {
  * Identity chunk: the "who is this school" content.
  * Includes all structured facts, flags, stats, admissions, transit.
  */
-function buildIdentityParts(school: School): string[] {
+export function buildIdentityParts(school: School): string[] {
   const d = school.doe_data;
   const f = school.flags;
   const parts: string[] = [];
@@ -192,7 +198,9 @@ function buildIdentityParts(school: School): string[] {
   if (f.has_screened) flagSentences.push("This school uses a screened admissions process.");
   if (f.has_open) flagSentences.push("This school has open admissions.");
   if (f.has_borough_priority) flagSentences.push("This school gives priority to students from its borough.");
-  if (f.is_hidden_gem) flagSentences.push("This school is considered a hidden gem.");
+  if (f.high_impact) {
+    flagSentences.push("Students grow more here than at 80%+ of NYC high schools (DOE 2024-25).");
+  }
   if (f.has_consortium) flagSentences.push("This school is part of the NYC Performance Standards Consortium.");
   if (f.has_ib) flagSentences.push("This school offers the International Baccalaureate (IB) program.");
   if (flagSentences.length > 0) {
@@ -210,6 +218,24 @@ function buildIdentityParts(school: School): string[] {
   if (d.college_career_rate != null) stats.push(`college/career readiness ${Math.round(d.college_career_rate * 100)}%`);
   if (stats.length > 0) {
     parts.push(`Key stats: ${stats.join(", ")}.`);
+  }
+
+  // DOE School Quality Report scores
+  if (school.sqr) {
+    const { performance_pctl, impact_pctl, rating, year } = school.sqr;
+    const sqrSentences: string[] = [];
+    if (performance_pctl != null) {
+      sqrSentences.push(`Results: better than ${performance_pctl}% of NYC high schools.`);
+    }
+    if (impact_pctl != null) {
+      sqrSentences.push(`Impact: students grow more than at ${impact_pctl}% of schools.`);
+    }
+    if (rating != null && year != null) {
+      sqrSentences.push(`DOE rating: ${rating} (${year}).`);
+    }
+    if (sqrSentences.length > 0) {
+      parts.push(sqrSentences.join(" "));
+    }
   }
 
   // Transit
@@ -453,7 +479,7 @@ async function main() {
       size: c.school.size,
       total_students: c.school.total_students,
       applicants_per_seat: c.school.applicants_per_seat,
-      academic_score_pct: c.school.academic_score_pct,
+      sqr: c.school.sqr,
       neighborhood: c.school.doe_data.neighborhood,
       admissions_types: c.school.admissions_types,
       program_codes: (c.school.programs ?? []).map((p) => p.program_code).filter((code): code is string => Boolean(code)),
@@ -475,7 +501,9 @@ async function main() {
   console.log(`File size: ${(fs.statSync(outputPath).size / 1024 / 1024).toFixed(1)} MB`);
 }
 
-main().catch((err) => {
-  console.error("Error:", err);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((err) => {
+    console.error("Error:", err);
+    process.exit(1);
+  });
+}
