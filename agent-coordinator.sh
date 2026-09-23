@@ -434,6 +434,20 @@ except Exception:
   return 1
 }
 
+malformed_blocked_by() {
+  # malformed_blocked_by ISSUE_BODY -> succeeds (no output) if the body
+  # mentions "blocked by" case-insensitively but no line matches the strict
+  # "Blocked by #N" form blocking_issue_number requires (issue #359). This is
+  # a near-miss check, not a state check: it fires purely on shape, so a
+  # well-formed "Blocked by #N" line never trips it even if issue #N is
+  # already closed. Do not try to parse the loose form into a number here —
+  # the point is to stop and tell a human, not guess the intended blocker.
+  local BODY="$1"
+  printf '%s\n' "$BODY" | grep -qiE '[Bb]locked [Bb]y' || return 1
+  printf '%s\n' "$BODY" | grep -qE '^Blocked by #[0-9]+\r?$' && return 1
+  return 0
+}
+
 github_comment() {
   local BODY
   BODY=$(printf '%s' "$2" | json_escape)
@@ -1220,6 +1234,16 @@ run_agent() {
   BLOCKER=$(blocking_issue_number "$ISSUE_BODY")
   if [ -n "$BLOCKER" ]; then
     log "Issue #${ISSUE_NUMBER}: skipping this loop, blocked by open issue #${BLOCKER}"
+    return
+  fi
+
+  # Near-miss check: a body that says "blocked by" but not in the exact
+  # shape the gate above requires would otherwise run with no dependency
+  # held at all, silently (issue #359). Flag it for a human instead of
+  # guessing the intended blocker.
+  if malformed_blocked_by "$ISSUE_BODY"; then
+    log "Issue #${ISSUE_NUMBER}: body mentions a blocker but no line matches 'Blocked by #N' exactly — the dependency gate will NOT hold. Fix the issue body."
+    github_label "$ISSUE_NUMBER" "needs-you"
     return
   fi
 
