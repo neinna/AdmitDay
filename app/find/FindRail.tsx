@@ -114,7 +114,6 @@ export default function FindRail({
       <div className="flex flex-col gap-3">
         <div className="font-mono text-[11px] tracking-[0.12em] uppercase text-faint">Distance</div>
         <SegmentedControl options={RADIUS_OPTIONS} value={radiusValue} onChange={onRadiusChange} disabled={radiusDisabled} />
-        {radiusDisabled && <div className="text-[12.5px] text-faint">Add a starting point</div>}
       </div>
 
       <div className="flex flex-col gap-3">
@@ -161,9 +160,6 @@ export default function FindRail({
       </div>
 
       <div className="flex flex-col gap-[10px] pt-[6px] border-t border-rule">
-        <div className="text-[13px] text-faint">
-          Boroughs and tracks are multi-select. Cleared filters return all {schools.length} schools.
-        </div>
         <button
           type="button"
           onClick={onReset}
