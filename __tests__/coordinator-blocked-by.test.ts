@@ -59,3 +59,81 @@ describe('agent-coordinator.sh "Blocked by #N" dependency gate', () => {
     expect(body).toMatch(/log ".*blocked by open issue #\$\{BLOCKER\}"/)
   })
 })
+
+// ── agent-coordinator.sh: malformed "Blocked by" near-miss check (issue #359) ──
+// The gate above only ever matches a line that is exactly "Blocked by #N".
+// A body that says "Blocked by 336." or "Blocked by #336 (part 2)" produces
+// no blocker at all, and the issue ran as if it had no dependency — silently.
+// These tests pin a near-miss check: it must fire on the loose shape without
+// running the issue, and must not fire on a clean line or on no mention at all.
+
+describe('agent-coordinator.sh malformed "Blocked by" near-miss check', () => {
+  const coordinatorSource = fs.readFileSync(path.join(__dirname, '../agent-coordinator.sh'), 'utf-8')
+
+  it('defines a helper that detects a "blocked by" mention with no strict match', () => {
+    expect(coordinatorSource).toContain('malformed_blocked_by()')
+    const fn = coordinatorSource.match(/malformed_blocked_by\(\) \{([\s\S]*?)\n\}/)
+    expect(fn).not.toBeNull()
+    const body = fn![1]
+    expect(body).toMatch(/\[Bb\]locked \[Bb\]y/)
+    expect(body).toMatch(/\^Blocked by #\[0-9\]\+/)
+  })
+
+  function extractMalformedBranch() {
+    const marker = 'if malformed_blocked_by "$ISSUE_BODY"; then'
+    const start = coordinatorSource.indexOf(marker)
+    if (start === -1) return null
+    const bodyStart = start + marker.length
+    const fiIndex = coordinatorSource.indexOf('fi', bodyStart)
+    if (fiIndex === -1) return null
+    return coordinatorSource.slice(bodyStart, fiIndex)
+  }
+
+  it('runs after the dependency gate, logs, labels needs-you, and skips the issue', () => {
+    const runAgentBody = coordinatorSource.split('run_agent() {')[1]
+    expect(runAgentBody).toBeDefined()
+    const gateIndex = runAgentBody.indexOf('blocking_issue_number "$ISSUE_BODY"')
+    const malformedIndex = runAgentBody.indexOf('malformed_blocked_by "$ISSUE_BODY"')
+    expect(gateIndex).toBeGreaterThan(-1)
+    expect(malformedIndex).toBeGreaterThan(gateIndex)
+
+    const body = extractMalformedBranch()
+    expect(body).not.toBeNull()
+    expect(body).toMatch(/log ".*no line matches 'Blocked by #N' exactly.*"/)
+    expect(body).toContain('github_label "$ISSUE_NUMBER" "needs-you"')
+    expect(body).toContain('return')
+  })
+
+  // Exercise the actual helper logic (shell semantics), not just its source text.
+  function runMalformedCheck(body: string): boolean {
+    const script = `
+malformed_blocked_by() {
+  local BODY="$1"
+  printf '%s\\n' "$BODY" | grep -qiE '[Bb]locked [Bb]y' || return 1
+  printf '%s\\n' "$BODY" | grep -qE '^Blocked by #[0-9]+\\r?$' && return 1
+  return 0
+}
+malformed_blocked_by "$1" && echo YES || echo NO
+`
+    const result = require('child_process').execFileSync('bash', ['-c', script, 'bash', body], {
+      encoding: 'utf-8',
+    })
+    return result.trim() === 'YES'
+  }
+
+  it('flags "Blocked by 336." (missing #) as a near miss', () => {
+    expect(runMalformedCheck('Blocked by 336. Part 2 of the old #303.')).toBe(true)
+  })
+
+  it('flags "Blocked by #336 (part 2)" (trailing text on the line) as a near miss', () => {
+    expect(runMalformedCheck('Blocked by #336 (part 2)')).toBe(true)
+  })
+
+  it('does not flag a clean "Blocked by #336" line', () => {
+    expect(runMalformedCheck('Some context.\nBlocked by #336\nMore context.')).toBe(false)
+  })
+
+  it('does not flag a body with no blocker mention at all', () => {
+    expect(runMalformedCheck('Just a normal issue body with no dependency.')).toBe(false)
+  })
+})

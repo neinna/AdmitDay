@@ -4,10 +4,10 @@ AdmitDay - schema summary generator (issue #321)
 
 schools.json is a 4 MB scrape output. Nothing about its shape needs a full
 read: this script distills it into data/schema-summary.json (committed,
-under ~50 KB) -- every field name on a school record, on `doe_data`, and on
-a program record, with its type, how many records have it, and one short
-(truncated) example, plus school/program counts and a truncated sample
-record.
+under ~50 KB) -- every field name on a school record, on `doe_data`, on
+`open_house`, on `hours`, and on a program record, with its type, how many
+records have it, and one short (truncated) example, plus school/program
+counts and a truncated sample record.
 
 Run directly to regenerate data/schema-summary.json from schools.json:
   python3 scripts/build_schema_summary.py
@@ -104,6 +104,11 @@ def median_number(values):
 
 def build_summary(schools):
     doe_records = [s["doe_data"] for s in schools if isinstance(s.get("doe_data"), dict)]
+    # open_house/hours (issue #346): nested objects like doe_data, so their
+    # own sub-fields get the same per-field type/presence/example treatment
+    # instead of collapsing to a single opaque "object" entry in school_fields.
+    open_house_records = [s["open_house"] for s in schools if isinstance(s.get("open_house"), dict)]
+    hours_records = [s["hours"] for s in schools if isinstance(s.get("hours"), dict)]
 
     programs = []
     for school in schools:
@@ -126,6 +131,8 @@ def build_summary(schools):
         "school_count": len(schools),
         "school_fields": describe_fields(schools),
         "doe_data_fields": describe_fields(doe_records),
+        "open_house_fields": describe_fields(open_house_records),
+        "hours_fields": describe_fields(hours_records),
         "program_fields": describe_fields(programs),
         "program_count": len(programs),
         "programs_per_school": {
