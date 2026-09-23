@@ -23,9 +23,12 @@ interface Props {
   schools: School[]
   filters: FindFilters
   trackOptions: string[]
+  startZip: string
+  zipNotFound: boolean
   onToggleBorough: (borough: string) => void
   onToggleTrack: (track: string) => void
   onSizeChange: (size: string) => void
+  onStartZipChange: (zip: string) => void
   onReset: () => void
 }
 
@@ -58,15 +61,32 @@ export default function FindRail({
   schools,
   filters,
   trackOptions,
+  startZip,
+  zipNotFound,
   onToggleBorough,
   onToggleTrack,
   onSizeChange,
+  onStartZipChange,
   onReset,
 }: Props) {
   const { main: mainTrackOptions, iep: iepTrackOptions } = splitTrackOptionsForRail(trackOptions)
 
   return (
     <div className="flex flex-col gap-[30px] px-7 py-8 min-[900px]:border-r min-[900px]:border-rule">
+      <div className="flex flex-col gap-3">
+        <div className="font-mono text-[11px] tracking-[0.12em] uppercase text-faint">Starting from</div>
+        <input
+          type="text"
+          inputMode="numeric"
+          value={startZip}
+          onChange={(e) => onStartZipChange(e.target.value)}
+          placeholder="ZIP code"
+          aria-label="Starting from ZIP code"
+          className="border border-border-strong px-[13px] py-[9px] text-[14px] text-ink outline-none placeholder:text-faint bg-transparent"
+        />
+        {zipNotFound && <div className="text-[12.5px] text-faint">Not a NYC ZIP code</div>}
+      </div>
+
       <div className="flex flex-col gap-3">
         <div className="flex items-baseline justify-between">
           <div className="font-mono text-[11px] tracking-[0.12em] uppercase text-faint">Borough</div>
