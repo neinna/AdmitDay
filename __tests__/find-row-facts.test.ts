@@ -54,8 +54,16 @@ describe('buildFindRowFacts (issue #164)', () => {
     expect(buildFindRowSummary(makeSchool())).toBe('')
   })
 
-  it('selects graduation rate, college & career rate, and AP course count, in that fixed order', () => {
+  it('selects SQR percentiles, graduation rate, college & career rate, and AP course count, in that fixed order', () => {
     const school = makeSchool({
+      sqr: {
+        performance_pctl: 67,
+        impact_pctl: 64,
+        performance_score: 0.57,
+        impact_score: 0.56,
+        rating: 'Fair',
+        year: '2024-25',
+      },
       doe_data: {
         overview: '',
         language: '',
@@ -70,12 +78,14 @@ describe('buildFindRowFacts (issue #164)', () => {
       },
     })
     expect(buildFindRowFacts(school)).toEqual([
+      'Results better than 67% of NYC high schools',
+      'Students grow more here than at 64% of schools',
       '94% graduation rate',
       '88% college & career rate',
       '3 AP courses',
     ])
     expect(buildFindRowSummary(school)).toBe(
-      '94% graduation rate · 88% college & career rate · 3 AP courses'
+      'Results better than 67% of NYC high schools · Students grow more here than at 64% of schools · 94% graduation rate · 88% college & career rate · 3 AP courses'
     )
   })
 
@@ -129,6 +139,75 @@ describe('buildFindRowFacts (issue #164)', () => {
       },
     })
     expect(buildFindRowFacts(genuineZero)).toContain('0% graduation rate')
+  })
+
+  it('with both SQR percentiles present, renders both sentences in order, before graduation rate (issue #324)', () => {
+    const school = makeSchool({
+      sqr: {
+        performance_pctl: 67,
+        impact_pctl: 64,
+        performance_score: 0.57,
+        impact_score: 0.56,
+        rating: 'Fair',
+        year: '2024-25',
+      },
+      doe_data: {
+        overview: '',
+        language: '',
+        extracurriculars: '',
+        website: '',
+        phone: '',
+        address: '',
+        zip: '',
+        graduation_rate: 0.94,
+      },
+    })
+    const facts = buildFindRowFacts(school)
+    expect(facts).toContain('Results better than 67% of NYC high schools')
+    expect(facts).toContain('Students grow more here than at 64% of schools')
+    expect(facts.indexOf('Results better than 67% of NYC high schools')).toBeLessThan(
+      facts.indexOf('94% graduation rate')
+    )
+    expect(facts.indexOf('Students grow more here than at 64% of schools')).toBeLessThan(
+      facts.indexOf('94% graduation rate')
+    )
+  })
+
+  it('with sqr absent, renders neither percentile sentence and still renders other facts (issue #324)', () => {
+    const school = makeSchool({
+      doe_data: {
+        overview: '',
+        language: '',
+        extracurriculars: '',
+        website: '',
+        phone: '',
+        address: '',
+        zip: '',
+        graduation_rate: 0.94,
+      },
+    })
+    const facts = buildFindRowFacts(school)
+    expect(facts).not.toContain('Results better than')
+    expect(facts).not.toContain('Students grow more here than')
+    expect(facts).toContain('94% graduation rate')
+  })
+
+  it('renders percentiles as whole numbers without decimals (issue #324)', () => {
+    const school = makeSchool({
+      sqr: {
+        performance_pctl: 67.8,
+        impact_pctl: 64.2,
+        performance_score: 0.57,
+        impact_score: 0.56,
+        rating: 'Fair',
+        year: '2024-25',
+      },
+    })
+    const facts = buildFindRowFacts(school)
+    expect(facts).toContain('Results better than 68% of NYC high schools')
+    expect(facts).toContain('Students grow more here than at 64% of schools')
+    expect(facts).not.toContain('67.8')
+    expect(facts).not.toContain('64.2')
   })
 
   it('never emits an empty string or orphaned separator when facts are missing', () => {

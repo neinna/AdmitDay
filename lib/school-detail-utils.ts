@@ -246,21 +246,24 @@ export function getMissingActivityLabels(school: School): string[] {
 // prose truncated at 140 characters — identical regardless of what the parent
 // filtered for (issue #164). These are the published facts that most affect a
 // fit decision without repeating what the row's metadata line already shows
-// (neighborhood, admissions track, enrollment): the academic score the
-// filter itself ranks by (issue #161 — parents asked for the number, not
-// just a word), the two outcome rates DOE reports for nearly every school,
-// and how many AP courses it offers. Same omit-don't-zero-fill rule as
-// buildStatCells, and the same `pct` formatting school-detail's "Academic
-// score" stat cell uses, so the figure reads identically on both screens.
+// (neighborhood, admissions track, enrollment): the School Quality Review
+// percentiles (issue #324), the two outcome rates DOE reports for nearly
+// every school, and how many AP courses it offers. Same omit-don't-zero-fill
+// rule as buildStatCells, so the figure reads identically on both screens.
 const FIND_ROW_RATE_FACTS: {
   key: string
   get: (school: School) => number | null | undefined
   format: (value: number) => string
 }[] = [
   {
-    key: 'academicScore',
+    key: 'performancePercentile',
     get: (s) => s.sqr?.performance_pctl,
-    format: (v) => `${pct(v)} academic score`,
+    format: (v) => `Results better than ${Math.round(v)}% of NYC high schools`,
+  },
+  {
+    key: 'impactPercentile',
+    get: (s) => s.sqr?.impact_pctl,
+    format: (v) => `Students grow more here than at ${Math.round(v)}% of schools`,
   },
   {
     key: 'graduationRate',
