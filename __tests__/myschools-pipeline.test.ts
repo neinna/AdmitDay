@@ -42,6 +42,11 @@ describe('MySchools program pipeline', () => {
     expect(buildSource).toContain('program["admissions_type"] = method')
   })
 
+  it('captures MySchools open-house/hours/website meta from the same fetch as programs (#346)', () => {
+    expect(buildSource).toContain('scrape_school_meta')
+    expect(buildSource).toContain('**school_meta')
+  })
+
   it('requires MySchools program validation in the production refresh path', () => {
     expect(refreshSource).toContain('requireMySchoolsPrograms: true')
   })

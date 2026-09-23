@@ -23,6 +23,16 @@ describe('scripts/vps-data-cron.txt', () => {
     expect(cronSource).toContain('9-12,1-3 1')
   })
 
+  it('runs the admissions-season pr/merge pair on Mondays and Thursdays (issue #346)', () => {
+    expect(cronSource).toMatch(/^0 12 \* 9-12,1-3 1,4 .*vps-data-refresh\.sh pr$/m)
+    expect(cronSource).toMatch(/^30 12 \* 9-12,1-3 1,4 .*vps-data-refresh\.sh merge$/m)
+  })
+
+  it('leaves the off-season first-Monday-only cadence at day-of-week 1 (unchanged)', () => {
+    expect(cronSource).toMatch(/^0 12 \* 4-8 1 /m)
+    expect(cronSource).not.toMatch(/^0 12 \* 4-8 1,4 /m)
+  })
+
   it('covers the off-season (April - August), limited to the first Monday', () => {
     expect(cronSource).toContain('4-8 1')
     expect(cronSource).toMatch(/date \+\\%d.*-le 7/)

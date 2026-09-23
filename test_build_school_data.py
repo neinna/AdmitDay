@@ -112,7 +112,7 @@ def test_build_school_json_excludes_school_with_no_myschools_programs(monkeypatc
     def fake_fetch(dbn):
         if dbn == "08X537":
             raise build_school_data.MySchoolsNotAdmittingError(f"{dbn} returned no MySchools programs")
-        return (["Screened"], [_myschools_program()])
+        return (["Screened"], [_myschools_program()], {})
 
     monkeypatch.setattr(build_school_data, "fetch_myschools_program_detail", fake_fetch)
     monkeypatch.setattr(build_school_data, "fetch_myschools_school_location", lambda dbn: None)
@@ -134,7 +134,7 @@ def test_build_school_json_keeps_school_with_myschools_programs(monkeypatch):
     monkeypatch.setattr(
         build_school_data,
         "fetch_myschools_program_detail",
-        lambda dbn: (["Screened"], [_myschools_program()]),
+        lambda dbn: (["Screened"], [_myschools_program()], {}),
     )
     monkeypatch.setattr(build_school_data, "fetch_myschools_school_location", lambda dbn: None)
     monkeypatch.setattr(build_school_data.time, "sleep", lambda *_: None)
@@ -154,7 +154,7 @@ def test_build_school_json_aborts_on_network_error_instead_of_excluding(monkeypa
     def fake_fetch(dbn):
         if dbn == "02M475":
             raise build_school_data.MySchoolsError("Failed to fetch https://www.myschools.nyc/... after 3 attempts")
-        return (["Screened"], [_myschools_program()])
+        return (["Screened"], [_myschools_program()], {})
 
     monkeypatch.setattr(build_school_data, "fetch_myschools_program_detail", fake_fetch)
     monkeypatch.setattr(build_school_data.time, "sleep", lambda *_: None)
@@ -172,7 +172,7 @@ def test_build_school_json_has_no_sift_url_and_no_nycsift_provenance(monkeypatch
     monkeypatch.setattr(
         build_school_data,
         "fetch_myschools_program_detail",
-        lambda dbn: (["Screened"], [_myschools_program()]),
+        lambda dbn: (["Screened"], [_myschools_program()], {}),
     )
     monkeypatch.setattr(build_school_data.time, "sleep", lambda *_: None)
 
@@ -192,7 +192,7 @@ def test_build_school_json_has_no_applicants_per_seat_or_academic_score_source(m
     monkeypatch.setattr(
         build_school_data,
         "fetch_myschools_program_detail",
-        lambda dbn: (["Screened"], [_myschools_program()]),
+        lambda dbn: (["Screened"], [_myschools_program()], {}),
     )
     monkeypatch.setattr(build_school_data.time, "sleep", lambda *_: None)
 
@@ -233,7 +233,7 @@ def test_build_school_json_merges_doe_directory_data(monkeypatch):
     monkeypatch.setattr(
         build_school_data,
         "fetch_myschools_program_detail",
-        lambda dbn: (["Screened"], [_myschools_program()]),
+        lambda dbn: (["Screened"], [_myschools_program()], {}),
     )
     monkeypatch.setattr(build_school_data.time, "sleep", lambda *_: None)
 
@@ -309,7 +309,7 @@ def test_fetch_myschools_program_detail_drops_transfer_but_keeps_others(monkeypa
     ]
     monkeypatch.setattr(build_school_data, "scrape_school_programs", lambda dbn, cache_dir=None: programs)
 
-    admissions_types, enriched = build_school_data.fetch_myschools_program_detail("13K430")
+    admissions_types, enriched, _meta = build_school_data.fetch_myschools_program_detail("13K430")
 
     assert admissions_types == ["Screened"]
     assert [p["program_name"] for p in enriched] == ["Screened Program"]
@@ -354,7 +354,7 @@ def test_build_school_json_carries_location_onto_the_school_when_present(monkeyp
     monkeypatch.setattr(
         build_school_data,
         "fetch_myschools_program_detail",
-        lambda dbn: (["Screened"], [_myschools_program()]),
+        lambda dbn: (["Screened"], [_myschools_program()], {}),
     )
     monkeypatch.setattr(
         build_school_data, "fetch_myschools_school_location", lambda dbn: {"lat": 40.71336, "lng": -73.986058}
@@ -371,7 +371,7 @@ def test_build_school_json_omits_location_key_when_absent(monkeypatch):
     monkeypatch.setattr(
         build_school_data,
         "fetch_myschools_program_detail",
-        lambda dbn: (["Screened"], [_myschools_program()]),
+        lambda dbn: (["Screened"], [_myschools_program()], {}),
     )
     monkeypatch.setattr(build_school_data, "fetch_myschools_school_location", lambda dbn: None)
     monkeypatch.setattr(build_school_data.time, "sleep", lambda *_: None)
