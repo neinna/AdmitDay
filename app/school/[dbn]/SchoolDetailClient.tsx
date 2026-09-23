@@ -191,7 +191,7 @@ export default function SchoolDetailClient({
               </span>
             ))}
             {school.flags.high_impact && (
-              <span title="Under 5 applicants per seat and an academic score above 60% (NYC-SIFT)" className="font-mono text-[10.5px] tracking-[0.08em] uppercase text-gem bg-gem-bg border border-gem-border px-2 py-1">
+              <span title="Students grow more here than at 80%+ of NYC high schools (DOE, 2024-25)" className="font-mono text-[10.5px] tracking-[0.08em] uppercase text-gem bg-gem-bg border border-gem-border px-2 py-1">
                 Fewer applicants per seat, strong results
               </span>
             )}
