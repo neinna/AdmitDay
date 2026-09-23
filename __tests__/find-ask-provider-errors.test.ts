@@ -128,13 +128,13 @@ describe('/api/find/ask provider failure handling (issue #128)', () => {
 
   it('still returns a normal answer when the provider call succeeds (no regression)', async () => {
     mockCreate.mockResolvedValue({
-      content: [{ type: 'text', text: 'Test High School is a great fit.' }],
+      content: [{ type: 'text', text: '01M001 | Test High School is a great fit.' }],
     })
 
     const res = await POST(fakeAskRequest('Which schools have strong STEM?', '10.0.0.5'))
     expect(res.status).toBe(200)
     const body = await res.json()
-    expect(body.answer).toBe('Test High School is a great fit.')
+    expect(body.answer).toBe('Test High School — Test High School is a great fit.')
     expect(body.sources).toHaveLength(1)
   })
 })

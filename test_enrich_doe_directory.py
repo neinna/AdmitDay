@@ -234,3 +234,112 @@ def test_parse_directory_rows_keys_by_dbn(monkeypatch):
 
     assert set(by_dbn.keys()) == {"13K430", "02M475"}
     assert by_dbn["13K430"]["graduation_rate"] == "93"
+
+
+# ── School Quality Report 4-year history (issue #292) ───────────────────────
+
+
+def _sqr_row(dbn, performance=None, impact=None):
+    return {
+        "DBN": dbn,
+        "Performance Score": performance,
+        "Impact Score": impact,
+    }
+
+
+def test_build_sqr_history_entries_computes_percentiles_within_one_year():
+    results = {
+        "13K430": _sqr_row("13K430", performance=0.9, impact=0.8),
+        "02M475": _sqr_row("02M475", performance=0.5, impact=0.4),
+        "20K490": _sqr_row("20K490", performance=0.1, impact=0.2),
+    }
+
+    by_dbn = enrich.build_sqr_history_entries(results)
+
+    assert by_dbn["13K430"] == {"performance_score": 0.9, "performance_pctl": 100, "impact_score": 0.8, "impact_pctl": 100}
+    assert by_dbn["20K490"]["performance_pctl"] == 33
+    assert by_dbn["20K490"]["impact_pctl"] == 33
+
+
+def test_build_sqr_history_entries_omits_dbn_with_no_numeric_score():
+    results = {
+        "13K430": _sqr_row("13K430", performance=0.9, impact=0.8),
+        "99Z999": _sqr_row("99Z999", performance=".", impact=None),
+    }
+
+    by_dbn = enrich.build_sqr_history_entries(results)
+
+    assert "99Z999" not in by_dbn
+    assert "13K430" in by_dbn
+
+
+def test_build_sqr_history_skips_a_year_a_school_is_missing_from():
+    results_by_year = {
+        "2021-22": {"13K430": _sqr_row("13K430", performance=0.5, impact=0.5)},
+        "2022-23": {"02M475": _sqr_row("02M475", performance=0.6, impact=0.6)},  # 13K430 absent this year
+        "2023-24": {"13K430": _sqr_row("13K430", performance=0.7, impact=0.7)},
+        "2024-25": {"13K430": _sqr_row("13K430", performance=0.8, impact=0.8)},
+    }
+
+    history = enrich.build_sqr_history(
+        results_by_year,
+        years=[("2021-22", ""), ("2022-23", ""), ("2023-24", ""), ("2024-25", "")],
+    )
+
+    assert [entry["year"] for entry in history["13K430"]] == ["2021-22", "2023-24", "2024-25"]
+
+
+def test_build_sqr_history_orders_entries_oldest_year_first():
+    results_by_year = {
+        "2021-22": {"13K430": _sqr_row("13K430", performance=0.5, impact=0.5)},
+        "2022-23": {"13K430": _sqr_row("13K430", performance=0.6, impact=0.6)},
+        "2023-24": {"13K430": _sqr_row("13K430", performance=0.7, impact=0.7)},
+        "2024-25": {"13K430": _sqr_row("13K430", performance=0.8, impact=0.8)},
+    }
+
+    history = enrich.build_sqr_history(
+        results_by_year,
+        years=[("2021-22", ""), ("2022-23", ""), ("2023-24", ""), ("2024-25", "")],
+    )
+
+    assert [entry["year"] for entry in history["13K430"]] == ["2021-22", "2022-23", "2023-24", "2024-25"]
+    assert history["13K430"][0]["performance_score"] == 0.5
+    assert history["13K430"][-1]["performance_score"] == 0.8
+
+
+def test_build_sqr_history_skips_a_year_whose_workbook_never_downloaded():
+    # results_by_year has no key at all for 2022-23 (e.g. that year's fetch
+    # failed) -- every dbn just has no entry for it, not a zeroed one.
+    results_by_year = {
+        "2021-22": {"13K430": _sqr_row("13K430", performance=0.5, impact=0.5)},
+        "2023-24": {"13K430": _sqr_row("13K430", performance=0.7, impact=0.7)},
+        "2024-25": {"13K430": _sqr_row("13K430", performance=0.8, impact=0.8)},
+    }
+
+    history = enrich.build_sqr_history(
+        results_by_year,
+        years=[("2021-22", ""), ("2022-23", ""), ("2023-24", ""), ("2024-25", "")],
+    )
+
+    assert [entry["year"] for entry in history["13K430"]] == ["2021-22", "2023-24", "2024-25"]
+
+
+def test_fetch_sqr_history_downloads_and_parses_each_year(monkeypatch):
+    calls = []
+
+    def fake_download(url):
+        calls.append(url)
+        return b"workbook-bytes-for-" + url.encode()
+
+    def fake_parse(xlsx_bytes, sheet_name=enrich.SQR_RESULTS_SHEET_NAME):
+        # Echo the fake bytes back as a single-school result so we can tell
+        # which URL's "workbook" produced this year's rows.
+        return {"13K430": _sqr_row("13K430", performance=0.5, impact=0.5)}
+
+    monkeypatch.setattr(enrich, "download_sqr_results_workbook", fake_download)
+    monkeypatch.setattr(enrich, "parse_sqr_results_rows", fake_parse)
+
+    history = enrich.fetch_sqr_history()
+
+    assert calls == [url for _year, url in enrich.SQR_HISTORY_YEARS]
+    assert len(history["13K430"]) == len(enrich.SQR_HISTORY_YEARS)

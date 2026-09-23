@@ -98,7 +98,7 @@ describe('/api/find/ask question length cap (issue #218)', () => {
     mockCreate.mockResolvedValue({
       model: 'claude-sonnet-5',
       usage: { input_tokens: 10, output_tokens: 10 },
-      content: [{ type: 'text', text: 'Test High School is a great fit.' }],
+      content: [{ type: 'text', text: '01M001 | Test High School is a great fit.' }],
     })
     const atLimit = 'a'.repeat(MAX_QUESTION_LENGTH)
     const res = await POST(fakeAskRequest(atLimit, '10.1.0.3'))
@@ -112,7 +112,7 @@ describe('/api/find/ask no-odds guardrail on model output (issue #218)', () => {
     mockCreate.mockResolvedValue({
       model: 'claude-sonnet-5',
       usage: { input_tokens: 10, output_tokens: 10 },
-      content: [{ type: 'text', text: 'Given the data, your chances of getting in are good.' }],
+      content: [{ type: 'text', text: '01M001 | Given the data, your chances of getting in are good.' }],
     })
     const res = await POST(fakeAskRequest('Which schools fit my daughter?', '10.1.0.4'))
     expect(res.status).toBe(200)
@@ -128,12 +128,12 @@ describe('/api/find/ask no-odds guardrail on model output (issue #218)', () => {
     mockCreate.mockResolvedValue({
       model: 'claude-sonnet-5',
       usage: { input_tokens: 10, output_tokens: 10 },
-      content: [{ type: 'text', text: 'Test High School emphasizes small discussion-based classes.' }],
+      content: [{ type: 'text', text: '01M001 | Emphasizes small discussion-based classes.' }],
     })
     const res = await POST(fakeAskRequest('Which schools have small classes?', '10.1.0.5'))
     expect(res.status).toBe(200)
     const body = await res.json()
-    expect(body.answer).toBe('Test High School emphasizes small discussion-based classes.')
+    expect(body.answer).toBe('Test High School — Emphasizes small discussion-based classes.')
     expect(mockRecordLlmTrace).toHaveBeenCalledWith(expect.objectContaining({ guardrail: 'none' }))
   })
 })
@@ -159,13 +159,13 @@ describe('/api/find/ask prediction-request preface (issue #218)', () => {
     mockCreate.mockResolvedValue({
       model: 'claude-sonnet-5',
       usage: { input_tokens: 10, output_tokens: 10 },
-      content: [{ type: 'text', text: 'Test High School reviews grades and attendance.' }],
+      content: [{ type: 'text', text: '01M001 | Reviews grades and attendance.' }],
     })
     const res = await POST(fakeAskRequest('What are my chances of getting into Test High School?', '10.1.0.7'))
     expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.answer.startsWith(PREDICTION_PREFACE)).toBe(true)
-    expect(body.answer).toContain('Test High School reviews grades and attendance.')
+    expect(body.answer).toContain('Test High School — Reviews grades and attendance.')
     expect(mockRecordLlmTrace).toHaveBeenCalledWith(expect.objectContaining({ guardrail: 'prediction_preface' }))
   })
 
@@ -173,7 +173,7 @@ describe('/api/find/ask prediction-request preface (issue #218)', () => {
     mockCreate.mockResolvedValue({
       model: 'claude-sonnet-5',
       usage: { input_tokens: 10, output_tokens: 10 },
-      content: [{ type: 'text', text: 'Test High School reviews grades and attendance.' }],
+      content: [{ type: 'text', text: '01M001 | Reviews grades and attendance.' }],
     })
     const res = await POST(fakeAskRequest('Which schools have a strong theater program?', '10.1.0.8'))
     expect(res.status).toBe(200)

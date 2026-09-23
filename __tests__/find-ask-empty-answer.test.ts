@@ -82,13 +82,13 @@ describe('/api/find/ask reads every text block, not just content[0] (issue #257)
       usage: { input_tokens: 10, output_tokens: 10 },
       content: [
         { type: 'thinking', thinking: 'reasoning about the schools' },
-        { type: 'text', text: 'Test High School is a great fit.' },
+        { type: 'text', text: '01M001 | Test High School is a great fit.' },
       ],
     })
     const res = await POST(fakeAskRequest('Which schools fit my daughter?', '10.2.0.1'))
     expect(res.status).toBe(200)
     const body = await res.json()
-    expect(body.answer).toBe('Test High School is a great fit.')
+    expect(body.answer).toBe('Test High School — Test High School is a great fit.')
     expect(mockRecordLlmTrace).toHaveBeenCalledWith(expect.objectContaining({ guardrail: 'none' }))
   })
 
@@ -98,14 +98,14 @@ describe('/api/find/ask reads every text block, not just content[0] (issue #257)
       stop_reason: 'end_turn',
       usage: { input_tokens: 10, output_tokens: 10 },
       content: [
-        { type: 'text', text: 'Test High School is a great fit.' },
-        { type: 'text', text: ' It has strong academics.' },
+        { type: 'text', text: '01M001 | Test High School is a great fit' },
+        { type: 'text', text: ' and has strong academics.' },
       ],
     })
     const res = await POST(fakeAskRequest('Which schools fit my daughter?', '10.2.0.2'))
     expect(res.status).toBe(200)
     const body = await res.json()
-    expect(body.answer).toBe('Test High School is a great fit. It has strong academics.')
+    expect(body.answer).toBe('Test High School — Test High School is a great fit and has strong academics.')
   })
 
   it('falls back to NO_ANSWER with sources kept when there are no text blocks, and records why', async () => {
