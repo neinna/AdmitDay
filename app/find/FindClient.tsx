@@ -817,7 +817,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
                           variant="outline"
                           onClick={() => toggleAdded(school.dbn)}
                           className={`w-24 max-[899px]:w-full text-center hover:bg-ink hover:text-white ${
-                            added ? 'bg-ink text-white' : ''
+                            added ? '!bg-ink !text-white' : ''
                           }`}
                         >
                           {added ? 'Remove' : 'Add'}
