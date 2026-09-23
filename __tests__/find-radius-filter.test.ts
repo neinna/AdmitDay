@@ -227,16 +227,24 @@ describe('FindClient wires radiusDisabled off startCoords, not the raw input (is
 // Issue #395 renamed FindRail's radius label from "Within" to "Distance", so
 // the sort-control check below is scoped to FindClient's "Sorted by" text
 // (the only place a sort option would appear) rather than FindRail's source.
+//
+// Issue #400 replaced the old "Sorted by fit" label (a claim the old
+// comparator never actually delivered — see find-sort-toggle.test.ts) with a
+// real Results / Fewest applicants toggle. Distance still never becomes a
+// sort option of its own.
 
-describe('no Distance option is added to the sort control (issue #344/#361/#395)', () => {
+describe('no Distance option is added to the sort control (issue #344/#361/#395/#400)', () => {
   const findClientSrc = readSource('app/find/FindClient.tsx')
 
-  it('the sort label expression is unchanged — still only "your ask" or "fit"', () => {
-    expect(findClientSrc).toContain("Sorted by {askReasons.length > 0 ? 'your ask' : 'fit'}")
+  it('the ask-reasons label is unchanged — still "Sorted by your ask"', () => {
+    expect(findClientSrc).toContain("'Sorted by your ask'")
   })
 
   it('FindClient does not introduce a "Distance" sort option', () => {
-    expect(findClientSrc).not.toMatch(/Sorted by[\s\S]{0,80}Distance/)
+    const startIdx = findClientSrc.indexOf('Sorted by your ask')
+    const endIdx = findClientSrc.indexOf('</div>', findClientSrc.indexOf('Fewest applicants', startIdx))
+    const sortControlBlock = findClientSrc.slice(startIdx, endIdx)
+    expect(sortControlBlock).not.toContain('Distance')
   })
 })
 

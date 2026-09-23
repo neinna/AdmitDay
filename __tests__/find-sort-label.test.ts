@@ -20,24 +20,24 @@ function readSource(relPath: string): string {
 
 const src = readSource('app/find/FindClient.tsx')
 
-describe('the sort label reflects the active ordering (issue #362)', () => {
-  it('reads "your ask" when askReasons is non-empty, "fit" otherwise, off the same expression', () => {
-    expect(src).toContain("Sorted by {askReasons.length > 0 ? 'your ask' : 'fit'}")
+describe('the sort label reflects the active ordering (issue #362/#400)', () => {
+  it('reads "Sorted by your ask" when askReasons is non-empty', () => {
+    expect(src).toContain("askReasons.length > 0 ? (\n                'Sorted by your ask'")
   })
 
   it('keeps the existing font-mono, uppercase, tracking and muted styling untouched', () => {
-    const labelIdx = src.indexOf("Sorted by {askReasons.length > 0 ? 'your ask' : 'fit'}")
+    const labelIdx = src.indexOf("askReasons.length > 0 ? (\n                'Sorted by your ask'")
     expect(labelIdx).toBeGreaterThan(-1)
     const before = src.slice(Math.max(0, labelIdx - 200), labelIdx)
     expect(before).toContain('font-mono text-[11.5px] tracking-[0.1em] uppercase text-faint')
   })
 
-  it('no longer contains the old fixed label', () => {
-    expect(src).not.toContain('Sorted by fit\n')
+  it('no longer contains the old fixed label — issue #400 replaced it with a real sort toggle', () => {
+    expect(src).not.toContain('Sorted by fit')
   })
 
-  it('does not gate the label on the starting point — a starting point with no ask still reads "fit"', () => {
-    const labelIdx = src.indexOf("Sorted by {askReasons.length > 0 ? 'your ask' : 'fit'}")
+  it('does not gate the ask-reasons label on the starting point', () => {
+    const labelIdx = src.indexOf("askReasons.length > 0 ? (\n                'Sorted by your ask'")
     const labelLine = src.slice(labelIdx - 5, labelIdx + 60)
     expect(labelLine).not.toMatch(/startCoords|startingPoint/)
   })
