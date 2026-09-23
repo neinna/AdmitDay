@@ -89,6 +89,8 @@ export default function FindClient({ schools, initialFilters }: Props) {
 
   const [addedDbns, setAddedDbns] = useState<Set<string>>(new Set())
   const [hydrated, setHydrated] = useState(false)
+  const [shortlistLoadFailed, setShortlistLoadFailed] = useState(false)
+  const [saveErrorDbns, setSaveErrorDbns] = useState<Set<string>>(new Set())
 
   // Rail filters are a hard floor and live in the URL so a filtered /find
   // view is linkable — reloading the URL restores them (parsed server-side
@@ -107,9 +109,21 @@ export default function FindClient({ schools, initialFilters }: Props) {
     if (!isLoaded) return
     if (isSignedIn) {
       fetch('/api/saved-schools')
-        .then((res) => (res.ok ? res.json() : { dbns: [] }))
-        .then((data) => setAddedDbns(new Set(Array.isArray(data.dbns) ? data.dbns : [])))
-        .catch(() => setAddedDbns(new Set()))
+        .then((res) => {
+          if (!res.ok) throw new Error('failed to load saved schools')
+          return res.json()
+        })
+        .then((data) => {
+          setAddedDbns(new Set(Array.isArray(data.dbns) ? data.dbns : []))
+          setShortlistLoadFailed(false)
+        })
+        .catch(() => {
+          // A failed load must never look like a parent who has saved
+          // nothing — keep the set empty but flag it as a load failure so
+          // the nav can say so instead of showing "0 saved".
+          setAddedDbns(new Set())
+          setShortlistLoadFailed(true)
+        })
         .finally(() => setHydrated(true))
       return
     }
@@ -224,22 +238,39 @@ export default function FindClient({ schools, initialFilters }: Props) {
       return
     }
 
-    const next = new Set(addedDbns)
-    const adding = !next.has(dbn)
+    const previous = addedDbns
+    const adding = !previous.has(dbn)
+    const next = new Set(previous)
     if (adding) next.add(dbn)
     else next.delete(dbn)
     setAddedDbns(next)
 
+    let ok: boolean
     try {
-      await fetch('/api/saved-schools', {
+      const res = await fetch('/api/saved-schools', {
         method: adding ? 'POST' : 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ dbn }),
       })
+      ok = res.ok
     } catch {
-      // ignore
+      ok = false
     }
 
+    if (!ok) {
+      // Roll back the optimistic update — a failed save must never be
+      // shown to the parent as added (or a failed remove as gone).
+      setAddedDbns(previous)
+      setSaveErrorDbns((prev) => new Set(prev).add(dbn))
+      return
+    }
+
+    setSaveErrorDbns((prev) => {
+      if (!prev.has(dbn)) return prev
+      const next = new Set(prev)
+      next.delete(dbn)
+      return next
+    })
     posthog?.capture(adding ? 'school_saved' : 'school_removed', {
       dbn,
       list_size_after: next.size,
@@ -338,7 +369,11 @@ export default function FindClient({ schools, initialFilters }: Props) {
             <span className="text-ink font-medium border-b-2 border-accent pb-[3px]">Find</span>
             <Link href="/shortlist" className="hover:text-ink transition-colors duration-[120ms] ease-out">
               Shortlist
-              {addedCount > 0 && <span className="font-mono text-accent ml-1">{addedCount}</span>}
+              {hydrated && shortlistLoadFailed ? (
+                <span className="text-faint ml-1">Couldn&rsquo;t load your shortlist.</span>
+              ) : (
+                addedCount > 0 && <span className="font-mono text-accent ml-1">{addedCount}</span>
+              )}
             </Link>
           </nav>
           <AuthControls />
@@ -561,16 +596,23 @@ export default function FindClient({ schools, initialFilters }: Props) {
                       )
                     }
                     action={
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => toggleAdded(school.dbn)}
-                        className={`w-24 max-[899px]:w-full text-center hover:bg-ink hover:text-white ${
-                          added ? 'bg-ink text-white' : ''
-                        }`}
-                      >
-                        {added ? 'Remove' : 'Add'}
-                      </Button>
+                      <div className="flex flex-col gap-1 items-center max-[899px]:items-stretch">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => toggleAdded(school.dbn)}
+                          className={`w-24 max-[899px]:w-full text-center hover:bg-ink hover:text-white ${
+                            added ? 'bg-ink text-white' : ''
+                          }`}
+                        >
+                          {added ? 'Remove' : 'Add'}
+                        </Button>
+                        {saveErrorDbns.has(school.dbn) && (
+                          <p className="text-[12.5px] text-faint text-center max-[899px]:text-left">
+                            Couldn&rsquo;t save — try again.
+                          </p>
+                        )}
+                      </div>
                     }
                   />
                 )
