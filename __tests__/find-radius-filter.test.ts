@@ -190,8 +190,8 @@ describe('FindClient computes each annotated row\'s distance the same way as the
 describe('FindRail "Within" control (issue #344)', () => {
   const src = readSource('app/find/FindRail.tsx')
 
-  it('adds a Within control with the 1/3/5/10 mile + Any options', () => {
-    expect(src).toContain('Within')
+  it('adds a Distance control with the 1/3/5/10 mile + Any options', () => {
+    expect(src).toContain('Distance')
     expect(src).toContain("{ label: '1 mi', value: '1' }")
     expect(src).toContain("{ label: '3 mi', value: '3' }")
     expect(src).toContain("{ label: '5 mi', value: '5' }")
@@ -220,17 +220,19 @@ describe('FindClient wires radiusDisabled off startCoords, not the raw input (is
 })
 
 // ── No Distance sort option (issue #344 supersedes an earlier ask for one) ──
+//
+// Issue #395 renamed FindRail's radius label from "Within" to "Distance", so
+// the sort-control check below is scoped to FindClient's "Sorted by" text
+// (the only place a sort option would appear) rather than FindRail's source.
 
-describe('no Distance option is added to the sort control (issue #344/#361)', () => {
+describe('no Distance option is added to the sort control (issue #344/#361/#395)', () => {
   const findClientSrc = readSource('app/find/FindClient.tsx')
-  const findRailSrc = readSource('app/find/FindRail.tsx')
 
   it('the sort label expression is unchanged — still only "your ask" or "fit"', () => {
     expect(findClientSrc).toContain("Sorted by {askReasons.length > 0 ? 'your ask' : 'fit'}")
   })
 
-  it('neither file introduces a "Distance" sort option', () => {
+  it('FindClient does not introduce a "Distance" sort option', () => {
     expect(findClientSrc).not.toMatch(/Sorted by[\s\S]{0,80}Distance/)
-    expect(findRailSrc).not.toContain('Distance')
   })
 })

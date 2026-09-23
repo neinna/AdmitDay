@@ -91,14 +91,14 @@ export default function FindRail({
   return (
     <div className="flex flex-col gap-[30px] px-7 py-8 min-[900px]:border-r min-[900px]:border-rule">
       <div className="flex flex-col gap-3">
-        <div className="font-mono text-[11px] tracking-[0.12em] uppercase text-faint">Starting from</div>
+        <div className="font-mono text-[11px] tracking-[0.12em] uppercase text-faint">Location</div>
         <input
           type="text"
           list="starting-point-suggestions"
           value={startingPointInput}
           onChange={(e) => onStartingPointInputChange(e.target.value)}
           placeholder="ZIP code or subway station"
-          aria-label="Starting from ZIP code or subway station"
+          aria-label="Location: ZIP code or subway station"
           className="border border-border-strong px-[13px] py-[9px] text-[14px] text-ink outline-none placeholder:text-faint bg-transparent"
         />
         <datalist id="starting-point-suggestions">
@@ -112,7 +112,7 @@ export default function FindRail({
       </div>
 
       <div className="flex flex-col gap-3">
-        <div className="font-mono text-[11px] tracking-[0.12em] uppercase text-faint">Within</div>
+        <div className="font-mono text-[11px] tracking-[0.12em] uppercase text-faint">Distance</div>
         <SegmentedControl options={RADIUS_OPTIONS} value={radiusValue} onChange={onRadiusChange} disabled={radiusDisabled} />
         {radiusDisabled && <div className="text-[12.5px] text-faint">Add a starting point</div>}
       </div>
