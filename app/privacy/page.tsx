@@ -138,6 +138,14 @@ export default function PrivacyPage() {
           No name, no grade, no date of birth, no contact details, no documents. AdmitDay works from the borough,
           preferences, and filters you set for a search — never from who your child is.
         </p>
+        <p className="text-[15px] font-semibold text-ink mt-4 max-w-[680px]">
+          Where you&rsquo;re commuting from
+        </p>
+        <p className="text-[14.5px] text-ink-2 leading-[1.55] mt-2 max-w-[680px]">
+          If you set a &ldquo;Starting from&rdquo; ZIP code or subway station on Find to see distances, it&rsquo;s
+          saved only in your browser. It&rsquo;s never sent to AdmitDay&rsquo;s servers, never included in a search
+          question, and never reaches PostHog, Sentry, or Langfuse. No street address is accepted.
+        </p>
       </section>
 
       <section className="px-5 min-[900px]:px-9 pt-[26px] pb-[30px] border-b border-rule">

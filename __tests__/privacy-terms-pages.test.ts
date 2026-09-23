@@ -124,6 +124,14 @@ describe('/privacy content matches the product as it actually exists', () => {
     expect(privacySource).not.toMatch(/is on the way/i)
   })
 
+  it('documents that the commute starting point is saved to localStorage, not sent anywhere (issue #376)', () => {
+    const schoolListUtils = fs.readFileSync(path.join(__dirname, '../lib/school-list-utils.ts'), 'utf-8')
+    expect(schoolListUtils).toMatch(/localStorage\.setItem\(STARTING_POINT_KEY/)
+    expect(privacySource).toMatch(/commuting from/i)
+    expect(privacySource).toMatch(/saved only in your browser/i)
+    expect(privacySource).toMatch(/never sent to AdmitDay&rsquo;s servers/i)
+  })
+
   it('the Sentry claim matches sendDefaultPii in every runtime config, not just the server one', () => {
     // A prior draft claimed IP addresses were stripped everywhere, but only
     // sentry.server.config.ts sets sendDefaultPii: false — the browser and
