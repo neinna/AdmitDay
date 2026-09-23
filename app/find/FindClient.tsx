@@ -632,6 +632,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
                 </span>
                 <span className="text-[14px] text-muted">
                   match{ranked.length === 1 ? '' : 'es'} {describeFindFilters(filters)}
+                  {startCoords ? ` · starting from ${startZip}` : ''}
                 </span>
               </div>
               <p className="text-[12.5px] text-faint mt-1">
@@ -639,7 +640,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
               </p>
             </div>
             <div className="font-mono text-[11.5px] tracking-[0.1em] uppercase text-faint">
-              Sorted by fit
+              Sorted by {askReasons.length > 0 ? 'your ask' : 'fit'}
             </div>
           </div>
 
