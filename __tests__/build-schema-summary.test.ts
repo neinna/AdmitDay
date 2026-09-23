@@ -176,6 +176,74 @@ describe('scripts/build_schema_summary.py', () => {
   })
 })
 
+// ── open_house / hours / school_website (issue #346) ────────────────────────
+// These are top-level, optional school fields MySchools publishes directly
+// (open-house text + when it was fetched, school hours, independent
+// website). Most schools have none of them -- absence must produce no key,
+// never an empty string -- so this uses its own fixture rather than adding
+// the fields to FIXTURE_SCHOOLS above, which would change the exact field
+// lists other tests in this file already assert on.
+
+const OPEN_HOUSE_FIXTURE_SCHOOLS = [
+  {
+    dbn: '01M001',
+    name: 'Fixture School With Open House',
+    borough: 'Manhattan',
+    admissions_types: [],
+    programs: [],
+    open_house: { text: 'Wed Oct 15, 6:00pm - 8:00pm', fetched_at: '2026-09-01T00:00:00+00:00' },
+    hours: { start: '08:00am', end: '03:00pm' },
+    school_website: 'https://example.org/',
+  },
+  {
+    dbn: '01M002',
+    name: 'Fixture School Without Open House',
+    borough: 'Brooklyn',
+    admissions_types: [],
+    programs: [],
+  },
+]
+
+describe('scripts/build_schema_summary.py -- open_house/hours/school_website (#346)', () => {
+  const { output } = runGenerator(OPEN_HOUSE_FIXTURE_SCHOOLS)
+
+  it('includes open_house, hours, and school_website in school_fields, present on only one of two schools', () => {
+    const fields = output.school_fields as FieldSummary[]
+    expect(findField(fields, 'open_house')).toMatchObject({ type: 'object', present: 1 })
+    expect(findField(fields, 'hours')).toMatchObject({ type: 'object', present: 1 })
+    expect(findField(fields, 'school_website')).toMatchObject({
+      type: 'string',
+      present: 1,
+      example: 'https://example.org/',
+    })
+  })
+
+  it('describes open_house sub-fields (text, fetched_at) the same way doe_data sub-fields are described', () => {
+    const fields = output.open_house_fields as FieldSummary[]
+    expect(fields.map((f) => f.name).sort()).toEqual(['fetched_at', 'text'])
+    expect(findField(fields, 'text')).toMatchObject({
+      type: 'string',
+      present: 1,
+      example: 'Wed Oct 15, 6:00pm - 8:00pm',
+    })
+  })
+
+  it('describes hours sub-fields (start, end)', () => {
+    const fields = output.hours_fields as FieldSummary[]
+    expect(fields.map((f) => f.name).sort()).toEqual(['end', 'start'])
+    expect(findField(fields, 'start')).toMatchObject({ type: 'string', present: 1, example: '08:00am' })
+  })
+
+  it('does not invent open_house/hours fields for the school missing them', () => {
+    // Second fixture school has neither key -- open_house_fields/hours_fields
+    // must describe only the one record that actually has them, not both.
+    const openHouseFields = output.open_house_fields as FieldSummary[]
+    const hoursFields = output.hours_fields as FieldSummary[]
+    expect(openHouseFields.every((f) => f.present === 1)).toBe(true)
+    expect(hoursFields.every((f) => f.present === 1)).toBe(true)
+  })
+})
+
 describe('data/schema-summary.json (committed artifact)', () => {
   const summaryPath = path.join(REPO_ROOT, 'data', 'schema-summary.json')
   const summaryAvailable = fs.existsSync(summaryPath)
