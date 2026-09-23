@@ -1,6 +1,7 @@
 import { School, SectionGroup, SectionType, UserInputs } from '@/types'
 import { getShsatCutoffs } from './shsat-cutoffs'
 import zipCentroids from '@/data/nyc-zip-centroids.json'
+import subwayStations from '@/data/nyc-subway-stations.json'
 
 // localStorage key for the optimistic "added to My Schools" set. Shared by
 // /find (FindClient) and /school/[dbn] so both pages agree on the same saved
@@ -441,16 +442,17 @@ export function admissionMethodCopy(method: string, school: School): string {
   return `${base} Lowest score offered: ${scores.join(' · ')}`
 }
 
-// ── /find "Starting from" ZIP + distance (issue #343) ───────────────────────
-// The ZIP is a client-only convenience for sorting/reading the list; it must
-// never leave the browser (no fetch body, no analytics event).
+// ── /find "Starting from" ZIP or subway station + distance (issue #343/#374) ─
+// The starting point is a client-only convenience for sorting/reading the
+// list; it must never leave the browser (no fetch body, no analytics event).
 
 export interface LatLng {
   lat: number
   lng: number
 }
 
-// localStorage key the ZIP is persisted under — never sent to the server.
+// localStorage key a bare ZIP was persisted under by #343 — kept only so
+// loadStartingPoint can migrate a value left over from before #374.
 export const START_ZIP_KEY = 'admitday.startZip'
 
 const ZIP_CENTROIDS = new Map<string, LatLng>(
@@ -463,6 +465,119 @@ const ZIP_CENTROIDS = new Map<string, LatLng>(
 /** Looks up a 5-digit ZIP's centroid among the committed NYC ZIPs; null when it isn't one. */
 export function lookupZipCentroid(zip: string): LatLng | null {
   return ZIP_CENTROIDS.get(zip) ?? null
+}
+
+const ZIP_RE = /^\d{5}$/
+
+export interface Station {
+  id: string
+  name: string
+  lat: number
+  lng: number
+}
+
+const RAW_STATIONS = subwayStations as Station[]
+
+// A physical station complex lists once per line (e.g. four separate "86 St"
+// entries on four different lines) — offer one entry per distinct name,
+// matched case-insensitively, keeping the first.
+function dedupeStationsByName(stations: Station[]): Station[] {
+  const seen = new Set<string>()
+  const result: Station[] = []
+  for (const station of stations) {
+    const key = station.name.toLowerCase()
+    if (seen.has(key)) continue
+    seen.add(key)
+    result.push(station)
+  }
+  return result
+}
+
+export const SUBWAY_STATIONS: Station[] = dedupeStationsByName(RAW_STATIONS)
+
+/** Exact, case-insensitive subway station name lookup among the deduped stations; null when none matches. */
+export function findStationByName(name: string): Station | null {
+  const target = name.trim().toLowerCase()
+  if (!target) return null
+  return SUBWAY_STATIONS.find((s) => s.name.toLowerCase() === target) ?? null
+}
+
+/** Station names whose lowercase form contains `query`, for the "Starting from" datalist — capped at `limit`. */
+export function suggestStationNames(query: string, limit = 8): string[] {
+  const target = query.trim().toLowerCase()
+  if (!target) return []
+  return SUBWAY_STATIONS.filter((s) => s.name.toLowerCase().includes(target))
+    .slice(0, limit)
+    .map((s) => s.name)
+}
+
+/** What "Starting from" resolves to and persists — a bare ZIP or a station name, never a street address. */
+export interface StartingPoint {
+  label: string
+  point: LatLng
+}
+
+// localStorage key the resolved starting point is persisted under (issue
+// #374) — never sent to the server, PostHog, Sentry, Langfuse, or the ask box.
+export const STARTING_POINT_KEY = 'admitday_find_starting_point'
+
+/**
+ * Resolves free-typed "Starting from" input: a 5-digit string is looked up as
+ * a NYC ZIP, anything else as an exact (case-insensitive) subway station
+ * name. Returns null when neither matches — the field then shows "Not a NYC
+ * ZIP code or subway station" and any existing starting point is left alone.
+ */
+export function resolveStartingPointInput(input: string): StartingPoint | null {
+  const trimmed = input.trim()
+  if (!trimmed) return null
+
+  if (ZIP_RE.test(trimmed)) {
+    const point = lookupZipCentroid(trimmed)
+    return point ? { label: trimmed, point } : null
+  }
+
+  const station = findStationByName(trimmed)
+  return station ? { label: station.name, point: { lat: station.lat, lng: station.lng } } : null
+}
+
+function isStartingPoint(value: unknown): value is StartingPoint {
+  const v = value as { label?: unknown; point?: { lat?: unknown; lng?: unknown } } | null
+  return (
+    !!v &&
+    typeof v.label === 'string' &&
+    !!v.point &&
+    typeof v.point.lat === 'number' &&
+    typeof v.point.lng === 'number'
+  )
+}
+
+/**
+ * Reads the persisted starting point. Migrates a bare-ZIP value left by
+ * #343's old `START_ZIP_KEY` silently into the new shape. Never throws — a
+ * malformed value under either key loads as absent (null).
+ */
+export function loadStartingPoint(): StartingPoint | null {
+  try {
+    const raw = localStorage.getItem(STARTING_POINT_KEY)
+    if (raw != null) {
+      const parsed = JSON.parse(raw)
+      return isStartingPoint(parsed) ? parsed : null
+    }
+    const legacyZip = localStorage.getItem(START_ZIP_KEY)
+    return legacyZip ? resolveStartingPointInput(legacyZip) : null
+  } catch {
+    return null
+  }
+}
+
+/** Persists the resolved starting point (or clears it when null) under STARTING_POINT_KEY. */
+export function saveStartingPoint(startingPoint: StartingPoint | null): void {
+  try {
+    if (startingPoint) localStorage.setItem(STARTING_POINT_KEY, JSON.stringify(startingPoint))
+    else localStorage.removeItem(STARTING_POINT_KEY)
+  } catch {
+    // ignore
+  }
 }
 
 const EARTH_RADIUS_MI = 3958.8
