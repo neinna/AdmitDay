@@ -86,6 +86,14 @@ export interface SchoolProgram {
   }
 }
 
+// School coordinates from MySchools' school.address.latitude/longitude
+// (issue #342). Absent when MySchools didn't publish parseable coordinates
+// -- never a placeholder like {lat: 0, lng: 0}.
+export interface SchoolLocation {
+  lat: number
+  lng: number
+}
+
 export interface School {
   dbn: string
   name: string
@@ -100,6 +108,7 @@ export interface School {
   flags: SchoolFlags
   doe_data: DoeData
   last_verified: string
+  location?: SchoolLocation
 }
 
 export type SectionType = 'shsat' | 'audition' | 'screened' | 'edopt' | 'lottery'

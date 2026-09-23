@@ -41,6 +41,10 @@ data/schools.json
 # eval runner output (npm run eval:ask) — regenerated per run, not tracked
 /evals/results/
 
+# Playwright (npm run e2e) — traces, screenshots, HTML report; regenerated per run
+/test-results/
+/playwright-report/
+
 # refresh-data.ts sidecar: DBNs excluded from the current scrape, read by
 # scripts/vps-data-refresh.sh for the data PR body -- not app data
 schools.excluded.json
