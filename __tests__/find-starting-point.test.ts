@@ -211,12 +211,15 @@ describe('FindClient "Starting from" input handling (issue #374)', () => {
 // ── Privacy: the starting point never leaves the browser ────────────────────
 // Mirrors __tests__/find-start-zip-distance.test.ts's scan, extended to the
 // new StartingPoint-shaped state so a future change threading it into a
-// request can't land silently.
+// request can't land silently. Issue #375 adds SchoolDetailClient.tsx to the
+// scan, since it also reads the starting point (for the school-page distance
+// line and directions link).
 
-describe('starting point never appears in a fetch body or analytics call (issue #374)', () => {
+describe('starting point never appears in a fetch body or analytics call (issue #374/#375)', () => {
   const files = [
     readSource('app/find/FindClient.tsx'),
     readSource('app/find/FindRail.tsx'),
+    readSource('app/school/[dbn]/SchoolDetailClient.tsx'),
   ]
 
   it('never passes startingPoint into a fetch() call', () => {
