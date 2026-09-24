@@ -43,7 +43,11 @@ Rules:
 
 Every implementation run is capped by `CLAUDE_IMPLEMENT_MAX_USD` (currently \$5.00). An issue that cannot be finished inside one capped run is not a hard issue — it is a badly sized one, and it will consume the whole cap and produce nothing.
 
-The metric is **cost per merged PR**, not cost per attempt. On 2026-09-17 this repo spent roughly \$13 per merged PR across five runs. \$2–5 is the healthy range for a multi-file feature with tests; \$0.50–1.50 for a single-file change with an explicit spec.
+The metric is **cost per merged PR**, not cost per attempt. On 2026-09-17 this repo spent **\$9.72 per merged PR** — recomputed from raw token counts at list prices, but across five runs and **one** merged PR, so treat it as an anecdote, not a baseline. Since then it has ranged \$1.40–\$3.07 a day with no clear trend. A single run has cost about \$1 throughout; what varies is how many are wasted.
+
+**An oversized issue fails at a cliff, not on a curve.** Cost scales roughly linearly with work (measured: `cache_read ≈ output^1.03`, r=0.92, n=109), so a big issue is not disproportionately wasteful — but work that does not fit inside one capped run returns **zero**, not a partial result. Splitting works by turning one all-or-nothing bet into several that each fit the budget, not by making the agent more efficient. Raising the cap does not fix this; it moves the cliff.
+
+**Do not take dollar figures from Langfuse.** It prices by model name and its table lags a generation: measured over 369 generations on 2026-09-24, it bills Claude Sonnet 5 at **1.50×** list (Sonnet 4.6 rates) and Claude Opus 5.5 at **0.70×**, while Haiku 4.5 is exact. There is no single correction factor — the error follows the day's model mix. Recompute from `usageDetails` (cache reads at 10% of input, cache writes at 125%), or use the Anthropic Console for totals.
 
 ### Epics and children
 
