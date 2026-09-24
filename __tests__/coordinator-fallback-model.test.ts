@@ -99,13 +99,35 @@ describe('run_claude signature: sixth positional parameter is the fallback model
 })
 
 describe('agent-coordinator.sh: fallback model settings', () => {
-  it('defines CLAUDE_IMPLEMENT_FALLBACK_MODEL and CLAUDE_REVIEW_FALLBACK_MODEL beside the other model settings', () => {
+  // `-` not `:-`. The colon form substitutes the default when the variable is
+  // unset OR empty, so an operator setting the variable to empty to turn the
+  // fallback off would silently get haiku anyway — the documented off switch
+  // would do nothing. Unset must still default to haiku.
+  it('defaults both fallbacks to haiku when unset, and respects an explicit empty value', () => {
     expect(coordinatorSource).toMatch(
-      /CLAUDE_IMPLEMENT_FALLBACK_MODEL="\$\{CLAUDE_IMPLEMENT_FALLBACK_MODEL:-haiku\}"/,
+      /CLAUDE_IMPLEMENT_FALLBACK_MODEL="\$\{CLAUDE_IMPLEMENT_FALLBACK_MODEL-haiku\}"/,
     )
     expect(coordinatorSource).toMatch(
-      /CLAUDE_REVIEW_FALLBACK_MODEL="\$\{CLAUDE_REVIEW_FALLBACK_MODEL:-haiku\}"/,
+      /CLAUDE_REVIEW_FALLBACK_MODEL="\$\{CLAUDE_REVIEW_FALLBACK_MODEL-haiku\}"/,
     )
+    expect(coordinatorSource).not.toMatch(/FALLBACK_MODEL="\$\{[A-Z_]+:-haiku\}"/)
+  })
+
+  it.each([
+    ['unset', '', 'haiku'],
+    ['empty', 'CLAUDE_IMPLEMENT_FALLBACK_MODEL=', ''],
+    ['set', 'CLAUDE_IMPLEMENT_FALLBACK_MODEL=sonnet', 'sonnet'],
+  ])('resolves the implement fallback to %s -> %s', (_label, assignment, expected) => {
+    const line = coordinatorSource
+      .split('\n')
+      .find((l) => l.startsWith('CLAUDE_IMPLEMENT_FALLBACK_MODEL='))
+    expect(line).toBeDefined()
+    const out = execFileSync(
+      '/bin/sh',
+      ['-c', `${assignment ? assignment + '; ' : ''}${line}; printf '%s' "$CLAUDE_IMPLEMENT_FALLBACK_MODEL"`],
+      { encoding: 'utf-8' },
+    )
+    expect(out).toBe(expected)
   })
 
   it('passes the fallback settings at the implement and review call sites', () => {
