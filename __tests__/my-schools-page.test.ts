@@ -55,6 +55,7 @@ describe('/shortlist makes no derived judgement', () => {
   })
 
   it('never renders a missing ratio as zero or a dash', () => {
-    expect(clientSrc).toMatch(/Not reported/i)
+    // Issue #422 replaced the "Not reported" sentence with a compact `n/a` marker.
+    expect(clientSrc).toMatch(/>\s*n\/a\s*</)
   })
 })
