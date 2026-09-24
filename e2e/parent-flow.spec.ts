@@ -84,9 +84,13 @@ test('signed-out parent flow', async ({ page }) => {
     const programsSection = await programsHeading.locator('xpath=../..').innerText()
     expect(ADMISSION_METHODS.some((method) => programsSection.includes(method))).toBe(true)
 
+    // Issue #438: the link must land on this specific school, not the
+    // MySchools homepage — built from the DBN in the current /school/{dbn} URL.
+    const dbn = new URL(page.url()).pathname.match(/\/school\/([^/?]+)/)?.[1] ?? ''
+    expect(dbn.length).toBeGreaterThanOrEqual(3)
     await expect(page.getByRole('link', { name: /Open in MySchools/ }).first()).toHaveAttribute(
       'href',
-      MYSCHOOLS_URL
+      `${MYSCHOOLS_URL}/en/schools/${dbn}/`
     )
   })
 

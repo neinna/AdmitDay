@@ -58,7 +58,7 @@ import {
   REGRESSION_THRESHOLD_POINTS,
   COST_LIMIT_USD,
 } from "./gate";
-import { recordDatasetRun, fetchWeeklyBaselineSummary } from "./langfuse-run";
+import { recordEvalRunSafely } from "./langfuse-run";
 
 interface SeedCase {
   id: string;
@@ -340,15 +340,16 @@ async function main() {
   console.log(`\nWrote ${outPath}`);
 
   console.log(`\nRecording dataset run "${runName}" to Langfuse (dataset: ask-seed)...`);
-  await recordDatasetRun({ runName, trigger, commitSha, results, summary });
-  console.log("Recorded.");
+  const { ok: telemetryOk, baseline } = await recordEvalRunSafely(
+    { runName, trigger, commitSha, results, summary },
+    trigger === "pull_request"
+  );
 
   const gatingScorers = ["hallucination", "noAdmissionsOddsLanguage"];
   const failedGate = gatingScorers.filter((name) => summary[name].rate < 1);
 
   let regressions: string[] = [];
-  if (trigger === "pull_request") {
-    const baseline = await fetchWeeklyBaselineSummary();
+  if (trigger === "pull_request" && telemetryOk) {
     if (baseline) {
       regressions = computeRegressions(summary, baseline, gatingScorers);
     } else {

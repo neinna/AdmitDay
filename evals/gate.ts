@@ -72,10 +72,13 @@ interface DatasetRunLike {
 
 /**
  * The most recent weekly run's summary, or null if none exists yet (e.g.
- * the very first PR run before any weekly run has landed on main).
+ * the very first PR run before any weekly run has landed on main, or the
+ * Langfuse fetch that would have returned the run list failed).
  */
-export function pickLatestWeeklyBaseline(runs: DatasetRunLike[]): RunSummary | null {
-  const weeklyRuns = runs.filter((r) => r.name.startsWith(WEEKLY_RUN_PREFIX));
+export function pickLatestWeeklyBaseline(
+  runs: DatasetRunLike[] | null | undefined
+): RunSummary | null {
+  const weeklyRuns = (runs ?? []).filter((r) => r.name.startsWith(WEEKLY_RUN_PREFIX));
   if (weeklyRuns.length === 0) return null;
 
   const latest = weeklyRuns.reduce((a, b) =>

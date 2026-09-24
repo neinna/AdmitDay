@@ -11,9 +11,11 @@
  * the run's metadata so a later PR run can read the last weekly run's
  * numbers back without re-aggregating every trace's scores.
  *
- * Unlike lib/trace.ts, this is never fire-and-forget: a broken write here
- * must fail the eval run, since a gap in history is exactly what the PR gate
- * depends on not having.
+ * Issue #455: recording is observability, not the gate. A Langfuse outage
+ * (expired credentials, network failure, etc.) must not fail the eval run —
+ * recordEvalRunSafely below catches any failure from the record-and-fetch-
+ * baseline path, logs one warning, and lets the case results alone decide
+ * the exit code.
  */
 
 import type { Langfuse as LangfuseClient } from "langfuse";
@@ -99,4 +101,36 @@ export async function fetchWeeklyBaselineSummary(): Promise<RunSummary | null> {
   const langfuse = getClient();
   const { data: runs } = await langfuse.getDatasetRuns(DATASET_NAME);
   return pickLatestWeeklyBaseline(runs);
+}
+
+export const LANGFUSE_FAILURE_WARNING =
+  "Langfuse recording failed (401) — eval result stands, baseline comparison skipped";
+
+export interface RecordEvalRunResult {
+  /** Whether the record-and-fetch-baseline path completed without a Langfuse failure. */
+  ok: boolean;
+  /** The weekly baseline, or null if not requested, not found, or the fetch failed. */
+  baseline: RunSummary | null;
+}
+
+/**
+ * Records the run and, on request, fetches the weekly baseline — but never
+ * throws. Any Langfuse failure anywhere in this path (expired credentials,
+ * network error, a malformed response) is caught once here, logged as a
+ * single warning, and reported back as `ok: false` so the caller can skip
+ * regression comparison without changing the eval's exit code.
+ */
+export async function recordEvalRunSafely(
+  params: RecordRunParams,
+  fetchBaseline: boolean
+): Promise<RecordEvalRunResult> {
+  try {
+    await recordDatasetRun(params);
+    console.log("Recorded.");
+    const baseline = fetchBaseline ? await fetchWeeklyBaselineSummary() : null;
+    return { ok: true, baseline };
+  } catch (err) {
+    console.warn(LANGFUSE_FAILURE_WARNING);
+    return { ok: false, baseline: null };
+  }
 }
