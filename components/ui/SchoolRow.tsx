@@ -48,7 +48,7 @@ export default function SchoolRow({
           <div className="font-sans font-bold text-[18px] text-ink">{name}</div>
           {isHighImpact && (
             <span title="Students grow more here than at 80%+ of NYC high schools (DOE, 2024-25)" className="font-mono text-[10.5px] tracking-[0.08em] uppercase text-gem bg-gem-bg border border-gem-border px-[7px] py-[3px]">
-              High impact
+              Strong student growth
             </span>
           )}
         </div>

@@ -13,7 +13,7 @@ const files = ['app/school/[dbn]/SchoolDetailClient.tsx', 'components/ui/SchoolR
 describe('school badge states facts, not a verdict', () => {
   it.each(files)('%s shows the factual label and no "Hidden gem"', (f) => {
     const src = fs.readFileSync(path.join(__dirname, '..', f), 'utf8')
-    expect(src).toContain('High impact')
+    expect(src).toContain('Strong student growth')
     expect(src).not.toMatch(/>\s*Hidden gem\s*</)
   })
 
@@ -49,13 +49,13 @@ describe('SchoolRow badge rendering (issue #334)', () => {
 
   it('a school without flags.high_impact (isHighImpact false) renders no badge', () => {
     const html = renderToStaticMarkup(React.createElement(SchoolRow, { ...baseProps, isHighImpact: false }))
-    expect(html).not.toContain('High impact')
+    expect(html).not.toContain('Strong student growth')
     expect(html).not.toContain('DOE, 2024-25')
   })
 
   it('a school with flags.high_impact (isHighImpact true) renders the badge with the DOE tooltip', () => {
     const html = renderToStaticMarkup(React.createElement(SchoolRow, { ...baseProps, isHighImpact: true }))
-    expect(html).toContain('High impact')
+    expect(html).toContain('Strong student growth')
     expect(html).toContain('Students grow more here than at 80%+ of NYC high schools (DOE, 2024-25)')
   })
 })

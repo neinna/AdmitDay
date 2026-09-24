@@ -2,8 +2,8 @@ import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import SchoolRow from '../components/ui/SchoolRow'
 
-// #414: the badge text lagged the #302 rename to flags.high_impact.
-describe('SchoolRow "High impact" badge (issue #414)', () => {
+// #432: the badge text lagged the decided wording, "Strong student growth".
+describe('SchoolRow "Strong student growth" badge (issue #414)', () => {
   const baseProps = {
     rowNumber: 1,
     name: 'Test School',
@@ -15,13 +15,13 @@ describe('SchoolRow "High impact" badge (issue #414)', () => {
     action: null,
   }
 
-  it('renders "High impact" when flags.high_impact is true', () => {
+  it('renders "Strong student growth" when flags.high_impact is true', () => {
     const html = renderToStaticMarkup(React.createElement(SchoolRow, { ...baseProps, isHighImpact: true }))
-    expect(html).toContain('High impact')
+    expect(html).toContain('Strong student growth')
   })
 
   it('renders no badge when flags.high_impact is false', () => {
     const html = renderToStaticMarkup(React.createElement(SchoolRow, { ...baseProps, isHighImpact: false }))
-    expect(html).not.toContain('High impact')
+    expect(html).not.toContain('Strong student growth')
   })
 })
