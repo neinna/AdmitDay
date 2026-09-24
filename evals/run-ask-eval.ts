@@ -11,6 +11,14 @@
  * (evals/langfuse-run.ts) and, on a pull_request trigger, gates on that
  * history — see evals/gate.ts for the pass/fail rules.
  *
+ * Issue #450: a pull_request run stays synchronous (one messages.create per
+ * case) because a PR check that can take up to 24 hours is useless. A
+ * weekly or manual run instead submits every case through the Batch API
+ * (evals/batch.ts) for half the token cost — every case is still built with
+ * lib/ask.ts's buildAskRequest/buildAnswerResult, the same functions the
+ * production ask box uses, so a batched run scores exactly what the
+ * synchronous path would have produced.
+ *
  * Requires ANTHROPIC_API_KEY, OPENAI_API_KEY, EVAL_LANGFUSE_PUBLIC_KEY and
  * EVAL_LANGFUSE_SECRET_KEY from the environment — every run is recorded to
  * Langfuse, so a missing key fails the run rather than silently skipping
@@ -28,8 +36,11 @@
 
 import fs from "fs";
 import path from "path";
-import { answerQuestion } from "../lib/ask";
+import Anthropic from "@anthropic-ai/sdk";
+import { answerQuestion, buildAskRequest, buildAnswerResult, buildSchoolContext, ASK_RETRIEVAL_COUNT, AnswerQuestionResult } from "../lib/ask";
+import { searchSchools } from "../lib/rag";
 import { estimateCostUsd } from "../lib/model-cost";
+import { pollBatchUntilEnded, indexBatchResultsByCustomId } from "./batch";
 import {
   scoreNoBannedPhrases,
   scoreNoAdmissionsOddsLanguage,
@@ -90,57 +101,117 @@ function loadAllSchoolNames(): string[] {
   return Array.from(new Set(schools.map((s) => s.name)));
 }
 
+function scoreAnswer(seedCase: SeedCase, result: AnswerQuestionResult, allSchoolNames: string[]): CaseResult {
+  const retrievedNames = result.retrieved.map((r) => r.name);
+  const retrievedChunks = result.retrieved.map((r) => r.chunk);
+
+  const scores: CaseResult["scores"] = {
+    noBannedPhrases: scoreNoBannedPhrases(result.answer),
+    noAdmissionsOddsLanguage: scoreNoAdmissionsOddsLanguage(result.answer),
+  };
+
+  if (DESCRIPTIVE_GUARDRAILS.has(result.guardrail)) {
+    scores.hallucination = scoreHallucination(result.answer, retrievedNames, allSchoolNames);
+    scores.coverage = scoreCoverage(result.answer, retrievedNames);
+    scores.missingDataNotShownAsZero = scoreMissingDataNotShownAsZero(result.answer, retrievedChunks);
+  } else {
+    scores.hallucination = { pass: true, skipped: true };
+    scores.coverage = { pass: true, skipped: true };
+    scores.missingDataNotShownAsZero = { pass: true, skipped: true };
+  }
+
+  return {
+    id: seedCase.id,
+    kind: seedCase.kind,
+    question: seedCase.question,
+    filters: seedCase.filters,
+    guardrail: result.guardrail,
+    scores,
+    costUsd: estimateCostUsd(result.model, result.usage?.input_tokens, result.usage?.output_tokens),
+  };
+}
+
+// An errored case can't vouch for its own safety — count it as a failure on
+// every scorer rather than silently excluding it.
+function buildErrorCaseResult(seedCase: SeedCase, message: string): CaseResult {
+  const failed: ScorerResult = { pass: false, detail: `case failed: ${message}` };
+  return {
+    id: seedCase.id,
+    kind: seedCase.kind,
+    question: seedCase.question,
+    filters: seedCase.filters,
+    guardrail: "error",
+    error: message,
+    scores: {
+      noBannedPhrases: failed,
+      noAdmissionsOddsLanguage: failed,
+      hallucination: failed,
+      coverage: failed,
+      missingDataNotShownAsZero: failed,
+    },
+  };
+}
+
 async function runCase(seedCase: SeedCase, allSchoolNames: string[]): Promise<CaseResult> {
   try {
     const result = await answerQuestion({ question: seedCase.question, filters: seedCase.filters });
-    const retrievedNames = result.retrieved.map((r) => r.name);
-    const retrievedChunks = result.retrieved.map((r) => r.chunk);
-
-    const scores: CaseResult["scores"] = {
-      noBannedPhrases: scoreNoBannedPhrases(result.answer),
-      noAdmissionsOddsLanguage: scoreNoAdmissionsOddsLanguage(result.answer),
-    };
-
-    if (DESCRIPTIVE_GUARDRAILS.has(result.guardrail)) {
-      scores.hallucination = scoreHallucination(result.answer, retrievedNames, allSchoolNames);
-      scores.coverage = scoreCoverage(result.answer, retrievedNames);
-      scores.missingDataNotShownAsZero = scoreMissingDataNotShownAsZero(result.answer, retrievedChunks);
-    } else {
-      scores.hallucination = { pass: true, skipped: true };
-      scores.coverage = { pass: true, skipped: true };
-      scores.missingDataNotShownAsZero = { pass: true, skipped: true };
-    }
-
-    return {
-      id: seedCase.id,
-      kind: seedCase.kind,
-      question: seedCase.question,
-      filters: seedCase.filters,
-      guardrail: result.guardrail,
-      scores,
-      costUsd: estimateCostUsd(result.model, result.usage?.input_tokens, result.usage?.output_tokens),
-    };
+    return scoreAnswer(seedCase, result, allSchoolNames);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    // An errored case can't vouch for its own safety — count it as a
-    // failure on every scorer rather than silently excluding it.
-    const failed: ScorerResult = { pass: false, detail: `case failed: ${message}` };
-    return {
-      id: seedCase.id,
-      kind: seedCase.kind,
-      question: seedCase.question,
-      filters: seedCase.filters,
-      guardrail: "error",
-      error: message,
-      scores: {
-        noBannedPhrases: failed,
-        noAdmissionsOddsLanguage: failed,
-        hallucination: failed,
-        coverage: failed,
-        missingDataNotShownAsZero: failed,
-      },
-    };
+    return buildErrorCaseResult(seedCase, message);
   }
+}
+
+/**
+ * The weekly/manual path: retrieval still runs per-case up front (it's cheap
+ * and local — no reason to batch it), but every model call goes through one
+ * Anthropic Batch API submission instead of 30 separate messages.create
+ * calls. Each request is built with the exact same buildAskRequest() the
+ * synchronous path uses, and each result is turned into an
+ * AnswerQuestionResult with the exact same buildAnswerResult(), so a batched
+ * run scores exactly what the production ask box would have produced.
+ */
+async function runBatch(cases: SeedCase[], allSchoolNames: string[]): Promise<CaseResult[]> {
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+  const perCase = await Promise.all(
+    cases.map(async (seedCase) => {
+      const results = await searchSchools(seedCase.question, ASK_RETRIEVAL_COUNT, seedCase.filters);
+      const schoolContext = buildSchoolContext(results);
+      return { seedCase, results, request: buildAskRequest(seedCase.question, schoolContext) };
+    })
+  );
+
+  console.log(`Submitting ${perCase.length} cases as one Anthropic message batch...`);
+  const batch = await client.messages.batches.create({
+    requests: perCase.map(({ seedCase, request }) => ({ custom_id: seedCase.id, params: request })),
+  });
+
+  console.log(`Batch ${batch.id} created — polling until it ends (batches can take up to 24 hours)...`);
+  const ended = await pollBatchUntilEnded({
+    retrieve: () => client.messages.batches.retrieve(batch.id),
+    sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+  });
+  console.log(`Batch ${ended.id} ended: ${JSON.stringify(ended.request_counts)}`);
+
+  const items: Anthropic.Messages.MessageBatchIndividualResponse[] = [];
+  for await (const item of await client.messages.batches.results(ended.id)) {
+    items.push(item);
+  }
+  const resultsByCustomId = indexBatchResultsByCustomId(items);
+
+  return perCase.map(({ seedCase, results }) => {
+    const batchResult = resultsByCustomId[seedCase.id];
+    if (!batchResult) {
+      return buildErrorCaseResult(seedCase, "missing from batch results");
+    }
+    if (batchResult.type !== "succeeded") {
+      return buildErrorCaseResult(seedCase, `batch result type: ${batchResult.type}`);
+    }
+
+    const answer = buildAnswerResult(batchResult.message, seedCase.question, results);
+    return scoreAnswer(seedCase, answer, allSchoolNames);
+  });
 }
 
 function summarize(results: CaseResult[]): Record<string, { passed: number; total: number; rate: number }> {
@@ -183,29 +254,56 @@ async function main() {
 
   console.log(`Running ${cases.length} ask-box eval cases (trigger=${trigger}, run=${runName})...`);
 
-  const results: CaseResult[] = [];
+  let results: CaseResult[];
   let totalCostUsd = 0;
   let aborted = false;
-  for (const seedCase of cases) {
-    const result = await runCase(seedCase, allSchoolNames);
-    results.push(result);
-    totalCostUsd += result.costUsd ?? 0;
-    console.log(
-      `  ${result.error ? "ERROR" : "ok"} ${result.id} [${result.kind}] guardrail=${result.guardrail} ` +
-        `(running cost: $${totalCostUsd.toFixed(4)})`
-    );
+
+  if (trigger === "pull_request") {
+    // A PR check that can take up to 24 hours (the Batch API's own expiry)
+    // is useless, so PR runs stay synchronous — one messages.create per
+    // case, aborting as soon as the running cost passes the guard.
+    results = [];
+    for (const seedCase of cases) {
+      const result = await runCase(seedCase, allSchoolNames);
+      results.push(result);
+      totalCostUsd += result.costUsd ?? 0;
+      console.log(
+        `  ${result.error ? "ERROR" : "ok"} ${result.id} [${result.kind}] guardrail=${result.guardrail} ` +
+          `(running cost: $${totalCostUsd.toFixed(4)})`
+      );
+
+      if (totalCostUsd > COST_LIMIT_USD) {
+        console.error(
+          `\n${buildCostGuardAbortMessage({
+            lastCaseId: result.id,
+            casesRun: results.length,
+            totalCases: cases.length,
+            totalCostUsd,
+          })}`
+        );
+        aborted = true;
+        break;
+      }
+    }
+  } else {
+    // Weekly and manual runs are unattended, so there's no PR check waiting
+    // on the result — batch every case for half the token cost instead.
+    results = await runBatch(cases, allSchoolNames);
+    for (const result of results) {
+      totalCostUsd += result.costUsd ?? 0;
+      console.log(`  ${result.error ? "ERROR" : "ok"} ${result.id} [${result.kind}] guardrail=${result.guardrail}`);
+    }
 
     if (totalCostUsd > COST_LIMIT_USD) {
       console.error(
         `\n${buildCostGuardAbortMessage({
-          lastCaseId: result.id,
+          lastCaseId: results[results.length - 1].id,
           casesRun: results.length,
           totalCases: cases.length,
           totalCostUsd,
         })}`
       );
       aborted = true;
-      break;
     }
   }
 
