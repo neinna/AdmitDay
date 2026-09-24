@@ -7,3 +7,24 @@
   50%  { transform: scale(1.1); }
   100% { transform: scale(1); }
 }
+
+/*
+ * Issue #405 — the Shortlist print sheet is the artifact a parent carries to
+ * the kitchen table, so it prints as a standalone record, not a screenshot of
+ * the app: the site header/nav, the reorder arrows, the Remove buttons and the
+ * Print button itself (all marked `print-hide`) are dropped, and hover/
+ * transition styling is turned off since it can't apply on paper.
+ */
+@media print {
+  .print-hide {
+    display: none !important;
+  }
+
+  footer {
+    display: none !important;
+  }
+
+  * {
+    transition: none !important;
+  }
+}

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePostHog } from 'posthog-js/react'
 import { trackLabel } from '@/lib/school-list-utils'
+import { dedupePrograms } from '@/lib/school-detail-utils'
 import { Eyebrow } from '@/components/ui'
 import AuthControls from '@/components/AuthControls'
 import {
@@ -12,6 +13,7 @@ import {
   resolveSavedSchools,
   type Composition,
   type ListSchool,
+  type ListSchoolDetail,
 } from '@/lib/saved-list-utils'
 
 /**
@@ -36,8 +38,15 @@ type Props = {
   index: ListSchool[]
   /** The signed-in parent's saved dbns, in rank order, fetched server-side from Postgres (issue #200). Empty when signed out. */
   initialOrder: string[]
+  /** Print-only detail (issue #405), keyed by dbn, for schools on the saved list only. */
+  details?: Record<string, ListSchoolDetail>
   /** Whether the request that rendered this page had a session (issue #240). Signed out, there is no list — saving a school requires an account. */
   signedIn: boolean
+}
+
+/** "0.93" -> "93%". Absent input stays absent — never a fabricated 0%. */
+function ratePct(v: number | null | undefined): string | null {
+  return v == null ? null : `${Math.round(v * 100)}%`
 }
 
 // Issue #199: /shortlist had no header at all before this — the sign-in /
@@ -45,7 +54,7 @@ type Props = {
 // pattern already duplicated across page.tsx, FindClient.tsx, and SiteHeader.tsx.
 function Header() {
   return (
-    <header className="flex items-center justify-between px-5 min-[900px]:px-9 py-[18px] border-b border-rule">
+    <header className="print-hide flex items-center justify-between px-5 min-[900px]:px-9 py-[18px] border-b border-rule">
       <Link href="/" aria-label="AdmitDay home" className="flex items-center gap-[9px]">
         <span className="w-[9px] h-[9px] bg-accent inline-block" />
         <div className="flex items-baseline">
@@ -64,11 +73,19 @@ function Header() {
   )
 }
 
-export default function ShortlistClient({ index, initialOrder, signedIn }: Props) {
+export default function ShortlistClient({ index, initialOrder, details = {}, signedIn }: Props) {
   const posthog = usePostHog()
   const [order, setOrder] = useState<string[]>(initialOrder)
   const [notice, setNotice] = useState<string | null>(null)
   const viewFiredRef = useRef(false)
+  // Computed client-side only, after mount: computing it during SSR would
+  // bake the server's date/locale into the markup and risk a hydration
+  // mismatch against the browser's.
+  const [printDate, setPrintDate] = useState('')
+
+  useEffect(() => {
+    setPrintDate(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }))
+  }, [])
 
   // The order arrives from the server (Postgres, issue #200) as a prop, so
   // there is no client-side fetch/hydration step here — only the view-fired
@@ -168,7 +185,7 @@ export default function ShortlistClient({ index, initialOrder, signedIn }: Props
   return (
     <div>
       <Header />
-      <div className="flex items-end justify-between gap-5 px-5 min-[900px]:px-9 pt-[30px] pb-6 border-b border-rule">
+      <div className="print-hide flex items-end justify-between gap-5 px-5 min-[900px]:px-9 pt-[30px] pb-6 border-b border-rule">
         <h1 className="font-display font-bold text-[30px] min-[700px]:text-[40px] leading-[1.04] tracking-[-0.038em] text-ink">
           Shortlist
         </h1>
@@ -181,7 +198,88 @@ export default function ShortlistClient({ index, initialOrder, signedIn }: Props
         </button>
       </div>
 
-      <div className={wide ? 'grid grid-cols-1 min-[900px]:grid-cols-[1fr_316px]' : ''}>
+      <div className="hidden print:block px-5 py-4">
+        <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-faint">
+          Printed {printDate}
+        </p>
+        <p className="font-mono text-[11px] uppercase tracking-[0.1em] text-faint">
+          {saved.length} school{saved.length === 1 ? '' : 's'}
+        </p>
+      </div>
+
+      {saved.map((school, i) => {
+        const detail = details[school.dbn]
+        const programs = dedupePrograms(detail?.programs ?? [])
+        const fields: { label: string; value: string | null }[] = [
+          { label: 'Borough', value: school.borough || null },
+          { label: 'Neighborhood', value: school.neighborhood ?? null },
+          { label: 'Address', value: detail?.doe_data.address ?? null },
+          {
+            label: 'Admissions tracks',
+            value: (school.admissions_types ?? []).map(trackLabel).join(', ') || null,
+          },
+          {
+            label: 'Applicants per seat',
+            value: school.applicants_per_seat != null ? `${school.applicants_per_seat.toFixed(1)} applicants per seat` : null,
+          },
+          {
+            label: 'Performance percentile',
+            value: detail?.sqr?.performance_pctl != null ? String(detail.sqr.performance_pctl) : null,
+          },
+          { label: 'Rating', value: detail?.sqr?.rating ?? null },
+          {
+            label: 'Impact percentile',
+            value: detail?.sqr?.impact_pctl != null ? String(detail.sqr.impact_pctl) : null,
+          },
+          { label: 'Graduation rate', value: ratePct(detail?.doe_data.graduation_rate) },
+          { label: 'College and career rate', value: ratePct(detail?.doe_data.college_career_rate) },
+          { label: 'Attendance rate', value: ratePct(detail?.doe_data.attendance_rate) },
+          {
+            label: 'Total students',
+            value: detail?.total_students != null ? String(detail.total_students) : null,
+          },
+          { label: 'Subway', value: detail?.doe_data.subway ?? null },
+          { label: 'Bus', value: detail?.doe_data.bus ?? null },
+          { label: 'Website', value: detail?.school_website || detail?.doe_data.website || null },
+        ].filter((f) => f.value != null && f.value !== '')
+
+        return (
+          <div
+            key={school.dbn}
+            className={`hidden print:block break-inside-avoid px-5 py-6${i > 0 ? ' break-before-page' : ''}`}
+          >
+            <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-faint border-b border-rule pb-2 mb-4">
+              Shortlist
+            </p>
+            <h2 className="font-display font-bold text-[22px] tracking-[-0.02em] text-ink">
+              {String(i + 1).padStart(2, '0')} — {school.name}
+            </h2>
+            <p className="font-mono text-[13px] text-faint mb-3">{school.dbn}</p>
+            <dl>
+              {fields.map((f) => (
+                <div key={f.label} className="flex gap-3 py-1 text-[13px] border-b border-rule-light">
+                  <dt className="w-[180px] shrink-0 text-faint">{f.label}</dt>
+                  <dd className="text-ink-2">{f.value}</dd>
+                </div>
+              ))}
+            </dl>
+            {programs.length > 0 && (
+              <div className="mt-4">
+                <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-faint mb-1">Programs</p>
+                <ul>
+                  {programs.map((p, idx) => (
+                    <li key={idx} className="text-[13px] text-ink-2 py-[2px]">
+                      {p.name} — {p.method}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )
+      })}
+
+      <div className={`print-hide ${wide ? 'grid grid-cols-1 min-[900px]:grid-cols-[1fr_316px]' : ''}`}>
         <section
           className={`px-5 min-[900px]:px-9 pt-[26px] pb-[30px] ${wide ? 'min-[900px]:border-r border-rule' : ''}`}
         >
@@ -351,7 +449,7 @@ export default function ShortlistClient({ index, initialOrder, signedIn }: Props
         </aside>
       </div>
 
-      <div className="flex flex-col min-[900px]:flex-row justify-between gap-1 px-5 min-[900px]:px-9 py-4 bg-surface-2 border-t border-rule">
+      <div className="print-hide flex flex-col min-[900px]:flex-row justify-between gap-1 px-5 min-[900px]:px-9 py-4 bg-surface-2 border-t border-rule">
         <span className="text-[13px] text-faint">
           Confirm each program on the official listing before you apply.
         </span>

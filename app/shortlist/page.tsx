@@ -3,7 +3,7 @@ import { auth } from '@clerk/nextjs/server'
 import Footer from '@/components/Footer'
 import { getAllSchools } from '@/lib/load-schools'
 import { findParentId, getSavedDbns } from '@/lib/saved-lists-db'
-import type { ListSchool } from '@/lib/saved-list-utils'
+import type { ListSchool, ListSchoolDetail } from '@/lib/saved-list-utils'
 import ShortlistClient from './ShortlistClient'
 
 export const metadata: Metadata = {
@@ -33,7 +33,7 @@ export default async function ShortlistPage() {
   if (!userId) {
     return (
       <main className="min-h-screen bg-white">
-        <ShortlistClient index={[]} initialOrder={[]} signedIn={false} />
+        <ShortlistClient index={[]} initialOrder={[]} details={{}} signedIn={false} />
         <Footer />
       </main>
     )
@@ -52,9 +52,32 @@ export default async function ShortlistPage() {
     neighborhood: s.doe_data?.neighborhood ?? null,
   }))
 
+  // Print detail (issue #405) only for schools actually on the list — the
+  // index above ships for all schools and must stay slim.
+  const savedSet = new Set(initialOrder)
+  const details: Record<string, ListSchoolDetail> = {}
+  for (const s of schools) {
+    if (!savedSet.has(s.dbn)) continue
+    details[s.dbn] = {
+      total_students: s.total_students,
+      sqr: s.sqr,
+      school_website: s.school_website,
+      programs: s.programs,
+      doe_data: {
+        address: s.doe_data?.address ?? null,
+        graduation_rate: s.doe_data?.graduation_rate ?? null,
+        college_career_rate: s.doe_data?.college_career_rate ?? null,
+        attendance_rate: s.doe_data?.attendance_rate ?? null,
+        subway: s.doe_data?.subway,
+        bus: s.doe_data?.bus,
+        website: s.doe_data?.website ?? null,
+      },
+    }
+  }
+
   return (
     <main className="min-h-screen bg-white">
-      <ShortlistClient index={index} initialOrder={initialOrder} signedIn={true} />
+      <ShortlistClient index={index} initialOrder={initialOrder} details={details} signedIn={true} />
       <Footer />
     </main>
   )
