@@ -102,7 +102,7 @@ test('signed-out parent flow', async ({ page }) => {
 
   await test.step('/shortlist asks a signed-out visitor to sign in', async () => {
     await page.goto('/shortlist')
-    await expect(page.getByText(/sign in/i)).toBeVisible()
+    await expect(page.getByText('Sign in to see your saved schools.')).toBeVisible()
   })
 
   await test.step('an excluded school 404s', async () => {
