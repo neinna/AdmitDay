@@ -434,15 +434,16 @@ export const ADMISSION_METHOD_COPY: Record<string, string> = {
 
 /**
  * The approved row copy for one admissions method this school uses. SHSAT
- * appends up to three published offer cutoffs, newest year first, skipping
- * any year DOE hasn't published — never a 0.
+ * names only the most recent published offer cutoff, with its year, so the
+ * number is interpretable (issue #437) — never a bare, unattributed score.
  */
 export function admissionMethodCopy(method: string, school: School): string {
   const base = ADMISSION_METHOD_COPY[method] ?? method
   if (method !== 'SHSAT') return base
-  const scores = (getShsatCutoffs(school.dbn) ?? []).map((c) => c.score).reverse()
-  if (scores.length === 0) return base
-  return `${base} Lowest score offered: ${scores.join(' · ')}`
+  const cutoffs = getShsatCutoffs(school.dbn) ?? []
+  if (cutoffs.length === 0) return base
+  const latest = cutoffs[cutoffs.length - 1]
+  return `${base} Lowest score offered in ${latest.year}: ${latest.score}`
 }
 
 // ── /find "Starting from" ZIP or subway station + distance (issue #343/#374) ─

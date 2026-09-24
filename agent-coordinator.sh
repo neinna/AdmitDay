@@ -39,6 +39,11 @@ CLAUDE_TIMEOUT=1800
 CLAUDE_IMPLEMENT_MODEL="${CLAUDE_IMPLEMENT_MODEL:-sonnet}"
 CLAUDE_REVIEW_MODEL="${CLAUDE_REVIEW_MODEL:-sonnet}"
 CLAUDE_PLANNER_MODEL="${CLAUDE_PLANNER_MODEL:-sonnet}"
+CLAUDE_IMPLEMENT_FALLBACK_MODEL="${CLAUDE_IMPLEMENT_FALLBACK_MODEL:-haiku}"
+# Must differ from CLAUDE_REVIEW_MODEL (also "sonnet" by default): a fallback
+# equal to the primary gives no protection against a model-specific outage,
+# since the same model would be unavailable both times (issue #430 review).
+CLAUDE_REVIEW_FALLBACK_MODEL="${CLAUDE_REVIEW_FALLBACK_MODEL:-haiku}"
 CLAUDE_IMPLEMENT_MAX_USD="${CLAUDE_IMPLEMENT_MAX_USD:-5.00}"
 CLAUDE_REVIEW_MAX_USD="${CLAUDE_REVIEW_MAX_USD:-0.75}"
 CLAUDE_PLANNER_MAX_USD="${CLAUDE_PLANNER_MAX_USD:-0.50}"
@@ -731,7 +736,10 @@ maybe_reconcile_open_prs() {
 
 # Run one claude agent call with timeout, capturing the JSON result.
 # Reads the prompt from $PROMPT.
-# run_claude OUT_FILE [RESUME_ID] [TOOLS] [MODEL] [MAX_BUDGET_USD]
+# run_claude OUT_FILE [RESUME_ID] [TOOLS] [MODEL] [MAX_BUDGET_USD] [FALLBACK_MODEL]
+# FALLBACK_MODEL is passed straight through to the CLI's own --fallback-model,
+# which it retries on automatically when the primary model is unavailable
+# (issue #430). Empty means no flag at all, so behavior is unchanged when unset.
 # Returns: 0 on success, 124 on timeout, 1 on any other error.
 run_claude() {
   local OUT_FILE="$1"
@@ -739,6 +747,7 @@ run_claude() {
   local TOOLS="${3:-Bash,Read,Write,Edit,Glob,Grep}"
   local MODEL="${4:-}"
   local MAX_BUDGET_USD="${5:-}"
+  local FALLBACK_MODEL="${6:-}"
   local RESUME_ARGS=()
   local MODEL_ARGS=()
   local BUDGET_ARGS=()
@@ -747,6 +756,9 @@ run_claude() {
   fi
   if [ -n "$MODEL" ]; then
     MODEL_ARGS=(--model "$MODEL")
+  fi
+  if [ -n "$FALLBACK_MODEL" ]; then
+    MODEL_ARGS+=(--fallback-model "$FALLBACK_MODEL")
   fi
   if [ -n "$MAX_BUDGET_USD" ]; then
     BUDGET_ARGS=(--max-budget-usd "$MAX_BUDGET_USD")
@@ -784,6 +796,35 @@ try:
     print(d.get('$2','') or '')
 except Exception:
     pass
+"
+}
+
+# claude_ran_on_fallback FILE PRIMARY FALLBACK
+# True (exit 0) if this call ran entirely on the fallback model rather than
+# the primary one (issue #430: the CLI's own --fallback-model kicked in).
+# Matches by substring since the resolved model id (e.g.
+# "claude-haiku-4-5-20251001") contains the alias passed on the command line
+# (e.g. "haiku"), and the two settings are never substrings of each other in
+# practice. Requires the primary to be absent from every modelUsage entry,
+# not just checked entry-by-entry: the CLI itself uses a small model (often
+# Haiku) for internal jobs like summarizing WebFetch results, so a run that
+# genuinely used the primary model can still have an unrelated Haiku entry
+# alongside it. Entry-by-entry matching would misread that as a fallback.
+claude_ran_on_fallback() {
+  python3 -c "
+import json,sys
+try:
+    d = json.load(open('$1'))
+except Exception:
+    sys.exit(1)
+models = set((d.get('modelUsage') or {}).keys())
+m = d.get('model')
+if m:
+    models.add(m)
+primary, fallback = '$2', '$3'
+used_fallback = any(fallback in x for x in models)
+used_primary = any(primary in x for x in models)
+sys.exit(0 if fallback and used_fallback and not used_primary else 1)
 "
 }
 
@@ -1017,9 +1058,14 @@ RISK: LIVE-VERIFY-NEEDED"
   # No log() calls in this function: its stdout is the review text.
   local T0 T1
   T0=$(lf_now_ns)
-  run_claude "$REVIEW_OUT" "" "Read,Glob,Grep" "$CLAUDE_REVIEW_MODEL" "$CLAUDE_REVIEW_MAX_USD"
+  run_claude "$REVIEW_OUT" "" "Read,Glob,Grep" "$CLAUDE_REVIEW_MODEL" "$CLAUDE_REVIEW_MAX_USD" "$CLAUDE_REVIEW_FALLBACK_MODEL"
   local RC=$?
   T1=$(lf_now_ns)
+  if [ $RC -eq 0 ] && claude_ran_on_fallback "$REVIEW_OUT" "$CLAUDE_REVIEW_MODEL" "$CLAUDE_REVIEW_FALLBACK_MODEL"; then
+    # Not log(): its `tee` would leak onto stdout, which is this function's
+    # return value (see the note above on Langfuse helpers).
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Issue #${ISSUE_NUMBER}: ran on fallback model ${CLAUDE_REVIEW_FALLBACK_MODEL}" >> "$LOG_FILE"
+  fi
   local REVIEW_TEXT
   REVIEW_TEXT=$(claude_json_field "$REVIEW_OUT" "result")
   local REVIEW_STATUS="unavailable"
@@ -1440,8 +1486,11 @@ Instructions:
     # PROMPT below carrying forward just the issue, the failure reason, and
     # the files already touched (issue #207).
     run_claude "$CLAUDE_OUT" "" \
-      "Bash,Read,Write,Edit,Glob,Grep,WebFetch,WebSearch" "$CLAUDE_IMPLEMENT_MODEL" "$CLAUDE_IMPLEMENT_MAX_USD"
+      "Bash,Read,Write,Edit,Glob,Grep,WebFetch,WebSearch" "$CLAUDE_IMPLEMENT_MODEL" "$CLAUDE_IMPLEMENT_MAX_USD" "$CLAUDE_IMPLEMENT_FALLBACK_MODEL"
     local RC=$?
+    if [ $RC -eq 0 ] && claude_ran_on_fallback "$CLAUDE_OUT" "$CLAUDE_IMPLEMENT_MODEL" "$CLAUDE_IMPLEMENT_FALLBACK_MODEL"; then
+      log "Issue #${ISSUE_NUMBER}: ran on fallback model ${CLAUDE_IMPLEMENT_FALLBACK_MODEL}"
+    fi
     if [ "$(env_fingerprint)" != "$ENV_FP_BEFORE" ]; then
       log "Issue #${ISSUE_NUMBER}: SECRETS FILE CHANGED during attempt ${ATTEMPT}: an .env file was created, edited, or deleted. Failing the run."
       github_comment "$ISSUE_NUMBER" "The coordinator stopped this run: during attempt ${ATTEMPT} the agent created, edited, or deleted a secrets (.env) file. Agents must never touch secrets. If the build needs a placeholder value, it belongs in a committed file where the PR diff shows it. Check the VPS before re-queuing."
