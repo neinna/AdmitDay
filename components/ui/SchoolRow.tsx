@@ -5,7 +5,7 @@ interface Props {
   rowNumber: number
   name: ReactNode
   href: string
-  isHiddenGem?: boolean
+  isHighImpact?: boolean
   metadata: string
   rationale: string
   statValue: ReactNode
@@ -19,7 +19,7 @@ export default function SchoolRow({
   rowNumber,
   name,
   href,
-  isHiddenGem = false,
+  isHighImpact = false,
   metadata,
   rationale,
   statValue,
@@ -46,9 +46,9 @@ export default function SchoolRow({
       <div className="flex flex-col gap-[5px] order-1 min-[900px]:order-none">
         <div className="flex items-center gap-2.5">
           <div className="font-sans font-bold text-[18px] text-ink">{name}</div>
-          {isHiddenGem && (
+          {isHighImpact && (
             <span title="Students grow more here than at 80%+ of NYC high schools (DOE, 2024-25)" className="font-mono text-[10.5px] tracking-[0.08em] uppercase text-gem bg-gem-bg border border-gem-border px-[7px] py-[3px]">
-              Fewer applicants per seat, strong results
+              High impact
             </span>
           )}
         </div>
