@@ -510,66 +510,32 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
         </section>
 
         <aside className={wide ? '' : 'border-t border-rule'}>
-          <section className="px-5 min-[900px]:px-7 py-[26px]">
-            <div className="flex items-baseline justify-between gap-3 mb-3">
-              <Eyebrow>Composition</Eyebrow>
-              <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-faint">
-                {composition.total} saved
-              </span>
-            </div>
-
-            <div className="flex h-3 w-full mb-3">
+          <section className="px-5 min-[900px]:px-7 py-[14px]">
+            <div className="flex h-3 w-full">
               {composition.buckets.map((b, i) => (
                 <div
                   key={b.key}
                   style={{ flex: b.count }}
+                  title={`${b.label}: ${b.count}`}
+                  aria-label={`${b.label}: ${b.count}`}
+                  role="img"
                   className={['bg-ink', 'bg-ink-2', 'bg-muted', 'bg-faint'][i]}
                 />
               ))}
             </div>
 
-            <div className="flex flex-col gap-[7px]">
-              {composition.buckets.map((b, i) => (
-                <div key={b.key} className="flex items-center gap-2">
-                  <span
-                    className={`w-[10px] h-[10px] ${
-                      b.count === 0
-                        ? 'border border-border bg-surface'
-                        : ['bg-ink', 'bg-ink-2', 'bg-muted', 'bg-faint'][i]
-                    }`}
-                  />
-                  <span
-                    className={`flex-1 text-[13.5px] ${b.count === 0 ? 'text-faint' : 'text-ink-2'}`}
-                  >
-                    {b.label}
-                  </span>
-                  <span className="font-mono text-[13px] text-ink">{b.count}</span>
-                </div>
+            <div className="flex h-3 w-full mt-2">
+              {composition.byBorough.map((cell, i) => (
+                <div
+                  key={cell.label}
+                  style={{ flex: cell.count }}
+                  title={`${cell.label}: ${cell.count}`}
+                  aria-label={`${cell.label}: ${cell.count}`}
+                  role="img"
+                  className={['bg-ink', 'bg-ink-2', 'bg-ink-3', 'bg-muted', 'bg-faint'][i % 5]}
+                />
               ))}
             </div>
-
-            <div className="pt-[14px] mt-[14px] border-t border-rule-light">
-              <Eyebrow>Reading the shape</Eyebrow>
-              <p className="text-[13px] text-muted mt-1">{composition.shapeSentence}</p>
-            </div>
-
-            {composition.byBorough.length > 0 && (
-              <div className="pt-[14px] mt-[14px] border-t border-rule-light">
-                <Eyebrow>Boroughs</Eyebrow>
-                <div className="grid grid-cols-3 gap-[1px] bg-rule border border-rule mt-2">
-                  {composition.byBorough.slice(0, 6).map((cell) => (
-                    <div key={cell.label} className="bg-surface px-3 py-2">
-                      <div className="font-mono text-[18px] font-medium tracking-[-0.02em] text-ink">
-                        {cell.count}
-                      </div>
-                      <div className="text-[11px] uppercase tracking-[0.04em] text-faint">
-                        {cell.label}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </section>
         </aside>
       </div>
