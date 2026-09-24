@@ -962,11 +962,16 @@ print(matches[-1] if matches else '')
 }
 
 # Coordinator-owned verification: the ONLY success signal.
-# Keeps Next's webpack cache (.next/cache, ~325MB) between builds: a warm
-# build takes ~74s on this VPS versus ~160s cold. Everything else in .next is
-# wiped so no stale output survives. If free disk ever drops below
+# Keeps Next's webpack cache (.next/cache) between builds: a warm build takes
+# ~74s on this VPS versus ~160s cold. The cache has no fixed size (698MB was
+# observed on #405) and nothing prunes it. Everything else in .next is wiped
+# so no stale output survives. If free disk ever drops below
 # BUILD_CACHE_MIN_FREE_MB the cache is dropped too, as it was when this VPS
 # had <600MB free.
+# The preserved cache and the wiped output are two halves of one consistent
+# state (#431): if a build fails on a module-resolution error, webpack may
+# have restored a module graph describing files the wipe above just deleted.
+# In that case the cache is dropped and the build retried exactly once.
 verify_app() {
   local OUT="$1" RC=0
   local T0 T1
@@ -989,6 +994,14 @@ verify_app() {
     T0=$(lf_now_ns)
     (cd "$APP_DIR" && npm run build) >> "$OUT" 2>&1 || RC=1
     T1=$(lf_now_ns)
+    if [ $RC -ne 0 ] && grep -q 'Cannot find module' "$OUT" && grep -qE 'webpack-runtime|\.next/server' "$OUT"; then
+      log "Build failed on a module-resolution error — dropping .next/cache and rebuilding once."
+      rm -rf "$APP_DIR/.next/cache"
+      RC=0
+      T0=$(lf_now_ns)
+      (cd "$APP_DIR" && npm run build) >> "$OUT" 2>&1 || RC=1
+      T1=$(lf_now_ns)
+    fi
     BUILD_RESULT="$([ $RC -eq 0 ] && echo passed || echo failed)"
     lf_record "build" "$T0" "$T1" "$([ $RC -eq 0 ] && echo 1 || echo 0)" "" "" "$BUILD_RESULT"
   else
