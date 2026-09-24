@@ -57,7 +57,6 @@ export type Composition = {
   buckets: CompositionBucket[]
   byBorough: BreakdownCell[]
   byRatio: BreakdownCell[]
-  shapeSentence: string
   /** Saved schools with no published applicants-per-seat; drives the incomplete-column note. */
   ratioMissing: number
 }
@@ -201,7 +200,6 @@ export function buildComposition(saved: ListSchool[]): Composition {
     buckets,
     byBorough,
     byRatio,
-    shapeSentence: buildShapeSentence(buckets, total, ratioMissing),
     ratioMissing,
   }
 }

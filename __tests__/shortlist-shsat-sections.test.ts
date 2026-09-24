@@ -96,11 +96,12 @@ describe('/shortlist SHSAT / Main List split (issue #406)', () => {
       })
     )
 
-    // The ranking list itself, isolated from the Composition rail below it —
+    // The ranking list itself, isolated from the composition rail below it —
     // that rail keeps its own "SHSAT" bucket label at 0 (issue #406 point 6,
     // "the composition summary below the list stays as it is"), which is not
-    // what this assertion is about.
-    const rankingSection = html.slice(html.indexOf('Your ranking'), html.indexOf('Composition'))
+    // what this assertion is about. The rail lost its "Composition" eyebrow
+    // in issue #424, so the <aside> tag marks the boundary instead.
+    const rankingSection = html.slice(html.indexOf('Your ranking'), html.indexOf('<aside'))
     expect(rankingSection).not.toContain('SHSAT')
     expect(rankingSection).toContain('Main List')
   })
