@@ -101,7 +101,12 @@ function loadAllSchoolNames(): string[] {
   return Array.from(new Set(schools.map((s) => s.name)));
 }
 
-function scoreAnswer(seedCase: SeedCase, result: AnswerQuestionResult, allSchoolNames: string[]): CaseResult {
+function scoreAnswer(
+  seedCase: SeedCase,
+  result: AnswerQuestionResult,
+  allSchoolNames: string[],
+  isBatch: boolean
+): CaseResult {
   const retrievedNames = result.retrieved.map((r) => r.name);
   const retrievedChunks = result.retrieved.map((r) => r.chunk);
 
@@ -127,7 +132,7 @@ function scoreAnswer(seedCase: SeedCase, result: AnswerQuestionResult, allSchool
     filters: seedCase.filters,
     guardrail: result.guardrail,
     scores,
-    costUsd: estimateCostUsd(result.model, result.usage?.input_tokens, result.usage?.output_tokens),
+    costUsd: estimateCostUsd(result.model, result.usage?.input_tokens, result.usage?.output_tokens, isBatch),
   };
 }
 
@@ -155,7 +160,7 @@ function buildErrorCaseResult(seedCase: SeedCase, message: string): CaseResult {
 async function runCase(seedCase: SeedCase, allSchoolNames: string[]): Promise<CaseResult> {
   try {
     const result = await answerQuestion({ question: seedCase.question, filters: seedCase.filters });
-    return scoreAnswer(seedCase, result, allSchoolNames);
+    return scoreAnswer(seedCase, result, allSchoolNames, false);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return buildErrorCaseResult(seedCase, message);
@@ -170,6 +175,8 @@ async function runCase(seedCase: SeedCase, allSchoolNames: string[]): Promise<Ca
  * synchronous path uses, and each result is turned into an
  * AnswerQuestionResult with the exact same buildAnswerResult(), so a batched
  * run scores exactly what the production ask box would have produced.
+ * scoreAnswer() is told isBatch=true so the reported cost reflects the
+ * Batch API's 50% discount rather than list price.
  */
 async function runBatch(cases: SeedCase[], allSchoolNames: string[]): Promise<CaseResult[]> {
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
@@ -210,7 +217,7 @@ async function runBatch(cases: SeedCase[], allSchoolNames: string[]): Promise<Ca
     }
 
     const answer = buildAnswerResult(batchResult.message, seedCase.question, results);
-    return scoreAnswer(seedCase, answer, allSchoolNames);
+    return scoreAnswer(seedCase, answer, allSchoolNames, true);
   });
 }
 
