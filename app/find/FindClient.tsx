@@ -670,7 +670,6 @@ export default function FindClient({ schools, initialFilters }: Props) {
             </div>
 
             <div className="flex flex-col gap-2">
-              <div className="font-mono text-[11px] tracking-[0.12em] uppercase text-faint">Add Details</div>
               <p className="text-[15.5px] text-muted max-w-[560px]" style={{ textWrap: 'pretty' }}>
                 Anything the filters can&rsquo;t capture — in your own words.
               </p>
