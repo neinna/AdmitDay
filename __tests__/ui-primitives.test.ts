@@ -250,7 +250,7 @@ describe('SchoolRow ui primitive (issue #113)', () => {
   })
 
   it('puts the name and hidden-gem badge in a gapped flex row (badge cannot land mid-wrap)', () => {
-    expect(src).toMatch(/flex items-center gap-2\.5[\s\S]{0,200}isHiddenGem/)
+    expect(src).toMatch(/flex items-center gap-2\.5[\s\S]{0,200}isHighImpact/)
   })
 })
 

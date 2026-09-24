@@ -1,4 +1,4 @@
-import type { School } from '@/types'
+import type { DoeData, School } from '@/types'
 
 /**
  * The subset of a school this page needs. The saved list lives in localStorage,
@@ -10,6 +10,20 @@ export type ListSchool = Pick<
   School,
   'dbn' | 'name' | 'borough' | 'admissions_types' | 'applicants_per_seat'
 > & { neighborhood?: string | null }
+
+/**
+ * Everything the print-only detail block needs beyond `ListSchool` (issue
+ * #405). Keyed by dbn and populated server-side only for the schools that are
+ * actually on the signed-in parent's saved list — the slim index above still
+ * ships for every school, so this stays out of it rather than ballooning that
+ * payload.
+ */
+export type ListSchoolDetail = Pick<School, 'total_students' | 'sqr' | 'school_website' | 'programs'> & {
+  doe_data: Pick<
+    DoeData,
+    'address' | 'graduation_rate' | 'college_career_rate' | 'attendance_rate' | 'subway' | 'bus' | 'website'
+  >
+}
 
 /**
  * Derivations for /shortlist (issue #137).
