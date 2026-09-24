@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePostHog } from 'posthog-js/react'
-import { trackLabel } from '@/lib/school-list-utils'
+import { citywidePercentile, trackLabel } from '@/lib/school-list-utils'
+import { applicantsPerSeatDotColor } from '@/app/find/FindClient'
 import { dedupePrograms } from '@/lib/school-detail-utils'
 import { Eyebrow } from '@/components/ui'
 import AuthControls from '@/components/AuthControls'
@@ -320,10 +321,11 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
             </span>
           </div>
 
-          <div className="grid grid-cols-[46px_1fr_auto] min-[700px]:grid-cols-[46px_1fr_132px_62px_84px] gap-3 pb-2 border-b border-rule font-mono text-[10px] uppercase tracking-[0.1em] text-faint">
+          <div className="grid grid-cols-[46px_1fr_auto] min-[700px]:grid-cols-[46px_1fr_132px_90px_76px_84px] gap-3 pb-2 border-b border-rule font-mono text-[10px] uppercase tracking-[0.1em] text-faint">
             <span>Rank</span>
             <span>School</span>
             <span className="hidden min-[700px]:block">Track</span>
+            <span className="hidden min-[700px]:block">Results</span>
             <span className="hidden min-[700px]:block">Apps/seat</span>
             <span />
           </div>
@@ -335,10 +337,12 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
                 <Eyebrow className="pt-4 pb-[7px]">{section.label}</Eyebrow>
                 {section.schools.map((school, i) => {
                   const ratio = school.applicants_per_seat
+                  const resultsPctl = details[school.dbn]?.sqr?.performance_pctl
+                  const competitionPctl = ratio != null ? citywidePercentile(ratio, index) : null
                   return (
                     <div
                       key={school.dbn}
-                      className="grid grid-cols-[46px_1fr_auto] min-[700px]:grid-cols-[46px_1fr_132px_62px_84px] gap-3 items-start py-[11px] border-b border-rule-light hover:bg-surface-2 transition-colors duration-[120ms] ease-out"
+                      className="grid grid-cols-[46px_1fr_auto] min-[700px]:grid-cols-[46px_1fr_132px_90px_76px_84px] gap-3 items-start py-[11px] border-b border-rule-light hover:bg-surface-2 transition-colors duration-[120ms] ease-out"
                     >
                       <span className="font-mono text-[16px] font-medium text-ink">
                         {String(i + 1).padStart(2, '0')}
@@ -359,15 +363,39 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
                         </p>
                         <p className="min-[700px]:hidden text-[13px] text-ink-2 mt-1">
                           {(school.admissions_types ?? []).map(trackLabel).join(', ') || '—'}
-                          {ratio != null && <span className="font-mono ml-2">{ratio} / seat</span>}
+                          {ratio != null && (
+                            <span className="inline-flex items-center gap-1.5 ml-2">
+                              <span className="font-mono">{ratio} / seat</span>
+                              {competitionPctl != null && (
+                                <span
+                                  className={`inline-block h-2 w-2 rounded-full ${applicantsPerSeatDotColor(competitionPctl)}`}
+                                  title={`More applicants per seat than ${competitionPctl}% of NYC high schools`}
+                                  aria-label={`More applicants per seat than ${competitionPctl}% of NYC high schools`}
+                                />
+                              )}
+                            </span>
+                          )}
+                          {resultsPctl != null && <span className="ml-2">Results {resultsPctl}%</span>}
                         </p>
                       </div>
                       <span className="hidden min-[700px]:block text-[13.5px] text-ink-2">
                         {(school.admissions_types ?? []).map(trackLabel).join(', ')}
                       </span>
+                      <span className="hidden min-[700px]:block font-mono text-[13px] text-ink">
+                        {resultsPctl != null ? `Results ${resultsPctl}%` : null}
+                      </span>
                       <span className="hidden min-[700px]:block font-mono text-[14px] text-ink">
                         {ratio != null ? (
-                          ratio
+                          <span className="inline-flex items-center gap-1.5">
+                            {ratio}
+                            {competitionPctl != null && (
+                              <span
+                                className={`inline-block h-2 w-2 rounded-full ${applicantsPerSeatDotColor(competitionPctl)}`}
+                                title={`More applicants per seat than ${competitionPctl}% of NYC high schools`}
+                                aria-label={`More applicants per seat than ${competitionPctl}% of NYC high schools`}
+                              />
+                            )}
+                          </span>
                         ) : (
                           <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-faint">
                             Not reported

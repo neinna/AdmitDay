@@ -369,8 +369,11 @@ export function groupSchools(schools: School[]): SectionGroup[] {
  * value). The comparison is strict so ties never inflate the rank, and the
  * result is always derived from `allSchools` — never a hardcoded table — so
  * it stays correct after each data refresh.
+ *
+ * Takes just the `applicants_per_seat` field so slimmer school shapes (like
+ * /shortlist's `ListSchool`, issue #407) can reuse it without a second copy.
  */
-export function citywidePercentile(aps: number, allSchools: School[]): number {
+export function citywidePercentile(aps: number, allSchools: Pick<School, 'applicants_per_seat'>[]): number {
   const withValue = allSchools.filter((s) => s.applicants_per_seat !== null)
   if (withValue.length === 0) return 0
   const below = withValue.filter((s) => (s.applicants_per_seat as number) < aps).length
