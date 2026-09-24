@@ -45,8 +45,8 @@ describe('Button "selected" prop (issue #420)', () => {
     expect(src).toMatch(/selected\?:\s*boolean/)
   })
 
-  it('applies bg-ink text-white border-ink with no !important when selected', () => {
-    expect(src).toMatch(/SELECTED_CLASSES\s*=\s*'bg-ink text-white border-ink'/)
+  it('applies bg-ink text-white border border-ink with no !important when selected', () => {
+    expect(src).toMatch(/SELECTED_CLASSES\s*=\s*'bg-ink text-white border border-ink'/)
     expect(src).not.toMatch(/!bg-ink/)
     expect(src).not.toMatch(/!text-white/)
   })

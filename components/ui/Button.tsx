@@ -15,7 +15,7 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   outline: 'bg-transparent text-ink border border-ink',
 }
 
-const SELECTED_CLASSES = 'bg-ink text-white border-ink'
+const SELECTED_CLASSES = 'bg-ink text-white border border-ink'
 
 export default function Button({ variant = 'primary', selected = false, className = '', ...rest }: Props) {
   const variantClasses = selected ? SELECTED_CLASSES : VARIANT_CLASSES[variant]
