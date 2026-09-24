@@ -770,24 +770,30 @@ export default function FindClient({ schools, initialFilters }: Props) {
               ) : (
                 <span className="inline-flex items-center gap-3">
                   <span>Sort</span>
-                  <button
-                    type="button"
-                    onClick={() => setSortMode('results')}
-                    aria-pressed={sortMode === 'results'}
-                    className={sortMode === 'results' ? 'text-ink' : 'text-faint hover:text-ink-3'}
-                  >
-                    Results
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSortMode('fewest_applicants')}
-                    aria-pressed={sortMode === 'fewest_applicants'}
-                    className={
-                      sortMode === 'fewest_applicants' ? 'text-ink' : 'text-faint hover:text-ink-3'
-                    }
-                  >
-                    Fewest applicants
-                  </button>
+                  <span className="inline-flex border border-rule">
+                    <button
+                      type="button"
+                      onClick={() => setSortMode('results')}
+                      aria-pressed={sortMode === 'results'}
+                      className={`px-3 py-1.5 cursor-pointer ${
+                        sortMode === 'results' ? 'bg-ink text-white' : 'text-ink-2 hover:bg-rule-light'
+                      }`}
+                    >
+                      Results
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSortMode('fewest_applicants')}
+                      aria-pressed={sortMode === 'fewest_applicants'}
+                      className={`px-3 py-1.5 border-l border-rule cursor-pointer ${
+                        sortMode === 'fewest_applicants'
+                          ? 'bg-ink text-white'
+                          : 'text-ink-2 hover:bg-rule-light'
+                      }`}
+                    >
+                      Fewest applicants
+                    </button>
+                  </span>
                 </span>
               )}
             </div>
