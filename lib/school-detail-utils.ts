@@ -559,6 +559,32 @@ export const PROVENANCE_SOURCE = 'MySchools + NYC DOE Open Data'
 // official link" rule — so every link points at the directory itself.
 export const MYSCHOOLS_URL = 'https://www.myschools.nyc'
 
+/** This school's official MySchools listing (issue #438) — the human-facing page, not the API endpoint stored as program provenance.url. */
+export function buildMySchoolsUrl(dbn: string): string {
+  return `https://www.myschools.nyc/en/schools/${dbn}/`
+}
+
+/**
+ * "From MySchools, checked September 18, 2026" — carries the scrape vintage
+ * next to the MySchools link even when a parent never clicks through (issue
+ * #438). Every program for a school is fetched in the same pass, so the
+ * first one with a recorded fetch date speaks for the school. Null when no
+ * program has provenance (e.g. older NYC-SIFT-shaped rows).
+ */
+export function buildMySchoolsCheckedLabel(school: School): string | null {
+  const fetchedAt = school.programs?.find((p) => p.provenance?.fetched_at)?.provenance?.fetched_at
+  if (!fetchedAt) return null
+  const date = new Date(fetchedAt)
+  if (Number.isNaN(date.getTime())) return null
+  const formatted = date.toLocaleDateString('en-US', {
+    timeZone: 'UTC',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+  return `From MySchools, checked ${formatted}`
+}
+
 /** "2025-2026" -> "2025–26 admissions". Falls back to the raw string if it isn't that shape. */
 export function formatAdmissionsCycle(lastVerified: string | undefined | null): string | null {
   if (!lastVerified) return null
