@@ -82,3 +82,5 @@ Design lives in `design/`.
 - `design/DESIGN-SYSTEM.html` is the canonical source for color, type, geometry, layout, primitives, states, and visual invariants.
 - Per-screen files such as `find-screen`, `school-detail`, `saved-list`, and `landing` are deltas on top of the design system.
 - Never hardcode a hex value or type size that the system already defines; use Tailwind tokens.
+- **A mark, not a sentence.** Where a fact can be carried by an icon, a dot, a colour or a short token (`n/a`), use that and put the words in a `title`/`aria-label`. Parents do not read explanatory paragraphs in a UI. A sentence on the page has to earn its place.
+- **Fix shared components, not call sites.** A visual fault in something used in more than one place is fixed in the component. `!important` to beat a variant's own styling means the component needs a prop, not an override.
