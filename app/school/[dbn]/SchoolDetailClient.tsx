@@ -22,6 +22,8 @@ import {
   RequirementBlock,
   SqrTrendCell,
   chipIsMatched,
+  buildMySchoolsUrl,
+  buildMySchoolsCheckedLabel,
 } from '@/lib/school-detail-utils'
 import { Eyebrow, DefinitionRow, NotReportedLine, StatGrid, TrendSparkline } from '@/components/ui'
 import SiteHeader from './SiteHeader'
@@ -55,7 +57,6 @@ interface Props {
   provenanceRows: { key: string; label: string; value: string }[]
   dataVintageNote: string | null
   sourceUrl?: string
-  myschoolsUrl: string
   backHref: string
   backLabel: string
   positionLabel: string | null
@@ -83,7 +84,6 @@ export default function SchoolDetailClient({
   provenanceRows,
   dataVintageNote,
   sourceUrl,
-  myschoolsUrl,
   backHref,
   backLabel,
   positionLabel,
@@ -163,6 +163,9 @@ export default function SchoolDetailClient({
     })
   }
 
+  const myschoolsUrl = buildMySchoolsUrl(school.dbn)
+  const myschoolsCheckedLabel = buildMySchoolsCheckedLabel(school)
+
   const addedCount = hydrated ? addedDbns.size : 0
   const added = hydrated && addedDbns.has(school.dbn)
   const alsoOnYourList = alsoOnYourListIndex.filter((s) => hydrated && addedDbns.has(s.dbn)).slice(0, 4)
@@ -236,15 +239,20 @@ export default function SchoolDetailClient({
           >
             {added ? 'On your list · Remove' : 'Add to list'}
           </button>
-          <a
-            href={myschoolsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() => posthog?.capture('myschools_link_clicked', { dbn: school.dbn })}
-            className="flex-1 text-center border border-border text-[13.5px] text-accent py-[10px] hover:bg-surface-2 transition-colors duration-[120ms] ease-out"
-          >
-            Open in MySchools ↗
-          </a>
+          <div className="flex-1 flex flex-col gap-1">
+            <a
+              href={myschoolsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => posthog?.capture('myschools_link_clicked', { dbn: school.dbn })}
+              className="block text-center border border-border text-[13.5px] text-accent py-[10px] hover:bg-surface-2 transition-colors duration-[120ms] ease-out"
+            >
+              Open in MySchools ↗
+            </a>
+            {myschoolsCheckedLabel && (
+              <span className="text-[11px] text-faint text-center">{myschoolsCheckedLabel}</span>
+            )}
+          </div>
         </div>
       </div>
 
@@ -358,18 +366,23 @@ export default function SchoolDetailClient({
               <span className="text-[14px] text-ink-2 flex-1" style={{ textWrap: 'pretty' }}>
                 Requirements change year to year. Confirm on the official listing before you apply.
               </span>
-              <a
-                href={myschoolsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => {
-                  posthog?.capture('myschools_link_clicked', { dbn: school.dbn })
-                  posthog?.capture('view_requirements_clicked', { dbn: school.dbn })
-                }}
-                className="text-[13.5px] font-medium border border-accent px-[14px] py-2 whitespace-nowrap text-accent hover:bg-accent hover:text-white transition-colors duration-[120ms] ease-out"
-              >
-                Open in MySchools ↗
-              </a>
+              <div className="flex flex-col items-start min-[521px]:items-end gap-1">
+                <a
+                  href={myschoolsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => {
+                    posthog?.capture('myschools_link_clicked', { dbn: school.dbn })
+                    posthog?.capture('view_requirements_clicked', { dbn: school.dbn })
+                  }}
+                  className="text-[13.5px] font-medium border border-accent px-[14px] py-2 whitespace-nowrap text-accent hover:bg-accent hover:text-white transition-colors duration-[120ms] ease-out"
+                >
+                  Open in MySchools ↗
+                </a>
+                {myschoolsCheckedLabel && (
+                  <span className="text-[11px] text-faint whitespace-nowrap">{myschoolsCheckedLabel}</span>
+                )}
+              </div>
             </div>
           </div>
 
