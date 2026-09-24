@@ -40,7 +40,10 @@ CLAUDE_IMPLEMENT_MODEL="${CLAUDE_IMPLEMENT_MODEL:-sonnet}"
 CLAUDE_REVIEW_MODEL="${CLAUDE_REVIEW_MODEL:-sonnet}"
 CLAUDE_PLANNER_MODEL="${CLAUDE_PLANNER_MODEL:-sonnet}"
 CLAUDE_IMPLEMENT_FALLBACK_MODEL="${CLAUDE_IMPLEMENT_FALLBACK_MODEL:-haiku}"
-CLAUDE_REVIEW_FALLBACK_MODEL="${CLAUDE_REVIEW_FALLBACK_MODEL:-sonnet}"
+# Must differ from CLAUDE_REVIEW_MODEL (also "sonnet" by default): a fallback
+# equal to the primary gives no protection against a model-specific outage,
+# since the same model would be unavailable both times (issue #430 review).
+CLAUDE_REVIEW_FALLBACK_MODEL="${CLAUDE_REVIEW_FALLBACK_MODEL:-haiku}"
 CLAUDE_IMPLEMENT_MAX_USD="${CLAUDE_IMPLEMENT_MAX_USD:-5.00}"
 CLAUDE_REVIEW_MAX_USD="${CLAUDE_REVIEW_MAX_USD:-0.75}"
 CLAUDE_PLANNER_MAX_USD="${CLAUDE_PLANNER_MAX_USD:-0.50}"
@@ -797,12 +800,16 @@ except Exception:
 }
 
 # claude_ran_on_fallback FILE PRIMARY FALLBACK
-# True (exit 0) if the actual model reported for this call is the fallback
-# model rather than the primary one (issue #430: the CLI's own
-# --fallback-model kicked in). Matches by substring since the resolved model
-# id (e.g. "claude-haiku-4-5-20251001") contains the alias passed on the
-# command line (e.g. "haiku"), and the two settings are never substrings of
-# each other in practice.
+# True (exit 0) if this call ran entirely on the fallback model rather than
+# the primary one (issue #430: the CLI's own --fallback-model kicked in).
+# Matches by substring since the resolved model id (e.g.
+# "claude-haiku-4-5-20251001") contains the alias passed on the command line
+# (e.g. "haiku"), and the two settings are never substrings of each other in
+# practice. Requires the primary to be absent from every modelUsage entry,
+# not just checked entry-by-entry: the CLI itself uses a small model (often
+# Haiku) for internal jobs like summarizing WebFetch results, so a run that
+# genuinely used the primary model can still have an unrelated Haiku entry
+# alongside it. Entry-by-entry matching would misread that as a fallback.
 claude_ran_on_fallback() {
   python3 -c "
 import json,sys
@@ -815,7 +822,9 @@ m = d.get('model')
 if m:
     models.add(m)
 primary, fallback = '$2', '$3'
-sys.exit(0 if fallback and any(fallback in x and primary not in x for x in models) else 1)
+used_fallback = any(fallback in x for x in models)
+used_primary = any(primary in x for x in models)
+sys.exit(0 if fallback and used_fallback and not used_primary else 1)
 "
 }
 

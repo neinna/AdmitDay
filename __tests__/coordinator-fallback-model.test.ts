@@ -104,7 +104,7 @@ describe('agent-coordinator.sh: fallback model settings', () => {
       /CLAUDE_IMPLEMENT_FALLBACK_MODEL="\$\{CLAUDE_IMPLEMENT_FALLBACK_MODEL:-haiku\}"/,
     )
     expect(coordinatorSource).toMatch(
-      /CLAUDE_REVIEW_FALLBACK_MODEL="\$\{CLAUDE_REVIEW_FALLBACK_MODEL:-sonnet\}"/,
+      /CLAUDE_REVIEW_FALLBACK_MODEL="\$\{CLAUDE_REVIEW_FALLBACK_MODEL:-haiku\}"/,
     )
   })
 
@@ -124,5 +124,54 @@ describe('agent-coordinator.sh: fallback model settings', () => {
     expect(coordinatorSource).toMatch(
       /ran on fallback model \$\{CLAUDE_REVIEW_FALLBACK_MODEL\}/,
     )
+  })
+})
+
+// ── claude_ran_on_fallback: don't mistake the CLI's own internal small-model
+// calls (e.g. summarizing a WebFetch result, often Haiku) for the run having
+// fallen back (issue #430 review) ───────────────────────────────────────────
+describe('claude_ran_on_fallback (functional): ignores unrelated modelUsage entries', () => {
+  let workDir: string
+  let outFile: string
+
+  beforeEach(() => {
+    workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'coord-fallback-detect-'))
+    outFile = path.join(workDir, 'claude-out.json')
+  })
+
+  afterEach(() => fs.rmSync(workDir, { recursive: true, force: true }))
+
+  function ranOnFallback(modelUsage: Record<string, unknown>, primary: string, fallback: string): boolean {
+    fs.writeFileSync(outFile, JSON.stringify({ modelUsage }))
+    const fnBody = extractFunction('claude_ran_on_fallback')
+    const script = `${fnBody}\nclaude_ran_on_fallback "${outFile}" "${primary}" "${fallback}"`
+    try {
+      execFileSync('bash', ['-c', script], { encoding: 'utf-8' })
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  it('is true when only the fallback model appears', () => {
+    expect(
+      ranOnFallback({ 'claude-haiku-4-5-20251001': {} }, 'sonnet', 'haiku'),
+    ).toBe(true)
+  })
+
+  it('is false when the primary model also appears (e.g. WebFetch used Haiku internally on an otherwise normal run)', () => {
+    expect(
+      ranOnFallback(
+        { 'claude-sonnet-5': {}, 'claude-haiku-4-5-20251001': {} },
+        'sonnet',
+        'haiku',
+      ),
+    ).toBe(false)
+  })
+
+  it('is false when only the primary model appears', () => {
+    expect(
+      ranOnFallback({ 'claude-sonnet-5': {} }, 'sonnet', 'haiku'),
+    ).toBe(false)
   })
 })
