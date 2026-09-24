@@ -351,7 +351,7 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
             </span>
           </div>
 
-          <div className="grid grid-cols-[46px_1fr_auto] min-[700px]:grid-cols-[46px_1fr_132px_90px_76px_84px] gap-3 pb-2 border-b border-rule font-mono text-[10px] uppercase tracking-[0.1em] text-faint">
+          <div className="grid grid-cols-[46px_1fr_auto] min-[700px]:grid-cols-[46px_minmax(0,24rem)_132px_90px_76px_84px] gap-3 pb-2 border-b border-rule font-mono text-[10px] uppercase tracking-[0.1em] text-faint">
             <span>Rank</span>
             <span>School</span>
             <span className="hidden min-[700px]:block">Track</span>
@@ -373,7 +373,7 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
                   const detailPanelId = `shortlist-detail-${school.dbn}`
                   return (
                     <Fragment key={school.dbn}>
-                    <div className="grid grid-cols-[46px_1fr_auto] min-[700px]:grid-cols-[46px_1fr_132px_90px_76px_84px] gap-3 items-start py-[11px] border-b border-rule-light hover:bg-surface-2 transition-colors duration-[120ms] ease-out">
+                    <div className="grid grid-cols-[46px_1fr_auto] min-[700px]:grid-cols-[46px_minmax(0,24rem)_132px_90px_76px_84px] gap-3 items-start py-[11px] border-b border-rule-light hover:bg-surface-2 transition-colors duration-[120ms] ease-out">
                       <span className="font-mono text-[16px] font-medium text-ink">
                         {String(i + 1).padStart(2, '0')}
                       </span>
@@ -395,7 +395,7 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
                           {(school.admissions_types ?? []).map(trackLabel).join(', ') || '—'}
                           {ratio != null && (
                             <span className="inline-flex items-center gap-1.5 ml-2">
-                              <span className="font-mono">{ratio} / seat</span>
+                              <span className="font-mono">{ratio.toFixed(1)} / seat</span>
                               {competitionPctl != null && (
                                 <span
                                   className={`inline-block h-2 w-2 rounded-full ${applicantsPerSeatDotColor(competitionPctl)}`}
@@ -412,12 +412,12 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
                         {(school.admissions_types ?? []).map(trackLabel).join(', ')}
                       </span>
                       <span className="hidden min-[700px]:block font-mono text-[13px] text-ink">
-                        {resultsPctl != null ? `Results ${resultsPctl}%` : null}
+                        {resultsPctl != null ? `${resultsPctl}%` : null}
                       </span>
                       <span className="hidden min-[700px]:block font-mono text-[14px] text-ink">
                         {ratio != null ? (
                           <span className="inline-flex items-center gap-1.5">
-                            {ratio}
+                            {ratio.toFixed(1)}
                             {competitionPctl != null && (
                               <span
                                 className={`inline-block h-2 w-2 rounded-full ${applicantsPerSeatDotColor(competitionPctl)}`}
