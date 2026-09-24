@@ -670,7 +670,6 @@ export default function FindClient({ schools, initialFilters }: Props) {
             </div>
 
             <div className="flex flex-col gap-2">
-              <div className="font-mono text-[11px] tracking-[0.12em] uppercase text-faint">Add Details</div>
               <p className="text-[15.5px] text-muted max-w-[560px]" style={{ textWrap: 'pretty' }}>
                 Anything the filters can&rsquo;t capture — in your own words.
               </p>
@@ -771,24 +770,30 @@ export default function FindClient({ schools, initialFilters }: Props) {
               ) : (
                 <span className="inline-flex items-center gap-3">
                   <span>Sort</span>
-                  <button
-                    type="button"
-                    onClick={() => setSortMode('results')}
-                    aria-pressed={sortMode === 'results'}
-                    className={sortMode === 'results' ? 'text-ink' : 'text-faint hover:text-ink-3'}
-                  >
-                    Results
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setSortMode('fewest_applicants')}
-                    aria-pressed={sortMode === 'fewest_applicants'}
-                    className={
-                      sortMode === 'fewest_applicants' ? 'text-ink' : 'text-faint hover:text-ink-3'
-                    }
-                  >
-                    Fewest applicants
-                  </button>
+                  <span className="inline-flex border border-rule">
+                    <button
+                      type="button"
+                      onClick={() => setSortMode('results')}
+                      aria-pressed={sortMode === 'results'}
+                      className={`px-3 py-1.5 cursor-pointer ${
+                        sortMode === 'results' ? 'bg-ink text-white' : 'text-ink-2 hover:bg-rule-light'
+                      }`}
+                    >
+                      Results
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSortMode('fewest_applicants')}
+                      aria-pressed={sortMode === 'fewest_applicants'}
+                      className={`px-3 py-1.5 border-l border-rule cursor-pointer ${
+                        sortMode === 'fewest_applicants'
+                          ? 'bg-ink text-white'
+                          : 'text-ink-2 hover:bg-rule-light'
+                      }`}
+                    >
+                      Fewest applicants
+                    </button>
+                  </span>
                 </span>
               )}
             </div>
