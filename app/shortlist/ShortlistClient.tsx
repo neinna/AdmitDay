@@ -51,6 +51,14 @@ function ratePct(v: number | null | undefined): string | null {
   return v == null ? null : `${Math.round(v * 100)}%`
 }
 
+/** Issue #422: same wording already approved and live on /find (lib/school-detail-utils.ts) — a percentile, not a score. */
+function resultsTooltip(pctl: number): string {
+  return `Results better than ${pctl}% of NYC high schools`
+}
+
+/** Issue #422: DOE data gap, not a low number — distinct from "not offered" (NotReportedLine, #116), which this marker does not touch. */
+const APPS_PER_SEAT_NOT_REPORTED_TOOLTIP = 'Not published by the DOE for this school — not a low number.'
+
 /**
  * The real NYC application has a separate SHSAT ranking from the main ranked
  * list (issue #406), so the Shortlist splits into two sections here. A
@@ -405,13 +413,21 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
                               )}
                             </span>
                           )}
-                          {resultsPctl != null && <span className="ml-2">Results {resultsPctl}%</span>}
+                          {resultsPctl != null && (
+                            <span className="ml-2" title={resultsTooltip(resultsPctl)} aria-label={resultsTooltip(resultsPctl)}>
+                              Results {resultsPctl}%
+                            </span>
+                          )}
                         </p>
                       </div>
                       <span className="hidden min-[700px]:block text-[13.5px] text-ink-2">
                         {(school.admissions_types ?? []).map(trackLabel).join(', ')}
                       </span>
-                      <span className="hidden min-[700px]:block font-mono text-[13px] text-ink">
+                      <span
+                        className="hidden min-[700px]:block font-mono text-[13px] text-ink"
+                        title={resultsPctl != null ? resultsTooltip(resultsPctl) : undefined}
+                        aria-label={resultsPctl != null ? resultsTooltip(resultsPctl) : undefined}
+                      >
                         {resultsPctl != null ? `${resultsPctl}%` : null}
                       </span>
                       <span className="hidden min-[700px]:block font-mono text-[14px] text-ink">
@@ -427,8 +443,12 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
                             )}
                           </span>
                         ) : (
-                          <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-faint">
-                            Not reported
+                          <span
+                            className="font-mono text-[14px] text-red-700"
+                            title={APPS_PER_SEAT_NOT_REPORTED_TOOLTIP}
+                            aria-label={APPS_PER_SEAT_NOT_REPORTED_TOOLTIP}
+                          >
+                            n/a
                           </span>
                         )}
                       </span>
@@ -485,16 +505,6 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
               </div>
             )
           })}
-
-          {composition.ratioMissing > 0 && (
-            <div className="pt-3">
-              <Eyebrow>Data gap</Eyebrow>
-              <p className="text-[13px] text-muted mt-1">
-                The DOE doesn&rsquo;t publish an applicants-per-seat figure for every school on this
-                list. That&rsquo;s a gap in the source data, not a low number.
-              </p>
-            </div>
-          )}
 
           {notice && <p className="text-[13px] text-muted pt-3">{notice}</p>}
         </section>
