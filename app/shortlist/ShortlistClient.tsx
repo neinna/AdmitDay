@@ -51,6 +51,14 @@ function ratePct(v: number | null | undefined): string | null {
   return v == null ? null : `${Math.round(v * 100)}%`
 }
 
+/** Issue #422: same wording already approved and live on /find (lib/school-detail-utils.ts) — a percentile, not a score. */
+function resultsTooltip(pctl: number): string {
+  return `Results better than ${pctl}% of NYC high schools`
+}
+
+/** Issue #422: DOE data gap, not a low number — distinct from "not offered" (NotReportedLine, #116), which this marker does not touch. */
+const APPS_PER_SEAT_NOT_REPORTED_TOOLTIP = 'Not published by the DOE for this school — not a low number.'
+
 /**
  * The real NYC application has a separate SHSAT ranking from the main ranked
  * list (issue #406), so the Shortlist splits into two sections here. A
@@ -351,7 +359,7 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
             </span>
           </div>
 
-          <div className="grid grid-cols-[46px_1fr_auto] min-[700px]:grid-cols-[46px_1fr_132px_90px_76px_84px] gap-3 pb-2 border-b border-rule font-mono text-[10px] uppercase tracking-[0.1em] text-faint">
+          <div className="grid grid-cols-[46px_1fr_auto] min-[700px]:grid-cols-[46px_minmax(0,24rem)_132px_90px_76px_84px] gap-3 pb-2 border-b border-rule font-mono text-[10px] uppercase tracking-[0.1em] text-faint">
             <span>Rank</span>
             <span>School</span>
             <span className="hidden min-[700px]:block">Track</span>
@@ -373,7 +381,7 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
                   const detailPanelId = `shortlist-detail-${school.dbn}`
                   return (
                     <Fragment key={school.dbn}>
-                    <div className="grid grid-cols-[46px_1fr_auto] min-[700px]:grid-cols-[46px_1fr_132px_90px_76px_84px] gap-3 items-start py-[11px] border-b border-rule-light hover:bg-surface-2 transition-colors duration-[120ms] ease-out">
+                    <div className="grid grid-cols-[46px_1fr_auto] min-[700px]:grid-cols-[46px_minmax(0,24rem)_132px_90px_76px_84px] gap-3 items-start py-[11px] border-b border-rule-light hover:bg-surface-2 transition-colors duration-[120ms] ease-out">
                       <span className="font-mono text-[16px] font-medium text-ink">
                         {String(i + 1).padStart(2, '0')}
                       </span>
@@ -395,7 +403,7 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
                           {(school.admissions_types ?? []).map(trackLabel).join(', ') || '—'}
                           {ratio != null && (
                             <span className="inline-flex items-center gap-1.5 ml-2">
-                              <span className="font-mono">{ratio} / seat</span>
+                              <span className="font-mono">{ratio.toFixed(1)} / seat</span>
                               {competitionPctl != null && (
                                 <span
                                   className={`inline-block h-2 w-2 rounded-full ${applicantsPerSeatDotColor(competitionPctl)}`}
@@ -405,19 +413,27 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
                               )}
                             </span>
                           )}
-                          {resultsPctl != null && <span className="ml-2">Results {resultsPctl}%</span>}
+                          {resultsPctl != null && (
+                            <span className="ml-2" title={resultsTooltip(resultsPctl)} aria-label={resultsTooltip(resultsPctl)}>
+                              Results {resultsPctl}%
+                            </span>
+                          )}
                         </p>
                       </div>
                       <span className="hidden min-[700px]:block text-[13.5px] text-ink-2">
                         {(school.admissions_types ?? []).map(trackLabel).join(', ')}
                       </span>
-                      <span className="hidden min-[700px]:block font-mono text-[13px] text-ink">
-                        {resultsPctl != null ? `Results ${resultsPctl}%` : null}
+                      <span
+                        className="hidden min-[700px]:block font-mono text-[13px] text-ink"
+                        title={resultsPctl != null ? resultsTooltip(resultsPctl) : undefined}
+                        aria-label={resultsPctl != null ? resultsTooltip(resultsPctl) : undefined}
+                      >
+                        {resultsPctl != null ? `${resultsPctl}%` : null}
                       </span>
                       <span className="hidden min-[700px]:block font-mono text-[14px] text-ink">
                         {ratio != null ? (
                           <span className="inline-flex items-center gap-1.5">
-                            {ratio}
+                            {ratio.toFixed(1)}
                             {competitionPctl != null && (
                               <span
                                 className={`inline-block h-2 w-2 rounded-full ${applicantsPerSeatDotColor(competitionPctl)}`}
@@ -427,8 +443,12 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
                             )}
                           </span>
                         ) : (
-                          <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-faint">
-                            Not reported
+                          <span
+                            className="font-mono text-[14px] text-red-700"
+                            title={APPS_PER_SEAT_NOT_REPORTED_TOOLTIP}
+                            aria-label={APPS_PER_SEAT_NOT_REPORTED_TOOLTIP}
+                          >
+                            n/a
                           </span>
                         )}
                       </span>
@@ -485,16 +505,6 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
               </div>
             )
           })}
-
-          {composition.ratioMissing > 0 && (
-            <div className="pt-3">
-              <Eyebrow>Data gap</Eyebrow>
-              <p className="text-[13px] text-muted mt-1">
-                The DOE doesn&rsquo;t publish an applicants-per-seat figure for every school on this
-                list. That&rsquo;s a gap in the source data, not a low number.
-              </p>
-            </div>
-          )}
 
           {notice && <p className="text-[13px] text-muted pt-3">{notice}</p>}
         </section>
