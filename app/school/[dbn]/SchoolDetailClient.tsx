@@ -221,7 +221,7 @@ export default function SchoolDetailClient({
             ))}
             {school.flags.high_impact && (
               <span title="Students grow more here than at 80%+ of NYC high schools (DOE, 2024-25)" className="font-mono text-[10.5px] tracking-[0.08em] uppercase text-gem bg-gem-bg border border-gem-border px-2 py-1">
-                High impact
+                Strong student growth
               </span>
             )}
           </div>

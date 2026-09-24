@@ -44,15 +44,13 @@ export default function SchoolRow({
       </div>
 
       <div className="flex flex-col gap-[5px] order-1 min-[900px]:order-none">
-        <div className="flex items-center gap-2.5">
-          <div className="font-sans font-bold text-[18px] text-ink">{name}</div>
-          {isHighImpact && (
-            <span title="Students grow more here than at 80%+ of NYC high schools (DOE, 2024-25)" className="font-mono text-[10.5px] tracking-[0.08em] uppercase text-gem bg-gem-bg border border-gem-border px-[7px] py-[3px]">
-              High impact
-            </span>
-          )}
-        </div>
+        <div className="font-sans font-bold text-[18px] text-ink">{name}</div>
         <div className="font-sans text-[13.5px] text-faint">{metadata}</div>
+        {isHighImpact && (
+          <span title="Students grow more here than at 80%+ of NYC high schools (DOE, 2024-25)" className="whitespace-nowrap font-mono text-[10.5px] tracking-[0.08em] uppercase text-gem bg-gem-bg border border-gem-border px-[7px] py-[3px] self-start">
+            Strong student growth
+          </span>
+        )}
         {rationale && (
           <div className="font-sans text-[14.5px] leading-[1.5] text-ink-2 max-w-[430px]" style={{ textWrap: 'pretty' }}>
             {rationale}
