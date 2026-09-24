@@ -43,7 +43,9 @@ Rules:
 
 Every implementation run is capped by `CLAUDE_IMPLEMENT_MAX_USD` (currently \$5.00). An issue that cannot be finished inside one capped run is not a hard issue — it is a badly sized one, and it will consume the whole cap and produce nothing.
 
-The metric is **cost per merged PR**, not cost per attempt. On 2026-09-17 this repo spent roughly \$13 per merged PR across five runs. \$2–5 is the healthy range for a multi-file feature with tests; \$0.50–1.50 for a single-file change with an explicit spec.
+The metric is **cost per merged PR**, not cost per attempt. On 2026-09-17 this repo spent **\$9.72 per merged PR**, recomputed from raw token counts at list prices. \$2–5 is the healthy range for a multi-file feature with tests; \$0.50–1.50 for a single-file change with an explicit spec.
+
+**Do not take dollar figures from Langfuse.** It prices by model name and its table lags a generation: measured over 369 generations on 2026-09-24, it bills Claude Sonnet 5 at **1.50×** list (Sonnet 4.6 rates) and Claude Opus 5.5 at **0.70×**, while Haiku 4.5 is exact. There is no single correction factor — the error follows the day's model mix. Recompute from `usageDetails` (cache reads at 10% of input, cache writes at 125%), or use the Anthropic Console for totals.
 
 ### Epics and children
 
