@@ -9,6 +9,7 @@ import { Eyebrow } from '@/components/ui'
 import AuthControls from '@/components/AuthControls'
 import {
   buildComposition,
+  bucketForSchool,
   moveItem,
   resolveSavedSchools,
   type Composition,
@@ -47,6 +48,26 @@ type Props = {
 /** "0.93" -> "93%". Absent input stays absent — never a fabricated 0%. */
 function ratePct(v: number | null | undefined): string | null {
   return v == null ? null : `${Math.round(v * 100)}%`
+}
+
+/**
+ * The real NYC application has a separate SHSAT ranking from the main ranked
+ * list (issue #406), so the Shortlist splits into two sections here. A
+ * school's section is determined entirely by its admissions type, never by
+ * position, so reordering can never move a school across the split.
+ */
+export function moveWithinSection(order: string[], sectionDbns: string[], localIndex: number, dir: -1 | 1): string[] {
+  const moved = moveItem(sectionDbns, localIndex, dir)
+  if (moved === sectionDbns) return order
+  const positions: number[] = []
+  order.forEach((dbn, idx) => {
+    if (sectionDbns.includes(dbn)) positions.push(idx)
+  })
+  const next = order.slice()
+  positions.forEach((idx, k) => {
+    next[idx] = moved[k]
+  })
+  return next
 }
 
 // Issue #199: /shortlist had no header at all before this — the sign-in /
@@ -116,8 +137,17 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
   const saved = useMemo(() => resolveSavedSchools(index, order), [index, order])
   const composition: Composition = useMemo(() => buildComposition(saved), [saved])
 
-  const move = (i: number, dir: -1 | 1) => {
-    const next = moveItem(order, i, dir)
+  const sections = useMemo(() => {
+    const shsat = saved.filter((s) => bucketForSchool(s) === 'shsat')
+    const main = saved.filter((s) => bucketForSchool(s) !== 'shsat')
+    return [
+      { label: 'SHSAT', schools: shsat },
+      { label: 'Main List', schools: main },
+    ].filter((section) => section.schools.length > 0)
+  }, [saved])
+
+  const move = (sectionDbns: string[], localIndex: number, dir: -1 | 1) => {
+    const next = moveWithinSection(order, sectionDbns, localIndex, dir)
     if (next !== order) {
       persist(next)
       setNotice(null)
@@ -298,75 +328,83 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
             <span />
           </div>
 
-          {saved.map((school, i) => {
-            const ratio = school.applicants_per_seat
+          {sections.map((section) => {
+            const sectionDbns = section.schools.map((s) => s.dbn)
             return (
-              <div
-                key={school.dbn}
-                className="grid grid-cols-[46px_1fr_auto] min-[700px]:grid-cols-[46px_1fr_132px_62px_84px] gap-3 items-start py-[11px] border-b border-rule-light hover:bg-surface-2 transition-colors duration-[120ms] ease-out"
-              >
-                <span className="font-mono text-[16px] font-medium text-ink">
-                  {String(i + 1).padStart(2, '0')}
-                </span>
-                <div className="min-w-0">
-                  <Link
-                    href={`/school/${school.dbn}`}
-                    onClick={() =>
-                      posthog?.capture('school_detail_viewed', { dbn: school.dbn, from: 'my_schools' })
-                    }
-                    className="text-[15px] font-semibold text-ink hover:text-accent"
-                  >
-                    {school.name}
-                  </Link>
-                  <p className="text-[12.5px] text-muted mt-[2px]">
-                    {[school.neighborhood, school.borough].filter(Boolean).join(', ')}
-                    <span className="font-mono ml-2 text-faint">{school.dbn}</span>
-                  </p>
-                  <p className="min-[700px]:hidden text-[13px] text-ink-2 mt-1">
-                    {(school.admissions_types ?? []).map(trackLabel).join(', ') || '—'}
-                    {ratio != null && <span className="font-mono ml-2">{ratio} / seat</span>}
-                  </p>
-                </div>
-                <span className="hidden min-[700px]:block text-[13.5px] text-ink-2">
-                  {(school.admissions_types ?? []).map(trackLabel).join(', ')}
-                </span>
-                <span className="hidden min-[700px]:block font-mono text-[14px] text-ink">
-                  {ratio != null ? (
-                    ratio
-                  ) : (
-                    <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-faint">
-                      Not reported
-                    </span>
-                  )}
-                </span>
-                <div className="flex items-center gap-1 justify-end">
-                  <button
-                    type="button"
-                    onClick={() => move(i, -1)}
-                    disabled={i === 0}
-                    aria-label={`Move ${school.name} up`}
-                    className="w-[23px] h-[23px] border border-border text-[12px] text-ink disabled:text-border disabled:cursor-default hover:border-muted"
-                  >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => move(i, 1)}
-                    disabled={i === saved.length - 1}
-                    aria-label={`Move ${school.name} down`}
-                    className="w-[23px] h-[23px] border border-border text-[12px] text-ink disabled:text-border disabled:cursor-default hover:border-muted"
-                  >
-                    ↓
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => remove(school.dbn)}
-                    aria-label={`Remove ${school.name}`}
-                    className="w-[23px] h-[23px] text-[13px] text-faint hover:text-ink"
-                  >
-                    ×
-                  </button>
-                </div>
+              <div key={section.label}>
+                <Eyebrow className="pt-4 pb-[7px]">{section.label}</Eyebrow>
+                {section.schools.map((school, i) => {
+                  const ratio = school.applicants_per_seat
+                  return (
+                    <div
+                      key={school.dbn}
+                      className="grid grid-cols-[46px_1fr_auto] min-[700px]:grid-cols-[46px_1fr_132px_62px_84px] gap-3 items-start py-[11px] border-b border-rule-light hover:bg-surface-2 transition-colors duration-[120ms] ease-out"
+                    >
+                      <span className="font-mono text-[16px] font-medium text-ink">
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                      <div className="min-w-0">
+                        <Link
+                          href={`/school/${school.dbn}`}
+                          onClick={() =>
+                            posthog?.capture('school_detail_viewed', { dbn: school.dbn, from: 'my_schools' })
+                          }
+                          className="text-[15px] font-semibold text-ink hover:text-accent"
+                        >
+                          {school.name}
+                        </Link>
+                        <p className="text-[12.5px] text-muted mt-[2px]">
+                          {[school.neighborhood, school.borough].filter(Boolean).join(', ')}
+                          <span className="font-mono ml-2 text-faint">{school.dbn}</span>
+                        </p>
+                        <p className="min-[700px]:hidden text-[13px] text-ink-2 mt-1">
+                          {(school.admissions_types ?? []).map(trackLabel).join(', ') || '—'}
+                          {ratio != null && <span className="font-mono ml-2">{ratio} / seat</span>}
+                        </p>
+                      </div>
+                      <span className="hidden min-[700px]:block text-[13.5px] text-ink-2">
+                        {(school.admissions_types ?? []).map(trackLabel).join(', ')}
+                      </span>
+                      <span className="hidden min-[700px]:block font-mono text-[14px] text-ink">
+                        {ratio != null ? (
+                          ratio
+                        ) : (
+                          <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-faint">
+                            Not reported
+                          </span>
+                        )}
+                      </span>
+                      <div className="flex items-center gap-1 justify-end">
+                        <button
+                          type="button"
+                          onClick={() => move(sectionDbns, i, -1)}
+                          disabled={i === 0}
+                          aria-label={`Move ${school.name} up`}
+                          className="w-[23px] h-[23px] border border-border text-[12px] text-ink disabled:text-border disabled:cursor-default hover:border-muted"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => move(sectionDbns, i, 1)}
+                          disabled={i === section.schools.length - 1}
+                          aria-label={`Move ${school.name} down`}
+                          className="w-[23px] h-[23px] border border-border text-[12px] text-ink disabled:text-border disabled:cursor-default hover:border-muted"
+                        >
+                          ↓
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => remove(school.dbn)}
+                          aria-label={`Remove ${school.name}`}
+                          className="w-[23px] h-[23px] text-[13px] text-faint hover:text-ink"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    </div>
+                  )
+                })}
               </div>
             )
           })}
