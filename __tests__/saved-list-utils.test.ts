@@ -120,7 +120,9 @@ describe('shape sentence — factual, never advisory', () => {
       school({ dbn: 'A', admissions_types: ['Screened'] }),
       school({ dbn: 'B', admissions_types: ['SHSAT'] }),
     ])
-    expect(c.shapeSentence).toMatch(/No open, Ed Opt or zoned program is on it yet/i)
+    expect(buildShapeSentence(c.buckets, c.total, c.ratioMissing)).toMatch(
+      /No open, Ed Opt or zoned program is on it yet/i
+    )
   })
 
   it('reports an incomplete ratio column rather than hiding it', () => {
@@ -128,7 +130,7 @@ describe('shape sentence — factual, never advisory', () => {
       school({ dbn: 'A', applicants_per_seat: null }),
       school({ dbn: 'B', applicants_per_seat: 4 }),
     ])
-    expect(c.shapeSentence).toMatch(/incomplete/i)
+    expect(buildShapeSentence(c.buckets, c.total, c.ratioMissing)).toMatch(/incomplete/i)
   })
 
   it('offers no advice and predicts nothing', () => {
@@ -136,7 +138,7 @@ describe('shape sentence — factual, never advisory', () => {
       school({ dbn: 'A', admissions_types: ['Screened'] }),
       school({ dbn: 'B', admissions_types: ['Open'] }),
     ])
-    expect(c.shapeSentence).not.toMatch(
+    expect(buildShapeSentence(c.buckets, c.total, c.ratioMissing)).not.toMatch(
       /should|consider|recommend|risky|balanced|safe|reach|likely|chance|add more/i
     )
   })
