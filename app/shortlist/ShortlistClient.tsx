@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePostHog } from 'posthog-js/react'
 import { citywidePercentile, trackLabel } from '@/lib/school-list-utils'
@@ -71,6 +71,85 @@ export function moveWithinSection(order: string[], sectionDbns: string[], localI
   return next
 }
 
+/** Issue #408: expanding/collapsing a row is a Set toggle, kept pure so both the row's aria-expanded state and multi-row behavior can be unit tested without simulating a click. */
+export function toggleExpandedDbn(expanded: Set<string>, dbn: string): Set<string> {
+  const next = new Set(expanded)
+  if (next.has(dbn)) next.delete(dbn)
+  else next.add(dbn)
+  return next
+}
+
+type DetailField = { label: string; value: string | null }
+
+/**
+ * The field set the print block (#405) renders. Issue #408 reuses this for
+ * the in-page expand panel too, rather than a second field list.
+ */
+function buildDetailFields(school: ListSchool, detail?: ListSchoolDetail): DetailField[] {
+  return [
+    { label: 'Borough', value: school.borough || null },
+    { label: 'Neighborhood', value: school.neighborhood ?? null },
+    { label: 'Address', value: detail?.doe_data.address ?? null },
+    {
+      label: 'Admissions tracks',
+      value: (school.admissions_types ?? []).map(trackLabel).join(', ') || null,
+    },
+    {
+      label: 'Applicants per seat',
+      value: school.applicants_per_seat != null ? `${school.applicants_per_seat.toFixed(1)} applicants per seat` : null,
+    },
+    {
+      label: 'Performance percentile',
+      value: detail?.sqr?.performance_pctl != null ? String(detail.sqr.performance_pctl) : null,
+    },
+    { label: 'Rating', value: detail?.sqr?.rating ?? null },
+    {
+      label: 'Impact percentile',
+      value: detail?.sqr?.impact_pctl != null ? String(detail.sqr.impact_pctl) : null,
+    },
+    { label: 'Graduation rate', value: ratePct(detail?.doe_data.graduation_rate) },
+    { label: 'College and career rate', value: ratePct(detail?.doe_data.college_career_rate) },
+    { label: 'Attendance rate', value: ratePct(detail?.doe_data.attendance_rate) },
+    {
+      label: 'Total students',
+      value: detail?.total_students != null ? String(detail.total_students) : null,
+    },
+    { label: 'Subway', value: detail?.doe_data.subway ?? null },
+    { label: 'Bus', value: detail?.doe_data.bus ?? null },
+    { label: 'Website', value: detail?.school_website || detail?.doe_data.website || null },
+  ].filter((f) => f.value != null && f.value !== '')
+}
+
+/** The full record: same field set and program list as the print block (#405), shared by both. */
+function SchoolDetailFields({ school, detail }: { school: ListSchool; detail?: ListSchoolDetail }) {
+  const fields = buildDetailFields(school, detail)
+  const programs = dedupePrograms(detail?.programs ?? [])
+  return (
+    <>
+      <dl>
+        {fields.map((f) => (
+          <div key={f.label} className="flex gap-3 py-1 text-[13px] border-b border-rule-light">
+            <dt className="w-[180px] shrink-0 text-faint">{f.label}</dt>
+            <dd className="text-ink-2">{f.value}</dd>
+          </div>
+        ))}
+      </dl>
+      {programs.length > 0 && (
+        <div className="mt-4">
+          <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-faint mb-1">Programs</p>
+          <ul>
+            {programs.map((p, idx) => (
+              <li key={idx} className="text-[13px] text-ink-2 py-[2px]">
+                {p.name} — {p.method}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </>
+  )
+}
+
 // Issue #199: /shortlist had no header at all before this — the sign-in /
 // sign-up buttons are required on every page, so this adds the same header
 // pattern already duplicated across page.tsx, FindClient.tsx, and SiteHeader.tsx.
@@ -99,6 +178,9 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
   const posthog = usePostHog()
   const [order, setOrder] = useState<string[]>(initialOrder)
   const [notice, setNotice] = useState<string | null>(null)
+  // Issue #408: which rows have their detail panel open. Component state
+  // only — not persisted, and toggling it never touches `order`.
+  const [expandedDbns, setExpandedDbns] = useState<Set<string>>(new Set())
   const viewFiredRef = useRef(false)
   // Computed client-side only, after mount: computing it during SSR would
   // bake the server's date/locale into the markup and risk a hydration
@@ -173,6 +255,10 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
     posthog?.capture('school_removed', { dbn, list_size_after: next.length })
   }
 
+  const toggleExpanded = (dbn: string) => {
+    setExpandedDbns((prev) => toggleExpandedDbn(prev, dbn))
+  }
+
   if (!signedIn) {
     // Issue #240: saving a school requires an account, so a signed-out visit
     // has nothing to show — just the door in, via AuthControls in Header.
@@ -238,77 +324,21 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
         </p>
       </div>
 
-      {saved.map((school, i) => {
-        const detail = details[school.dbn]
-        const programs = dedupePrograms(detail?.programs ?? [])
-        const fields: { label: string; value: string | null }[] = [
-          { label: 'Borough', value: school.borough || null },
-          { label: 'Neighborhood', value: school.neighborhood ?? null },
-          { label: 'Address', value: detail?.doe_data.address ?? null },
-          {
-            label: 'Admissions tracks',
-            value: (school.admissions_types ?? []).map(trackLabel).join(', ') || null,
-          },
-          {
-            label: 'Applicants per seat',
-            value: school.applicants_per_seat != null ? `${school.applicants_per_seat.toFixed(1)} applicants per seat` : null,
-          },
-          {
-            label: 'Performance percentile',
-            value: detail?.sqr?.performance_pctl != null ? String(detail.sqr.performance_pctl) : null,
-          },
-          { label: 'Rating', value: detail?.sqr?.rating ?? null },
-          {
-            label: 'Impact percentile',
-            value: detail?.sqr?.impact_pctl != null ? String(detail.sqr.impact_pctl) : null,
-          },
-          { label: 'Graduation rate', value: ratePct(detail?.doe_data.graduation_rate) },
-          { label: 'College and career rate', value: ratePct(detail?.doe_data.college_career_rate) },
-          { label: 'Attendance rate', value: ratePct(detail?.doe_data.attendance_rate) },
-          {
-            label: 'Total students',
-            value: detail?.total_students != null ? String(detail.total_students) : null,
-          },
-          { label: 'Subway', value: detail?.doe_data.subway ?? null },
-          { label: 'Bus', value: detail?.doe_data.bus ?? null },
-          { label: 'Website', value: detail?.school_website || detail?.doe_data.website || null },
-        ].filter((f) => f.value != null && f.value !== '')
-
-        return (
-          <div
-            key={school.dbn}
-            className={`hidden print:block break-inside-avoid px-5 py-6${i > 0 ? ' break-before-page' : ''}`}
-          >
-            <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-faint border-b border-rule pb-2 mb-4">
-              Shortlist
-            </p>
-            <h2 className="font-display font-bold text-[22px] tracking-[-0.02em] text-ink">
-              {String(i + 1).padStart(2, '0')} — {school.name}
-            </h2>
-            <p className="font-mono text-[13px] text-faint mb-3">{school.dbn}</p>
-            <dl>
-              {fields.map((f) => (
-                <div key={f.label} className="flex gap-3 py-1 text-[13px] border-b border-rule-light">
-                  <dt className="w-[180px] shrink-0 text-faint">{f.label}</dt>
-                  <dd className="text-ink-2">{f.value}</dd>
-                </div>
-              ))}
-            </dl>
-            {programs.length > 0 && (
-              <div className="mt-4">
-                <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-faint mb-1">Programs</p>
-                <ul>
-                  {programs.map((p, idx) => (
-                    <li key={idx} className="text-[13px] text-ink-2 py-[2px]">
-                      {p.name} — {p.method}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )
-      })}
+      {saved.map((school, i) => (
+        <div
+          key={school.dbn}
+          className={`hidden print:block break-inside-avoid px-5 py-6${i > 0 ? ' break-before-page' : ''}`}
+        >
+          <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-faint border-b border-rule pb-2 mb-4">
+            Shortlist
+          </p>
+          <h2 className="font-display font-bold text-[22px] tracking-[-0.02em] text-ink">
+            {String(i + 1).padStart(2, '0')} — {school.name}
+          </h2>
+          <p className="font-mono text-[13px] text-faint mb-3">{school.dbn}</p>
+          <SchoolDetailFields school={school} detail={details[school.dbn]} />
+        </div>
+      ))}
 
       <div className={`print-hide ${wide ? 'grid grid-cols-1 min-[900px]:grid-cols-[1fr_316px]' : ''}`}>
         <section
@@ -339,11 +369,11 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
                   const ratio = school.applicants_per_seat
                   const resultsPctl = details[school.dbn]?.sqr?.performance_pctl
                   const competitionPctl = ratio != null ? citywidePercentile(ratio, index) : null
+                  const isExpanded = expandedDbns.has(school.dbn)
+                  const detailPanelId = `shortlist-detail-${school.dbn}`
                   return (
-                    <div
-                      key={school.dbn}
-                      className="grid grid-cols-[46px_1fr_auto] min-[700px]:grid-cols-[46px_1fr_132px_90px_76px_84px] gap-3 items-start py-[11px] border-b border-rule-light hover:bg-surface-2 transition-colors duration-[120ms] ease-out"
-                    >
+                    <Fragment key={school.dbn}>
+                    <div className="grid grid-cols-[46px_1fr_auto] min-[700px]:grid-cols-[46px_1fr_132px_90px_76px_84px] gap-3 items-start py-[11px] border-b border-rule-light hover:bg-surface-2 transition-colors duration-[120ms] ease-out">
                       <span className="font-mono text-[16px] font-medium text-ink">
                         {String(i + 1).padStart(2, '0')}
                       </span>
@@ -405,6 +435,16 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
                       <div className="flex items-center gap-1 justify-end">
                         <button
                           type="button"
+                          onClick={() => toggleExpanded(school.dbn)}
+                          aria-expanded={isExpanded}
+                          aria-controls={detailPanelId}
+                          aria-label={isExpanded ? `Collapse ${school.name}` : `Expand ${school.name}`}
+                          className="w-[23px] h-[23px] border border-border text-[12px] text-ink hover:border-muted"
+                        >
+                          {isExpanded ? '−' : '+'}
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => move(sectionDbns, i, -1)}
                           disabled={i === 0}
                           aria-label={`Move ${school.name} up`}
@@ -431,6 +471,15 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
                         </button>
                       </div>
                     </div>
+                    {isExpanded && (
+                      <div
+                        id={detailPanelId}
+                        className="px-3 py-4 border-b border-rule-light bg-surface-2"
+                      >
+                        <SchoolDetailFields school={school} detail={details[school.dbn]} />
+                      </div>
+                    )}
+                    </Fragment>
                   )
                 })}
               </div>
