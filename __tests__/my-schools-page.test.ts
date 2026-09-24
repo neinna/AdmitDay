@@ -44,17 +44,18 @@ describe('/shortlist server/client boundary', () => {
 
 describe('/shortlist makes no derived judgement', () => {
   it('uses no reach/target/likely or odds language', () => {
-    // Note: the footer legitimately contains "we don't score a list", so this
-    // checks for the vocabulary of a prediction, not the word "score" itself.
     expect(clientCode).not.toMatch(/reach school|target school|safety school|\bodds\b|chance of|likely to get/i)
     expect(clientCode).not.toMatch(/\brisky\b|\bbalanced\b/i)
   })
 
-  it('carries the standing disclaimer that it does not score or predict', () => {
-    expect(clientSrc).toMatch(/don&rsquo;t score a list or predict an outcome/i)
+  it('never renders a missing ratio as zero or a dash', () => {
+    // Issue #422 replaced the "Not reported" sentence with a compact `n/a` marker.
+    expect(clientSrc).toMatch(/>\s*n\/a\s*</)
   })
 
-  it('never renders a missing ratio as zero or a dash', () => {
-    expect(clientSrc).toMatch(/Not reported/i)
+  it('renders no footer disclaimer lines', () => {
+    // Issue #425 removed both footer lines; no replacement copy is owed by this change.
+    expect(clientSrc).not.toMatch(/Confirm each program on the official listing before you apply/i)
+    expect(clientSrc).not.toMatch(/don&rsquo;t score a list or predict an outcome/i)
   })
 })

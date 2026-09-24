@@ -51,6 +51,14 @@ function ratePct(v: number | null | undefined): string | null {
   return v == null ? null : `${Math.round(v * 100)}%`
 }
 
+/** Issue #422: same wording already approved and live on /find (lib/school-detail-utils.ts) — a percentile, not a score. */
+function resultsTooltip(pctl: number): string {
+  return `Results better than ${pctl}% of NYC high schools`
+}
+
+/** Issue #422: DOE data gap, not a low number — distinct from "not offered" (NotReportedLine, #116), which this marker does not touch. */
+const APPS_PER_SEAT_NOT_REPORTED_TOOLTIP = 'Not published by the DOE for this school — not a low number.'
+
 /**
  * The real NYC application has a separate SHSAT ranking from the main ranked
  * list (issue #406), so the Shortlist splits into two sections here. A
@@ -405,13 +413,21 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
                               )}
                             </span>
                           )}
-                          {resultsPctl != null && <span className="ml-2">Results {resultsPctl}%</span>}
+                          {resultsPctl != null && (
+                            <span className="ml-2" title={resultsTooltip(resultsPctl)} aria-label={resultsTooltip(resultsPctl)}>
+                              Results {resultsPctl}%
+                            </span>
+                          )}
                         </p>
                       </div>
                       <span className="hidden min-[700px]:block text-[13.5px] text-ink-2">
                         {(school.admissions_types ?? []).map(trackLabel).join(', ')}
                       </span>
-                      <span className="hidden min-[700px]:block font-mono text-[13px] text-ink">
+                      <span
+                        className="hidden min-[700px]:block font-mono text-[13px] text-ink"
+                        title={resultsPctl != null ? resultsTooltip(resultsPctl) : undefined}
+                        aria-label={resultsPctl != null ? resultsTooltip(resultsPctl) : undefined}
+                      >
                         {resultsPctl != null ? `${resultsPctl}%` : null}
                       </span>
                       <span className="hidden min-[700px]:block font-mono text-[14px] text-ink">
@@ -427,8 +443,12 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
                             )}
                           </span>
                         ) : (
-                          <span className="font-mono text-[11px] uppercase tracking-[0.06em] text-faint">
-                            Not reported
+                          <span
+                            className="font-mono text-[14px] text-red-700"
+                            title={APPS_PER_SEAT_NOT_REPORTED_TOOLTIP}
+                            aria-label={APPS_PER_SEAT_NOT_REPORTED_TOOLTIP}
+                          >
+                            n/a
                           </span>
                         )}
                       </span>
@@ -486,91 +506,38 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
             )
           })}
 
-          {composition.ratioMissing > 0 && (
-            <div className="pt-3">
-              <Eyebrow>Data gap</Eyebrow>
-              <p className="text-[13px] text-muted mt-1">
-                The DOE doesn&rsquo;t publish an applicants-per-seat figure for every school on this
-                list. That&rsquo;s a gap in the source data, not a low number.
-              </p>
-            </div>
-          )}
-
           {notice && <p className="text-[13px] text-muted pt-3">{notice}</p>}
         </section>
 
         <aside className={wide ? '' : 'border-t border-rule'}>
-          <section className="px-5 min-[900px]:px-7 py-[26px]">
-            <div className="flex items-baseline justify-between gap-3 mb-3">
-              <Eyebrow>Composition</Eyebrow>
-              <span className="font-mono text-[11px] uppercase tracking-[0.1em] text-faint">
-                {composition.total} saved
-              </span>
-            </div>
-
-            <div className="flex h-3 w-full mb-3">
+          <section className="px-5 min-[900px]:px-7 py-[14px]">
+            <div className="flex h-3 w-full">
               {composition.buckets.map((b, i) => (
                 <div
                   key={b.key}
                   style={{ flex: b.count }}
+                  title={`${b.label}: ${b.count}`}
+                  aria-label={`${b.label}: ${b.count}`}
+                  role="img"
                   className={['bg-ink', 'bg-ink-2', 'bg-muted', 'bg-faint'][i]}
                 />
               ))}
             </div>
 
-            <div className="flex flex-col gap-[7px]">
-              {composition.buckets.map((b, i) => (
-                <div key={b.key} className="flex items-center gap-2">
-                  <span
-                    className={`w-[10px] h-[10px] ${
-                      b.count === 0
-                        ? 'border border-border bg-surface'
-                        : ['bg-ink', 'bg-ink-2', 'bg-muted', 'bg-faint'][i]
-                    }`}
-                  />
-                  <span
-                    className={`flex-1 text-[13.5px] ${b.count === 0 ? 'text-faint' : 'text-ink-2'}`}
-                  >
-                    {b.label}
-                  </span>
-                  <span className="font-mono text-[13px] text-ink">{b.count}</span>
-                </div>
+            <div className="flex h-3 w-full mt-2">
+              {composition.byBorough.map((cell, i) => (
+                <div
+                  key={cell.label}
+                  style={{ flex: cell.count }}
+                  title={`${cell.label}: ${cell.count}`}
+                  aria-label={`${cell.label}: ${cell.count}`}
+                  role="img"
+                  className={['bg-ink', 'bg-ink-2', 'bg-ink-3', 'bg-muted', 'bg-faint'][i % 5]}
+                />
               ))}
             </div>
-
-            <div className="pt-[14px] mt-[14px] border-t border-rule-light">
-              <Eyebrow>Reading the shape</Eyebrow>
-              <p className="text-[13px] text-muted mt-1">{composition.shapeSentence}</p>
-            </div>
-
-            {composition.byBorough.length > 0 && (
-              <div className="pt-[14px] mt-[14px] border-t border-rule-light">
-                <Eyebrow>Boroughs</Eyebrow>
-                <div className="grid grid-cols-3 gap-[1px] bg-rule border border-rule mt-2">
-                  {composition.byBorough.slice(0, 6).map((cell) => (
-                    <div key={cell.label} className="bg-surface px-3 py-2">
-                      <div className="font-mono text-[18px] font-medium tracking-[-0.02em] text-ink">
-                        {cell.count}
-                      </div>
-                      <div className="text-[11px] uppercase tracking-[0.04em] text-faint">
-                        {cell.label}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </section>
         </aside>
-      </div>
-
-      <div className="print-hide flex flex-col min-[900px]:flex-row justify-between gap-1 px-5 min-[900px]:px-9 py-4 bg-surface-2 border-t border-rule">
-        <span className="text-[13px] text-faint">
-          Confirm each program on the official listing before you apply.
-        </span>
-        <span className="text-[13px] text-faint">
-          Counts only — we don&rsquo;t score a list or predict an outcome.
-        </span>
       </div>
     </div>
   )

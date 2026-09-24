@@ -11,7 +11,13 @@ import {
   admissionMethodCopy,
   ADMISSION_METHOD_COPY,
 } from '../lib/school-list-utils'
+import { getShsatCutoffs } from '../lib/shsat-cutoffs'
 import { School, SchoolProgram } from '../types'
+
+jest.mock('../lib/shsat-cutoffs', () => {
+  const actual = jest.requireActual('../lib/shsat-cutoffs')
+  return { ...actual, getShsatCutoffs: jest.fn(actual.getShsatCutoffs) }
+})
 
 function makeSchool(overrides: Partial<School> & { dbn?: string } = {}): School {
   return {
@@ -141,11 +147,21 @@ describe('admissionMethodCopy (issue #216)', () => {
     }
   })
 
-  it('appends up to three published SHSAT cutoffs, newest year first', () => {
-    // Stuyvesant's real DBN, per lib/shsat-cutoffs.ts.
+  it('names only the most recent of three published SHSAT cutoffs, with its year (issue #437)', () => {
+    // Stuyvesant's real DBN, per lib/shsat-cutoffs.ts — has 2024, 2025, and 2026 cutoffs.
     const school = makeSchool({ dbn: '02M475' })
     expect(admissionMethodCopy('SHSAT', school)).toBe(
-      'Specialized: admission by SHSAT score. Lowest score offered: 561 · 556 · 561'
+      'Specialized: admission by SHSAT score. Lowest score offered in 2026: 561'
+    )
+  })
+
+  it('names the year alongside the score for a school with only one published cutoff (issue #437)', () => {
+    ;(getShsatCutoffs as jest.Mock).mockReturnValueOnce([
+      { year: '2026', score: 500, source: 'https://example.com', verifiedDate: '2026-09-16' },
+    ])
+    const school = makeSchool({ dbn: 'SINGLE-CUTOFF-DBN' })
+    expect(admissionMethodCopy('SHSAT', school)).toBe(
+      'Specialized: admission by SHSAT score. Lowest score offered in 2026: 500'
     )
   })
 
