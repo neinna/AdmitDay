@@ -888,10 +888,9 @@ export default function FindClient({ schools, initialFilters }: Props) {
                         <Button
                           type="button"
                           variant="outline"
+                          selected={added}
                           onClick={() => toggleAdded(school.dbn)}
-                          className={`w-24 max-[899px]:w-full text-center hover:bg-ink hover:text-white ${
-                            added ? '!bg-ink !text-white' : ''
-                          }`}
+                          className="w-24 max-[899px]:w-full text-center hover:bg-ink hover:text-white"
                         >
                           {added ? 'Remove' : 'Add'}
                         </Button>

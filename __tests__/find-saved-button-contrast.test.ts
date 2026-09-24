@@ -11,8 +11,13 @@ import * as path from 'path'
  * Tailwind's generated stylesheet orders same-specificity utility rules by its
  * own internal plugin order (not by position in the className string), the
  * outline variant's `bg-transparent` could still win over `bg-ink`, leaving
- * "Remove" rendered in white text on a transparent background. This repo's
- * jest config has no jsdom/testing-library (see auth-header.test.ts and
+ * "Remove" rendered in white text on a transparent background. The original
+ * fix forced the saved state with `!bg-ink !text-white`.
+ *
+ * Issue #420 replaced those `!important` overrides with a `selected` prop on
+ * the shared Button component, which swaps the variant's classes out entirely
+ * instead of trying to out-rank them, so no `!important` is needed. This
+ * repo's jest config has no jsdom/testing-library (see auth-header.test.ts and
  * find-save-failure-handling.test.ts), so these are source-text assertions
  * against app/find/FindClient.tsx rather than a rendered interaction test.
  */
@@ -39,19 +44,13 @@ describe('the /find Add/Remove button is visible in the saved state (issue #392)
     expect(buttonSrc).toMatch(/outline:\s*'[^']*bg-transparent[^']*'/)
   })
 
-  it('forces a non-transparent background on the saved state with an !important modifier, so it cannot lose to the outline variant\'s bg-transparent', () => {
+  it('passes selected={added} to Button instead of forcing classes with !important (issue #420)', () => {
     const actionIdx = src.indexOf("added ? 'Remove' : 'Add'")
     expect(actionIdx).toBeGreaterThan(-1)
 
     const before = src.slice(Math.max(0, actionIdx - 400), actionIdx)
-    const savedStateClassMatch = before.match(/added\s*\?\s*'([^']+)'\s*:\s*''/)
-    expect(savedStateClassMatch).not.toBeNull()
-
-    const savedStateClasses = savedStateClassMatch![1]
-    expect(savedStateClasses).toContain('!bg-ink')
-    expect(savedStateClasses).toContain('!text-white')
-    // A plain (non-important) `bg-ink` here would be no more specific than
-    // the outline variant's `bg-transparent` and could still lose to it.
-    expect(savedStateClasses).not.toMatch(/(?<!!)\bbg-ink\b/)
+    expect(before).toMatch(/selected=\{added\}/)
+    expect(before).not.toContain('!bg-ink')
+    expect(before).not.toContain('!text-white')
   })
 })
