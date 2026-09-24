@@ -21,7 +21,6 @@ import {
   buildNotReportedTransitLabel,
   dedupePrograms,
   buildRequirementBlocks,
-  MYSCHOOLS_URL,
   describeBackFilters,
   parseMatchedSignals,
 } from '@/lib/school-detail-utils'
@@ -132,7 +131,6 @@ export default async function SchoolDetailPage({
         provenanceRows={provenanceRows}
         dataVintageNote={dataVintageNote}
         sourceUrl={school.sqr?.source_url}
-        myschoolsUrl={MYSCHOOLS_URL}
         backHref={backHref}
         backLabel={backLabel}
         positionLabel={positionLabel}
