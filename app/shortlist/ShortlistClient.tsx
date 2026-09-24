@@ -539,15 +539,6 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
           </section>
         </aside>
       </div>
-
-      <div className="print-hide flex flex-col min-[900px]:flex-row justify-between gap-1 px-5 min-[900px]:px-9 py-4 bg-surface-2 border-t border-rule">
-        <span className="text-[13px] text-faint">
-          Confirm each program on the official listing before you apply.
-        </span>
-        <span className="text-[13px] text-faint">
-          Counts only — we don&rsquo;t score a list or predict an outcome.
-        </span>
-      </div>
     </div>
   )
 }
