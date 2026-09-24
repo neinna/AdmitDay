@@ -2,10 +2,13 @@
  * __tests__/find-header-copy.test.ts
  *
  * Issue #401 — /find header: the page title is put in Title Case, the old
- * subtitle ("Filters set the floor...") is removed, an "Add Details" label
- * (matching the rail's section-label style) plus a one-line description
- * replace it, the submit button reads "Refine list" instead of "Ask", and
+ * subtitle ("Filters set the floor...") is removed, a one-line description
+ * replaces it, the submit button reads "Refine list" instead of "Ask", and
  * the textarea placeholder becomes a conversational sentence.
+ *
+ * Issue #434 — the "Add Details" eyebrow above the description (added by
+ * #401) is removed: the description line already says what the box is for,
+ * and the eyebrow just repeated the "Refine list" button.
  *
  * This repo's jest config runs under plain node with no jsdom (see
  * find-ask-textarea.test.ts's convention), so FindClient's rendering is
@@ -32,10 +35,8 @@ describe('/find header copy (issue #401)', () => {
     expect(src).not.toContain('The ask box adds what a filter')
   })
 
-  it('labels the ask section "Add Details" in the rail\'s label style', () => {
-    expect(src).toContain(
-      '<div className="font-mono text-[11px] tracking-[0.12em] uppercase text-faint">Add Details</div>'
-    )
+  it('does not render the "Add Details" eyebrow above the ask box (issue #434)', () => {
+    expect(src).not.toContain('Add Details')
   })
 
   it('adds the one-line description under the label', () => {
