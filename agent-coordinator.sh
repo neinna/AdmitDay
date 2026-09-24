@@ -442,6 +442,24 @@ except Exception:
   return 1
 }
 
+blocker_is_agent_stuck() {
+  # blocker_is_agent_stuck NUM -> success (0) if issue NUM currently carries
+  # the agent-stuck label, failure (1) otherwise. A blocker that is merely
+  # open will eventually close on its own; one labeled agent-stuck will not
+  # (issue #429), so the dependency gate below needs to tell the two apart
+  # instead of polling the same open blocker every loop forever.
+  local NUM="$1"
+  gh_api GET "/issues/$NUM" | python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    names = [l.get('name', '') for l in data.get('labels', [])]
+    sys.exit(0 if 'agent-stuck' in names else 1)
+except Exception:
+    sys.exit(1)
+"
+}
+
 malformed_blocked_by() {
   # malformed_blocked_by ISSUE_BODY -> succeeds (no output) if the body
   # mentions "blocked by" case-insensitively but no line matches the strict
@@ -1358,7 +1376,20 @@ run_agent() {
   local BLOCKER
   BLOCKER=$(blocking_issue_number "$ISSUE_BODY")
   if [ -n "$BLOCKER" ]; then
-    log "Issue #${ISSUE_NUMBER}: skipping this loop, blocked by open issue #${BLOCKER}"
+    if ! blocker_is_agent_stuck "$BLOCKER"; then
+      log "Issue #${ISSUE_NUMBER}: skipping this loop, blocked by open issue #${BLOCKER}"
+      return
+    fi
+    # The blocker is agent-stuck, not just open — it will never close on its
+    # own, so leaving this issue "agent-ok" would poll the same dead end
+    # every loop forever (issue #429: #405 stuck at 23:00 and #406-408 logged
+    # "skipping this loop" once a minute for eleven hours). Pull it out of
+    # the queue once instead of returning silently; a human restores
+    # agent-ok once the blocker is resolved.
+    log "Issue #${ISSUE_NUMBER}: blocked by open issue #${BLOCKER}, which is agent-stuck — removing from queue instead of polling it forever"
+    github_remove_label "$ISSUE_NUMBER" "$TRIGGER_LABEL"
+    github_label "$ISSUE_NUMBER" "blocked"
+    github_comment "$ISSUE_NUMBER" "Waiting on #${BLOCKER}, which is agent-stuck. Removed from the queue so the coordinator does not poll it every minute. Re-add agent-ok once #${BLOCKER} is resolved."
     return
   fi
 
