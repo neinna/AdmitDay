@@ -249,8 +249,9 @@ describe('SchoolRow ui primitive (issue #113)', () => {
     expect(src).not.toMatch(/hover:(scale|translate)/)
   })
 
-  it('puts the name and hidden-gem badge in a gapped flex row (badge cannot land mid-wrap)', () => {
-    expect(src).toMatch(/flex items-center gap-2\.5[\s\S]{0,200}isHighImpact/)
+  it('renders the hidden-gem badge on its own line below the metadata, never wrapping inside itself (issue #436)', () => {
+    expect(src).toMatch(/\{metadata\}[\s\S]{0,200}isHighImpact/)
+    expect(src).toMatch(/isHighImpact[\s\S]{0,200}whitespace-nowrap/)
   })
 })
 
