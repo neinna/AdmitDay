@@ -77,75 +77,61 @@ function parseReasons(
   return reasons;
 }
 
-export async function answerQuestion({
-  question,
-  filters = {},
-}: {
-  question: string;
-  filters?: HardFilters;
-}): Promise<AnswerQuestionResult> {
-  // Step 1: Retrieve the top ASK_RETRIEVAL_COUNT most relevant schools,
-  // restricted to the active /find rail filters (issue #231)
-  const results = await searchSchools(question, ASK_RETRIEVAL_COUNT, filters);
-
-  // Step 2: Build context from retrieved schools
-  // Each result already contains all chunks for that school, concatenated.
-  const schoolContext = results
+// Each result already contains all chunks for that school, concatenated.
+// Issue #450: exported so evals/run-ask-eval.ts's batch path can build the
+// exact same context the production path sends, instead of reimplementing
+// this template and risking drift from it.
+export function buildSchoolContext(results: SearchResult[]): string {
+  return results
     .map(
       (r, i) =>
         `--- School ${i + 1} (similarity: ${r.score.toFixed(3)}, matched on: ${r.matchedChunkType}) ---\n${r.chunk}`
     )
     .join("\n\n");
+}
 
-  // Step 3: Send to Claude with the retrieved context
-  //
-  // Issue #308: thinking is adaptive and on by default for claude-sonnet-5,
-  // and thinking tokens count against max_tokens. A 600-token budget could
-  // be entirely consumed by thinking before any answer text was produced,
-  // tripping the #257 empty-answer fallback. This task is a direct
-  // context-to-answer synthesis that doesn't need extended reasoning, so
-  // thinking is disabled outright; max_tokens is raised to give the answer
-  // itself headroom. Answer length/tone is controlled by SYSTEM_PROMPT.
-  let message: Anthropic.Message;
-  try {
-    message = await getAnthropicClient().messages.create({
-      model: "claude-sonnet-5",
-      max_tokens: 1500,
-      thinking: { type: "disabled" },
-      system: SYSTEM_PROMPT,
-      messages: [
-        {
-          role: "user",
-          content:
-            `Here are the most relevant schools for this question:\n\n${schoolContext}\n\n` +
-            `Parent's question: <question>${question}</question>`,
-        },
-      ],
-    });
-  } catch (err) {
-    // Issue #354: an Anthropic account usage-limit hit is a known, distinct
-    // shape of failure — the parent gets the approved PROVIDER_LIMIT copy
-    // with the schools already retrieved, instead of the call failing
-    // outright and losing them. Any other provider failure (rate limit,
-    // outage, timeout) is rethrown for the route's existing handling.
-    //
-    // This path answers successfully rather than throwing, so it never
-    // reaches the route's catch block — the real error (with the "regain
-    // access on ..." date) is logged here instead, so the existing Sentry
-    // alert this issue relies on still fires.
-    if (classifyProviderError(err).classification === "usage_limit") {
-      Sentry.captureException(err);
-      return {
-        answer: PROVIDER_LIMIT,
-        guardrail: "provider_limit",
-        retrieved: results,
-        sources: results,
-        reasons: [],
-      };
-    }
-    throw err;
-  }
+// Issue #308: thinking is adaptive and on by default for claude-sonnet-5,
+// and thinking tokens count against max_tokens. A 600-token budget could
+// be entirely consumed by thinking before any answer text was produced,
+// tripping the #257 empty-answer fallback. This task is a direct
+// context-to-answer synthesis that doesn't need extended reasoning, so
+// thinking is disabled outright; max_tokens is raised to give the answer
+// itself headroom. Answer length/tone is controlled by SYSTEM_PROMPT.
+//
+// Issue #450: exported as a pure function so evals/run-ask-eval.ts's batch
+// path can build the exact request the production path sends (for
+// messages.batches.create) without duplicating — and risking drift from —
+// this assembly.
+export function buildAskRequest(
+  question: string,
+  schoolContext: string
+): Anthropic.MessageCreateParamsNonStreaming {
+  return {
+    model: "claude-sonnet-5",
+    max_tokens: 1500,
+    thinking: { type: "disabled" },
+    system: SYSTEM_PROMPT,
+    messages: [
+      {
+        role: "user",
+        content:
+          `Here are the most relevant schools for this question:\n\n${schoolContext}\n\n` +
+          `Parent's question: <question>${question}</question>`,
+      },
+    ],
+  };
+}
 
+// Issue #450: turns a completed Anthropic.Message into the same
+// AnswerQuestionResult shape whether it arrived from a synchronous
+// messages.create call or from a batch result — so the eval's batch path
+// can score exactly what the production path would have produced instead
+// of reimplementing this dispatch and risking drift from it.
+export function buildAnswerResult(
+  message: Anthropic.Message,
+  question: string,
+  results: SearchResult[]
+): AnswerQuestionResult {
   const rawAnswer = message.content
     .filter((block): block is Anthropic.TextBlock => block.type === "text")
     .map((block) => block.text)
@@ -205,4 +191,49 @@ export async function answerQuestion({
     stopReason,
     contentBlockTypes,
   };
+}
+
+export async function answerQuestion({
+  question,
+  filters = {},
+}: {
+  question: string;
+  filters?: HardFilters;
+}): Promise<AnswerQuestionResult> {
+  // Step 1: Retrieve the top ASK_RETRIEVAL_COUNT most relevant schools,
+  // restricted to the active /find rail filters (issue #231)
+  const results = await searchSchools(question, ASK_RETRIEVAL_COUNT, filters);
+
+  // Step 2: Build context from retrieved schools
+  const schoolContext = buildSchoolContext(results);
+
+  // Step 3: Send to Claude with the retrieved context
+  let message: Anthropic.Message;
+  try {
+    message = await getAnthropicClient().messages.create(buildAskRequest(question, schoolContext));
+  } catch (err) {
+    // Issue #354: an Anthropic account usage-limit hit is a known, distinct
+    // shape of failure — the parent gets the approved PROVIDER_LIMIT copy
+    // with the schools already retrieved, instead of the call failing
+    // outright and losing them. Any other provider failure (rate limit,
+    // outage, timeout) is rethrown for the route's existing handling.
+    //
+    // This path answers successfully rather than throwing, so it never
+    // reaches the route's catch block — the real error (with the "regain
+    // access on ..." date) is logged here instead, so the existing Sentry
+    // alert this issue relies on still fires.
+    if (classifyProviderError(err).classification === "usage_limit") {
+      Sentry.captureException(err);
+      return {
+        answer: PROVIDER_LIMIT,
+        guardrail: "provider_limit",
+        retrieved: results,
+        sources: results,
+        reasons: [],
+      };
+    }
+    throw err;
+  }
+
+  return buildAnswerResult(message, question, results);
 }
