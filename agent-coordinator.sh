@@ -47,6 +47,11 @@ CLAUDE_IMPLEMENT_FALLBACK_MODEL="${CLAUDE_IMPLEMENT_FALLBACK_MODEL-haiku}"
 # equal to the primary gives no protection against a model-specific outage,
 # since the same model would be unavailable both times (issue #430 review).
 CLAUDE_REVIEW_FALLBACK_MODEL="${CLAUDE_REVIEW_FALLBACK_MODEL-haiku}"
+# `-` not `:-` on EFFORT_FIRST, same reasoning as the fallback models above:
+# an operator who sets this to EMPTY means "no --effort flag", and `:-` would
+# silently turn that back into "low" (issue #454's bug, repeated here).
+CLAUDE_IMPLEMENT_EFFORT_FIRST="${CLAUDE_IMPLEMENT_EFFORT_FIRST-low}"
+CLAUDE_IMPLEMENT_EFFORT_RETRY="${CLAUDE_IMPLEMENT_EFFORT_RETRY:-}"
 CLAUDE_IMPLEMENT_MAX_USD="${CLAUDE_IMPLEMENT_MAX_USD:-5.00}"
 CLAUDE_REVIEW_MAX_USD="${CLAUDE_REVIEW_MAX_USD:-0.75}"
 CLAUDE_PLANNER_MAX_USD="${CLAUDE_PLANNER_MAX_USD:-0.50}"
@@ -283,7 +288,7 @@ PYEOF
   return 0
 }
 
-# lf_emit ISSUE TITLE BRANCH OUTCOME ATTEMPTS LABEL START_NS END_NS TEST BUILD REVIEWER PR [TRACE_NAME]
+# lf_emit ISSUE TITLE BRANCH OUTCOME ATTEMPTS LABEL START_NS END_NS TEST BUILD REVIEWER PR [TRACE_NAME] [EFFORT_FIRST] [EFFORT_RETRY]
 # Assembles this run's buffered phases into one payload and hands it to the only
 # script that talks to Langfuse. Hard-timed and swallowed: a hung or dead
 # Langfuse costs the loop at most 30 seconds and nothing else. The same
@@ -307,6 +312,7 @@ lf_emit() {
   LF_LABEL="$6" LF_TSTART="$7" LF_TEND="$8" LF_SPANS="$RUN_FILE" \
   LF_TEST_RESULT="$9" LF_BUILD_RESULT="${10}" LF_REVIEWER_RESULT="${11}" \
   LF_PR_OUTCOME="${12}" LF_TRACE_NAME="${13:-agent-run}" LF_METADATA_DIR="$RUN_METADATA_DIR" \
+  LF_EFFORT_FIRST="${14:-}" LF_EFFORT_RETRY="${15:-}" \
   GITHUB_REPO="$GITHUB_REPO" \
   python3 << 'PYEOF' 2>> "$LOG_FILE" | timeout 30 "$LF_TRACE_PYTHON" "$LF_TRACE_SCRIPT" 2>> "$LOG_FILE"
 import json, os
@@ -342,6 +348,8 @@ trace = {
     "reviewer_result": os.environ.get("LF_REVIEWER_RESULT") or None,
     "pr_outcome": os.environ.get("LF_PR_OUTCOME") or None,
     "trace_name": os.environ.get("LF_TRACE_NAME") or None,
+    "effort_first": os.environ.get("LF_EFFORT_FIRST") or None,
+    "effort_retry": os.environ.get("LF_EFFORT_RETRY") or None,
     "start_ns": num("LF_TSTART"),
     "end_ns": num("LF_TEND"),
 }
@@ -440,6 +448,24 @@ except Exception:
     fi
   done
   return 1
+}
+
+blocker_is_agent_stuck() {
+  # blocker_is_agent_stuck NUM -> success (0) if issue NUM currently carries
+  # the agent-stuck label, failure (1) otherwise. A blocker that is merely
+  # open will eventually close on its own; one labeled agent-stuck will not
+  # (issue #429), so the dependency gate below needs to tell the two apart
+  # instead of polling the same open blocker every loop forever.
+  local NUM="$1"
+  gh_api GET "/issues/$NUM" | python3 -c "
+import json, sys
+try:
+    data = json.load(sys.stdin)
+    names = [l.get('name', '') for l in data.get('labels', [])]
+    sys.exit(0 if 'agent-stuck' in names else 1)
+except Exception:
+    sys.exit(1)
+"
 }
 
 malformed_blocked_by() {
@@ -739,10 +765,12 @@ maybe_reconcile_open_prs() {
 
 # Run one claude agent call with timeout, capturing the JSON result.
 # Reads the prompt from $PROMPT.
-# run_claude OUT_FILE [RESUME_ID] [TOOLS] [MODEL] [MAX_BUDGET_USD] [FALLBACK_MODEL]
+# run_claude OUT_FILE [RESUME_ID] [TOOLS] [MODEL] [MAX_BUDGET_USD] [FALLBACK_MODEL] [EFFORT]
 # FALLBACK_MODEL is passed straight through to the CLI's own --fallback-model,
 # which it retries on automatically when the primary model is unavailable
 # (issue #430). Empty means no flag at all, so behavior is unchanged when unset.
+# EFFORT is passed straight through to the CLI's own --effort (issue #449).
+# Empty means no flag at all, so behavior is unchanged when unset.
 # Returns: 0 on success, 124 on timeout, 1 on any other error.
 run_claude() {
   local OUT_FILE="$1"
@@ -751,9 +779,11 @@ run_claude() {
   local MODEL="${4:-}"
   local MAX_BUDGET_USD="${5:-}"
   local FALLBACK_MODEL="${6:-}"
+  local EFFORT="${7:-}"
   local RESUME_ARGS=()
   local MODEL_ARGS=()
   local BUDGET_ARGS=()
+  local EFFORT_ARGS=()
   if [ -n "$RESUME_ID" ]; then
     RESUME_ARGS=(--resume "$RESUME_ID")
   fi
@@ -766,13 +796,17 @@ run_claude() {
   if [ -n "$MAX_BUDGET_USD" ]; then
     BUDGET_ARGS=(--max-budget-usd "$MAX_BUDGET_USD")
   fi
-  echo "[$(date '+%Y-%m-%d %H:%M:%S')] Claude call: model=${MODEL:-default} max_budget_usd=${MAX_BUDGET_USD:-none} tools=${TOOLS}" >> "$LOG_FILE"
+  if [ -n "$EFFORT" ]; then
+    EFFORT_ARGS=(--effort "$EFFORT")
+  fi
+  echo "[$(date '+%Y-%m-%d %H:%M:%S')] Claude call: model=${MODEL:-default} max_budget_usd=${MAX_BUDGET_USD:-none} effort=${EFFORT:-default} tools=${TOOLS}" >> "$LOG_FILE"
   ANTHROPIC_API_KEY="$ANTHROPIC_API_KEY" timeout "$CLAUDE_TIMEOUT" claude \
     -p "$PROMPT" \
     --output-format json \
     --allowedTools "$TOOLS" \
     "${MODEL_ARGS[@]}" \
     "${BUDGET_ARGS[@]}" \
+    "${EFFORT_ARGS[@]}" \
     "${RESUME_ARGS[@]}" \
     < /dev/null \
     > "$OUT_FILE" 2>> "$LOG_FILE"
@@ -1358,7 +1392,20 @@ run_agent() {
   local BLOCKER
   BLOCKER=$(blocking_issue_number "$ISSUE_BODY")
   if [ -n "$BLOCKER" ]; then
-    log "Issue #${ISSUE_NUMBER}: skipping this loop, blocked by open issue #${BLOCKER}"
+    if ! blocker_is_agent_stuck "$BLOCKER"; then
+      log "Issue #${ISSUE_NUMBER}: skipping this loop, blocked by open issue #${BLOCKER}"
+      return
+    fi
+    # The blocker is agent-stuck, not just open — it will never close on its
+    # own, so leaving this issue "agent-ok" would poll the same dead end
+    # every loop forever (issue #429: #405 stuck at 23:00 and #406-408 logged
+    # "skipping this loop" once a minute for eleven hours). Pull it out of
+    # the queue once instead of returning silently; a human restores
+    # agent-ok once the blocker is resolved.
+    log "Issue #${ISSUE_NUMBER}: blocked by open issue #${BLOCKER}, which is agent-stuck — removing from queue instead of polling it forever"
+    github_remove_label "$ISSUE_NUMBER" "$TRIGGER_LABEL"
+    github_label "$ISSUE_NUMBER" "blocked"
+    github_comment "$ISSUE_NUMBER" "Waiting on #${BLOCKER}, which is agent-stuck. Removed from the queue so the coordinator does not poll it every minute. Re-add agent-ok once #${BLOCKER} is resolved."
     return
   fi
 
@@ -1467,7 +1514,17 @@ Instructions:
   local DIRTY_TREE_NOTE=""
 
   while [ $ATTEMPT -le 2 ]; do
-    log "Issue #${ISSUE_NUMBER}: agent attempt ${ATTEMPT}"
+    # Attempt 1 runs cheap (low effort by default); attempt 2 starts a fresh
+    # session at the CLI default. Never change effort mid-session — that
+    # invalidates the prompt cache — but attempt 2 already starts fresh, so
+    # switching there is free (issue #449).
+    local IMPLEMENT_EFFORT
+    if [ $ATTEMPT -eq 1 ]; then
+      IMPLEMENT_EFFORT="$CLAUDE_IMPLEMENT_EFFORT_FIRST"
+    else
+      IMPLEMENT_EFFORT="$CLAUDE_IMPLEMENT_EFFORT_RETRY"
+    fi
+    log "Issue #${ISSUE_NUMBER}: agent attempt ${ATTEMPT} (effort ${IMPLEMENT_EFFORT:-default})"
     ATTEMPTS_USED=$ATTEMPT
     local T0 T1
     T0=$(lf_now_ns)
@@ -1489,7 +1546,7 @@ Instructions:
     # PROMPT below carrying forward just the issue, the failure reason, and
     # the files already touched (issue #207).
     run_claude "$CLAUDE_OUT" "" \
-      "Bash,Read,Write,Edit,Glob,Grep,WebFetch,WebSearch" "$CLAUDE_IMPLEMENT_MODEL" "$CLAUDE_IMPLEMENT_MAX_USD" "$CLAUDE_IMPLEMENT_FALLBACK_MODEL"
+      "Bash,Read,Write,Edit,Glob,Grep,WebFetch,WebSearch" "$CLAUDE_IMPLEMENT_MODEL" "$CLAUDE_IMPLEMENT_MAX_USD" "$CLAUDE_IMPLEMENT_FALLBACK_MODEL" "$IMPLEMENT_EFFORT"
     local RC=$?
     if [ $RC -eq 0 ] && claude_ran_on_fallback "$CLAUDE_OUT" "$CLAUDE_IMPLEMENT_MODEL" "$CLAUDE_IMPLEMENT_FALLBACK_MODEL"; then
       log "Issue #${ISSUE_NUMBER}: ran on fallback model ${CLAUDE_IMPLEMENT_FALLBACK_MODEL}"
@@ -1504,7 +1561,7 @@ Instructions:
       git checkout main >> "$LOG_FILE" 2>&1
       lf_emit "$ISSUE_NUMBER" "$ISSUE_TITLE" "$BRANCH" "$OUTCOME" "$ATTEMPTS_USED" \
         "$GH_LABEL" "$RUN_START" "$(lf_now_ns)" "$TEST_RESULT" "$BUILD_RESULT" \
-        "$REVIEWER_RESULT" "$PR_OUTCOME"
+        "$REVIEWER_RESULT" "$PR_OUTCOME" "" "$CLAUDE_IMPLEMENT_EFFORT_FIRST" "$CLAUDE_IMPLEMENT_EFFORT_RETRY"
       rm -f "$CLAUDE_OUT" "$VERIFY_OUT"
       return 0
     fi
@@ -1561,7 +1618,7 @@ This is a controlled cost stop, not a verified implementation failure. The issue
       git checkout main >> "$LOG_FILE" 2>&1
       lf_emit "$ISSUE_NUMBER" "$ISSUE_TITLE" "$BRANCH" "$OUTCOME" "$ATTEMPTS_USED" \
         "$GH_LABEL" "$RUN_START" "$(lf_now_ns)" "$TEST_RESULT" "$BUILD_RESULT" \
-        "$REVIEWER_RESULT" "$PR_OUTCOME"
+        "$REVIEWER_RESULT" "$PR_OUTCOME" "" "$CLAUDE_IMPLEMENT_EFFORT_FIRST" "$CLAUDE_IMPLEMENT_EFFORT_RETRY"
       rm -f "$CLAUDE_OUT" "$VERIFY_OUT"
       return 0
     fi
@@ -1772,7 +1829,7 @@ ${FAIL_OUTPUT}
   # One trace per issue, written after the run has fully finished either way.
   lf_emit "$ISSUE_NUMBER" "$ISSUE_TITLE" "$BRANCH" "$OUTCOME" "$ATTEMPTS_USED" \
     "$GH_LABEL" "$RUN_START" "$(lf_now_ns)" "$TEST_RESULT" "$BUILD_RESULT" \
-    "$REVIEWER_RESULT" "$PR_OUTCOME"
+    "$REVIEWER_RESULT" "$PR_OUTCOME" "" "$CLAUDE_IMPLEMENT_EFFORT_FIRST" "$CLAUDE_IMPLEMENT_EFFORT_RETRY"
 
   rm -f "$CLAUDE_OUT" "$VERIFY_OUT"
 }

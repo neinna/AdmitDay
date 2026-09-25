@@ -91,6 +91,8 @@ TRACE_KEYS = (
     "pr_outcome",
     "metadata_file",
     "trace_name",
+    "effort_first",
+    "effort_retry",
     "start_ns",
     "end_ns",
 )
