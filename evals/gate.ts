@@ -94,6 +94,30 @@ export function pickLatestWeeklyBaseline(
  * dropped more than REGRESSION_THRESHOLD_POINTS below the weekly baseline.
  * Returns human-readable descriptions, one per regressed scorer.
  */
+/**
+ * Distinguishes a broken run (every case threw before scoring) from a bad
+ * answer (cases ran and scored, but failed a quality bar). Returns null
+ * unless every result errored, in which case it lists the distinct error
+ * messages so the real cause shows up in the log instead of a scorer
+ * failure message.
+ */
+export function describeInfraFailure(results: { id: string; error?: string }[]): string | null {
+  if (results.length === 0) return null;
+  if (results.some((r) => !r.error)) return null;
+
+  const counts = new Map<string, number>();
+  for (const result of results) {
+    const message = result.error as string;
+    counts.set(message, (counts.get(message) ?? 0) + 1);
+  }
+
+  const lines = Array.from(counts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .map(([message, count]) => `  ${count}× ${message}`);
+
+  return [`EVAL COULD NOT RUN: all ${results.length} cases errored before scoring.`, ...lines].join("\n");
+}
+
 export function computeRegressions(
   current: RunSummary,
   baseline: RunSummary | null,

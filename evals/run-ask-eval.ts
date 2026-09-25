@@ -55,6 +55,7 @@ import {
   buildRunName,
   computeRegressions,
   buildCostGuardAbortMessage,
+  describeInfraFailure,
   REGRESSION_THRESHOLD_POINTS,
   COST_LIMIT_USD,
 } from "./gate";
@@ -221,6 +222,11 @@ async function runBatch(cases: SeedCase[], allSchoolNames: string[]): Promise<Ca
   });
 }
 
+function formatErrorSuffix(error: string | undefined): string {
+  if (!error) return "";
+  return ` — ${error.slice(0, 300)}`;
+}
+
 function summarize(results: CaseResult[]): Record<string, { passed: number; total: number; rate: number }> {
   const scorerNames = [
     "noBannedPhrases",
@@ -276,7 +282,7 @@ async function main() {
       totalCostUsd += result.costUsd ?? 0;
       console.log(
         `  ${result.error ? "ERROR" : "ok"} ${result.id} [${result.kind}] guardrail=${result.guardrail} ` +
-          `(running cost: $${totalCostUsd.toFixed(4)})`
+          `(running cost: $${totalCostUsd.toFixed(4)})${formatErrorSuffix(result.error)}`
       );
 
       if (totalCostUsd > COST_LIMIT_USD) {
@@ -298,7 +304,10 @@ async function main() {
     results = await runBatch(cases, allSchoolNames);
     for (const result of results) {
       totalCostUsd += result.costUsd ?? 0;
-      console.log(`  ${result.error ? "ERROR" : "ok"} ${result.id} [${result.kind}] guardrail=${result.guardrail}`);
+      console.log(
+        `  ${result.error ? "ERROR" : "ok"} ${result.id} [${result.kind}] guardrail=${result.guardrail}` +
+          formatErrorSuffix(result.error)
+      );
     }
 
     if (totalCostUsd > COST_LIMIT_USD) {
@@ -315,6 +324,13 @@ async function main() {
   }
 
   if (aborted) {
+    process.exit(1);
+    return;
+  }
+
+  const infraFailure = describeInfraFailure(results);
+  if (infraFailure) {
+    console.error(`\n${infraFailure}`);
     process.exit(1);
     return;
   }
