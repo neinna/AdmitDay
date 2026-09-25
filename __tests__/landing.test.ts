@@ -71,4 +71,16 @@ describe('the landing page keeps the product’s promises', () => {
   it('is a server component so the numbers render without JS', () => {
     expect(pageSrc).not.toMatch(/^['"]use client['"]/m)
   })
+
+  it('states the new subline exactly', () => {
+    expect(pageCopy).toContain(
+      "Every school's real data, made personal. Filter for the must-haves, then ask in plain English for everything else."
+    )
+  })
+
+  it('has the three-item how-it-works section', () => {
+    expect(pageCopy).toContain('Where the data comes from')
+    expect(pageCopy).toContain('What the AI does')
+    expect(pageCopy).toContain('What it never does')
+  })
 })
