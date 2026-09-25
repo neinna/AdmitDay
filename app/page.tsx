@@ -68,7 +68,7 @@ export default async function Landing() {
             Every NYC public high school, in one list you can actually use
           </h1>
           <p className="text-[16px] min-[700px]:text-[17px] text-muted mt-4 min-[700px]:mt-5 max-w-[540px]">
-            Every school's real data, made personal. Filter for the must-haves, then ask in plain English for everything else.
+            {"Every school's real data, made personal. Filter for the must-haves, then ask in plain English for everything else."}
           </p>
         </div>
         <div>
