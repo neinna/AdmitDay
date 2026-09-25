@@ -22,33 +22,23 @@ describe('schools.json', () => {
 })
 
 // ── Issue #4: Footer disclaimer text ────────────────────────────────────────
+// Issue #476 moved this disclaimer paragraph off the footer and onto its own
+// /disclaimers page (see __tests__/disclaimers-page.test.ts), so the footer
+// no longer carries the paragraph or the myschools.nyc link directly.
 
 describe('Footer disclaimer text', () => {
   const footerSource = fs.readFileSync(path.join(__dirname, '../components/Footer.tsx'), 'utf-8')
 
-  it('contains the new disclaimer text', () => {
-    expect(footerSource).toContain('Every effort was made to keep this data current.')
-  })
-
-  it('contains the AI caveat', () => {
-    expect(footerSource).toContain('AI can make mistakes and school data can change.')
-  })
-
-  it('contains the confirm deadlines text', () => {
-    expect(footerSource).toContain('confirm deadlines and requirements at')
+  it('no longer contains the disclaimer paragraph (moved to /disclaimers, #476)', () => {
+    expect(footerSource).not.toContain('Every effort was made to keep this data current.')
   })
 
   it('does NOT contain the old NYC-SIFT disclaimer', () => {
     expect(footerSource).not.toContain('Data from NYC-SIFT and NYC DOE Open Data')
   })
 
-  it('links to https://www.myschools.nyc (with www)', () => {
-    expect(footerSource).toContain('https://www.myschools.nyc')
-  })
-
-  it('myschools.nyc link opens in a new tab', () => {
-    expect(footerSource).toContain('target="_blank"')
-    expect(footerSource).toContain('rel="noopener noreferrer"')
+  it('links to /disclaimers instead of carrying the paragraph inline (#476)', () => {
+    expect(footerSource).toContain('href="/disclaimers"')
   })
 })
 
@@ -383,19 +373,15 @@ describe('getVisibleGroups', () => {
 
 // ── Issue #8: Unified Footer disclaimer + no Note box on list page ───────────
 
+// Issue #476 moved this disclaimer content off the footer entirely, onto its
+// own /disclaimers page (see __tests__/disclaimers-page.test.ts), so it no
+// longer lives in Footer.tsx at all.
 describe('Issue #8: Footer unified disclaimer', () => {
   const footerSource = fs.readFileSync(path.join(__dirname, '../components/Footer.tsx'), 'utf-8')
 
-  it('contains the DOE tiebreaker sentence', () => {
-    expect(footerSource).toContain("DOE&apos;s own prediction tool uses randomness as a tiebreaker")
-  })
-
-  it('contains the no-guarantee clause', () => {
-    expect(footerSource).toContain('no tool can guarantee an offer')
-  })
-
-  it('uses the shortened before-submitting text', () => {
-    expect(footerSource).toContain('Before submitting, confirm deadlines and requirements at')
+  it('no longer contains the disclaimer paragraph in the footer (moved to /disclaimers, #476)', () => {
+    expect(footerSource).not.toContain('no tool can guarantee an offer')
+    expect(footerSource).not.toContain('Before submitting, confirm deadlines and requirements at')
   })
 
   it('does NOT contain the old verbose phrasing', () => {
