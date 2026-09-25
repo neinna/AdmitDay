@@ -15,10 +15,10 @@ import { buildLandscape, landscapeIsPublishable } from '@/lib/landscape'
  * piece of vocabulary carries its meaning. One job — get them into /find with
  * enough trust to try it.
  *
- * Kept deliberately short (2026-09-18): headline, one line, one button, the
- * landscape numbers, three one-line steps, and the refusal to predict. No
- * pricing, feature list, FAQ, newsletter capture, second destination, or
- * social proof.
+ * Kept short: headline, one line, one button, the landscape numbers, three
+ * steps, and a three-item "how it works" section (added 2026-09-25 by
+ * Inna's decision, to build trust). No pricing, FAQ, newsletter capture,
+ * second destination, or social proof.
  *
  * The landscape numbers are derived from the school table (lib/landscape.ts),
  * never typed here.
@@ -68,7 +68,7 @@ export default async function Landing() {
             Every NYC public high school, in one list you can actually use
           </h1>
           <p className="text-[16px] min-[700px]:text-[17px] text-muted mt-4 min-[700px]:mt-5 max-w-[540px]">
-            Filter by what matters. See what each school actually requires.
+            Every school's real data, made personal. Filter for the must-haves, then ask in plain English for everything else.
           </p>
         </div>
         <div>
@@ -107,8 +107,17 @@ export default async function Landing() {
         ))}
       </section>
 
-      <section className="px-5 min-[900px]:px-9 py-7 min-[900px]:py-8">
-        <p className="text-[15px] text-ink-2">We never predict admission. Every fact links to its source.</p>
+      <section className="grid grid-cols-1 min-[900px]:grid-cols-3 gap-7 min-[900px]:gap-10 px-5 min-[900px]:px-9 py-9 min-[900px]:py-12 border-b border-rule">
+        {[
+          { t: 'Where the data comes from', b: "NYC Department of Education's MySchools. Every fact links to its source, with the date it was fetched." },
+          { t: 'What the AI does', b: 'Reads only that data, and gives one reason for each school it puts at the top of your list.' },
+          { t: 'What it never does', b: "We never predict admission. Your question goes to our AI provider to answer it; we don't store its text." },
+        ].map((s) => (
+          <div key={s.t} className="flex flex-col gap-1 min-[900px]:gap-2">
+            <h3 className="text-[16px] min-[700px]:text-[17px] font-bold text-ink">{s.t}</h3>
+            <p className="text-[14.5px] text-ink-2 leading-[1.5]">{s.b}</p>
+          </div>
+        ))}
       </section>
 
       <div className="flex flex-col min-[900px]:flex-row justify-between gap-1 px-5 min-[900px]:px-9 py-4 bg-surface-2 border-t border-rule">
