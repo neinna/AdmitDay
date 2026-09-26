@@ -25,7 +25,14 @@ import {
   buildMySchoolsUrl,
   buildMySchoolsCheckedLabel,
 } from '@/lib/school-detail-utils'
-import { Eyebrow, DefinitionRow, NotReportedLine, StatGrid, TrendSparkline } from '@/components/ui'
+import {
+  Eyebrow,
+  DefinitionRow,
+  NotReportedLine,
+  StatGrid,
+  TrendSparkline,
+  MissingMark,
+} from '@/components/ui'
 import SiteHeader from './SiteHeader'
 
 const PROGRAMS_CAP = 6
@@ -47,7 +54,7 @@ interface Props {
   programs: ProgramRow[]
   requirementBlocks: RequirementBlock[]
   activityGroups: ActivityGroup[]
-  notOfferedActivitiesSentence: string | null
+  missingActivityGroups: { key: string; label: string }[]
   matchedSignals: string[]
   matchedDisplayLabels: string[]
   subwayLines: string[]
@@ -73,7 +80,7 @@ export default function SchoolDetailClient({
   programs,
   requirementBlocks,
   activityGroups,
-  notOfferedActivitiesSentence,
+  missingActivityGroups,
   matchedSignals,
   matchedDisplayLabels,
   subwayLines,
@@ -379,7 +386,7 @@ export default function SchoolDetailClient({
             </div>
           </div>
 
-          {(activityGroups.length > 0 || notOfferedActivitiesSentence) && (
+          {(activityGroups.length > 0 || missingActivityGroups.length > 0) && (
             <div className="px-5 min-[900px]:px-9 pt-[26px] pb-[30px] flex flex-col gap-[18px]">
               <div className="flex items-baseline justify-between gap-4 flex-wrap">
                 <Eyebrow>Activities</Eyebrow>
@@ -443,14 +450,21 @@ export default function SchoolDetailClient({
                     </div>
                   )
                 })}
-                {notOfferedActivitiesSentence && (
-                  <NotReportedLine
-                    variant="offered"
-                    className={activityGroups.length > 0 ? 'pt-[14px] border-t border-rule-light' : ''}
+                {missingActivityGroups.map((group, i) => (
+                  <div
+                    key={group.key}
+                    className={`grid grid-cols-1 min-[900px]:grid-cols-[152px_1fr] gap-4 items-start ${
+                      activityGroups.length > 0 || i > 0 ? 'pt-[14px] border-t border-rule-light' : ''
+                    }`}
                   >
-                    {notOfferedActivitiesSentence}
-                  </NotReportedLine>
-                )}
+                    <div className="flex items-baseline gap-[7px]">
+                      <span className="text-[14px] font-medium text-ink">{group.label}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-[7px]">
+                      <MissingMark kind="not_reported" className="text-[13px]" />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
