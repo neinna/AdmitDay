@@ -53,6 +53,20 @@ export interface AnswerQuestionResult {
   contentBlockTypes?: string[];
 }
 
+// Issue #489: product decision 2026-09-26 to cap each per-school reason at
+// 120 characters, cutting at a word boundary where possible.
+export const MAX_REASON_LENGTH = 120;
+
+export function capReason(reason: string): string {
+  if (reason.length <= MAX_REASON_LENGTH) return reason;
+
+  const truncated = reason.slice(0, MAX_REASON_LENGTH);
+  const lastSpace = truncated.lastIndexOf(" ");
+  const cut = lastSpace === -1 ? truncated : truncated.slice(0, lastSpace);
+
+  return cut.replace(/[\s.,;:!?]+$/, "") + "…";
+}
+
 // Parses the model's "DBN | reason" lines. Malformed output must never
 // throw — a line with no separator, or a DBN not among the retrieved
 // schools, is silently dropped rather than failing the whole answer.
@@ -68,7 +82,7 @@ function parseReasons(
     if (separatorIndex === -1) continue;
 
     const dbn = line.slice(0, separatorIndex).trim();
-    const reason = line.slice(separatorIndex + 3).trim();
+    const reason = capReason(line.slice(separatorIndex + 3).trim());
     if (!retrievedDbns.has(dbn)) continue;
 
     reasons.push({ dbn, reason });
