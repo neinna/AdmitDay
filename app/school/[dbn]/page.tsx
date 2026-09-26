@@ -6,9 +6,7 @@ import { parseFindFilters, findFiltersToQueryString, trackLabel } from '@/lib/sc
 import {
   findSchoolByDbn,
   formatSchoolName,
-  buildStatCells,
-  getMissingStatLabels,
-  buildNotReportedStatsSentence,
+  buildStatCellsWithMissing,
   buildSqrTrends,
   buildShsatCutoffRows,
   buildActivityGroups,
@@ -68,8 +66,7 @@ export default async function SchoolDetailPage({
 
   const matchedSignals = parseMatchedSignals(searchParams.matched)
 
-  const statCells = buildStatCells(school)
-  const notReportedStatsSentence = buildNotReportedStatsSentence(getMissingStatLabels(school))
+  const statCells = buildStatCellsWithMissing(school)
   const sqrTrends = buildSqrTrends(school)
   const shsatCutoffRows = buildShsatCutoffRows(school)
 
@@ -116,7 +113,6 @@ export default async function SchoolDetailPage({
         neighborhood={neighborhood}
         tracks={tracks}
         statCells={statCells}
-        notReportedStatsSentence={notReportedStatsSentence}
         sqrTrends={sqrTrends}
         shsatCutoffRows={shsatCutoffRows}
         programs={programs}

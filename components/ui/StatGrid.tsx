@@ -1,4 +1,5 @@
 import { StatCell } from '@/lib/school-detail-utils'
+import MissingMark from './MissingMark'
 
 interface Props {
   stats: StatCell[]
@@ -15,9 +16,13 @@ export default function StatGrid({ stats, noteText = DEFAULT_NOTE }: Props) {
     <div className="grid grid-cols-1 min-[521px]:grid-cols-2 min-[901px]:grid-cols-4 gap-px bg-rule border border-rule">
       {stats.map((stat) => (
         <div key={stat.key} className="bg-surface px-[18px] py-4 flex flex-col gap-1">
-          <span className="font-mono text-[22px] min-[901px]:text-[24px] font-medium text-ink tracking-[-0.02em]">
-            {stat.value}
-          </span>
+          {stat.missing ? (
+            <MissingMark kind="not_reported" className="text-[22px] min-[901px]:text-[24px]" />
+          ) : (
+            <span className="font-mono text-[22px] min-[901px]:text-[24px] font-medium text-ink tracking-[-0.02em]">
+              {stat.value}
+            </span>
+          )}
           <span className="text-[10.5px] tracking-[0.06em] uppercase text-faint">{stat.label}</span>
         </div>
       ))}
