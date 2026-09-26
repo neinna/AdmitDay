@@ -34,6 +34,7 @@ export interface StatCell {
   key: string
   value: string
   label: string
+  missing?: true
 }
 
 interface StatField {
@@ -112,6 +113,17 @@ export function buildStatCells(school: School): StatCell[] {
     value: f.format(f.get(school) as number),
     label: f.gridLabel,
   }))
+}
+
+/** Every STAT_FIELDS entry, in the fixed design order — present fields built as buildStatCells does, missing fields marked `missing: true` with an empty value. */
+export function buildStatCellsWithMissing(school: School): StatCell[] {
+  return STAT_FIELDS.map((f) => {
+    const value = f.get(school)
+    if (isPresent(value)) {
+      return { key: f.key, value: f.format(value), label: f.gridLabel }
+    }
+    return { key: f.key, label: f.gridLabel, value: '', missing: true }
+  })
 }
 
 /** Sentence-form labels (lowercase, natural reading order) for stats DOE did not publish. */
