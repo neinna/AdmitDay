@@ -383,8 +383,9 @@ describe('checkRateLimit — per-IP daily limit (issue #490)', () => {
     const blocked = await mod.checkRateLimit(reqFrom(ip))
     expect(blocked.ok).toBe(false)
     if (!blocked.ok) {
-      expect(blocked.retryAfterSec).toBeGreaterThan(0)
-      expect(blocked.retryAfterSec).toBeLessThanOrEqual(24 * 60 * 60)
+      // Clock is at 00:20:00 UTC (20 requests, each stepping WINDOW_MS = 60s
+      // afterward) — exactly 23h40m = 85200s until the next UTC midnight.
+      expect(blocked.retryAfterSec).toBe(85200)
     }
   })
 
@@ -405,20 +406,25 @@ describe('checkRateLimit — per-IP daily limit (issue #490)', () => {
   })
 
   it('in memory: a request refused by the per-IP daily limit does not increase the sitewide daily count', async () => {
-    process.env.DAILY_LLM_CEILING = '1000'
+    // Ceiling set to exactly the 20 real calls the first IP makes plus one
+    // spare slot. If the refused 21st request also counted toward the
+    // sitewide ceiling (the #197 regression), that slot would already be
+    // gone and the second IP's request below would be refused too.
+    process.env.DAILY_LLM_CEILING = '21'
     mockSql.mockRejectedValue(new Error('connection refused'))
     const mod = loadFreshModule()
 
     jest.setSystemTime(Date.UTC(2026, 8, 18, 0, 0, 0))
     const ip = '1.2.3.4'
     for (let i = 0; i < mod.DAILY_PER_IP; i++) {
-      await mod.checkRateLimit(reqFrom(ip))
+      expect(await mod.checkRateLimit(reqFrom(ip))).toEqual({ ok: true })
       jest.setSystemTime(Date.now() + mod.WINDOW_MS)
     }
     expect((await mod.checkRateLimit(reqFrom(ip))).ok).toBe(false)
 
-    // The sitewide ceiling still has room for a different IP, proving the
-    // refused 21st request from the first IP never counted toward it.
+    // The sitewide ceiling still has exactly one slot left for a different
+    // IP, proving the refused 21st request from the first IP never counted
+    // toward it.
     expect(await mod.checkRateLimit(reqFrom('9.9.9.9'))).toEqual({ ok: true })
   })
 

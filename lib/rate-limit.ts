@@ -107,12 +107,16 @@ function checkInMemory(now: number, ip: string): RateLimitResult {
 
   const dayKey = utcDateKey(now)
 
+  // Mirrors the store's ipday CTE: the per-IP daily row is persisted as soon
+  // as the per-minute check passes, whether or not the sitewide ceiling
+  // below then refuses the request.
   let ipDaily = ipDailyBuckets.get(ip)
   if (!ipDaily || ipDaily.dayKey !== dayKey) {
     ipDaily = { dayKey, count: 0 }
   }
-  const nextIpDailyCount = ipDaily.count + 1
-  if (nextIpDailyCount > DAILY_PER_IP) {
+  ipDaily.count++
+  ipDailyBuckets.set(ip, ipDaily)
+  if (ipDaily.count > DAILY_PER_IP) {
     return { ok: false, retryAfterSec: secondsUntilUtcMidnight(now) }
   }
 
@@ -123,8 +127,6 @@ function checkInMemory(now: number, ip: string): RateLimitResult {
     return { ok: false, retryAfterSec: secondsUntilUtcMidnight(now) }
   }
   dailyEntry.count++
-  ipDaily.count = nextIpDailyCount
-  ipDailyBuckets.set(ip, ipDaily)
 
   if (inWindow) {
     entry.count++
