@@ -42,7 +42,6 @@ interface Props {
   neighborhood: string
   tracks: string[]
   statCells: StatCell[]
-  notReportedStatsSentence: string | null
   sqrTrends: SqrTrendCell[]
   shsatCutoffRows: ShsatCutoffRow[]
   programs: ProgramRow[]
@@ -69,7 +68,6 @@ export default function SchoolDetailClient({
   neighborhood,
   tracks,
   statCells,
-  notReportedStatsSentence,
   sqrTrends,
   shsatCutoffRows,
   programs,
@@ -266,11 +264,6 @@ export default function SchoolDetailClient({
             </a>
             : {school.sqr.rating} · {school.sqr.year}
           </div>
-        )}
-        {notReportedStatsSentence && (
-          <NotReportedLine variant="reported" className="pt-3">
-            {notReportedStatsSentence}
-          </NotReportedLine>
         )}
         {sqrTrends.length > 0 && (
           <div className="flex flex-col gap-2 pt-4">

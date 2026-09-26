@@ -7,6 +7,7 @@ import {
   findSchoolByDbn,
   formatSchoolName,
   buildStatCells,
+  buildStatCellsWithMissing,
   getMissingStatLabels,
   buildNotReportedStatsSentence,
   parseCommaList,
@@ -227,6 +228,53 @@ describe('buildStatCells', () => {
       },
     })
     expect(buildStatCells(school)).toHaveLength(7)
+  })
+})
+
+describe('buildStatCellsWithMissing (issue #472)', () => {
+  it('returns every STAT_FIELDS entry in order, marking only the missing ones', () => {
+    const school = makeSchool({
+      applicants_per_seat: null,
+      total_students: 5900,
+      sqr: { performance_pctl: 72 },
+      doe_data: {
+        overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '',
+        graduation_rate: 0.96, attendance_rate: 0.95, college_career_rate: 0.91,
+      },
+    })
+    const cells = buildStatCellsWithMissing(school)
+    expect(cells.map((c) => c.label)).toEqual([
+      'Applicants per seat',
+      'Total students',
+      'Results',
+      'Impact',
+      'Graduation rate',
+      'Attendance rate',
+      'College and career',
+    ])
+    expect(cells.filter((c) => c.missing).map((c) => c.key)).toEqual(['applicantsPerSeat', 'impact'])
+    expect(cells.find((c) => c.key === 'applicantsPerSeat')).toEqual({
+      key: 'applicantsPerSeat',
+      label: 'Applicants per seat',
+      value: '',
+      missing: true,
+    })
+    expect(cells.find((c) => c.key === 'totalStudents')?.missing).toBeUndefined()
+  })
+
+  it('marks no cell as missing when every stat is published', () => {
+    const school = makeSchool({
+      applicants_per_seat: 4.1,
+      total_students: 5900,
+      sqr: { performance_pctl: 94, impact_pctl: 88 },
+      doe_data: {
+        overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '',
+        graduation_rate: 0.96, attendance_rate: 0.95, college_career_rate: 0.91,
+      },
+    })
+    const cells = buildStatCellsWithMissing(school)
+    expect(cells).toHaveLength(7)
+    expect(cells.some((c) => c.missing)).toBe(false)
   })
 })
 
@@ -466,9 +514,8 @@ describe('NOT REPORTED vs NOT OFFERED are never blurred (issue #116)', () => {
     expect(sentence).not.toMatch(/gap in the DOE data/)
   })
 
-  it('SchoolDetailClient uses the reported variant for stats and offered for activities', () => {
+  it('SchoolDetailClient uses the offered variant for activities; missing stats render inline via StatGrid (issue #472)', () => {
     const src = readSource('app/school/[dbn]/SchoolDetailClient.tsx')
-    expect(src).toMatch(/notReportedStatsSentence[\s\S]{0,80}variant="reported"/)
     expect(src).toMatch(/notOfferedActivitiesSentence[\s\S]{0,300}variant="offered"/)
   })
 
