@@ -249,7 +249,7 @@ export default function SchoolDetailClient({
               onClick={() => posthog?.capture('myschools_link_clicked', { dbn: school.dbn })}
               className="block text-center border border-border text-[13.5px] text-accent py-[10px] hover:bg-surface-2 transition-colors duration-[120ms] ease-out"
             >
-              Open in MySchools ↗
+              Find <span className="font-mono">{school.dbn}</span> on MySchools ↗
             </a>
             {myschoolsCheckedLabel && (
               <span className="text-[11px] text-faint text-center">{myschoolsCheckedLabel}</span>
@@ -374,7 +374,7 @@ export default function SchoolDetailClient({
                   }}
                   className="text-[13.5px] font-medium border border-accent px-[14px] py-2 whitespace-nowrap text-accent hover:bg-accent hover:text-white transition-colors duration-[120ms] ease-out"
                 >
-                  Open in MySchools ↗
+                  Find <span className="font-mono">{school.dbn}</span> on MySchools ↗
                 </a>
                 {myschoolsCheckedLabel && (
                   <span className="text-[11px] text-faint whitespace-nowrap">{myschoolsCheckedLabel}</span>

@@ -57,11 +57,15 @@ function readSource(relPath: string): string {
 
 describe('buildMySchoolsUrl', () => {
   it('builds the per-school listing URL from the DBN', () => {
-    expect(buildMySchoolsUrl('03M485')).toBe('https://www.myschools.nyc/en/schools/03M485/')
+    expect(buildMySchoolsUrl('03M485')).toBe('https://www.myschools.nyc/en/schools/high-school/')
   })
 
   it('uses a different DBN to produce a different URL', () => {
-    expect(buildMySchoolsUrl('13K430')).toBe('https://www.myschools.nyc/en/schools/13K430/')
+    expect(buildMySchoolsUrl('13K430')).toBe('https://www.myschools.nyc/en/schools/high-school/')
+  })
+
+  it('returns the public directory URL for 13K430 (issue #482)', () => {
+    expect(buildMySchoolsUrl('13K430')).toBe('https://www.myschools.nyc/en/schools/high-school/')
   })
 })
 
@@ -135,6 +139,11 @@ describe('SchoolDetailClient — MySchools link points at the school (issue #438
     expect(src).toContain('buildMySchoolsCheckedLabel(school)')
     const occurrences = src.split('{myschoolsCheckedLabel &&').length - 1
     expect(occurrences).toBe(2)
+  })
+
+  it('labels the link "on MySchools", not "Open in MySchools" (issue #482)', () => {
+    expect(src).toContain('on MySchools ↗')
+    expect(src).not.toContain('Open in MySchools')
   })
 })
 

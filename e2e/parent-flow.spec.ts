@@ -80,17 +80,18 @@ test('signed-out parent flow', async ({ page }) => {
     const programsHeading = page.getByText('Programs', { exact: true })
     await expect(programsHeading).toBeVisible()
     // Scoped to the Programs block (its grandparent), not the whole page —
-    // "Open" is also part of the "Open in MySchools" link text below it.
+    // "Find" is also part of the "Find {dbn} on MySchools" link text below it.
     const programsSection = await programsHeading.locator('xpath=../..').innerText()
     expect(ADMISSION_METHODS.some((method) => programsSection.includes(method))).toBe(true)
 
-    // Issue #438: the link must land on this specific school, not the
-    // MySchools homepage — built from the DBN in the current /school/{dbn} URL.
+    // Issue #482: per-school MySchools pages require a MySchools login, so the
+    // link goes to the public High School directory instead, and its label
+    // carries the DBN from the current /school/{dbn} URL.
     const dbn = new URL(page.url()).pathname.match(/\/school\/([^/?]+)/)?.[1] ?? ''
     expect(dbn.length).toBeGreaterThanOrEqual(3)
-    await expect(page.getByRole('link', { name: /Open in MySchools/ }).first()).toHaveAttribute(
+    await expect(page.getByRole('link', { name: /on MySchools/ }).first()).toHaveAttribute(
       'href',
-      `${MYSCHOOLS_URL}/en/schools/${dbn}/`
+      `${MYSCHOOLS_URL}/en/schools/high-school/`
     )
   })
 
