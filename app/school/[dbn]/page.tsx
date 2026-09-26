@@ -10,8 +10,7 @@ import {
   buildSqrTrends,
   buildShsatCutoffRows,
   buildActivityGroups,
-  getMissingActivityLabels,
-  buildNotOfferedActivitiesSentence,
+  buildMissingActivityGroups,
   sortChipsMatchedFirst,
   chipIsMatched,
   parseSubwayLines,
@@ -75,9 +74,7 @@ export default async function SchoolDetailPage({
     ...g,
     items: sortChipsMatchedFirst(g.items, matchedSignals),
   }))
-  const notOfferedActivitiesSentence = buildNotOfferedActivitiesSentence(
-    getMissingActivityLabels(school)
-  )
+  const missingActivityGroups = buildMissingActivityGroups(school)
   const matchedDisplayLabels = matchedSignals.filter((sig) =>
     activityGroupsRaw.some((g) => g.items.some((item) => chipIsMatched(item, [sig])))
   )
@@ -118,7 +115,7 @@ export default async function SchoolDetailPage({
         programs={programs}
         requirementBlocks={requirementBlocks}
         activityGroups={activityGroups}
-        notOfferedActivitiesSentence={notOfferedActivitiesSentence}
+        missingActivityGroups={missingActivityGroups}
         matchedSignals={matchedSignals}
         matchedDisplayLabels={matchedDisplayLabels}
         subwayLines={subwayLines}

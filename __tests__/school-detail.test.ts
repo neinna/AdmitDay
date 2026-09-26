@@ -16,6 +16,7 @@ import {
   buildShsatCutoffRows,
   buildActivityGroups,
   getMissingActivityLabels,
+  buildMissingActivityGroups,
   buildNotOfferedActivitiesSentence,
   chipIsMatched,
   sortChipsMatchedFirst,
@@ -481,6 +482,30 @@ describe('buildActivityGroups + getMissingActivityLabels', () => {
   })
 })
 
+describe('buildMissingActivityGroups (issue #473)', () => {
+  it('returns the PSAL group with its label when a school has no PSAL teams', () => {
+    const school = makeSchool({
+      doe_data: {
+        overview: '', language: 'Spanish', extracurriculars: 'Yearbook', website: '', phone: '', address: '', zip: '',
+        advancedplacement_courses: 'AP Biology',
+      },
+    })
+    const missing = buildMissingActivityGroups(school)
+    expect(missing).toContainEqual({ key: 'psalSports', label: 'PSAL sports' })
+  })
+
+  it('returns [] when every group is present', () => {
+    const school = makeSchool({
+      doe_data: {
+        overview: '', language: 'Spanish', extracurriculars: 'Yearbook', website: '', phone: '', address: '', zip: '',
+        psal_sports_coed: 'Fencing',
+        advancedplacement_courses: 'AP Biology',
+      },
+    })
+    expect(buildMissingActivityGroups(school)).toEqual([])
+  })
+})
+
 describe('buildNotOfferedActivitiesSentence (NOT OFFERED — issue #116)', () => {
   it('matches the design\'s exact copy for missing PSAL + AP', () => {
     expect(buildNotOfferedActivitiesSentence(['PSAL teams', 'AP courses'])).toBe(
@@ -514,9 +539,9 @@ describe('NOT REPORTED vs NOT OFFERED are never blurred (issue #116)', () => {
     expect(sentence).not.toMatch(/gap in the DOE data/)
   })
 
-  it('SchoolDetailClient uses the offered variant for activities; missing stats render inline via StatGrid (issue #472)', () => {
+  it('SchoolDetailClient renders missing activity groups with MissingMark, not a sentence (issue #473)', () => {
     const src = readSource('app/school/[dbn]/SchoolDetailClient.tsx')
-    expect(src).toMatch(/notOfferedActivitiesSentence[\s\S]{0,300}variant="offered"/)
+    expect(src).toMatch(/missingActivityGroups\.map[\s\S]{0,800}MissingMark kind="not_reported"/)
   })
 
   it('transit (subway/bus) absence uses the reported variant too — it is a data-source gap, not a fact about the school', () => {

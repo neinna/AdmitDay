@@ -370,6 +370,14 @@ export function getMissingActivityLabels(school: School): string[] {
   return ACTIVITY_GROUP_DEFS.filter((g) => g.get(school).length === 0).map((g) => g.missingLabel)
 }
 
+/** Activity groups the DOE data left blank for this school, in definition order. */
+export function buildMissingActivityGroups(school: School): { key: string; label: string }[] {
+  return ACTIVITY_GROUP_DEFS.filter((g) => g.get(school).length === 0).map((g) => ({
+    key: g.key,
+    label: g.label,
+  }))
+}
+
 // ── Find-row facts (/find) ───────────────────────────────────────────────────
 
 // The /find row rationale line used to be doe_data.overview — DOE marketing
