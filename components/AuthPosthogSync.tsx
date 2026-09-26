@@ -19,7 +19,7 @@ export default function AuthPosthogSync() {
     if (isSignedIn && user && !identifiedRef.current) {
       identifiedRef.current = true
       posthog.identify(user.id)
-    } else if (!isSignedIn && identifiedRef.current) {
+    } else if (!isSignedIn && posthog.get_property('$user_state') === 'identified') {
       identifiedRef.current = false
       posthog.reset()
     }
