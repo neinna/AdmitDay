@@ -9,11 +9,9 @@ import { dedupePrograms } from '@/lib/school-detail-utils'
 import { Eyebrow, MissingMark } from '@/components/ui'
 import AuthControls from '@/components/AuthControls'
 import {
-  buildComposition,
   bucketForSchool,
   moveItem,
   resolveSavedSchools,
-  type Composition,
   type ListSchool,
   type ListSchoolDetail,
 } from '@/lib/saved-list-utils'
@@ -223,7 +221,6 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
   }
 
   const saved = useMemo(() => resolveSavedSchools(index, order), [index, order])
-  const composition: Composition = useMemo(() => buildComposition(saved), [saved])
 
   const sections = useMemo(() => {
     const shsat = saved.filter((s) => bucketForSchool(s) === 'shsat')
@@ -302,8 +299,6 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
     )
   }
 
-  const wide = saved.length >= 7
-
   return (
     <div>
       <Header />
@@ -345,10 +340,8 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
         </div>
       ))}
 
-      <div className={`print-hide ${wide ? 'grid grid-cols-1 min-[900px]:grid-cols-[1fr_316px]' : ''}`}>
-        <section
-          className={`px-5 min-[900px]:px-9 pt-[26px] pb-[30px] ${wide ? 'min-[900px]:border-r border-rule' : ''}`}
-        >
+      <div className="print-hide">
+        <section className="px-5 min-[900px]:px-9 pt-[26px] pb-[30px]">
           <div className="flex items-baseline justify-between gap-4 mb-3">
             <Eyebrow>Your ranking</Eyebrow>
             <span className="text-[12.5px] text-faint">
@@ -499,36 +492,6 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
 
           {notice && <p className="text-[13px] text-muted pt-3">{notice}</p>}
         </section>
-
-        <aside className={wide ? '' : 'border-t border-rule'}>
-          <section className="px-5 min-[900px]:px-7 py-[14px]">
-            <div className="flex h-3 w-full">
-              {composition.buckets.map((b, i) => (
-                <div
-                  key={b.key}
-                  style={{ flex: b.count }}
-                  title={`${b.label}: ${b.count}`}
-                  aria-label={`${b.label}: ${b.count}`}
-                  role="img"
-                  className={['bg-ink', 'bg-ink-2', 'bg-muted', 'bg-faint'][i]}
-                />
-              ))}
-            </div>
-
-            <div className="flex h-3 w-full mt-2">
-              {composition.byBorough.map((cell, i) => (
-                <div
-                  key={cell.label}
-                  style={{ flex: cell.count }}
-                  title={`${cell.label}: ${cell.count}`}
-                  aria-label={`${cell.label}: ${cell.count}`}
-                  role="img"
-                  className={['bg-ink', 'bg-ink-2', 'bg-ink-3', 'bg-muted', 'bg-faint'][i % 5]}
-                />
-              ))}
-            </div>
-          </section>
-        </aside>
       </div>
     </div>
   )
