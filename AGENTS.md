@@ -73,6 +73,7 @@ When filing an issue for the agent:
 - **A new third-party dependency is its own issue.** Installing it and proving one call works is one ticket; using it is the next. Integrating an unfamiliar SDK is the single most expensive thing this pipeline does.
 - **Name the infrastructure.** Whoever writes the issue checks the existing stack (above) and states which piece the work uses, for example "store it in Postgres". Adding a new service is Inna's decision, made before the issue is filed and never by the agent. The decision and its product and technical reasons are recorded in Notion, in the architecture doc or the PRD; the issue links to that entry.
 - **Check the issue against the PRD before filing.** #162 asked for a derived rating that the PRD bans by name, so no implementation of it could ever have passed review.
+- **Decisions live in Notion; the public repo carries only the spec.** This repo is public. An open product question, its options and its reasoning go in the Notion **AdmitDay — Decisions** table, not in a GitHub issue. The issue states what to build and says `Product decision YYYY-MM-DD (recorded in Notion)`. Never put these in an issue, a PR, a comment or a commit message: a known trust or safety gap before it ships, pricing, user-research quotes, or competitor analysis.
 
 ## Issue Sequencing
 
