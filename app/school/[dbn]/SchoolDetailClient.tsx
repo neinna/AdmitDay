@@ -28,7 +28,6 @@ import {
 import {
   Eyebrow,
   DefinitionRow,
-  NotReportedLine,
   StatGrid,
   TrendSparkline,
   MissingMark,
@@ -59,7 +58,6 @@ interface Props {
   matchedDisplayLabels: string[]
   subwayLines: string[]
   busRoutes: string[]
-  notReportedTransitLabel: string | null
   provenanceRows: { key: string; label: string; value: string }[]
   dataVintageNote: string | null
   sourceUrl?: string
@@ -85,7 +83,6 @@ export default function SchoolDetailClient({
   matchedDisplayLabels,
   subwayLines,
   busRoutes,
-  notReportedTransitLabel,
   provenanceRows,
   dataVintageNote,
   sourceUrl,
@@ -474,9 +471,9 @@ export default function SchoolDetailClient({
           <div className="px-[22px] min-[900px]:px-7 py-[26px] border-b border-rule flex flex-col gap-[14px]">
             <Eyebrow>Getting there</Eyebrow>
             <div className="flex flex-col gap-[11px]">
-              {subwayLines.length > 0 && (
-                <div className="flex flex-col gap-[6px]">
-                  <span className="text-[12.5px] text-faint">Subway</span>
+              <div className="flex flex-col gap-[6px]">
+                <span className="text-[12.5px] text-faint">Subway</span>
+                {subwayLines.length > 0 ? (
                   <div className="flex flex-wrap gap-[6px]">
                     {subwayLines.map((l) => (
                       <span
@@ -487,11 +484,13 @@ export default function SchoolDetailClient({
                       </span>
                     ))}
                   </div>
-                </div>
-              )}
-              {busRoutes.length > 0 && (
-                <div className="flex flex-col gap-[6px]">
-                  <span className="text-[12.5px] text-faint">Bus</span>
+                ) : (
+                  <MissingMark kind="not_reported" className="text-[13px]" />
+                )}
+              </div>
+              <div className="flex flex-col gap-[6px]">
+                <span className="text-[12.5px] text-faint">Bus</span>
+                {busRoutes.length > 0 ? (
                   <div className="flex flex-wrap gap-[6px]">
                     {busRoutes.map((r) => (
                       <span
@@ -502,16 +501,15 @@ export default function SchoolDetailClient({
                       </span>
                     ))}
                   </div>
-                </div>
-              )}
+                ) : (
+                  <MissingMark kind="not_reported" className="text-[13px]" />
+                )}
+              </div>
               {address && <DefinitionRow labelWidth={92} label="Address" value={address} className="pt-[3px]" />}
               {distance != null && (
                 <div className="text-[13.5px] text-ink-2">
                   {formatMiles(distance)} from your starting point
                 </div>
-              )}
-              {notReportedTransitLabel && (
-                <NotReportedLine variant="reported">{notReportedTransitLabel}</NotReportedLine>
               )}
               {directionsHref && (
                 <a

@@ -544,9 +544,10 @@ describe('NOT REPORTED vs NOT OFFERED are never blurred (issue #116)', () => {
     expect(src).toMatch(/missingActivityGroups\.map[\s\S]{0,800}MissingMark kind="not_reported"/)
   })
 
-  it('transit (subway/bus) absence uses the reported variant too — it is a data-source gap, not a fact about the school', () => {
+  it('transit (subway/bus) absence uses MissingMark too — it is a data-source gap, not a fact about the school (issue #474)', () => {
     const src = readSource('app/school/[dbn]/SchoolDetailClient.tsx')
-    expect(src).toMatch(/notReportedTransitLabel[\s\S]{0,40}variant="reported"/)
+    expect(src).toMatch(/Subway[\s\S]{0,700}MissingMark kind="not_reported"/)
+    expect(src).toMatch(/Bus[\s\S]{0,700}MissingMark kind="not_reported"/)
   })
 })
 
