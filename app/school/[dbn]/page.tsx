@@ -15,7 +15,6 @@ import {
   chipIsMatched,
   parseSubwayLines,
   parseBusRoutes,
-  buildNotReportedTransitLabel,
   dedupePrograms,
   buildRequirementBlocks,
   describeBackFilters,
@@ -81,11 +80,6 @@ export default async function SchoolDetailPage({
 
   const subwayLines = parseSubwayLines(school.doe_data?.subway)
   const busRoutes = parseBusRoutes(school.doe_data?.bus)
-  const missingTransitModes = [
-    ...(subwayLines.length === 0 ? ['subway routes'] : []),
-    ...(busRoutes.length === 0 ? ['bus routes'] : []),
-  ]
-  const notReportedTransitLabel = buildNotReportedTransitLabel(missingTransitModes)
 
   const programs = dedupePrograms(school.programs)
   const requirementBlocks = buildRequirementBlocks(school)
@@ -120,7 +114,6 @@ export default async function SchoolDetailPage({
         matchedDisplayLabels={matchedDisplayLabels}
         subwayLines={subwayLines}
         busRoutes={busRoutes}
-        notReportedTransitLabel={notReportedTransitLabel}
         provenanceRows={provenanceRows}
         dataVintageNote={dataVintageNote}
         sourceUrl={school.sqr?.source_url}
