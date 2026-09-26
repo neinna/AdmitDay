@@ -23,7 +23,7 @@ import ShortlistClient from '@/app/shortlist/ShortlistClient'
 import type { ListSchool, ListSchoolDetail } from '@/lib/saved-list-utils'
 
 const RESULTS_TOOLTIP = 'Results better than 71% of NYC high schools'
-const NOT_REPORTED_TOOLTIP = 'Not published by the DOE for this school — not a low number.'
+const NOT_REPORTED_TOOLTIP = 'The DOE didn&#x27;t publish this.'
 
 function makeIndex(overrides: Partial<ListSchool> = {}): ListSchool[] {
   return [

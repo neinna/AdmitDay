@@ -6,7 +6,7 @@ import { usePostHog } from 'posthog-js/react'
 import { citywidePercentile, trackLabel } from '@/lib/school-list-utils'
 import { applicantsPerSeatDotColor } from '@/app/find/FindClient'
 import { dedupePrograms } from '@/lib/school-detail-utils'
-import { Eyebrow } from '@/components/ui'
+import { Eyebrow, MissingMark } from '@/components/ui'
 import AuthControls from '@/components/AuthControls'
 import {
   buildComposition,
@@ -55,9 +55,6 @@ function ratePct(v: number | null | undefined): string | null {
 function resultsTooltip(pctl: number): string {
   return `Results better than ${pctl}% of NYC high schools`
 }
-
-/** Issue #422: DOE data gap, not a low number — distinct from "not offered" (NotReportedLine, #116), which this marker does not touch. */
-const APPS_PER_SEAT_NOT_REPORTED_TOOLTIP = 'Not published by the DOE for this school — not a low number.'
 
 /**
  * The real NYC application has a separate SHSAT ranking from the main ranked
@@ -443,13 +440,7 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
                             )}
                           </span>
                         ) : (
-                          <span
-                            className="font-mono text-[14px] text-red-700"
-                            title={APPS_PER_SEAT_NOT_REPORTED_TOOLTIP}
-                            aria-label={APPS_PER_SEAT_NOT_REPORTED_TOOLTIP}
-                          >
-                            n/a
-                          </span>
+                          <MissingMark kind="not_reported" className="text-[14px]" />
                         )}
                       </span>
                       <div className="flex items-center gap-1 justify-end">
