@@ -26,6 +26,8 @@ export const MAX_REQUESTS = 15
 export const WINDOW_MS = 60_000
 const WINDOW_SEC = WINDOW_MS / 1000
 
+export const DAILY_PER_IP = 20
+
 const DEFAULT_DAILY_LLM_CEILING = 2000
 const parsedCeiling = Number(process.env.DAILY_LLM_CEILING)
 export const DAILY_LLM_CEILING =
@@ -47,9 +49,15 @@ interface DailyEntry {
   count: number
 }
 
+interface IpDailyEntry {
+  dayKey: string
+  count: number
+}
+
 // In-memory fallback state (per warm instance — see module doc above).
 const buckets = new Map<string, WindowEntry>()
 let dailyEntry: DailyEntry | null = null
+const ipDailyBuckets = new Map<string, IpDailyEntry>()
 
 function getClientIp(request: NextRequest): string {
   return (
@@ -98,6 +106,20 @@ function checkInMemory(now: number, ip: string): RateLimitResult {
   }
 
   const dayKey = utcDateKey(now)
+
+  // Mirrors the store's ipday CTE: the per-IP daily row is persisted as soon
+  // as the per-minute check passes, whether or not the sitewide ceiling
+  // below then refuses the request.
+  let ipDaily = ipDailyBuckets.get(ip)
+  if (!ipDaily || ipDaily.dayKey !== dayKey) {
+    ipDaily = { dayKey, count: 0 }
+  }
+  ipDaily.count++
+  ipDailyBuckets.set(ip, ipDaily)
+  if (ipDaily.count > DAILY_PER_IP) {
+    return { ok: false, retryAfterSec: secondsUntilUtcMidnight(now) }
+  }
+
   if (!dailyEntry || dailyEntry.dayKey !== dayKey) {
     dailyEntry = { dayKey, count: 0 }
   }
@@ -139,6 +161,7 @@ function ensureSchema(): Promise<void> {
 interface StoreRow {
   ip_count: number
   ip_expires_at: string
+  ipday_count: number | null
   day_count: number | null
 }
 
@@ -155,13 +178,15 @@ async function checkFromStore(
   await ensureSchema()
 
   const ipKey = `ip:${ip}`
+  const ipdayKey = `ipday:${ip}:${utcDateKey(now)}`
   const dayKey = `day:${utcDateKey(now)}`
   const nextUtcMidnight = new Date(nextUtcMidnightMs(now)).toISOString()
 
   const { rows } = await sql<StoreRow>`
     WITH cleanup AS (
       DELETE FROM rate_limits
-      WHERE key LIKE 'ip:%' AND expires_at < now() - interval '24 hours'
+      WHERE (key LIKE 'ip:%' AND expires_at < now() - interval '24 hours')
+         OR (key LIKE 'ipday:%' AND expires_at < now())
     ), ip AS (
       INSERT INTO rate_limits (key, count, expires_at)
       VALUES (${ipKey}, 1, now() + make_interval(secs => ${WINDOW_SEC}))
@@ -169,13 +194,21 @@ async function checkFromStore(
         count      = CASE WHEN rate_limits.expires_at <= now() THEN 1 ELSE rate_limits.count + 1 END,
         expires_at = CASE WHEN rate_limits.expires_at <= now() THEN EXCLUDED.expires_at ELSE rate_limits.expires_at END
       RETURNING count, expires_at
+    ), ipday AS (
+      INSERT INTO rate_limits (key, count, expires_at)
+      SELECT ${ipdayKey}, 1, ${nextUtcMidnight} FROM ip WHERE ip.count <= ${MAX_REQUESTS}
+      ON CONFLICT (key) DO UPDATE SET count = rate_limits.count + 1
+      RETURNING count
     ), day AS (
       INSERT INTO rate_limits (key, count, expires_at)
-      SELECT ${dayKey}, 1, ${nextUtcMidnight} FROM ip WHERE ip.count <= ${MAX_REQUESTS}
+      SELECT ${dayKey}, 1, ${nextUtcMidnight} FROM ipday WHERE ipday.count <= ${DAILY_PER_IP}
       ON CONFLICT (key) DO UPDATE SET count = rate_limits.count + 1
       RETURNING count
     )
-    SELECT ip.count AS ip_count, ip.expires_at AS ip_expires_at, (SELECT count FROM day) AS day_count FROM ip
+    SELECT ip.count AS ip_count, ip.expires_at AS ip_expires_at,
+           (SELECT count FROM ipday) AS ipday_count,
+           (SELECT count FROM day) AS day_count
+    FROM ip
   `
 
   const row = rows[0]
@@ -187,6 +220,11 @@ async function checkFromStore(
       ok: false,
       retryAfterSec: Math.max(1, Math.ceil((expiresAtMs - now) / 1000)),
     }
+  }
+
+  const ipdayCount = row.ipday_count === null ? null : Number(row.ipday_count)
+  if (ipdayCount !== null && ipdayCount > DAILY_PER_IP) {
+    return { ok: false, retryAfterSec: secondsUntilUtcMidnight(now) }
   }
 
   const dayCount = row.day_count === null ? null : Number(row.day_count)

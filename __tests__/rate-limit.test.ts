@@ -60,17 +60,22 @@ function createFakePostgres() {
         store.forEach((entry, key) => {
           if (key.startsWith('ip:') && entry.expiresAt < now - 24 * 60 * 60 * 1000) {
             store.delete(key)
+          } else if (key.startsWith('ipday:') && entry.expiresAt < now) {
+            store.delete(key)
           }
         })
       }
 
-      const [ipKey, windowSec, dayKey, nextMidnightIso, maxRequests] = values as [
-        string,
-        number,
-        string,
-        string,
-        number
-      ]
+      const [
+        ipKey,
+        windowSec,
+        ipdayKey,
+        nextMidnightIso1,
+        maxRequests,
+        dayKey,
+        nextMidnightIso2,
+        dailyPerIp,
+      ] = values as [string, number, string, string, number, string, string, number]
 
       let ipEntry = getLive(ipKey, now)
       if (!ipEntry) {
@@ -80,16 +85,28 @@ function createFakePostgres() {
       }
       store.set(ipKey, ipEntry)
 
+      let ipdayCount: number | null = null
       let dayCount: number | null = null
       if (ipEntry.count <= maxRequests) {
-        let dayEntry = getLive(dayKey, now)
-        if (!dayEntry) {
-          dayEntry = { count: 1, expiresAt: new Date(nextMidnightIso).getTime() }
+        let ipdayEntry = getLive(ipdayKey, now)
+        if (!ipdayEntry) {
+          ipdayEntry = { count: 1, expiresAt: new Date(nextMidnightIso1).getTime() }
         } else {
-          dayEntry.count += 1
+          ipdayEntry.count += 1
         }
-        store.set(dayKey, dayEntry)
-        dayCount = dayEntry.count
+        store.set(ipdayKey, ipdayEntry)
+        ipdayCount = ipdayEntry.count
+
+        if (ipdayEntry.count <= dailyPerIp) {
+          let dayEntry = getLive(dayKey, now)
+          if (!dayEntry) {
+            dayEntry = { count: 1, expiresAt: new Date(nextMidnightIso2).getTime() }
+          } else {
+            dayEntry.count += 1
+          }
+          store.set(dayKey, dayEntry)
+          dayCount = dayEntry.count
+        }
       }
 
       return Promise.resolve({
@@ -97,6 +114,7 @@ function createFakePostgres() {
           {
             ip_count: ipEntry.count,
             ip_expires_at: new Date(ipEntry.expiresAt).toISOString(),
+            ipday_count: ipdayCount,
             day_count: dayCount,
           },
         ],
@@ -332,6 +350,99 @@ describe('checkRateLimit — expired per-IP row cleanup (issue #233)', () => {
     expect(store.has('ip:1.1.1.1')).toBe(false)
     expect(store.has('ip:2.2.2.2')).toBe(true)
     expect(store.has('day:2026-09-01')).toBe(true)
+  })
+})
+
+describe('checkRateLimit — per-IP daily limit (issue #490)', () => {
+  const originalEnv = { ...process.env }
+
+  afterEach(() => {
+    process.env = { ...originalEnv }
+  })
+
+  function reqFrom(ip: string) {
+    return {
+      headers: { get: (h: string) => (h === 'x-forwarded-for' ? ip : null) },
+    } as unknown as import('next/server').NextRequest
+  }
+
+  it('in memory: allows the 20th daily request from one IP and refuses the 21st until UTC midnight', async () => {
+    process.env.DAILY_LLM_CEILING = '1000'
+    mockSql.mockRejectedValue(new Error('connection refused'))
+    const mod = loadFreshModule()
+
+    jest.setSystemTime(Date.UTC(2026, 8, 18, 0, 0, 0))
+    const ip = '1.2.3.4'
+
+    for (let i = 0; i < mod.DAILY_PER_IP; i++) {
+      expect(await mod.checkRateLimit(reqFrom(ip))).toEqual({ ok: true })
+      // Step the clock past the per-minute window so it never trips.
+      jest.setSystemTime(Date.now() + mod.WINDOW_MS)
+    }
+
+    const blocked = await mod.checkRateLimit(reqFrom(ip))
+    expect(blocked.ok).toBe(false)
+    if (!blocked.ok) {
+      // Clock is at 00:20:00 UTC (20 requests, each stepping WINDOW_MS = 60s
+      // afterward) — exactly 23h40m = 85200s until the next UTC midnight.
+      expect(blocked.retryAfterSec).toBe(85200)
+    }
+  })
+
+  it('in memory: a second IP is unaffected by the first IP exhausting its daily limit', async () => {
+    process.env.DAILY_LLM_CEILING = '1000'
+    mockSql.mockRejectedValue(new Error('connection refused'))
+    const mod = loadFreshModule()
+
+    jest.setSystemTime(Date.UTC(2026, 8, 18, 0, 0, 0))
+    const first = '1.2.3.4'
+    for (let i = 0; i < mod.DAILY_PER_IP; i++) {
+      await mod.checkRateLimit(reqFrom(first))
+      jest.setSystemTime(Date.now() + mod.WINDOW_MS)
+    }
+    expect((await mod.checkRateLimit(reqFrom(first))).ok).toBe(false)
+
+    expect(await mod.checkRateLimit(reqFrom('5.6.7.8'))).toEqual({ ok: true })
+  })
+
+  it('in memory: a request refused by the per-IP daily limit does not increase the sitewide daily count', async () => {
+    // Ceiling set to exactly the 20 real calls the first IP makes plus one
+    // spare slot. If the refused 21st request also counted toward the
+    // sitewide ceiling (the #197 regression), that slot would already be
+    // gone and the second IP's request below would be refused too.
+    process.env.DAILY_LLM_CEILING = '21'
+    mockSql.mockRejectedValue(new Error('connection refused'))
+    const mod = loadFreshModule()
+
+    jest.setSystemTime(Date.UTC(2026, 8, 18, 0, 0, 0))
+    const ip = '1.2.3.4'
+    for (let i = 0; i < mod.DAILY_PER_IP; i++) {
+      expect(await mod.checkRateLimit(reqFrom(ip))).toEqual({ ok: true })
+      jest.setSystemTime(Date.now() + mod.WINDOW_MS)
+    }
+    expect((await mod.checkRateLimit(reqFrom(ip))).ok).toBe(false)
+
+    // The sitewide ceiling still has exactly one slot left for a different
+    // IP, proving the refused 21st request from the first IP never counted
+    // toward it.
+    expect(await mod.checkRateLimit(reqFrom('9.9.9.9'))).toEqual({ ok: true })
+  })
+
+  it('in memory: the per-IP daily count resets after UTC midnight', async () => {
+    process.env.DAILY_LLM_CEILING = '1000'
+    mockSql.mockRejectedValue(new Error('connection refused'))
+    const mod = loadFreshModule()
+
+    jest.setSystemTime(Date.UTC(2026, 8, 18, 23, 0, 0))
+    const ip = '1.2.3.4'
+    for (let i = 0; i < mod.DAILY_PER_IP; i++) {
+      expect(await mod.checkRateLimit(reqFrom(ip))).toEqual({ ok: true })
+      jest.setSystemTime(Date.now() + mod.WINDOW_MS)
+    }
+    expect((await mod.checkRateLimit(reqFrom(ip))).ok).toBe(false)
+
+    jest.setSystemTime(Date.UTC(2026, 8, 19, 0, 0, 1))
+    expect(await mod.checkRateLimit(reqFrom(ip))).toEqual({ ok: true })
   })
 })
 
