@@ -192,7 +192,7 @@ describe('agent-coordinator.sh: review, planner and triage call sites pass no ef
       'run_claude "$PLAN_OUT" "" "Read,Glob,Grep" "$CLAUDE_PLANNER_MODEL" "$CLAUDE_PLANNER_MAX_USD"',
     )
     expect(coordinatorSource).toContain(
-      'run_claude "$TRIAGE_OUT" "" "Read,Glob,Grep" "sonnet" "${CLAUDE_TRIAGE_MAX_USD}"',
+      'run_claude "$TRIAGE_OUT" "" "Read,Glob,Grep" "$CLAUDE_TRIAGE_MODEL" "${CLAUDE_TRIAGE_MAX_USD}"',
     )
   })
 })
