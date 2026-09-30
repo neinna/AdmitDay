@@ -56,6 +56,7 @@ CLAUDE_IMPLEMENT_MAX_USD="${CLAUDE_IMPLEMENT_MAX_USD:-5.00}"
 CLAUDE_REVIEW_MAX_USD="${CLAUDE_REVIEW_MAX_USD:-0.75}"
 CLAUDE_PLANNER_MAX_USD="${CLAUDE_PLANNER_MAX_USD:-0.50}"
 CLAUDE_TRIAGE_MAX_USD="${CLAUDE_TRIAGE_MAX_USD:-0.50}"
+REVIEW_DIFF_MAX_BYTES="${REVIEW_DIFF_MAX_BYTES:-60000}"
 LF_TRACE_SCRIPT="${APP_DIR}/scripts/langfuse_trace.py"
 LF_TRACE_PYTHON="${LF_TRACE_PYTHON:-/home/agent/.venvs/agent-observability/bin/python}"
 RUN_METADATA_DIR="/home/agent/agent-run-metadata"
@@ -1053,14 +1054,53 @@ verify_app() {
   return $RC
 }
 
+# review_verdict: reads a review on stdin, prints approve, reject or malformed.
+# The verdict must be exactly one line starting with "VERDICT:", and it must be
+# the last line, or followed only by the RISK line. A second VERDICT line, a
+# verdict buried mid-text, or anything other than "APPROVE" / "REJECT - <reason>"
+# is malformed: a quoted "VERDICT: APPROVE" in an explanation must never pass.
+review_verdict() {
+  python3 -c '
+import re, sys
+lines = [l.strip().strip("*`").strip() for l in sys.stdin.read().splitlines()]
+lines = [l for l in lines if l]
+verdicts = [i for i, l in enumerate(lines) if l.startswith("VERDICT:")]
+if len(verdicts) != 1:
+    print("malformed"); sys.exit()
+i = verdicts[0]
+if any(l != "RISK: LIVE-VERIFY-NEEDED" for l in lines[i + 1:]):
+    print("malformed"); sys.exit()
+v = lines[i]
+if v == "VERDICT: APPROVE":
+    print("approve")
+elif re.fullmatch(r"VERDICT: REJECT - \S.*", v):
+    print("reject")
+else:
+    print("malformed")
+'
+}
+
+# review_change ISSUE TITLE BODY
 # Independent reviewer with fresh context: given only the issue and the diff,
-# does this change actually resolve the issue? Echoes the review text.
-# Returns 0=approve, 1=reject, 2=reviewer unavailable (do not block on infra).
+# does this change actually resolve the issue?
+# Sets REVIEW_TEXT, REVIEWER_RESULT and REVIEW_DIFF_BYTES in the caller (call it
+# directly, never inside $(...): a subshell would drop those assignments).
+# Returns 0 approved, 1 rejected, 2 escalate to a human (reviewer unavailable,
+# malformed verdict, or a diff too large to show the reviewer in full).
 review_change() {
   local ISSUE_NUMBER="$1" ISSUE_TITLE="$2" ISSUE_BODY="$3"
   local REVIEW_OUT="/tmp/review-issue-${ISSUE_NUMBER}.json"
-  local DIFF
-  DIFF=$(cd "$APP_DIR" && git diff origin/main...HEAD | head -c 60000)
+  local DIFF DIFF_HEADING
+  REVIEW_TEXT=""
+  REVIEW_DIFF_BYTES=$(cd "$APP_DIR" && git diff origin/main...HEAD | wc -c | tr -d ' ')
+  DIFF=$(cd "$APP_DIR" && git diff origin/main...HEAD | head -c "$REVIEW_DIFF_MAX_BYTES")
+  DIFF_HEADING="The complete diff against main:"
+  if [ "$REVIEW_DIFF_BYTES" -gt "$REVIEW_DIFF_MAX_BYTES" ]; then
+    DIFF_HEADING="The diff against main is TRUNCATED: below are the first ${REVIEW_DIFF_MAX_BYTES} of ${REVIEW_DIFF_BYTES} bytes. Every changed file:
+$(cd "$APP_DIR" && git diff --stat=200 origin/main...HEAD)
+
+Read each changed file you did not see in full in /home/agent/app before giving a verdict."
+  fi
 
   local PROMPT="You are an independent code reviewer for the AdmitDay Next.js app. You have fresh context: judge only what is in front of you.
 
@@ -1069,7 +1109,7 @@ Issue #${ISSUE_NUMBER}: ${ISSUE_TITLE}
 
 ${ISSUE_BODY}
 
-The complete diff against main:
+${DIFF_HEADING}
 \`\`\`diff
 ${DIFF}
 \`\`\`
@@ -1097,42 +1137,37 @@ Do NOT add it merely because the diff reads a new environment variable through p
 The line, when it applies, is exactly:
 RISK: LIVE-VERIFY-NEEDED"
 
-  # No log() calls in this function: its stdout is the review text.
   local T0 T1
   T0=$(lf_now_ns)
   run_claude "$REVIEW_OUT" "" "Read,Glob,Grep" "$CLAUDE_REVIEW_MODEL" "$CLAUDE_REVIEW_MAX_USD" "$CLAUDE_REVIEW_FALLBACK_MODEL"
   local RC=$?
   T1=$(lf_now_ns)
   if [ $RC -eq 0 ] && claude_ran_on_fallback "$REVIEW_OUT" "$CLAUDE_REVIEW_MODEL" "$CLAUDE_REVIEW_FALLBACK_MODEL"; then
-    # Not log(): its `tee` would leak onto stdout, which is this function's
-    # return value (see the note above on Langfuse helpers).
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] Issue #${ISSUE_NUMBER}: ran on fallback model ${CLAUDE_REVIEW_FALLBACK_MODEL}" >> "$LOG_FILE"
+    log "Issue #${ISSUE_NUMBER}: ran on fallback model ${CLAUDE_REVIEW_FALLBACK_MODEL}"
   fi
-  local REVIEW_TEXT
   REVIEW_TEXT=$(claude_json_field "$REVIEW_OUT" "result")
-  local REVIEW_STATUS="unavailable"
-  local REVIEW_OK=0
+  local VERDICT="unavailable"
   if [ $RC -eq 0 ] && [ -n "$REVIEW_TEXT" ]; then
-    if echo "$REVIEW_TEXT" | grep -q "VERDICT: APPROVE"; then
-      REVIEW_STATUS="approved"
-      REVIEW_OK=1
-    else
-      REVIEW_STATUS="rejected"
-    fi
+    VERDICT=$(printf '%s\n' "$REVIEW_TEXT" | review_verdict)
   fi
-  lf_record "review" "$T0" "$T1" "$REVIEW_OK" "$REVIEW_OUT" "" "$REVIEW_STATUS"
+  case "$VERDICT" in
+    approve) REVIEWER_RESULT="approved" ;;
+    reject) REVIEWER_RESULT="rejected" ;;
+    malformed) REVIEWER_RESULT="malformed" ;;
+    *) REVIEWER_RESULT="unavailable" ;;
+  esac
+  lf_record "review" "$T0" "$T1" "$([ "$VERDICT" = approve ] && echo 1 || echo 0)" "$REVIEW_OUT" "" "$REVIEWER_RESULT"
   rm -f "$REVIEW_OUT"
-  echo "$REVIEW_TEXT"
-  if [ $RC -ne 0 ] || [ -z "$REVIEW_TEXT" ]; then
-    REVIEWER_RESULT="unavailable"
-    return 2
-  fi
-  if echo "$REVIEW_TEXT" | grep -q "VERDICT: APPROVE"; then
-    REVIEWER_RESULT="approved"
-    return 0
-  fi
-  REVIEWER_RESULT="rejected"
-  return 1
+  case "$VERDICT" in
+    approve)
+      if [ "$REVIEW_DIFF_BYTES" -gt "$REVIEW_DIFF_MAX_BYTES" ]; then
+        REVIEWER_RESULT="approved-diff-truncated"
+        return 2
+      fi
+      return 0 ;;
+    reject) return 1 ;;
+    *) return 2 ;;
+  esac
 }
 
 # Planner: break a Telegram /goal into <=5 small issues labeled agent-ok.
@@ -1516,6 +1551,7 @@ Instructions:
   local TEST_RESULT="not-run"
   local BUILD_RESULT="not-run"
   local REVIEWER_RESULT="not-run"
+  local REVIEW_DIFF_BYTES=0
   local PR_OUTCOME="not-run"
   local DIRTY_TREE_NOTE=""
 
@@ -1645,7 +1681,7 @@ This is a controlled cost stop, not a verified implementation failure. The issue
       if [ -n "$(git log origin/main..HEAD --oneline)" ]; then
         # Independent reviewer pass (fresh context, issue + diff only)
         log "Issue #${ISSUE_NUMBER}: verification green, running reviewer"
-        REVIEW_TEXT=$(review_change "$ISSUE_NUMBER" "$ISSUE_TITLE" "$ISSUE_BODY")
+        review_change "$ISSUE_NUMBER" "$ISSUE_TITLE" "$ISSUE_BODY"
         local REVIEW_RC=$?
         if [ $REVIEW_RC -eq 1 ]; then
           FAIL_REASON="An independent reviewer examined your diff against the issue and REJECTED it:
@@ -1655,7 +1691,7 @@ ${REVIEW_TEXT}
 Address the reviewer's objections. Diagnose what is wrong before changing anything else."
           log "Issue #${ISSUE_NUMBER}: reviewer rejected attempt ${ATTEMPT}: $(echo "$REVIEW_TEXT" | grep -m1 'VERDICT: REJECT' | cut -c1-300)"
         else
-          [ $REVIEW_RC -eq 2 ] && log "Issue #${ISSUE_NUMBER}: reviewer unavailable, proceeding without review"
+          [ $REVIEW_RC -eq 2 ] && log "Issue #${ISSUE_NUMBER}: review result ${REVIEWER_RESULT}, opening the PR for a human to merge"
           SUCCESS=1
           break
         fi
@@ -1751,7 +1787,11 @@ This PR changes CI workflow files under \`.github/workflows/\`. It needs a human
         # path where a mistake could print a key into a public log).
         local ESCALATION_REASON
         if [ "$REVIEW_RC" -eq 2 ]; then
-          ESCALATION_REASON="was unavailable, so this diff was never independently reviewed"
+          case "$REVIEWER_RESULT" in
+            approved-diff-truncated) ESCALATION_REASON="approved it, but the diff (${REVIEW_DIFF_BYTES} bytes) was over the ${REVIEW_DIFF_MAX_BYTES}-byte limit, so it was not shown the whole diff" ;;
+            malformed) ESCALATION_REASON="did not return one clear verdict, so its review cannot be trusted either way" ;;
+            *) ESCALATION_REASON="was unavailable, so this diff was never independently reviewed" ;;
+          esac
         elif [ "$WORKFLOW_CHANGED" -eq 1 ]; then
           ESCALATION_REASON="changes CI workflow files under .github/workflows/"
           echo "$REVIEW_TEXT" | grep -q "RISK: LIVE-VERIFY-NEEDED" && REVIEWER_RESULT="approved-live-verify-needed"
