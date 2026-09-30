@@ -1533,6 +1533,7 @@ Instructions:
 - Work in /home/agent/app on branch ${BRANCH} (already checked out). Read /home/agent/app/AGENTS.md first and follow its house rules.
 - Fix the issue. Stay strictly within its scope — an independent reviewer will reject scope creep. Add tests for your change in __tests__/ (add, don't overwrite existing tests).
 - While working, run only the tests for what you changed ('npx jest __tests__/<file>') and 'npx tsc --noEmit'. Run the full 'npm test' once before committing. Do NOT run 'npm run build': the coordinator runs the full test suite and the build after you finish and will send you any failure.
+- Every turn re-sends the whole conversation, so save turns: when tool calls do not depend on each other, make them together in one turn (read every file you need at once; run 'npx jest __tests__/<file> && npx tsc --noEmit' as one Bash call). Make all your edits to a file in one turn where you can, and do not re-read a file just to check an edit: the Edit result already shows it.
 - Solve the issue with the infrastructure the app already has (listed in AGENTS.md). Do not add a new external service, hosted database, or paid API unless the issue names it.
 - Commit your work: cd /home/agent/app && git add -A && git commit -m \"${COMMIT_TITLE}\"
 - Never modify data/schools.json.
@@ -1739,6 +1740,7 @@ Instructions:
 - Work in /home/agent/app on branch ${BRANCH} (already checked out). Read /home/agent/app/AGENTS.md first and follow its house rules.
 - Fix the issue. Stay strictly within its scope — an independent reviewer will reject scope creep. Add tests for your change in __tests__/ (add, don't overwrite existing tests).
 - While working, run only the tests for what you changed ('npx jest __tests__/<file>') and 'npx tsc --noEmit'. Run the full 'npm test' once before committing. Do NOT run 'npm run build': the coordinator runs the full test suite and the build after you finish and will send you any failure.
+- Every turn re-sends the whole conversation, so save turns: when tool calls do not depend on each other, make them together in one turn (read every file you need at once; run 'npx jest __tests__/<file> && npx tsc --noEmit' as one Bash call). Make all your edits to a file in one turn where you can, and do not re-read a file just to check an edit: the Edit result already shows it.
 - Solve the issue with the infrastructure the app already has (listed in AGENTS.md). Do not add a new external service, hosted database, or paid API unless the issue names it.
 - Commit your work: cd /home/agent/app && git add -A && git commit -m \"${COMMIT_TITLE}\"
 - Never modify data/schools.json.
