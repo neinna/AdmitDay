@@ -27,6 +27,13 @@ const retryInstruction = between(
 )
 
 describe('implementation brief', () => {
+  it('asks the agent to batch independent tool calls to save turns (implement and retry)', () => {
+    const matches = coordinator.match(/make them together in one turn/g) || []
+    expect(matches).toHaveLength(2)
+    expect(brief).toContain("npx jest __tests__/<file> && npx tsc --noEmit' as one Bash call")
+    expect(brief).toContain('do not re-read a file just to check an edit')
+  })
+
   it('tells the agent not to run the build, which the coordinator runs anyway', () => {
     expect(brief).toContain("Do NOT run 'npm run build'")
     expect(brief).not.toMatch(/iterate until both are green/)
