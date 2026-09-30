@@ -49,9 +49,10 @@ describe('agent-coordinator.sh: triage source checks', () => {
     expect(coordinatorSource).toMatch(/CLAUDE_TRIAGE_MAX_USD="\$\{CLAUDE_TRIAGE_MAX_USD:-0\.50\}"/)
   })
 
-  it('run_triage calls run_claude with the read-only tool list, sonnet, and its own budget', () => {
+  it('run_triage calls run_claude with the read-only tool list, its own model, and its own budget', () => {
     const fn = extractFunction('run_triage')
-    expect(fn).toContain('run_claude "$TRIAGE_OUT" "" "Read,Glob,Grep" "sonnet" "${CLAUDE_TRIAGE_MAX_USD}"')
+    expect(fn).toContain('run_claude "$TRIAGE_OUT" "" "Read,Glob,Grep" "$CLAUDE_TRIAGE_MODEL" "${CLAUDE_TRIAGE_MAX_USD}"')
+    expect(coordinatorSource).toContain('CLAUDE_TRIAGE_MODEL="${CLAUDE_TRIAGE_MODEL:-claude-sonnet-5-5}"')
   })
 
   it('run_triage never calls github_label or github_remove_label', () => {
@@ -225,6 +226,7 @@ ISSUE_TITLE="Test issue"
 ISSUE_BODY="Test body"
 BRANCH="task-214-test"
 CLAUDE_TRIAGE_MAX_USD="0.50"
+CLAUDE_TRIAGE_MODEL="claude-sonnet-5-5"
 LOG_FILE="${path.join(dir, 'log.txt')}"
 
 lf_now_ns() { echo 0; }

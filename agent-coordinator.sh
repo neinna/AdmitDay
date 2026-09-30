@@ -39,6 +39,7 @@ CLAUDE_TIMEOUT=1800
 CLAUDE_IMPLEMENT_MODEL="${CLAUDE_IMPLEMENT_MODEL:-sonnet}"
 CLAUDE_REVIEW_MODEL="${CLAUDE_REVIEW_MODEL:-sonnet}"
 CLAUDE_PLANNER_MODEL="${CLAUDE_PLANNER_MODEL:-sonnet}"
+CLAUDE_TRIAGE_MODEL="${CLAUDE_TRIAGE_MODEL:-claude-sonnet-5-5}"
 # `-` not `:-` on both fallbacks: an operator who sets these to EMPTY means
 # "no fallback, stall instead", and `:-` would silently ignore that and use
 # haiku anyway. Unset still defaults to haiku.
@@ -1365,7 +1366,7 @@ TRIAGE: INFRA - <what broke outside the issue itself>"
 
   local T0 T1
   T0=$(lf_now_ns)
-  run_claude "$TRIAGE_OUT" "" "Read,Glob,Grep" "sonnet" "${CLAUDE_TRIAGE_MAX_USD}"
+  run_claude "$TRIAGE_OUT" "" "Read,Glob,Grep" "$CLAUDE_TRIAGE_MODEL" "${CLAUDE_TRIAGE_MAX_USD}"
   local RC=$?
   T1=$(lf_now_ns)
 
