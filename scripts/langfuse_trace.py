@@ -73,6 +73,7 @@ SPAN_KEYS = (
     "cache_read_tokens",
     "cache_creation_tokens",
     "cost_usd",
+    "turns",
     "attempt",
     "ok",
     "status",
@@ -308,7 +309,7 @@ def emit(raw):
             span_meta = {
                 "latency_ms": _ms(_int(span.get("start_ns")), _int(span.get("end_ns")))
             }
-            for key in ("attempt", "ok", "status", "outcome", "issue_number"):
+            for key in ("attempt", "turns", "ok", "status", "outcome", "issue_number"):
                 if span.get(key) is not None:
                     span_meta[key] = span[key]
 
