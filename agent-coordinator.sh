@@ -283,6 +283,11 @@ if path and os.path.exists(path):
                          cache_creation_tokens=u.get("cache_creation_input_tokens"),
                          cost_usd=d.get("total_cost_usd")))
 
+# num_turns counts the whole call, so it goes on the first row only: summing
+# turns across a multi-model call's rows must not double-count.
+if rows and isinstance(d.get("num_turns"), int):
+    rows[0]["turns"] = d["num_turns"]
+
 for row in (rows or [base]):
     print(json.dumps({k: v for k, v in row.items() if v is not None}))
 PYEOF
