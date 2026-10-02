@@ -42,7 +42,10 @@ require_gh_token() {
 
 prepare_checkout() {
   cd "$APP_DIR"
-  git fetch origin main
+  # --prune: the merge step deletes the data branch on GitHub. A leftover
+  # origin/data/weekly-refresh makes the next --force-with-lease push fail
+  # as "stale info" (09-28 run: data built, push rejected, no PR).
+  git fetch --prune origin
   git switch main
   git pull --ff-only origin main
 }
