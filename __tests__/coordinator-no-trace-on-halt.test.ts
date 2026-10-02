@@ -86,6 +86,7 @@ describe('lf_record / lf_emit / lf_discard (functional): halt submits nothing, a
   let logFile: string
   let callsFile: string
   let stubScript: string
+  let binDir: string
 
   beforeEach(() => {
     dir = fs.mkdtempSync(path.join(os.tmpdir(), 'coord-notrace-'))
@@ -95,6 +96,10 @@ describe('lf_record / lf_emit / lf_discard (functional): halt submits nothing, a
     fs.writeFileSync(callsFile, '')
     // Stand-in for scripts/langfuse_trace.py: records that it was invoked,
     // and with what payload, instead of talking to Langfuse.
+    // macOS has no `timeout`; lf_emit pipes through it.
+    binDir = path.join(dir, 'bin')
+    fs.mkdirSync(binDir)
+    fs.writeFileSync(path.join(binDir, 'timeout'), '#!/bin/sh\nshift\nexec "$@"\n', { mode: 0o755 })
     stubScript = path.join(dir, 'fake_langfuse_trace.py')
     fs.writeFileSync(
       stubScript,
@@ -118,6 +123,7 @@ with open(${JSON.stringify(callsFile)}, 'a') as f:
   function script(body: string): string {
     const fns = ['lf_now_ns', 'lf_record', 'lf_emit', 'lf_discard'].map(extractFunction).join('\n\n')
     return `
+export PATH="${binDir}:$PATH"
 LOG_FILE="${logFile}"
 LF_TRACE_SCRIPT="${stubScript}"
 LF_TRACE_PYTHON="python3"
