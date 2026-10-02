@@ -1165,6 +1165,9 @@ RISK: LIVE-VERIFY-NEEDED"
     *) REVIEWER_RESULT="unavailable" ;;
   esac
   lf_record "review" "$T0" "$T1" "$([ "$VERDICT" = approve ] && echo 1 || echo 0)" "$REVIEW_OUT" "" "$REVIEWER_RESULT"
+  if [ -n "$REVIEW_TEXT" ]; then
+    { mkdir -p "$RUN_METADATA_DIR" && printf '%s\n' "$REVIEW_TEXT" > "${RUN_METADATA_DIR}/review-${ISSUE_NUMBER}-$(date -u +%Y%m%dT%H%M%SZ).txt"; } 2>/dev/null || true
+  fi
   rm -f "$REVIEW_OUT"
   case "$VERDICT" in
     approve)
