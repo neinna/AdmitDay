@@ -57,6 +57,8 @@ printf '%s\\n' "$@" > "${argsFile}"
 echo '{"is_error": false, "result": "ok", "model": "claude-sonnet-5"}'
 `
     fs.writeFileSync(path.join(binDir, 'claude'), claudeStub, { mode: 0o755 })
+    // macOS has no `timeout`; run_claude calls it.
+    fs.writeFileSync(path.join(binDir, 'timeout'), '#!/bin/sh\nshift\nexec "$@"\n', { mode: 0o755 })
   })
 
   afterEach(() => fs.rmSync(workDir, { recursive: true, force: true }))
