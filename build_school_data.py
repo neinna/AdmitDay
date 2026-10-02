@@ -257,7 +257,8 @@ def fetch_myschools_school_location(dbn):
     return parse_school_location(raw)
 
 
-def build_school_json(school_list, doe_by_dbn):
+def build_school_json(school_list, doe_by_dbn, sqr_by_dbn=None):
+    sqr_by_dbn = sqr_by_dbn or {}
     print("Merging data sources and fetching school details...")
     final = []
     excluded_dbns = []
@@ -300,9 +301,12 @@ def build_school_json(school_list, doe_by_dbn):
 
         aps = school.get("applicants_per_seat")
         acad = school.get("academic_score_pct")
-        is_hidden_gem = (
-            aps is not None and aps < 5.0 and
-            acad is not None and acad > 60.0
+        sqr = sqr_by_dbn.get(dbn)
+        impact_pctl = sqr.get("impact_pctl") if sqr else None
+        high_impact = (
+            isinstance(impact_pctl, (int, float))
+            and not isinstance(impact_pctl, bool)
+            and impact_pctl >= 80
         )
 
         CONSORTIUM_DBNS = {
@@ -380,7 +384,7 @@ def build_school_json(school_list, doe_by_dbn):
                 "has_screened": has_screened,
                 "has_open": has_open,
                 "has_borough_priority": has_borough_priority,
-                "is_hidden_gem": is_hidden_gem,
+                "high_impact": high_impact,
                 "has_consortium": has_consortium,
                 "has_ib": has_ib,
             },
@@ -414,6 +418,8 @@ def build_school_json(school_list, doe_by_dbn):
             "shsat_cutoff_score": SHSAT_CUTOFFS.get(dbn, {}).get(SHSAT_CUTOFFS_YEAR) if has_shsat else None,
             "shsat_cutoff_year": SHSAT_CUTOFFS_YEAR if has_shsat and SHSAT_CUTOFFS.get(dbn, {}).get(SHSAT_CUTOFFS_YEAR) else None,
         }
+        if sqr:
+            merged["sqr"] = sqr
         if location:
             merged["location"] = location
         final.append(merged)
@@ -430,7 +436,7 @@ def validate(schools, excluded_dbns=None):
     print(f"Audition schools:       {sum(1 for s in schools if s['flags']['has_audition'])}")
     print(f"Screened schools:       {sum(1 for s in schools if s['flags']['has_screened'])}")
     print(f"Open/EdOpt/Zoned:       {sum(1 for s in schools if s['flags']['has_open'])}")
-    print(f"Hidden gems:            {sum(1 for s in schools if s['flags']['is_hidden_gem'])}")
+    print(f"High impact:            {sum(1 for s in schools if s['flags']['high_impact'])}")
     print(f"Consortium schools:     {sum(1 for s in schools if s['flags']['has_consortium'])}")
     print(f"IB schools:             {sum(1 for s in schools if s['flags']['has_ib'])}")
     print(f"Missing admissions:     {sum(1 for s in schools if not s['admissions_types'])}")
@@ -460,8 +466,10 @@ if __name__ == "__main__":
     print()
 
     doe_by_dbn = fetch_doe_directory()
+    from scripts.enrich_doe_directory import fetch_sqr_scores
+    sqr_by_dbn = fetch_sqr_scores()
     school_list = build_school_list_from_directory(doe_by_dbn)
-    schools, excluded_dbns = build_school_json(school_list, doe_by_dbn)
+    schools, excluded_dbns = build_school_json(school_list, doe_by_dbn, sqr_by_dbn)
     validate(schools, excluded_dbns)
 
     output_path = os.environ.get("ADMITDAY_SCHOOLS_OUTPUT", "schools.json")
