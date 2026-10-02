@@ -257,6 +257,27 @@ def fetch_myschools_school_location(dbn):
     return parse_school_location(raw)
 
 
+def _is_number(v):
+    return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+
+def general_ed_applicants_per_seat(programs):
+    """Applicants per general-ed seat, summed over programs that report both.
+
+    Only programs whose general-ed seats is a number > 0 and whose general-ed
+    applicants is a number count. Returns None (never 0) when no seats."""
+    applicants = 0
+    seats = 0
+    for program in programs:
+        ge = ((program or {}).get("seats") or {}).get("general_education") or {}
+        p_seats = ge.get("seats")
+        p_applicants = ge.get("applicants")
+        if _is_number(p_seats) and p_seats > 0 and _is_number(p_applicants):
+            seats += p_seats
+            applicants += p_applicants
+    return applicants / seats if seats > 0 else None
+
+
 def build_school_json(school_list, doe_by_dbn, sqr_by_dbn=None):
     sqr_by_dbn = sqr_by_dbn or {}
     print("Merging data sources and fetching school details...")
@@ -299,7 +320,7 @@ def build_school_json(school_list, doe_by_dbn, sqr_by_dbn=None):
         borough = school.get("borough", "Unknown")
         has_borough_priority = borough != "Manhattan"
 
-        aps = school.get("applicants_per_seat")
+        aps = general_ed_applicants_per_seat(programs)
         acad = school.get("academic_score_pct")
         sqr = sqr_by_dbn.get(dbn)
         impact_pctl = sqr.get("impact_pctl") if sqr else None
