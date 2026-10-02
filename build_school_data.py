@@ -321,7 +321,6 @@ def build_school_json(school_list, doe_by_dbn, sqr_by_dbn=None):
         has_borough_priority = borough != "Manhattan"
 
         aps = general_ed_applicants_per_seat(programs)
-        acad = school.get("academic_score_pct")
         sqr = sqr_by_dbn.get(dbn)
         impact_pctl = sqr.get("impact_pctl") if sqr else None
         high_impact = (
@@ -394,8 +393,6 @@ def build_school_json(school_list, doe_by_dbn, sqr_by_dbn=None):
             "size": size,
             "total_students": school.get("total_students"),
             "applicants_per_seat": aps,
-            "academic_score_pct": acad,
-            "survey_score_pct": None,
             "admissions_types": admissions_types,
             "programs": programs,
             **school_meta,
@@ -465,7 +462,6 @@ def validate(schools, excluded_dbns=None):
     # surfaced here so a refresh never silently ships data with a field that
     # quietly went from populated to always-empty.
     print(f"Missing applicants/seat data:   {sum(1 for s in schools if s['applicants_per_seat'] is None)}")
-    print(f"Missing academic score data:    {sum(1 for s in schools if s['academic_score_pct'] is None)}")
     print(f"Excluded (no programs in this cycle's MySchools admissions): {len(excluded_dbns)}")
     if excluded_dbns:
         print(f"  {', '.join(excluded_dbns)}")
