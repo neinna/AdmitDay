@@ -321,7 +321,7 @@ lf_emit() {
   LF_PR_OUTCOME="${12}" LF_TRACE_NAME="${13:-agent-run}" LF_METADATA_DIR="$RUN_METADATA_DIR" \
   LF_EFFORT_FIRST="${14:-}" LF_EFFORT_RETRY="${15:-}" \
   GITHUB_REPO="$GITHUB_REPO" \
-  python3 << 'PYEOF' 2>> "$LOG_FILE" | timeout 30 "$LF_TRACE_PYTHON" "$LF_TRACE_SCRIPT" 2>> "$LOG_FILE"
+  python3 << 'PYEOF' 2>> "$LOG_FILE" | timeout 30 "$LF_TRACE_PYTHON" "$LF_TRACE_SCRIPT" 2> "$RUN_FILE.err"
 import json, os
 
 spans = []
@@ -381,7 +381,14 @@ if metadata_dir:
 
 print(json.dumps(payload))
 PYEOF
-  rm -f "$RUN_FILE"
+  cat "$RUN_FILE.err" >> "$LOG_FILE" 2>/dev/null
+  # The trace script always exits 0, so its "submitted trace" line is the only
+  # success signal. Prune only then: on a failed submit the file is the sole
+  # record of the run. A prune failure must never change the run's outcome.
+  if grep -q "submitted trace for issue" "$RUN_FILE.err" 2>/dev/null && [ -n "$RUN_METADATA_DIR" ]; then
+    find "$RUN_METADATA_DIR" -type f -mtime +14 -delete 2>> "$LOG_FILE" || true
+  fi
+  rm -f "$RUN_FILE" "$RUN_FILE.err"
   return 0
 }
 
