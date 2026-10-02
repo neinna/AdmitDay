@@ -112,6 +112,11 @@ build_refresh_pr_body() {
     const dbn = (s) => (s && typeof s.dbn === "string" ? s.dbn : null);
     const programCount = (schools) =>
       schools.reduce((n, s) => n + (Array.isArray(s.programs) ? s.programs.length : 0), 0);
+    const openHouseCount = (schools) =>
+      schools.filter((s) => {
+        const oh = s && s.open_house;
+        return !!oh && typeof oh === "object" && typeof oh.text === "string" && oh.text.trim() !== "";
+      }).length;
     const previousDbns = new Set(previous.map(dbn).filter(Boolean));
     const currentDbns = new Set(current.map(dbn).filter(Boolean));
     const added = [...currentDbns].filter((d) => !previousDbns.has(d));
@@ -125,6 +130,7 @@ build_refresh_pr_body() {
 - Removed DBNs: ${fmt(removed)}
 - Excluded DBNs (no programs in this admissions cycle on MySchools): ${fmt(excluded)}
 - Program count: ${programCount(previous)} -> ${programCount(current)}
+- Schools with open-house text: ${openHouseCount(previous)} -> ${openHouseCount(current)}
 - Fetched at: ${fetchedAt}
 
 This run used the validated refresh pipeline:
