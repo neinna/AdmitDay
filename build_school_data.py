@@ -257,7 +257,29 @@ def fetch_myschools_school_location(dbn):
     return parse_school_location(raw)
 
 
-def build_school_json(school_list, doe_by_dbn):
+def _is_number(v):
+    return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+
+def general_ed_applicants_per_seat(programs):
+    """Applicants per general-ed seat, summed over programs that report both.
+
+    Only programs whose general-ed seats is a number > 0 and whose general-ed
+    applicants is a number count. Returns None (never 0) when no seats."""
+    applicants = 0
+    seats = 0
+    for program in programs:
+        ge = ((program or {}).get("seats") or {}).get("general_education") or {}
+        p_seats = ge.get("seats")
+        p_applicants = ge.get("applicants")
+        if _is_number(p_seats) and p_seats > 0 and _is_number(p_applicants):
+            seats += p_seats
+            applicants += p_applicants
+    return applicants / seats if seats > 0 else None
+
+
+def build_school_json(school_list, doe_by_dbn, sqr_by_dbn=None):
+    sqr_by_dbn = sqr_by_dbn or {}
     print("Merging data sources and fetching school details...")
     final = []
     excluded_dbns = []
@@ -298,11 +320,13 @@ def build_school_json(school_list, doe_by_dbn):
         borough = school.get("borough", "Unknown")
         has_borough_priority = borough != "Manhattan"
 
-        aps = school.get("applicants_per_seat")
-        acad = school.get("academic_score_pct")
-        is_hidden_gem = (
-            aps is not None and aps < 5.0 and
-            acad is not None and acad > 60.0
+        aps = general_ed_applicants_per_seat(programs)
+        sqr = sqr_by_dbn.get(dbn)
+        impact_pctl = sqr.get("impact_pctl") if sqr else None
+        high_impact = (
+            isinstance(impact_pctl, (int, float))
+            and not isinstance(impact_pctl, bool)
+            and impact_pctl >= 80
         )
 
         CONSORTIUM_DBNS = {
@@ -369,8 +393,6 @@ def build_school_json(school_list, doe_by_dbn):
             "size": size,
             "total_students": school.get("total_students"),
             "applicants_per_seat": aps,
-            "academic_score_pct": acad,
-            "survey_score_pct": None,
             "admissions_types": admissions_types,
             "programs": programs,
             **school_meta,
@@ -380,7 +402,7 @@ def build_school_json(school_list, doe_by_dbn):
                 "has_screened": has_screened,
                 "has_open": has_open,
                 "has_borough_priority": has_borough_priority,
-                "is_hidden_gem": is_hidden_gem,
+                "high_impact": high_impact,
                 "has_consortium": has_consortium,
                 "has_ib": has_ib,
             },
@@ -414,6 +436,8 @@ def build_school_json(school_list, doe_by_dbn):
             "shsat_cutoff_score": SHSAT_CUTOFFS.get(dbn, {}).get(SHSAT_CUTOFFS_YEAR) if has_shsat else None,
             "shsat_cutoff_year": SHSAT_CUTOFFS_YEAR if has_shsat and SHSAT_CUTOFFS.get(dbn, {}).get(SHSAT_CUTOFFS_YEAR) else None,
         }
+        if sqr:
+            merged["sqr"] = sqr
         if location:
             merged["location"] = location
         final.append(merged)
@@ -430,7 +454,7 @@ def validate(schools, excluded_dbns=None):
     print(f"Audition schools:       {sum(1 for s in schools if s['flags']['has_audition'])}")
     print(f"Screened schools:       {sum(1 for s in schools if s['flags']['has_screened'])}")
     print(f"Open/EdOpt/Zoned:       {sum(1 for s in schools if s['flags']['has_open'])}")
-    print(f"Hidden gems:            {sum(1 for s in schools if s['flags']['is_hidden_gem'])}")
+    print(f"High impact:            {sum(1 for s in schools if s['flags']['high_impact'])}")
     print(f"Consortium schools:     {sum(1 for s in schools if s['flags']['has_consortium'])}")
     print(f"IB schools:             {sum(1 for s in schools if s['flags']['has_ib'])}")
     print(f"Missing admissions:     {sum(1 for s in schools if not s['admissions_types'])}")
@@ -438,7 +462,6 @@ def validate(schools, excluded_dbns=None):
     # surfaced here so a refresh never silently ships data with a field that
     # quietly went from populated to always-empty.
     print(f"Missing applicants/seat data:   {sum(1 for s in schools if s['applicants_per_seat'] is None)}")
-    print(f"Missing academic score data:    {sum(1 for s in schools if s['academic_score_pct'] is None)}")
     print(f"Excluded (no programs in this cycle's MySchools admissions): {len(excluded_dbns)}")
     if excluded_dbns:
         print(f"  {', '.join(excluded_dbns)}")
@@ -460,8 +483,10 @@ if __name__ == "__main__":
     print()
 
     doe_by_dbn = fetch_doe_directory()
+    from scripts.enrich_doe_directory import fetch_sqr_scores
+    sqr_by_dbn = fetch_sqr_scores()
     school_list = build_school_list_from_directory(doe_by_dbn)
-    schools, excluded_dbns = build_school_json(school_list, doe_by_dbn)
+    schools, excluded_dbns = build_school_json(school_list, doe_by_dbn, sqr_by_dbn)
     validate(schools, excluded_dbns)
 
     output_path = os.environ.get("ADMITDAY_SCHOOLS_OUTPUT", "schools.json")

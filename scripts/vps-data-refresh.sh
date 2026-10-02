@@ -112,6 +112,11 @@ build_refresh_pr_body() {
     const dbn = (s) => (s && typeof s.dbn === "string" ? s.dbn : null);
     const programCount = (schools) =>
       schools.reduce((n, s) => n + (Array.isArray(s.programs) ? s.programs.length : 0), 0);
+    const openHouseCount = (schools) =>
+      schools.filter((s) => {
+        const oh = s && s.open_house;
+        return !!oh && typeof oh === "object" && typeof oh.text === "string" && oh.text.trim() !== "";
+      }).length;
     const previousDbns = new Set(previous.map(dbn).filter(Boolean));
     const currentDbns = new Set(current.map(dbn).filter(Boolean));
     const added = [...currentDbns].filter((d) => !previousDbns.has(d));
@@ -125,6 +130,7 @@ build_refresh_pr_body() {
 - Removed DBNs: ${fmt(removed)}
 - Excluded DBNs (no programs in this admissions cycle on MySchools): ${fmt(excluded)}
 - Program count: ${programCount(previous)} -> ${programCount(current)}
+- Schools with open-house text: ${openHouseCount(previous)} -> ${openHouseCount(current)}
 - Fetched at: ${fetchedAt}
 
 This run used the validated refresh pipeline:
@@ -134,6 +140,12 @@ This run used the validated refresh pipeline:
 
 This PR is intended to be merged by the VPS data refresh runner, not by a human. Run \`scripts/vps-data-refresh.sh merge\` after CI passes; it only merges when the changed files are the expected data artifacts and the GitHub CI test is green. Loading happens in Vercel after the data PR merges (/api/cron/seed-schools).`);
   ' "$previous_file" "schools.json" "$fetched_at" "schools.excluded.json"
+}
+
+# The branch name is reused every week, so `gh pr view "$BRANCH"` also matches
+# closed and merged PRs. Resolve the open PR's number and use that instead.
+open_refresh_pr_number() {
+  gh pr list --repo "$REPO" --head "$BRANCH" --state open --json number --jq '.[0].number // empty'
 }
 
 open_refresh_pr() {
@@ -175,8 +187,10 @@ open_refresh_pr() {
   body="$(build_refresh_pr_body "$previous_schools")"
   rm -f "$previous_schools"
 
-  if gh pr view "$BRANCH" --repo "$REPO" --json number >/dev/null 2>&1; then
-    gh pr edit "$BRANCH" --repo "$REPO" --title "data: refresh school program data" --body "$body"
+  local number
+  number="$(open_refresh_pr_number)"
+  if [ -n "$number" ]; then
+    gh api -X PATCH "repos/$REPO/pulls/$number" -f title="data: refresh school program data" -f body="$body" >/dev/null
   else
     gh pr create --repo "$REPO" --base main --head "$BRANCH" --title "data: refresh school program data" --body "$body"
   fi
@@ -185,8 +199,9 @@ open_refresh_pr() {
 assert_refresh_pr_files() {
   require_gh_token
 
+  local number="$1"
   local files
-  files="$(gh pr diff "$BRANCH" --repo "$REPO" --name-only | sort)"
+  files="$(gh pr diff "$number" --repo "$REPO" --name-only | sort)"
 
   if [ "$files" != "$EXPECTED_DATA_FILES" ]; then
     echo "Refusing to merge data refresh PR with unexpected files:" >&2
@@ -198,8 +213,9 @@ assert_refresh_pr_files() {
 assert_refresh_ci_green() {
   require_gh_token
 
+  local number="$1"
   local passing_tests
-  passing_tests="$(gh pr view "$BRANCH" --repo "$REPO" --json statusCheckRollup --jq '[.statusCheckRollup[] | select((.name // .context) == "test") | select(((.status // "") == "COMPLETED" and (.conclusion // "") == "SUCCESS") or ((.state // "") == "SUCCESS"))] | length')"
+  passing_tests="$(gh pr view "$number" --repo "$REPO" --json statusCheckRollup --jq '[.statusCheckRollup[] | select((.name // .context) == "test") | select(((.status // "") == "COMPLETED" and (.conclusion // "") == "SUCCESS") or ((.state // "") == "SUCCESS"))] | length')"
 
   if [ "$passing_tests" != "1" ]; then
     echo "Refusing to merge data refresh PR before the GitHub CI test is green." >&2
@@ -208,10 +224,19 @@ assert_refresh_ci_green() {
 }
 
 merge_refresh_pr() {
-  assert_refresh_pr_files
-  assert_refresh_ci_green
+  require_gh_token
 
-  gh pr merge "$BRANCH" --repo "$REPO" --squash --delete-branch --subject "data: refresh school program data"
+  local number
+  number="$(open_refresh_pr_number)"
+  if [ -z "$number" ]; then
+    echo "No open data refresh PR for $BRANCH; nothing to merge."
+    exit 0
+  fi
+
+  assert_refresh_pr_files "$number"
+  assert_refresh_ci_green "$number"
+
+  gh pr merge "$number" --repo "$REPO" --squash --delete-branch --subject "data: refresh school program data"
 }
 
 apply_merged_data() {

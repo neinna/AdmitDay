@@ -77,7 +77,7 @@ describe('MySchools program pipeline', () => {
     expect(vpsRefreshSource).toContain(
       'EXPECTED_DATA_FILES="data/schema-summary.json\ndata/school-embeddings.json\nschools.json"'
     )
-    expect(vpsRefreshSource).toContain('gh pr merge "$BRANCH"')
+    expect(vpsRefreshSource).toContain('gh pr merge "$number"')
   })
 
   it('ends the VPS job at the data PR; Vercel loads it into Postgres after merge (#175 option B)', () => {

@@ -46,7 +46,7 @@ Rules:
 
 ## Cost And Issue Sizing
 
-Every implementation run is capped by `CLAUDE_IMPLEMENT_MAX_USD` (currently \$5.00). An issue that cannot be finished inside one capped run is not a hard issue — it is a badly sized one, and it will consume the whole cap and produce nothing.
+Every implementation run is capped by `CLAUDE_IMPLEMENT_MAX_USD` (currently \$3.00). An issue that cannot be finished inside one capped run is not a hard issue — it is a badly sized one, and it will consume the whole cap and produce nothing.
 
 The metric is **cost per merged PR**, not cost per attempt. On 2026-09-17 this repo spent **\$9.72 per merged PR** — recomputed from raw token counts at list prices, but across five runs and **one** merged PR, so treat it as an anecdote, not a baseline. Since then it has ranged \$1.40–\$3.07 a day with no clear trend. A single run has cost about \$1 throughout; what varies is how many are wasted.
 
