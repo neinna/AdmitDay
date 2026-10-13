@@ -166,10 +166,18 @@ def fetch_doe_directory():
     return by_dbn
 
 
+SPECIALIZED_PROGRAM_METHODS = ("District 75", "D75 Inclusion", "ASD / ACES", "Language Program")
+
+
 def classify_admissions(text):
     text = text.lower().strip()
     if "shsat" in text or "specialized" in text or text == "test":
         return "SHSAT"
+    if ("d75" in text or "district 75" in text) and "inclusi" in text:
+        # A D75 Inclusion Program is a small set of seats run by a District 75
+        # school *inside* a general-education (District 1-32) school. It does
+        # not make the host school a District 75 school.
+        return "D75 Inclusion"
     if "d75" in text or "district 75" in text:
         return "District 75"
     if "asd" in text or "aces" in text:
@@ -240,6 +248,11 @@ def fetch_myschools_program_detail(dbn):
             program["raw_method"] = raw_method
 
         enriched.append(program)
+
+    # List general-education methods first, special-education / language
+    # programs last, so a host school's inclusion program never leads its
+    # admissions methods (MySchools often lists it first).
+    admissions_types.sort(key=lambda m: m in SPECIALIZED_PROGRAM_METHODS)
 
     if len(enriched) == 0:
         raise MySchoolsNotAdmittingError(f"{dbn} returned no MySchools programs")
