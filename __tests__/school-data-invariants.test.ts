@@ -55,6 +55,7 @@ const KNOWN_ADMISSIONS_TRACKS = new Set([
   'Zoned',
   'Open',
   'District 75',
+  'D75 Inclusion',
   'ASD / ACES',
   'Language Program',
 ])

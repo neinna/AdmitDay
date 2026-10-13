@@ -268,7 +268,7 @@ def test_empty_myschools_record_is_not_admitting():
 # and drop Transfer programs entirely. ──────────────────────────────────────
 
 def test_classify_admissions_recognizes_new_myschools_methods():
-    assert build_school_data.classify_admissions("D75 Special Education Inclusive Services") == "District 75"
+    assert build_school_data.classify_admissions("D75 Special Education Inclusive Services") == "D75 Inclusion"
     assert build_school_data.classify_admissions("District 75 Program") == "District 75"
     assert build_school_data.classify_admissions("ASD/ACES Program") == "ASD / ACES"
     assert build_school_data.classify_admissions("Language Criteria") == "Language Program"
@@ -284,7 +284,7 @@ def test_classify_admissions_keeps_existing_mappings():
 def test_normalize_myschools_admissions_method_maps_new_methods_and_drops_transfer():
     assert build_school_data.normalize_myschools_admissions_method(
         "D75 Special Education Inclusive Services"
-    ) == "District 75"
+    ) == "D75 Inclusion"
     assert build_school_data.normalize_myschools_admissions_method("ASD/ACES Program") == "ASD / ACES"
     assert build_school_data.normalize_myschools_admissions_method("Language Criteria") == "Language Program"
     assert build_school_data.normalize_myschools_admissions_method("Transfer") is None
