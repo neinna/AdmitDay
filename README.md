@@ -26,8 +26,7 @@ AdmitDay's live surfaces are `/find` discovery, school detail pages, and a signe
 
 1. **Unified `/find`:** users narrow schools by hard rail filters (under a "Non-Negotiables" heading), optionally set a starting point (ZIP or subway station) to filter and sort by distance, then use the ask box for plain-language criteria that re-rank results without silently removing schools. Rows link to `/school/[dbn]` detail pages and can be saved to the shortlist.
 2. **RAG ask box:** users ask in natural language; the system extracts exact signals, hard-filters the candidate pool, semantic-ranks within it, and returns one short reason per school (retrieving 20 schools) via `/api/find/ask`.
-
-2. **Shortlist (`/shortlist`):** a signed-in family's saved schools, split into SHSAT and Main list sections, with expandable rows and a print view. Saved lists are stored in Postgres via `/api/saved-schools`.
+3. **Shortlist (`/shortlist`):** a signed-in family's saved schools, split into SHSAT and Main list sections, with expandable rows and a print view. Saved lists are stored in Postgres via `/api/saved-schools`.
 
 The older standalone `/chat` product surface is decommissioned.
 
