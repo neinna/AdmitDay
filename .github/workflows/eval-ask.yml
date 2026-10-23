@@ -56,5 +56,6 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.EVAL_OPENAI_API_KEY }}
           EVAL_LANGFUSE_PUBLIC_KEY: ${{ secrets.EVAL_LANGFUSE_PUBLIC_KEY }}
           EVAL_LANGFUSE_SECRET_KEY: ${{ secrets.EVAL_LANGFUSE_SECRET_KEY }}
+          EVAL_LANGFUSE_HOST: https://us.cloud.langfuse.com
           EVAL_TRIGGER: ${{ github.event_name == 'schedule' && 'weekly' || github.event_name == 'pull_request' && 'pull_request' || 'manual' }}
         run: npm run eval:ask
