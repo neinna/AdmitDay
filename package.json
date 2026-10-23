@@ -16,6 +16,9 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
     "@clerk/nextjs": "^6.39.6",
+    "@langfuse/client": "5.14.0",
+    "@langfuse/otel": "5.14.0",
+    "@langfuse/tracing": "5.14.0",
     "@sentry/nextjs": "^10.47.0",
     "@vercel/postgres": "^0.10.0",
     "bcryptjs": "^3.0.3",
