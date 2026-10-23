@@ -1146,8 +1146,8 @@
     "total_students": 524,
     "applicants_per_seat": 11.39047619047619,
     "admissions_types": [
-      "District 75",
-      "Screened"
+      "Screened",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -1193,7 +1193,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75M094 D75 Inclusion Program at The Clinton School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -1771,8 +1771,8 @@
     "total_students": 235,
     "applicants_per_seat": 0.12380952380952381,
     "admissions_types": [
-      "District 75",
-      "Educational Option"
+      "Educational Option",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -1818,7 +1818,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75M138 D75 Inclusion Program at High School of Hospitality Management",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -2153,8 +2153,8 @@
     "total_students": 267,
     "applicants_per_seat": 0.3253012048192771,
     "admissions_types": [
-      "District 75",
-      "Educational Option"
+      "Educational Option",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -2199,7 +2199,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75M138 D75 Inclusion Program at Facing History School, The",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -4625,8 +4625,8 @@
     "total_students": 687,
     "applicants_per_seat": 15.879032258064516,
     "admissions_types": [
-      "District 75",
-      "Screened"
+      "Screened",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -4673,7 +4673,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75M226 D75 Inclusion Program at Millennium High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -5632,8 +5632,8 @@
     "total_students": 187,
     "applicants_per_seat": 0.10526315789473684,
     "admissions_types": [
-      "District 75",
-      "Open"
+      "Open",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -5675,7 +5675,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75M751 D75 Inclusion Program at Hudson High School of Learning Technologies",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -6721,8 +6721,8 @@
     "total_students": 462,
     "applicants_per_seat": 3.6605504587155964,
     "admissions_types": [
-      "District 75",
-      "Audition"
+      "Audition",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -6757,7 +6757,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75M226 D75 Inclusion Program at Talent Unlimited High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -7754,8 +7754,8 @@
     "total_students": 370,
     "applicants_per_seat": 0.9759036144578314,
     "admissions_types": [
-      "District 75",
-      "Open"
+      "Open",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -7802,7 +7802,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75M721 D75 Inclusion Program at Harvest Collegiate High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -8793,7 +8793,7 @@
     "size": "small",
     "total_students": 94,
     "admissions_types": [
-      "District 75"
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -8838,7 +8838,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75M751 D75 Inclusion Program at Harvey Milk High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       }
     ],
@@ -8887,9 +8887,9 @@
     "total_students": 1446,
     "applicants_per_seat": 1.1436314363143631,
     "admissions_types": [
-      "District 75",
       "Audition",
-      "Educational Option"
+      "Educational Option",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -8936,7 +8936,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75M751 D75 Inclusion Program at High School of Fashion Industries, The",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -9312,9 +9312,9 @@
     "total_students": 388,
     "applicants_per_seat": 0.5847457627118644,
     "admissions_types": [
-      "District 75",
       "Screened",
-      "Educational Option"
+      "Educational Option",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -9361,7 +9361,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75M721 D75 Inclusion Program at Chelsea Career and Technical Education High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -12253,7 +12253,7 @@
     "total_students": 347,
     "applicants_per_seat": 1.3287671232876712,
     "admissions_types": [
-      "District 75",
+      "D75 Inclusion",
       "ASD / ACES",
       "Language Program"
     ],
@@ -12301,7 +12301,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75M138 D75 Inclusion Program at Esperanza Preparatory Academy",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -12473,9 +12473,9 @@
     "total_students": 1655,
     "applicants_per_seat": 5.100591715976331,
     "admissions_types": [
-      "District 75",
-      "Language Program",
-      "Screened"
+      "Screened",
+      "D75 Inclusion",
+      "Language Program"
     ],
     "programs": [
       {
@@ -12522,7 +12522,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75M169 D75 Inclusion Program at Manhattan Center for Science and Mathematics",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -13659,10 +13659,10 @@
     "total_students": 503,
     "applicants_per_seat": 0.444,
     "admissions_types": [
-      "District 75",
       "Screened",
       "Open",
-      "Educational Option"
+      "Educational Option",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -13706,7 +13706,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75M811 D75 Inclusion Program at Frederick Douglass Academy",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -15162,8 +15162,8 @@
     "total_students": 502,
     "applicants_per_seat": 0.792,
     "admissions_types": [
-      "ASD / ACES",
       "Educational Option",
+      "ASD / ACES",
       "Language Program"
     ],
     "programs": [
@@ -15601,8 +15601,8 @@
     "applicants_per_seat": 0.6971428571428572,
     "admissions_types": [
       "Educational Option",
-      "Language Program",
-      "Screened"
+      "Screened",
+      "Language Program"
     ],
     "programs": [
       {
@@ -16221,8 +16221,8 @@
     "total_students": 387,
     "applicants_per_seat": 2.36,
     "admissions_types": [
-      "Language Program",
-      "Educational Option"
+      "Educational Option",
+      "Language Program"
     ],
     "programs": [
       {
@@ -17056,8 +17056,8 @@
     "total_students": 305,
     "applicants_per_seat": 1.796875,
     "admissions_types": [
-      "District 75",
-      "Screened"
+      "Screened",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -17099,7 +17099,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75X811 D75 Inclusion Program at Hostos-Lincoln Academy of Science",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -17381,8 +17381,8 @@
     "total_students": 375,
     "applicants_per_seat": 0.7634408602150538,
     "admissions_types": [
-      "District 75",
-      "Educational Option"
+      "Educational Option",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -17429,7 +17429,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75X188 D75 Inclusion Program at Bronx Leadership Academy II High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -17834,9 +17834,9 @@
     "total_students": 413,
     "applicants_per_seat": 0.9548872180451128,
     "admissions_types": [
-      "Language Program",
       "Screened",
-      "Educational Option"
+      "Educational Option",
+      "Language Program"
     ],
     "programs": [
       {
@@ -18536,8 +18536,8 @@
     "total_students": 383,
     "applicants_per_seat": 1.0119047619047619,
     "admissions_types": [
-      "District 75",
-      "Educational Option"
+      "Educational Option",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -18584,7 +18584,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75X721 D75 Inclusion Program at Renaissance High School for Musical Theater and the Arts",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -18703,8 +18703,8 @@
     "total_students": 345,
     "applicants_per_seat": 1.0795454545454546,
     "admissions_types": [
-      "ASD / ACES",
-      "Educational Option"
+      "Educational Option",
+      "ASD / ACES"
     ],
     "programs": [
       {
@@ -19386,8 +19386,8 @@
     "total_students": 258,
     "applicants_per_seat": 0.96875,
     "admissions_types": [
-      "District 75",
-      "Open"
+      "Open",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -19432,7 +19432,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75X017 D75 Inclusion Program at Antonia Pantoja Preparatory Academy: A College Board School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -19558,10 +19558,10 @@
     "total_students": 1065,
     "applicants_per_seat": 0.9646739130434783,
     "admissions_types": [
-      "District 75",
       "Screened",
       "Educational Option",
-      "Zoned"
+      "Zoned",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -19608,7 +19608,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75X721 D75 Inclusion Program at Herbert H. Lehman High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -19998,9 +19998,9 @@
     "total_students": 295,
     "applicants_per_seat": 0.5806451612903226,
     "admissions_types": [
-      "District 75",
       "Educational Option",
-      "Open"
+      "Open",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -20046,7 +20046,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75X017 D75 Inclusion Program at Gotham Collaborative High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -21534,8 +21534,8 @@
     "total_students": 444,
     "applicants_per_seat": 0.5567010309278351,
     "admissions_types": [
-      "ASD / ACES",
-      "Educational Option"
+      "Educational Option",
+      "ASD / ACES"
     ],
     "programs": [
       {
@@ -21824,8 +21824,8 @@
     "total_students": 379,
     "applicants_per_seat": 2.0422535211267605,
     "admissions_types": [
-      "District 75",
-      "Open"
+      "Open",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -21867,7 +21867,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75X010 D75 Inclusion Program at Comprehensive Model School Project M.S. 327",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -25068,8 +25068,8 @@
     "total_students": 627,
     "applicants_per_seat": 2.1596638655462184,
     "admissions_types": [
-      "Language Program",
-      "Educational Option"
+      "Educational Option",
+      "Language Program"
     ],
     "programs": [
       {
@@ -25525,8 +25525,8 @@
     "total_students": 327,
     "applicants_per_seat": 0.704225352112676,
     "admissions_types": [
-      "ASD / ACES",
-      "Educational Option"
+      "Educational Option",
+      "ASD / ACES"
     ],
     "programs": [
       {
@@ -26195,9 +26195,9 @@
     "total_students": 1219,
     "applicants_per_seat": 1.7620689655172415,
     "admissions_types": [
-      "District 75",
       "Educational Option",
       "Screened",
+      "D75 Inclusion",
       "Language Program"
     ],
     "programs": [
@@ -26244,7 +26244,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75X168 D75 Inclusion Program at DeWitt Clinton High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -27008,8 +27008,8 @@
     "total_students": 399,
     "applicants_per_seat": 1.3488372093023255,
     "admissions_types": [
-      "Language Program",
-      "Screened"
+      "Screened",
+      "Language Program"
     ],
     "programs": [
       {
@@ -27893,8 +27893,8 @@
     "total_students": 262,
     "applicants_per_seat": 0.45348837209302323,
     "admissions_types": [
-      "District 75",
-      "Educational Option"
+      "Educational Option",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -27941,7 +27941,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75X176 D75 Inclusion Program at Bronx Lab School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -28167,8 +28167,8 @@
     "total_students": 472,
     "applicants_per_seat": 0.32867132867132864,
     "admissions_types": [
-      "District 75",
-      "Educational Option"
+      "Educational Option",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -28215,7 +28215,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75X176 D75 Inclusion Program at High School of Computers and Technology",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -28843,8 +28843,8 @@
     "total_students": 406,
     "applicants_per_seat": 1.13,
     "admissions_types": [
-      "District 75",
-      "Educational Option"
+      "Educational Option",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -28887,7 +28887,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75X811 D75 Inclusion Program at Bronx High School for the Visual Arts",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -29109,8 +29109,8 @@
     "admissions_types": [
       "Educational Option",
       "Open",
-      "ASD / ACES",
-      "Zoned"
+      "Zoned",
+      "ASD / ACES"
     ],
     "programs": [
       {
@@ -29778,9 +29778,9 @@
     "total_students": 388,
     "applicants_per_seat": 1.7333333333333334,
     "admissions_types": [
-      "District 75",
-      "ASD / ACES",
-      "Open"
+      "Open",
+      "D75 Inclusion",
+      "ASD / ACES"
     ],
     "programs": [
       {
@@ -29822,7 +29822,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75X010 D75 Inclusion Program at Bronxdale High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -30953,8 +30953,8 @@
     "total_students": 177,
     "applicants_per_seat": 0.24719101123595505,
     "admissions_types": [
-      "District 75",
-      "Open"
+      "Open",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -30997,7 +30997,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75X723 D75 Inclusion Program at The Metropolitan High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -32612,8 +32612,8 @@
     "total_students": 128,
     "applicants_per_seat": 0.4909090909090909,
     "admissions_types": [
-      "District 75",
-      "Audition"
+      "Audition",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -32658,7 +32658,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75K369 D75 Inclusion Program at Dr. Susan S. McKinney Secondary School of the Arts",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -34339,9 +34339,9 @@
     "total_students": 558,
     "applicants_per_seat": 0.8187919463087249,
     "admissions_types": [
-      "District 75",
       "Screened",
-      "Educational Option"
+      "Educational Option",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -34384,7 +34384,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75K369 D75 Inclusion Program at George Westinghouse Career and Technical Education High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -35112,8 +35112,8 @@
     "total_students": 344,
     "applicants_per_seat": 0.875,
     "admissions_types": [
-      "ASD / ACES",
-      "Open"
+      "Open",
+      "ASD / ACES"
     ],
     "programs": [
       {
@@ -38213,8 +38213,8 @@
     "total_students": 322,
     "applicants_per_seat": 0.3010752688172043,
     "admissions_types": [
-      "District 75",
       "Educational Option",
+      "D75 Inclusion",
       "ASD / ACES"
     ],
     "programs": [
@@ -38262,7 +38262,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75K373 D75 Inclusion Program at Cobble Hill School of American Studies",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -38961,8 +38961,8 @@
     "total_students": 1349,
     "applicants_per_seat": 0.5640138408304498,
     "admissions_types": [
-      "District 75",
-      "Open"
+      "Open",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -39008,7 +39008,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75K371 D75 Inclusion Program at Sunset Park High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -39127,8 +39127,8 @@
     "total_students": 686,
     "applicants_per_seat": 16.385826771653544,
     "admissions_types": [
-      "ASD / ACES",
-      "Screened"
+      "Screened",
+      "ASD / ACES"
     ],
     "programs": [
       {
@@ -39289,10 +39289,10 @@
     "total_students": 352,
     "applicants_per_seat": 0.07126948775055679,
     "admissions_types": [
-      "ASD / ACES",
       "Educational Option",
       "Screened",
-      "Zoned"
+      "Zoned",
+      "ASD / ACES"
     ],
     "programs": [
       {
@@ -39772,8 +39772,8 @@
     "total_students": 226,
     "applicants_per_seat": 0.9122807017543859,
     "admissions_types": [
-      "District 75",
-      "Educational Option"
+      "Educational Option",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -39819,7 +39819,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75K140 D75 Inclusion Program at Brooklyn Academy of Global Finance, The",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -39932,8 +39932,8 @@
     "applicants_per_seat": 0.21951219512195122,
     "admissions_types": [
       "Educational Option",
-      "ASD / ACES",
-      "Open"
+      "Open",
+      "ASD / ACES"
     ],
     "programs": [
       {
@@ -42073,11 +42073,11 @@
     "total_students": 1324,
     "applicants_per_seat": 0.9848484848484849,
     "admissions_types": [
-      "District 75",
-      "Language Program",
       "Educational Option",
-      "ASD / ACES",
-      "Screened"
+      "Screened",
+      "D75 Inclusion",
+      "Language Program",
+      "ASD / ACES"
     ],
     "programs": [
       {
@@ -42122,7 +42122,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75K753 D75 Inclusion Program at Clara Barton High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -43605,8 +43605,8 @@
     "total_students": 382,
     "applicants_per_seat": 0.8876404494382022,
     "admissions_types": [
-      "District 75",
-      "Educational Option"
+      "Educational Option",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -43651,7 +43651,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75K753 D75 Inclusion Program at High School for Medical Profressions",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -44044,8 +44044,8 @@
     "total_students": 364,
     "applicants_per_seat": 1.0918367346938775,
     "admissions_types": [
-      "District 75",
-      "Screened"
+      "Screened",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -44089,7 +44089,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75K077 D75 Inclusion Program at East New York Family Academy",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -44204,8 +44204,8 @@
     "total_students": 270,
     "applicants_per_seat": 0.5517241379310345,
     "admissions_types": [
-      "District 75",
-      "Educational Option"
+      "Educational Option",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -44248,7 +44248,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75K053 D75 Inclusion Program at Spring Creek Community School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -44851,8 +44851,8 @@
     "total_students": 207,
     "applicants_per_seat": 0.5,
     "admissions_types": [
-      "Language Program",
-      "Open"
+      "Open",
+      "Language Program"
     ],
     "programs": [
       {
@@ -46738,10 +46738,10 @@
     "total_students": 3212,
     "applicants_per_seat": 3.5793814432989692,
     "admissions_types": [
-      "District 75",
       "Educational Option",
       "Screened",
-      "Zoned"
+      "Zoned",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -46785,7 +46785,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75K370 D75 Inclusion Program at New Utrecht High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -47173,9 +47173,9 @@
     "total_students": 1209,
     "applicants_per_seat": 2.9659574468085106,
     "admissions_types": [
-      "District 75",
-      "ASD / ACES",
-      "Educational Option"
+      "Educational Option",
+      "D75 Inclusion",
+      "ASD / ACES"
     ],
     "programs": [
       {
@@ -47218,7 +47218,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75K371 D75 Inclusion Program at High School of Telecommunication Arts and Technology",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -47765,9 +47765,9 @@
     "total_students": 3412,
     "applicants_per_seat": 1.7109704641350212,
     "admissions_types": [
-      "ASD / ACES",
       "Educational Option",
-      "Zoned"
+      "Zoned",
+      "ASD / ACES"
     ],
     "programs": [
       {
@@ -48577,8 +48577,8 @@
     "total_students": 622,
     "applicants_per_seat": 0.8768115942028986,
     "admissions_types": [
-      "District 75",
-      "Educational Option"
+      "Educational Option",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -48624,7 +48624,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75K771 D75 Inclusion Program at Rachel Carson High School for Coastal Studies",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -48911,11 +48911,11 @@
     "total_students": 2228,
     "applicants_per_seat": 0.7021630615640599,
     "admissions_types": [
-      "District 75",
       "Screened",
       "Educational Option",
       "Audition",
-      "Zoned"
+      "Zoned",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -48958,7 +48958,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75K053 D75 Inclusion Program at Abraham Lincoln High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -49487,10 +49487,10 @@
     "total_students": 3490,
     "applicants_per_seat": 2.872703412073491,
     "admissions_types": [
-      "District 75",
-      "Language Program",
       "Educational Option",
-      "Audition"
+      "Audition",
+      "D75 Inclusion",
+      "Language Program"
     ],
     "programs": [
       {
@@ -49536,7 +49536,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75K811 D75 Inclusion Program at Edward R. Murrow High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -49947,12 +49947,12 @@
     "total_students": 2210,
     "applicants_per_seat": 1.4707207207207207,
     "admissions_types": [
-      "District 75",
-      "Language Program",
-      "ASD / ACES",
       "Screened",
       "Educational Option",
-      "Open"
+      "Open",
+      "D75 Inclusion",
+      "Language Program",
+      "ASD / ACES"
     ],
     "programs": [
       {
@@ -49999,7 +49999,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75K721 D75 Inclusion Program at John Dewey High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -50714,8 +50714,8 @@
     "total_students": 644,
     "applicants_per_seat": 0.5654008438818565,
     "admissions_types": [
-      "District 75",
       "Educational Option",
+      "D75 Inclusion",
       "ASD / ACES"
     ],
     "programs": [
@@ -50762,7 +50762,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75K370 D75 Inclusion Program at William E. Grady Career and Technical Education High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -51118,8 +51118,8 @@
     "total_students": 515,
     "applicants_per_seat": 2.1294117647058823,
     "admissions_types": [
-      "District 75",
-      "Educational Option"
+      "Educational Option",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -51163,7 +51163,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75K771 D75 Inclusion Program at Brooklyn Studio Secondary School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -51815,8 +51815,8 @@
     "total_students": 953,
     "applicants_per_seat": 6.238095238095238,
     "admissions_types": [
-      "District 75",
-      "Screened"
+      "Screened",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -51863,7 +51863,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75K053 D75 Inclusion Program at Leon M. Goldstein High School for the Sciences",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -52115,8 +52115,8 @@
     "total_students": 480,
     "applicants_per_seat": 0.75,
     "admissions_types": [
-      "ASD / ACES",
-      "Educational Option"
+      "Educational Option",
+      "ASD / ACES"
     ],
     "programs": [
       {
@@ -53857,8 +53857,8 @@
     "applicants_per_seat": 0.8343373493975904,
     "admissions_types": [
       "Educational Option",
-      "ASD / ACES",
-      "Zoned"
+      "Zoned",
+      "ASD / ACES"
     ],
     "programs": [
       {
@@ -55934,8 +55934,8 @@
     "total_students": 379,
     "applicants_per_seat": 2.953125,
     "admissions_types": [
-      "ASD / ACES",
-      "Educational Option"
+      "Educational Option",
+      "ASD / ACES"
     ],
     "programs": [
       {
@@ -57381,11 +57381,11 @@
     "total_students": 2882,
     "applicants_per_seat": 2.819298245614035,
     "admissions_types": [
-      "District 75",
       "Screened",
       "Educational Option",
       "Audition",
-      "Zoned"
+      "Zoned",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -57432,7 +57432,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75Q993 D75 Inclusion Program at Benjamin N. Cardozo High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -57904,11 +57904,11 @@
     "total_students": 4577,
     "applicants_per_seat": 7.137003841229193,
     "admissions_types": [
-      "District 75",
       "Screened",
-      "ASD / ACES",
       "Educational Option",
-      "Zoned"
+      "Zoned",
+      "D75 Inclusion",
+      "ASD / ACES"
     ],
     "programs": [
       {
@@ -57951,7 +57951,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75Q177 D75 Inclusion Program at Francis Lewis High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -58641,11 +58641,11 @@
     "total_students": 2980,
     "applicants_per_seat": 4.065693430656935,
     "admissions_types": [
-      "District 75",
       "Educational Option",
       "Audition",
       "Screened with Assessment",
-      "Zoned"
+      "Zoned",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -58688,7 +58688,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75Q811 D75 Inclusion Program at Bayside High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -59139,9 +59139,9 @@
     "total_students": 841,
     "applicants_per_seat": 0.6413043478260869,
     "admissions_types": [
-      "District 75",
-      "ASD / ACES",
-      "Educational Option"
+      "Educational Option",
+      "D75 Inclusion",
+      "ASD / ACES"
     ],
     "programs": [
       {
@@ -59188,7 +59188,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75Q811 D75 Inclusion Program at Queens High School of Teaching, Liberal Arts and the Sciences",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -59618,8 +59618,8 @@
     "total_students": 845,
     "applicants_per_seat": 1.193103448275862,
     "admissions_types": [
-      "District 75",
       "Educational Option",
+      "D75 Inclusion",
       "ASD / ACES"
     ],
     "programs": [
@@ -59664,7 +59664,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75Q256 D75 Inclusion Program at Channel View School for Research",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -61887,8 +61887,8 @@
     "total_students": 1076,
     "applicants_per_seat": 5.548543689320389,
     "admissions_types": [
-      "District 75",
-      "Screened"
+      "Screened",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -61931,7 +61931,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75Q233 D75 Inclusion Program at High School for Construction Trades, Engineering and Architecture",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -62847,8 +62847,8 @@
       "Educational Option",
       "Audition",
       "Screened",
-      "Language Program",
-      "Zoned"
+      "Zoned",
+      "Language Program"
     ],
     "programs": [
       {
@@ -63274,9 +63274,9 @@
     "admissions_types": [
       "Audition",
       "Educational Option",
-      "ASD / ACES",
       "Screened",
-      "Zoned"
+      "Zoned",
+      "ASD / ACES"
     ],
     "programs": [
       {
@@ -63674,9 +63674,9 @@
     "total_students": 2138,
     "applicants_per_seat": 7.388324873096447,
     "admissions_types": [
-      "District 75",
       "Screened",
       "Educational Option",
+      "D75 Inclusion",
       "ASD / ACES"
     ],
     "programs": [
@@ -63721,7 +63721,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75Q752 D75 Inclusion Program at Thomas A. Edison Career and Technical Education High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -64266,8 +64266,8 @@
     "total_students": 1068,
     "applicants_per_seat": 2.0833333333333335,
     "admissions_types": [
-      "District 75",
-      "Zoned"
+      "Zoned",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -64314,7 +64314,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75Q233 D75 Inclusion Program at Queens Metropolitan High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -64547,8 +64547,8 @@
     "total_students": 552,
     "applicants_per_seat": 0.302158273381295,
     "admissions_types": [
-      "District 75",
-      "Educational Option"
+      "Educational Option",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -64594,7 +64594,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75Q752 D75 Inclusion Program at High School for Law Enforcement and Public Safety",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -66815,8 +66815,8 @@
     "total_students": 490,
     "applicants_per_seat": 1.8020833333333333,
     "admissions_types": [
-      "District 75",
-      "Educational Option"
+      "Educational Option",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -66863,7 +66863,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75Q277 D75 Inclusion Program at Energy Tech High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -67108,8 +67108,8 @@
     "total_students": 548,
     "applicants_per_seat": 1.1810344827586208,
     "admissions_types": [
-      "ASD / ACES",
-      "Educational Option"
+      "Educational Option",
+      "ASD / ACES"
     ],
     "programs": [
       {
@@ -67271,8 +67271,8 @@
     "total_students": 182,
     "applicants_per_seat": 1.0159574468085106,
     "admissions_types": [
-      "District 75",
-      "Educational Option"
+      "Educational Option",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -67307,7 +67307,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75Q993 D75 Inclusion Program at Motion Picture Technical High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -67871,8 +67871,8 @@
     "admissions_types": [
       "Educational Option",
       "Screened",
-      "Language Program",
-      "Zoned"
+      "Zoned",
+      "Language Program"
     ],
     "programs": [
       {
@@ -68831,8 +68831,8 @@
     "total_students": 781,
     "applicants_per_seat": 0.5372340425531915,
     "admissions_types": [
-      "District 75",
-      "Educational Option"
+      "Educational Option",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -68874,7 +68874,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75Q721 D75 Inclusion Program at Information Technology High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -69813,8 +69813,8 @@
     "total_students": 490,
     "applicants_per_seat": 2.020408163265306,
     "admissions_types": [
-      "District 75",
-      "Educational Option"
+      "Educational Option",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -69856,7 +69856,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75R037 D75 Inclusion Program at Michael J. Petrides School, The",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -70112,9 +70112,9 @@
     "admissions_types": [
       "Educational Option",
       "Screened",
+      "Zoned",
       "ASD / ACES",
-      "District 75",
-      "Zoned"
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -70653,7 +70653,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "New Dorp High School D75 Inclusion Program",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -70774,10 +70774,10 @@
     "total_students": 1700,
     "applicants_per_seat": 0.6314553990610329,
     "admissions_types": [
-      "District 75",
       "Screened",
       "Educational Option",
-      "Zoned"
+      "Zoned",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -70823,7 +70823,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75R025 D75 Inclusion Program at Port Richmond High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -71390,11 +71390,11 @@
     "total_students": 2425,
     "applicants_per_seat": 0.8363939899833055,
     "admissions_types": [
-      "District 75",
       "Open",
       "Screened",
       "Educational Option",
-      "Zoned"
+      "Zoned",
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -71440,7 +71440,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75R025 D75 Inclusion Program at Curtis High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -72062,9 +72062,9 @@
       "Open",
       "Educational Option",
       "Screened",
+      "Zoned",
       "ASD / ACES",
-      "District 75",
-      "Zoned"
+      "D75 Inclusion"
     ],
     "programs": [
       {
@@ -72350,7 +72350,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "Tottenville High School D75 Inclusion Program",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
@@ -72523,8 +72523,8 @@
       "Screened",
       "Educational Option",
       "Audition",
-      "ASD / ACES",
-      "Zoned"
+      "Zoned",
+      "ASD / ACES"
     ],
     "programs": [
       {
@@ -73173,9 +73173,9 @@
     "total_students": 625,
     "applicants_per_seat": 0.6535947712418301,
     "admissions_types": [
-      "District 75",
       "Educational Option",
       "Screened",
+      "D75 Inclusion",
       "ASD / ACES"
     ],
     "programs": [
@@ -73218,7 +73218,7 @@
           "admissions_cycle": "2025-26 School Year"
         },
         "program": "75R721 D75 Inclusion Program at Ralph R. McKee Career and Technical Education High School",
-        "admissions_type": "District 75",
+        "admissions_type": "D75 Inclusion",
         "raw_method": "D75 Special Education Inclusive Services"
       },
       {
