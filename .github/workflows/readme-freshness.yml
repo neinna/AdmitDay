@@ -1,0 +1,41 @@
+name: README freshness
+
+on:
+  schedule:
+    - cron: '0 13 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  readme-freshness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: File a README refresh issue if it is behind main
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title='README: bring up to date with main'
+          sh scripts/readme-staleness.sh > staleness.txt
+          count=$(head -n 1 staleness.txt)
+          echo "README is $count non-data commits behind main"
+          if [ "$count" -le 10 ]; then
+            exit 0
+          fi
+          open=$(gh issue list --state open --search "in:title \"$title\"" --json title --jq "[.[] | select(.title == \"$title\")] | length")
+          if [ "$open" -gt 0 ]; then
+            echo "An open refresh issue already exists"
+            exit 0
+          fi
+          {
+            echo "README.md is $count commits behind main. Read README.md, then correct every statement that is no longer true of the code on main. Change only README.md. Keep its sections and order; remove or fix wrong lines rather than adding new sections. Commits since the README last changed:"
+            echo
+            tail -n +2 staleness.txt
+          } > issue-body.md
+          gh issue create --label agent-ok --title "$title" --body-file issue-body.md
