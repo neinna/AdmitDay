@@ -5,13 +5,15 @@ These are the shared rules for any coding agent working in this repo: Claude Cod
 ## Source Of Truth
 
 - Treat GitHub `main` as the live code truth. Local checkouts are caches and may be stale after agent-built PRs; refresh from GitHub before making or reviewing code claims.
-- Treat Notion as the live roadmap and task truth. Private or local planning docs are caches unless explicitly refreshed from Notion.
-- When local files, GitHub, and Notion disagree, state the conflict and prefer GitHub for code state and Notion for roadmap and task state.
+- Treat Linear (workspace `admitday`, issues `ADM-N`) as the live backlog and task truth: epics, their discovery, and work not yet filed for the agent.
+- Treat Notion as the live product truth: the PRD, its roadmap section, and the **AdmitDay — Decisions** table.
+- GitHub issues are only the specs the coordinator builds (`agent-ok`). Private or local planning docs are caches unless explicitly refreshed from their source.
+- When local files, GitHub, Linear, and Notion disagree, state the conflict and prefer GitHub for code state, Linear for task state, and Notion for product decisions.
 
 ## Core Rules
 
-- Treat GitHub `main` as the live code source of truth, Notion as the live roadmap/task source of truth, and local checkouts or local docs as caches unless explicitly refreshed from their source.
-- If GitHub, Notion, and local files disagree, state the conflict. Prefer GitHub for code state and Notion for roadmap/task state.
+- Treat GitHub `main` as the live code source of truth, Linear as the task source of truth, Notion as the product source of truth, and local checkouts or local docs as caches unless explicitly refreshed from their source.
+- If they disagree, state the conflict. Prefer GitHub for code, Linear for tasks, Notion for product decisions.
 - **Never modify `data/schools.json`.** It is curated source data.
 - The shape of the school data is in `data/schema-summary.json` (field names, types, presence counts, examples). Read that instead of opening `schools.json` or `data/school-embeddings.json` to find out what a field is called.
 - Filtering logic lives in `lib/school-list-utils.ts` — look there first for anything about school list filtering.
@@ -58,7 +60,7 @@ The metric is **cost per merged PR**, not cost per attempt. On 2026-09-17 this r
 
 A conversation that produces more than one concern, or that needs any discovery, becomes an **epic** first, not an issue.
 
-- **The epic is a record, never a task.** Label it `epic`. It never gets `agent-ok`, and the coordinator never picks it up. It holds the decision, why it was made, what was discovered, and links to its children.
+- **The epic is a record, never a task.** It lives in Linear (for example ADM-6); its children are filed on GitHub. An epic still on GitHub is labelled `epic`. It never gets `agent-ok`, and the coordinator never picks it up. It holds the decision, why it was made, what was discovered, and links to its children.
 - **Discovery happens before the children are filed, and its output lives in the epic.** Field names, sample records, column lists, API shapes, exact values. A child issue that still has to explore pays for that exploration inside a capped run, and re-reads the result on every later turn.
 - **One concern per child.** A scraper change and the screen that shows the new field are two children. A data migration and the cleanup that follows it are two children.
 - **Children carry the answer, not the pointer.** Exact values, exact file paths, exact thresholds, copied from the epic.
