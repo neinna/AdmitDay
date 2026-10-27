@@ -71,10 +71,8 @@ CompAnalysis.md
 # Local personal tool — not part of the app
 domaincheck.py
 
-# Local Claude Code state (worktrees, local settings) — never commit.
-# settings.json is the exception: shared allow rules every session reads.
-.claude/*
-!.claude/settings.json
+# Local Claude Code state (worktrees, local settings) — never commit
+.claude/
 
 # Private planning/strategy lives in the separate private Planning repo
 planning-docs/
