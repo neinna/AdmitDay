@@ -43,6 +43,29 @@ export function scoreNoAdmissionsOddsLanguage(answer: string): ScorerResult {
 }
 
 /**
+ * School names the answer actually names. 16 names sit inside longer ones
+ * ("Park East High School" in "Central Park East High School"), so a plain
+ * substring check credits the answer with naming both. Longest names claim
+ * their text first; a shorter name only counts where it appears outside
+ * every longer match.
+ */
+export function findNamedSchools(answer: string, schoolNames: string[]): Set<string> {
+  const byLength = Array.from(new Set(schoolNames)).sort((a, b) => b.length - a.length)
+  const claimed: [number, number][] = []
+  const named = new Set<string>()
+  for (const name of byLength) {
+    if (!name) continue
+    for (let at = answer.indexOf(name); at !== -1; at = answer.indexOf(name, at + 1)) {
+      const end = at + name.length
+      if (claimed.some(([start, stop]) => at >= start && end <= stop)) continue
+      claimed.push([at, end])
+      named.add(name)
+    }
+  }
+  return named
+}
+
+/**
  * Every school named in the answer must be one of the schools retrieval
  * actually returned for this question. `allSchoolNames` is the full universe
  * of names the data can produce — without it, a fabricated name and a real
@@ -54,7 +77,7 @@ export function scoreHallucination(
   allSchoolNames: string[]
 ): ScorerResult {
   const retrieved = new Set(retrievedNames)
-  const named = allSchoolNames.filter((name) => answer.includes(name))
+  const named = Array.from(findNamedSchools(answer, [...allSchoolNames, ...retrievedNames]))
   const hallucinated = named.filter((name) => !retrieved.has(name))
   return {
     pass: hallucinated.length === 0,
@@ -63,11 +86,33 @@ export function scoreHallucination(
 }
 
 /** No school retrieval returned may be silently missing from the answer. */
-export function scoreCoverage(answer: string, retrievedNames: string[]): ScorerResult {
-  const dropped = retrievedNames.filter((name) => !answer.includes(name))
+export function scoreCoverage(
+  answer: string,
+  retrievedNames: string[],
+  allSchoolNames: string[] = retrievedNames
+): ScorerResult {
+  const named = findNamedSchools(answer, [...allSchoolNames, ...retrievedNames])
+  const dropped = retrievedNames.filter((name) => !named.has(name))
   return {
     pass: dropped.length === 0,
     detail: dropped.length ? `dropped from answer: ${dropped.join(', ')}` : undefined,
+  }
+}
+
+/**
+ * Every school retrieval returned must get a reason. The answer is built
+ * from these reasons, one line per school (lib/ask.ts), so this is what the
+ * parent sees; comparing DBNs needs no name matching.
+ */
+export function scoreReasonCoverage(
+  retrieved: { dbn: string; name: string }[],
+  reasons: { dbn: string }[]
+): ScorerResult {
+  const reasoned = new Set(reasons.map((r) => r.dbn))
+  const dropped = retrieved.filter((school) => !reasoned.has(school.dbn))
+  return {
+    pass: dropped.length === 0,
+    detail: dropped.length ? `no reason for: ${dropped.map((s) => s.name).join(', ')}` : undefined,
   }
 }
 
