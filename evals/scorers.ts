@@ -43,12 +43,6 @@ export function scoreNoAdmissionsOddsLanguage(answer: string): ScorerResult {
 }
 
 /**
- * Every school named in the answer must be one of the schools retrieval
- * actually returned for this question. `allSchoolNames` is the full universe
- * of names the data can produce — without it, a fabricated name and a real
- * but unretrieved school would look identical.
- */
-/**
  * School names the answer actually names. 16 names sit inside longer ones
  * ("Park East High School" in "Central Park East High School"), so a plain
  * substring check credits the answer with naming both. Longest names claim
@@ -71,6 +65,12 @@ export function findNamedSchools(answer: string, schoolNames: string[]): Set<str
   return named
 }
 
+/**
+ * Every school named in the answer must be one of the schools retrieval
+ * actually returned for this question. `allSchoolNames` is the full universe
+ * of names the data can produce — without it, a fabricated name and a real
+ * but unretrieved school would look identical.
+ */
 export function scoreHallucination(
   answer: string,
   retrievedNames: string[],
