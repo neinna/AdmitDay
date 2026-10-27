@@ -3,6 +3,7 @@
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from "@sentry/nextjs";
+import { isNonBrowserRuntimeEvent } from "./lib/sentry-filters";
 
 // Only Vercel deployments should report to Sentry. Without this guard, the
 // coding agent's own VPS checkout — which deliberately has no secrets (#232)
@@ -53,6 +54,11 @@ if (process.env.NEXT_PUBLIC_VERCEL_ENV) {
     // put that in a third-party error store for no debugging benefit we need.
     // Matches sentry.server.config.ts, which already sets this to false.
     sendDefaultPii: false,
+
+    // Drop errors thrown inside a non-browser runtime (see lib/sentry-filters.ts).
+    beforeSend(event) {
+      return isNonBrowserRuntimeEvent(event) ? null : event;
+    },
   });
 }
 
