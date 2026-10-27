@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": ["mcp__Linear", "mcp__Notion", "mcp__github"],
+    "ask": [
+      "mcp__Linear__delete_attachment",
+      "mcp__Linear__delete_comment",
+      "mcp__Linear__delete_diff_comment",
+      "mcp__Linear__delete_status_update",
+      "mcp__Notion__notion-delete-pages",
+      "mcp__Notion__notion-delete-databases",
+      "mcp__Notion__notion-delete-comment",
+      "mcp__Notion__notion-calendar-cancel-events",
+      "mcp__github__delete_file",
+      "mcp__github__merge_pull_request"
+    ]
+  }
+}
