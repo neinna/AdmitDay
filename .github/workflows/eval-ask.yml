@@ -59,3 +59,14 @@ jobs:
           EVAL_LANGFUSE_HOST: https://us.cloud.langfuse.com
           EVAL_TRIGGER: ${{ github.event_name == 'schedule' && 'weekly' || github.event_name == 'pull_request' && 'pull_request' || 'manual' }}
         run: npm run eval:ask
+
+      # The per-case results (which case failed which scorer, and why) are
+      # otherwise only in Langfuse. Kept on failure too: that is when they
+      # are needed.
+      - name: Upload eval results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: evals/results/
+          if-no-files-found: ignore

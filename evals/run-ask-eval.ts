@@ -118,7 +118,7 @@ function scoreAnswer(
 
   if (DESCRIPTIVE_GUARDRAILS.has(result.guardrail)) {
     scores.hallucination = scoreHallucination(result.answer, retrievedNames, allSchoolNames);
-    scores.coverage = scoreCoverage(result.answer, retrievedNames);
+    scores.coverage = scoreCoverage(result.answer, retrievedNames, allSchoolNames);
     scores.missingDataNotShownAsZero = scoreMissingDataNotShownAsZero(result.answer, retrievedChunks);
   } else {
     scores.hallucination = { pass: true, skipped: true };
