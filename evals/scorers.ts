@@ -99,6 +99,23 @@ export function scoreCoverage(
   }
 }
 
+/**
+ * Every school retrieval returned must get a reason. The answer is built
+ * from these reasons, one line per school (lib/ask.ts), so this is what the
+ * parent sees; comparing DBNs needs no name matching.
+ */
+export function scoreReasonCoverage(
+  retrieved: { dbn: string; name: string }[],
+  reasons: { dbn: string }[]
+): ScorerResult {
+  const reasoned = new Set(reasons.map((r) => r.dbn))
+  const dropped = retrieved.filter((school) => !reasoned.has(school.dbn))
+  return {
+    pass: dropped.length === 0,
+    detail: dropped.length ? `no reason for: ${dropped.map((s) => s.name).join(', ')}` : undefined,
+  }
+}
+
 // A genuine DOE-reported 0 essentially never appears in retrieved chunk text
 // for these stats (see __tests__/rule-missing-data-never-zero.test.ts for the
 // school-detail-page version of the same rule). This is the ask-box
