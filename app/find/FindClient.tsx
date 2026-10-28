@@ -617,7 +617,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
           </div>
         </Link>
         <div className="flex items-center gap-[28px]">
-          <nav className="flex items-center gap-[28px] text-[14.5px] text-muted">
+          <nav className="flex items-baseline gap-[28px] text-[14.5px] text-muted">
             <span className="text-ink font-medium border-b-2 border-accent pb-[3px]">Find</span>
             <Link href="/shortlist" className="hover:text-ink transition-colors duration-[120ms] ease-out">
               Shortlist

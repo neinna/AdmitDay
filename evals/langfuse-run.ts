@@ -18,7 +18,8 @@
  * the exit code.
  */
 
-import type { Langfuse as LangfuseClient } from "langfuse";
+import { randomBytes, randomUUID } from "crypto";
+import { LangfuseClient } from "@langfuse/client";
 import type { EvalTrigger, RunSummary } from "./gate";
 import { pickLatestWeeklyBaseline } from "./gate";
 
@@ -51,8 +52,7 @@ function getClient(): LangfuseClient {
     );
   }
 
-  const { Langfuse } = require("langfuse") as typeof import("langfuse");
-  return new Langfuse({
+  return new LangfuseClient({
     publicKey,
     secretKey,
     baseUrl: process.env.EVAL_LANGFUSE_HOST || undefined,
@@ -61,45 +61,65 @@ function getClient(): LangfuseClient {
 
 /** Records one dataset run: upserts the dataset and its items, then one trace+score+run-item per case. */
 export async function recordDatasetRun(params: RecordRunParams): Promise<void> {
-  const langfuse = getClient();
+  const client = getClient();
 
-  await langfuse.createDataset(DATASET_NAME);
+  try {
+    await client.api.datasets.create({ name: DATASET_NAME });
+  } catch (err) {
+    // 409 means the dataset already exists, which is what we want.
+    if ((err as { statusCode?: number; status?: number })?.statusCode !== 409 &&
+        (err as { status?: number })?.status !== 409) {
+      throw err;
+    }
+  }
 
   const runMetadata = { trigger: params.trigger, commitSha: params.commitSha, summary: params.summary };
 
   for (const result of params.results) {
-    await langfuse.createDatasetItem({
+    await client.api.datasetItems.create({
       datasetName: DATASET_NAME,
       id: result.id,
       input: { question: result.question, filters: result.filters ?? null },
     });
 
-    const trace = langfuse.trace({
-      name: `ask-eval:${result.id}`,
-      tags: ["eval"],
-      metadata: { kind: result.kind, guardrail: result.guardrail, error: result.error },
+    const traceId = randomBytes(16).toString("hex");
+
+    await client.api.ingestion.batch({
+      batch: [
+        {
+          type: "trace-create",
+          id: randomUUID(),
+          timestamp: new Date().toISOString(),
+          body: {
+            id: traceId,
+            name: `ask-eval:${result.id}`,
+            tags: ["eval"],
+            metadata: { kind: result.kind, guardrail: result.guardrail, error: result.error },
+          },
+        },
+      ],
     });
 
     for (const [scorerName, score] of Object.entries(result.scores)) {
       if (score.skipped) continue;
-      trace.score({ name: scorerName, value: score.pass ? 1 : 0, comment: score.detail });
+      client.score.create({ traceId, name: scorerName, value: score.pass ? 1 : 0, comment: score.detail });
     }
 
-    await langfuse.createDatasetRunItem({
+    await client.api.datasetRunItems.create({
       runName: params.runName,
       datasetItemId: result.id,
-      traceId: trace.id,
+      traceId,
       metadata: runMetadata,
     });
   }
 
-  await langfuse.flushAsync();
+  await client.flush();
 }
 
 /** The last weekly run's per-scorer summary on main, or null if none has run yet. */
 export async function fetchWeeklyBaselineSummary(): Promise<RunSummary | null> {
-  const langfuse = getClient();
-  const { data: runs } = await langfuse.getDatasetRuns(DATASET_NAME);
+  const client = getClient();
+  const { data: runs } = await client.api.datasets.getRuns(DATASET_NAME);
   return pickLatestWeeklyBaseline(runs);
 }
 
