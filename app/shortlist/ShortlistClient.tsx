@@ -2,6 +2,7 @@
 
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
+import { SignInButton } from '@clerk/nextjs'
 import { usePostHog } from 'posthog-js/react'
 import { citywidePercentile, trackLabel } from '@/lib/school-list-utils'
 import { applicantsPerSeatDotColor } from '@/app/find/FindClient'
@@ -271,7 +272,12 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
           <h1 className="font-display font-bold text-[40px] leading-[1.04] tracking-[-0.038em] text-ink">
             Shortlist
           </h1>
-          <p className="mt-5 text-[15px] text-muted">Sign in to see your saved schools.</p>
+          <p className="mt-5 text-[15px] text-muted">
+            <SignInButton mode="modal">
+              <button type="button" className="text-accent underline underline-offset-[3px]">Sign in</button>
+            </SignInButton>{' '}
+            to see your saved schools.
+          </p>
         </div>
       </div>
     )

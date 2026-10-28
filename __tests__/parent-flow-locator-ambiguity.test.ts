@@ -24,6 +24,7 @@ describe('e2e/parent-flow.spec.ts — /shortlist locator cannot match header chr
   })
 
   it('the asserted copy matches what ShortlistClient actually renders when signed out', () => {
-    expect(shortlistClient).toContain('Sign in to see your saved schools.')
+    expect(shortlistClient).toContain('Sign in</button>')
+    expect(shortlistClient).toContain('to see your saved schools.')
   })
 })
