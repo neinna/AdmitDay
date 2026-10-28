@@ -746,8 +746,8 @@ export default function FindClient({ schools, initialFilters }: Props) {
             )}
           </div>
 
-          <div className="flex items-baseline justify-between px-9 py-4 bg-surface-2 border-b border-rule">
-            <div>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-3 px-9 py-4 bg-surface-2 border-b border-rule">
+            <div className="min-w-0">
               <div className="flex items-baseline gap-2">
                 <span className="font-mono text-[22px] font-medium text-ink tracking-[-0.02em]">
                   {ranked.length}
@@ -764,7 +764,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
                 Schools admitting 9th graders through this year&rsquo;s NYC high school admissions.
               </p>
             </div>
-            <div className="font-mono text-[11.5px] tracking-[0.1em] uppercase text-faint">
+            <div className="shrink-0 whitespace-nowrap font-mono text-[11.5px] tracking-[0.1em] uppercase text-faint">
               {askReasons.length > 0 ? (
                 'Sorted by your ask'
               ) : (
