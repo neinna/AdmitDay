@@ -13,28 +13,41 @@
  *     down the caller, which never awaits it.
  */
 
-const mockTraceFn = jest.fn()
-const mockGenerationFn = jest.fn()
-const mockEndFn = jest.fn()
-const mockFlushAsync = jest.fn()
-const mockLangfuseCtor = jest.fn()
+// recordLlmTrace sends through Langfuse v5 (issue #530): @langfuse/tracing
+// for the spans, lib/langfuse-otel for the isolated tracer provider.
+const mockInit = jest.fn()
+const mockFlush = jest.fn()
+const mockPropagate = jest.fn()
+const mockStartObservation = jest.fn()
+const mockChildObservation = jest.fn()
+const mockRootEnd = jest.fn()
+const mockChildEnd = jest.fn()
+const mockCaptureException = jest.fn()
 
-jest.mock('langfuse', () => ({
-  Langfuse: jest.fn().mockImplementation((...args: unknown[]) => {
-    mockLangfuseCtor(...args)
+jest.mock('@/lib/langfuse-otel', () => ({
+  initLangfuseTracing: () => mockInit(),
+  forceFlushLangfuse: () => mockFlush(),
+}))
+
+jest.mock('@langfuse/tracing', () => ({
+  propagateAttributes: (params: unknown, fn: () => unknown) => {
+    mockPropagate(params)
+    return fn()
+  },
+  startObservation: (...args: unknown[]) => {
+    mockStartObservation(...args)
     return {
-      trace: (...traceArgs: unknown[]) => {
-        mockTraceFn(...traceArgs)
-        return {
-          generation: (...genArgs: unknown[]) => {
-            mockGenerationFn(...genArgs)
-            return { end: mockEndFn }
-          },
-        }
+      startObservation: (...childArgs: unknown[]) => {
+        mockChildObservation(...childArgs)
+        return { end: mockChildEnd }
       },
-      flushAsync: (...flushArgs: unknown[]) => mockFlushAsync(...flushArgs),
+      end: mockRootEnd,
     }
-  }),
+  },
+}))
+
+jest.mock('@sentry/nextjs', () => ({
+  captureException: (...args: unknown[]) => mockCaptureException(...args),
 }))
 
 import { buildTracePayload } from '@/lib/trace'
@@ -127,51 +140,47 @@ describe('recordLlmTrace failure handling', () => {
 
   beforeEach(() => {
     jest.resetModules()
-    mockTraceFn.mockReset()
-    mockGenerationFn.mockReset()
-    mockEndFn.mockReset()
-    mockFlushAsync.mockReset()
-    mockLangfuseCtor.mockReset()
-    process.env = { ...ORIGINAL_ENV }
+    for (const m of [mockInit, mockFlush, mockPropagate, mockStartObservation, mockChildObservation, mockRootEnd, mockChildEnd, mockCaptureException]) {
+      m.mockReset()
+    }
+    mockInit.mockReturnValue(true)
+    mockFlush.mockResolvedValue(undefined)
+    process.env = { ...ORIGINAL_ENV, LANGFUSE_APP_PUBLIC_KEY: 'pk', LANGFUSE_APP_SECRET_KEY: 'sk' }
   })
 
   afterAll(() => {
     process.env = ORIGINAL_ENV
   })
 
-  it('never throws and swallows a Langfuse flush failure (bad host / auth rejection)', async () => {
-    process.env.LANGFUSE_APP_PUBLIC_KEY = 'pk'
-    process.env.LANGFUSE_APP_SECRET_KEY = 'sk'
-    mockFlushAsync.mockRejectedValue(new Error('getaddrinfo ENOTFOUND bad.host'))
+  it('never throws on a Langfuse flush failure, and reports it once to Sentry', async () => {
+    mockFlush.mockRejectedValue(new Error('getaddrinfo ENOTFOUND bad.host'))
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => {})
 
     const { recordLlmTrace } = await import('@/lib/trace')
-
     expect(() =>
       recordLlmTrace({ route: 'find_ask', sessionId: 's1', latencyMs: 5, outcome: 'ok' })
     ).not.toThrow()
 
-    // Let the rejected flushAsync promise settle inside the module's own
-    // .catch() — if it were unhandled, this test process would report an
-    // unhandled rejection.
     await new Promise((resolve) => setTimeout(resolve, 10))
+    expect(warn).toHaveBeenCalledTimes(1)
+    expect(mockCaptureException).toHaveBeenCalledTimes(1)
+    warn.mockRestore()
   })
 
-  it('never throws when the Langfuse constructor itself throws', async () => {
-    process.env.LANGFUSE_APP_PUBLIC_KEY = 'pk'
-    process.env.LANGFUSE_APP_SECRET_KEY = 'sk'
-    const langfuseModule = jest.requireMock('langfuse') as { Langfuse: jest.Mock }
-    langfuseModule.Langfuse.mockImplementationOnce(() => {
-      throw new Error('bad config')
-    })
+  it('never throws and sends nothing when the tracer provider cannot start', async () => {
+    mockInit.mockReturnValue(false)
 
     const { recordLlmTrace } = await import('@/lib/trace')
     expect(() =>
       recordLlmTrace({ route: 'find_ask', sessionId: 's1', latencyMs: 5, outcome: 'ok' })
     ).not.toThrow()
-    expect(mockTraceFn).not.toHaveBeenCalled()
+
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    expect(mockStartObservation).not.toHaveBeenCalled()
+    expect(mockCaptureException).not.toHaveBeenCalled()
   })
 
-  it('is a no-op — never constructs a client — when LANGFUSE_* keys are unset', async () => {
+  it('is a no-op — never starts the tracer — when LANGFUSE_* keys are unset', async () => {
     delete process.env.LANGFUSE_APP_PUBLIC_KEY
     delete process.env.LANGFUSE_APP_SECRET_KEY
 
@@ -179,15 +188,11 @@ describe('recordLlmTrace failure handling', () => {
     recordLlmTrace({ route: 'find_ask', sessionId: 's1', latencyMs: 5, outcome: 'ok' })
 
     await new Promise((resolve) => setTimeout(resolve, 10))
-    expect(mockLangfuseCtor).not.toHaveBeenCalled()
-    expect(mockTraceFn).not.toHaveBeenCalled()
+    expect(mockInit).not.toHaveBeenCalled()
+    expect(mockStartObservation).not.toHaveBeenCalled()
   })
 
   it('sends a trace with the expected shape when Langfuse is configured and healthy', async () => {
-    process.env.LANGFUSE_APP_PUBLIC_KEY = 'pk'
-    process.env.LANGFUSE_APP_SECRET_KEY = 'sk'
-    mockFlushAsync.mockResolvedValue(undefined)
-
     const { recordLlmTrace } = await import('@/lib/trace')
     recordLlmTrace({
       route: 'find_ask',
@@ -204,17 +209,36 @@ describe('recordLlmTrace failure handling', () => {
     })
 
     await new Promise((resolve) => setTimeout(resolve, 10))
-    expect(mockTraceFn).toHaveBeenCalledTimes(1)
-    expect(mockFlushAsync).toHaveBeenCalledTimes(1)
-    const traceArg = mockTraceFn.mock.calls[0][0]
-    expect(traceArg.sessionId).toBe('s1')
-    expect(traceArg.metadata.questionHash).toBe('deadbeef')
-    expect(traceArg.metadata.retrieval).toEqual([
-      { dbn: '01M001', score: 0.9, matchedChunkType: 'identity' },
-    ])
+    expect(mockPropagate).toHaveBeenCalledWith({ traceName: 'find_ask', sessionId: 's1', tags: ['outcome:ok'] })
+    expect(mockStartObservation).toHaveBeenCalledTimes(1)
+    const [name, rootAttrs] = mockStartObservation.mock.calls[0]
+    expect(name).toBe('find_ask')
+    expect(rootAttrs.metadata.questionHash).toBe('deadbeef')
+    expect(rootAttrs.metadata.retrieval).toEqual([{ dbn: '01M001', score: 0.9, matchedChunkType: 'identity' }])
 
-    const genArg = mockGenerationFn.mock.calls[0][0]
-    expect(genArg.model).toBe('claude-sonnet-5')
-    expect(genArg.usage).toEqual({ input: 100, output: 50 })
+    const [childName, genAttrs, childOpts] = mockChildObservation.mock.calls[0]
+    expect(childName).toBe('completion')
+    expect(childOpts).toEqual({ asType: 'generation' })
+    expect(genAttrs.model).toBe('claude-sonnet-5')
+    expect(genAttrs.usageDetails).toEqual({ input: 100, output: 50 })
+    expect(genAttrs.costDetails).toEqual({ total: 0.001 })
+    expect(mockChildEnd).toHaveBeenCalledTimes(1)
+    expect(mockRootEnd).toHaveBeenCalledTimes(1)
+    expect(mockFlush).toHaveBeenCalledTimes(1)
+  })
+
+  it('never puts question text on the trace, even when a caller passes it', async () => {
+    const { recordLlmTrace } = await import('@/lib/trace')
+    recordLlmTrace({
+      route: 'find_ask',
+      sessionId: 's1',
+      latencyMs: 5,
+      outcome: 'ok',
+      question: 'My child has an IEP, which school fits?',
+    } as never)
+
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    expect(JSON.stringify(mockStartObservation.mock.calls)).not.toContain('IEP')
+    expect(JSON.stringify(mockChildObservation.mock.calls)).not.toContain('IEP')
   })
 })

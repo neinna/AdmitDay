@@ -111,7 +111,8 @@ export async function POST(request: NextRequest) {
         matchedOn: r.matchedChunkType,
       })),
       reasons,
-      traceId: randomUUID(),
+      // 32 lowercase hex: the OpenTelemetry trace id format Langfuse v5 needs.
+      traceId: randomUUID().replace(/-/g, ""),
     };
 
     recordLlmTrace({
