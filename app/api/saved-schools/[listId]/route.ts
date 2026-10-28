@@ -16,11 +16,11 @@ import { findParentId, getOwnedList } from '@/lib/saved-lists-db'
 
 const NOT_FOUND = () => Response.json({ error: 'Not found' }, { status: 404 })
 
-export async function GET(_request: Request, { params }: { params: { listId: string } }) {
+export async function GET(_request: Request, { params }: { params: Promise<{ listId: string }> }) {
   const { userId } = await auth()
   if (!userId) return Response.json({ error: 'Sign in required' }, { status: 401 })
 
-  const listId = Number(params.listId)
+  const listId = Number((await params).listId)
   if (!Number.isInteger(listId)) return NOT_FOUND()
 
   const parentId = await findParentId(userId)

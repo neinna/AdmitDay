@@ -42,7 +42,7 @@ export default function AccountDeleteClient() {
             Delete your account?
           </h1>
           <p className="text-[15px] text-ink-2 leading-[1.55] mt-3">
-            This permanently deletes your AdmitDay account: your name, email, sign-in, and every saved school. It
+            This permanently deletes your AdmitDay account: your email, sign-in, and every saved school. It
             can&rsquo;t be undone.
           </p>
 

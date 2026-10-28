@@ -26,10 +26,11 @@ import SchoolDetailClient from './SchoolDetailClient'
 export async function generateMetadata({
   params,
 }: {
-  params: { dbn: string }
+  params: Promise<{ dbn: string }>
 }): Promise<Metadata> {
+  const { dbn } = await params
   const schools = await getAllSchools()
-  const school = findSchoolByDbn(schools, params.dbn)
+  const school = findSchoolByDbn(schools, dbn)
   if (!school) return { title: 'AdmitDay' }
   return { title: `${formatSchoolName(school.name)} · AdmitDay` }
 }
@@ -38,15 +39,14 @@ export async function generateMetadata({
 // getAllSchools() and does all data shaping here, so SchoolDetailClient only
 // ever renders what it's handed. Never calls the LLM: matchedSignals arrives
 // as a query param from /find, already computed there.
-export default async function SchoolDetailPage({
-  params,
-  searchParams,
-}: {
-  params: { dbn: string }
-  searchParams: { [key: string]: string | string[] | undefined }
+export default async function SchoolDetailPage(props: {
+  params: Promise<{ dbn: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
+  const { dbn } = await props.params
+  const searchParams = await props.searchParams
   const schools = await getAllSchools()
-  const school = findSchoolByDbn(schools, params.dbn)
+  const school = findSchoolByDbn(schools, dbn)
   if (!school) notFound()
 
   const filters = parseFindFilters(searchParams)

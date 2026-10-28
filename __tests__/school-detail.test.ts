@@ -131,19 +131,21 @@ describe('page.tsx — 404s an unknown dbn, renders a known one (issue #116)', (
   })
 
   it('looks up the school with findSchoolByDbn', () => {
-    expect(src).toContain('findSchoolByDbn(schools, params.dbn)')
+    expect(src).toContain('const { dbn } = await props.params')
+    expect(src).toContain('findSchoolByDbn(schools, dbn)')
   })
 
   it('calls notFound() when the lookup fails, before rendering anything', () => {
     expect(src).toContain('if (!school) notFound()')
   })
 
-  it('calling next/navigation notFound() throws the real NEXT_NOT_FOUND digest (verifies the 404 mechanism page.tsx relies on)', () => {
+  it('calling next/navigation notFound() throws the real 404 digest (verifies the 404 mechanism page.tsx relies on)', () => {
     expect(() => notFound()).toThrow()
     try {
       notFound()
     } catch (e) {
-      expect((e as { digest?: string }).digest).toBe('NEXT_NOT_FOUND')
+      // Next 15+ renamed the digest from NEXT_NOT_FOUND.
+      expect((e as { digest?: string }).digest).toBe('NEXT_HTTP_ERROR_FALLBACK;404')
     }
   })
 })
