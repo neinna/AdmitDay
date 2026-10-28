@@ -33,6 +33,23 @@ jest.mock('langfuse', () => ({
   })),
 }))
 
+// recordLlmTrace sends through Langfuse v5 (issue #530); recordLlmFeedback
+// still uses the v3 client mocked above until #531.
+const mockStartObservation = jest.fn()
+
+jest.mock('@/lib/langfuse-otel', () => ({
+  initLangfuseTracing: () => true,
+  forceFlushLangfuse: () => Promise.resolve(),
+}))
+
+jest.mock('@langfuse/tracing', () => ({
+  propagateAttributes: (_params: unknown, fn: () => unknown) => fn(),
+  startObservation: (...args: unknown[]) => {
+    mockStartObservation(...args)
+    return { startObservation: () => ({ end: () => {} }), end: () => {} }
+  },
+}))
+
 import { buildTracePayload, buildFeedbackPayload } from '@/lib/trace'
 
 describe('buildTracePayload keeps traceId (issue #195)', () => {
@@ -69,11 +86,7 @@ describe('recordLlmTrace threads traceId onto the Langfuse trace id', () => {
 
   beforeEach(() => {
     jest.resetModules()
-    mockTraceFn.mockReset()
-    mockGenerationFn.mockReset()
-    mockEndFn.mockReset()
-    mockFlushAsync.mockReset()
-    mockFlushAsync.mockResolvedValue(undefined)
+    mockStartObservation.mockReset()
     process.env = { ...ORIGINAL_ENV, LANGFUSE_APP_PUBLIC_KEY: 'pk', LANGFUSE_APP_SECRET_KEY: 'sk' }
   })
 
@@ -83,11 +96,12 @@ describe('recordLlmTrace threads traceId onto the Langfuse trace id', () => {
 
   it('passes traceId as the Langfuse trace id so the response and the trace are the same record', async () => {
     const { recordLlmTrace } = await import('@/lib/trace')
-    recordLlmTrace({ route: 'find_ask', sessionId: 's1', traceId: 'trace-xyz', latencyMs: 5, outcome: 'ok' })
+    const traceId = '0123456789abcdef0123456789abcdef'
+    recordLlmTrace({ route: 'find_ask', sessionId: 's1', traceId, latencyMs: 5, outcome: 'ok' })
 
     await new Promise((resolve) => setTimeout(resolve, 10))
-    expect(mockTraceFn).toHaveBeenCalledTimes(1)
-    expect(mockTraceFn.mock.calls[0][0].id).toBe('trace-xyz')
+    expect(mockStartObservation).toHaveBeenCalledTimes(1)
+    expect(mockStartObservation.mock.calls[0][2].parentSpanContext.traceId).toBe(traceId)
   })
 
   it('omits the trace id field when the caller does not supply one (e.g. the rationale route)', async () => {
@@ -95,7 +109,7 @@ describe('recordLlmTrace threads traceId onto the Langfuse trace id', () => {
     recordLlmTrace({ route: 'rationale', sessionId: 's1', latencyMs: 5, outcome: 'ok' })
 
     await new Promise((resolve) => setTimeout(resolve, 10))
-    expect(mockTraceFn.mock.calls[0][0].id).toBeUndefined()
+    expect(mockStartObservation.mock.calls[0][2]).toBeUndefined()
   })
 })
 

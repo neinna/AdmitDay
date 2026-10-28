@@ -25,6 +25,8 @@
  */
 
 import type { Langfuse as LangfuseClient } from "langfuse"
+import * as Sentry from "@sentry/nextjs"
+import { randomBytes } from "crypto"
 
 // Hard ceiling on how long a trace write may run before it is abandoned.
 // The Langfuse SDK also gets its own (shorter) request timeout below; this
@@ -185,45 +187,62 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   })
 }
 
-async function sendTrace(langfuse: LangfuseClient, payload: UnknownRecord): Promise<void> {
+async function sendTrace(payload: UnknownRecord): Promise<void> {
+  // Required lazily, like the v3 client below: importing this module must
+  // never load the Langfuse SDK when tracing is unconfigured.
+  const { initLangfuseTracing, forceFlushLangfuse } =
+    require("./langfuse-otel") as typeof import("./langfuse-otel")
+  if (!initLangfuseTracing()) return
+  const { propagateAttributes, startObservation } =
+    require("@langfuse/tracing") as typeof import("@langfuse/tracing")
+
   const route = typeof payload.route === "string" ? payload.route : "unknown"
   const sessionId = typeof payload.sessionId === "string" ? payload.sessionId : undefined
   const traceId = typeof payload.traceId === "string" ? payload.traceId : undefined
   const outcome = typeof payload.outcome === "string" ? payload.outcome : "ok"
 
-  const trace = langfuse.trace({
-    id: traceId,
-    name: route,
-    sessionId,
-    tags: [`outcome:${outcome}`],
-    metadata: {
-      questionLength: payload.questionLength,
-      questionHash: payload.questionHash,
-      retrieval: payload.retrieval,
-      errorClassification: payload.errorClassification,
-      guardrail: payload.guardrail,
-      stopReason: payload.stopReason,
-      contentBlockTypes: payload.contentBlockTypes,
-    },
+  const usageDetails: Record<string, number> = {}
+  if (typeof payload.inputTokens === "number") usageDetails.input = payload.inputTokens
+  if (typeof payload.outputTokens === "number") usageDetails.output = payload.outputTokens
+
+  propagateAttributes({ traceName: route, sessionId, tags: [`outcome:${outcome}`] }, () => {
+    // The trace id is the one already returned to the client, so a rating
+    // (issue #195) lands on this trace.
+    const root = startObservation(
+      route,
+      {
+        metadata: {
+          questionLength: payload.questionLength,
+          questionHash: payload.questionHash,
+          retrieval: payload.retrieval,
+          errorClassification: payload.errorClassification,
+          guardrail: payload.guardrail,
+          stopReason: payload.stopReason,
+          contentBlockTypes: payload.contentBlockTypes,
+        },
+      },
+      traceId
+        ? { parentSpanContext: { traceId, spanId: randomBytes(8).toString("hex"), traceFlags: 1 } }
+        : undefined
+    )
+    root
+      .startObservation(
+        "completion",
+        {
+          model: typeof payload.model === "string" ? payload.model : undefined,
+          usageDetails: Object.keys(usageDetails).length > 0 ? usageDetails : undefined,
+          costDetails: typeof payload.costUsd === "number" ? { total: payload.costUsd } : undefined,
+          metadata: { latencyMs: payload.latencyMs },
+          level: outcome === "ok" ? undefined : "ERROR",
+          statusMessage: outcome === "ok" ? undefined : outcome,
+        },
+        { asType: "generation" }
+      )
+      .end()
+    root.end()
   })
 
-  const usage: Record<string, number> = {}
-  if (typeof payload.inputTokens === "number") usage.input = payload.inputTokens
-  if (typeof payload.outputTokens === "number") usage.output = payload.outputTokens
-
-  trace
-    .generation({
-      name: "completion",
-      model: typeof payload.model === "string" ? payload.model : undefined,
-      usage: Object.keys(usage).length > 0 ? usage : undefined,
-      costDetails: typeof payload.costUsd === "number" ? { total: payload.costUsd } : undefined,
-      metadata: { latencyMs: payload.latencyMs },
-      level: outcome === "ok" ? undefined : "ERROR",
-      statusMessage: outcome === "ok" ? undefined : outcome,
-    })
-    .end()
-
-  await langfuse.flushAsync()
+  await forceFlushLangfuse()
 }
 
 /**
@@ -233,15 +252,17 @@ async function sendTrace(langfuse: LangfuseClient, payload: UnknownRecord): Prom
  * configuration and simply no-ops.
  */
 export function recordLlmTrace(event: LlmTraceEvent): void {
-  const langfuse = getClient()
-  if (!langfuse) return
+  if (!process.env.LANGFUSE_APP_PUBLIC_KEY || !process.env.LANGFUSE_APP_SECRET_KEY) return
 
   const payload = buildTracePayload(event)
   if (!payload) return
 
-  withTimeout(sendTrace(langfuse, payload), WATCHDOG_MS).catch(() => {
-    // Logging only. A bad host, an auth rejection, a timeout, an SDK
-    // change — all the same to us: the product request already returned.
+  withTimeout(sendTrace(payload), WATCHDOG_MS).catch((err) => {
+    // Never thrown to the caller, never silent: an empty catch here hid a
+    // six-day tracing gap (Oct 16-23, 2026). One Sentry issue per failure
+    // kind triggers the existing alert email.
+    console.warn("[trace] langfuse send failed:", err instanceof Error ? err.message : String(err))
+    Sentry.captureException(err)
   })
 }
 
