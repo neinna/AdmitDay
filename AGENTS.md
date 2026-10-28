@@ -72,6 +72,7 @@ When filing an issue for the agent:
 
 - **One concern per issue.** A new module, a new dependency, two route changes, and three test scenarios in one ticket is four issues.
 - **Put the answer in the issue, not a pointer to it.** Exact values, exact thresholds, exact API calls. #192 landed on the first pass because the verified cutoff numbers were written into the body. #162 failed four times because its four selectivity levels were named and never defined, leaving the agent to invent thresholds and then test its own invention.
+- **Name the tests the change breaks.** When an issue replaces code that existing tests pin (an SDK swap, a renamed call), list those test files under the files that must change and say their cases move to the new code, keep what they prove, and are not dropped. Without that line the agent obeys "never overwrite existing tests" and gets stuck on a test it may not edit: #530 and #532 both stalled this way on 2026-10-27.
 - **Do not list files "for context".** Every file named in the body is a paid read before any work begins. Name only the files that must change.
 - **No open design decisions.** If the issue requires choosing a threshold, a scale, or a product rule, that decision belongs in the issue or in Notion before the issue is filed.
 - **A new third-party dependency is its own issue.** Installing it and proving one call works is one ticket; using it is the next. Integrating an unfamiliar SDK is the single most expensive thing this pipeline does.
