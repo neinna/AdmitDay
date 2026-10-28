@@ -11,30 +11,20 @@
  * routes.test.ts mock out entirely to test their callers in isolation.
  */
 
-const mockTraceFn = jest.fn()
-const mockGenerationFn = jest.fn()
-const mockEndFn = jest.fn()
 const mockScoreFn = jest.fn()
 const mockFlushAsync = jest.fn()
 
-jest.mock('langfuse', () => ({
-  Langfuse: jest.fn().mockImplementation(() => ({
-    trace: (...args: unknown[]) => {
-      mockTraceFn(...args)
-      return {
-        generation: (...genArgs: unknown[]) => {
-          mockGenerationFn(...genArgs)
-          return { end: mockEndFn }
-        },
-      }
+jest.mock('@langfuse/client', () => ({
+  LangfuseClient: jest.fn().mockImplementation(() => ({
+    score: {
+      create: (...args: unknown[]) => mockScoreFn(...args),
+      flush: (...args: unknown[]) => mockFlushAsync(...args),
     },
-    score: (...args: unknown[]) => mockScoreFn(...args),
-    flushAsync: (...args: unknown[]) => mockFlushAsync(...args),
   })),
 }))
 
-// recordLlmTrace sends through Langfuse v5 (issue #530); recordLlmFeedback
-// still uses the v3 client mocked above until #531.
+// recordLlmTrace sends through @langfuse/tracing (issue #530); feedback
+// scores go through @langfuse/client (issue #531).
 const mockStartObservation = jest.fn()
 
 jest.mock('@/lib/langfuse-otel', () => ({

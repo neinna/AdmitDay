@@ -24,16 +24,14 @@
  * If the keys are unset, every export here is a no-op.
  */
 
-import type { Langfuse as LangfuseClient } from "langfuse"
+import type { LangfuseClient } from "@langfuse/client"
 import * as Sentry from "@sentry/nextjs"
 import { randomBytes } from "crypto"
 
-// Hard ceiling on how long a trace write may run before it is abandoned.
-// The Langfuse SDK also gets its own (shorter) request timeout below; this
-// is belt-and-braces so a wedged fetch can never hold up the caller, since
-// nothing on the response path ever awaits this module.
+// Hard ceiling on how long a trace write may run before it is abandoned,
+// so a wedged fetch can never hold up the caller, since nothing on the
+// response path ever awaits this module.
 const WATCHDOG_MS = 3000
-const REQUEST_TIMEOUT_MS = 2000
 
 export type TraceOutcome = "ok" | "provider_error" | "rate_limited" | "bad_request" | "provider_limit"
 
@@ -157,13 +155,11 @@ function getClient(): LangfuseClient | null {
     // never pull in the Langfuse SDK when tracing is unconfigured (the
     // common case), and any failure to load or construct it is just
     // another Langfuse failure to swallow, same as a bad host.
-    const { Langfuse } = require("langfuse") as typeof import("langfuse")
-    client = new Langfuse({
+    const { LangfuseClient } = require("@langfuse/client") as typeof import("@langfuse/client")
+    client = new LangfuseClient({
       publicKey,
       secretKey,
       baseUrl: process.env.LANGFUSE_APP_HOST || undefined,
-      requestTimeout: REQUEST_TIMEOUT_MS,
-      flushAt: 1,
     })
   } catch {
     client = null
@@ -188,7 +184,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 }
 
 async function sendTrace(payload: UnknownRecord): Promise<void> {
-  // Required lazily, like the v3 client below: importing this module must
+  // Required lazily, like the score client below: importing this module must
   // never load the Langfuse SDK when tracing is unconfigured.
   const { initLangfuseTracing, forceFlushLangfuse } =
     require("./langfuse-otel") as typeof import("./langfuse-otel")
@@ -270,13 +266,13 @@ async function sendFeedback(langfuse: LangfuseClient, payload: UnknownRecord): P
   const traceId = typeof payload.traceId === "string" ? payload.traceId : undefined
   if (!traceId) return
 
-  langfuse.score({
+  langfuse.score.create({
     traceId,
     name: "user_feedback",
     value: payload.rating === "up" ? 1 : 0,
   })
 
-  await langfuse.flushAsync()
+  await langfuse.score.flush()
 }
 
 /**
@@ -292,7 +288,9 @@ export function recordLlmFeedback(event: LlmFeedbackEvent): void {
   const payload = buildFeedbackPayload(event)
   if (!payload) return
 
-  withTimeout(sendFeedback(langfuse, payload), WATCHDOG_MS).catch(() => {
+  withTimeout(sendFeedback(langfuse, payload), WATCHDOG_MS).catch((err) => {
     // Logging only, same as recordLlmTrace.
+    console.warn("[trace] langfuse feedback failed:", err instanceof Error ? err.message : String(err))
+    Sentry.captureException(err)
   })
 }
