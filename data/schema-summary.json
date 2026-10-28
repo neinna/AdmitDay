@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-22T23:31:38.496528+00:00",
+  "generated_at": "2026-10-28T21:51:07.379864+00:00",
   "school_count": 426,
   "school_fields": [
     {
@@ -12,7 +12,7 @@
     },
     {
       "name": "applicants_per_seat",
-      "type": "number",
+      "type": "number|null",
       "present": 415,
       "example": 0.7
     },
@@ -47,6 +47,9 @@
         "interests": [
           "Humanities & Interdisciplinary"
         ],
+        "graduation_rate": 0.93,
+        "attendance_rate": 0.818,
+        "college_career_rate": 0.71,
         "subway": "F to East Broadway; J, M, Z to Essex St",
         "bus": "B39, M14A-SBS, M14D-SBS, M15, M15-SBS, M21, M22, M9, X37, X38",
         "psal_sports_boys": "Volleyball",
@@ -55,10 +58,7 @@
         "advancedplacement_courses": "Algebra II (Advanced Math),AP Biology,AP English Literature and Composition,AP United States History,Chemistry (Advanced Science),World Languages (Advanced World Languages)",
         "diplomaendorsements": "",
         "neighborhood": "Lower East Side",
-        "addtl_info": "College Trips,Community School,Extended Day Program,Health Center,Online Grading System,Orientation,Summer Internships,Summer Orientation,Weekend Programs",
-        "graduation_rate": 0.93,
-        "attendance_rate": 0.818,
-        "college_career_rate": 0.71
+        "addtl_info": "College Trips,Community School,Extended Day Program,Health Center,Online Grading System,Orientation,Summer Internships,Summer Orientation,Weekend Programs"
       }
     },
     {
@@ -71,9 +71,18 @@
         "has_screened": false,
         "has_open": true,
         "has_borough_priority": false,
+        "high_impact": false,
         "has_consortium": false,
-        "has_ib": false,
-        "high_impact": false
+        "has_ib": false
+      }
+    },
+    {
+      "name": "hours",
+      "type": "object",
+      "present": 422,
+      "example": {
+        "start": "8:25am",
+        "end": "2:45pm"
       }
     },
     {
@@ -81,6 +90,15 @@
       "type": "string",
       "present": 426,
       "example": "2025-2026"
+    },
+    {
+      "name": "location",
+      "type": "object",
+      "present": 426,
+      "example": {
+        "lat": 40.71336,
+        "lng": -73.986058
+      }
     },
     {
       "name": "name",
@@ -116,6 +134,10 @@
               "number": 0
             }
           },
+          "seats_filled_last_year": {
+            "general_education": false,
+            "students_with_disabilities": true
+          },
           "eligibility": {
             "priority_groups": [
               {
@@ -146,6 +168,12 @@
           "raw_method": "Ed. Opt."
         }
       ]
+    },
+    {
+      "name": "school_website",
+      "type": "string",
+      "present": 425,
+      "example": "https://www.orchardcollegiateacademy.org"
     },
     {
       "name": "shsat_cutoff_score",
@@ -181,9 +209,9 @@
     },
     {
       "name": "total_students",
-      "type": "number",
-      "present": 426,
-      "example": 258
+      "type": "number|null",
+      "present": 413,
+      "example": 296
     }
   ],
   "doe_data_fields": [
@@ -213,7 +241,7 @@
     },
     {
       "name": "attendance_rate",
-      "type": "number",
+      "type": "number|null",
       "present": 419,
       "example": 0.818
     },
@@ -231,7 +259,7 @@
     },
     {
       "name": "college_career_rate",
-      "type": "number",
+      "type": "number|null",
       "present": 409,
       "example": 0.71
     },
@@ -249,7 +277,7 @@
     },
     {
       "name": "graduation_rate",
-      "type": "number",
+      "type": "number|null",
       "present": 412,
       "example": 0.93
     },
@@ -332,6 +360,21 @@
       "type": "string",
       "present": 426,
       "example": "10002"
+    }
+  ],
+  "open_house_fields": [],
+  "hours_fields": [
+    {
+      "name": "end",
+      "type": "string",
+      "present": 422,
+      "example": "2:45pm"
+    },
+    {
+      "name": "start",
+      "type": "string",
+      "present": 422,
+      "example": "8:25am"
     }
   ],
   "program_fields": [
@@ -467,6 +510,15 @@
           "number": 0
         }
       }
+    },
+    {
+      "name": "seats_filled_last_year",
+      "type": "object",
+      "present": 914,
+      "example": {
+        "general_education": false,
+        "students_with_disabilities": true
+      }
     }
   ],
   "program_count": 923,
@@ -530,7 +582,7 @@
     "name": "Orchard Collegiate Academy",
     "borough": "Manhattan",
     "size": "small",
-    "total_students": 258,
+    "total_students": 296,
     "applicants_per_seat": 0.7,
     "admissions_types": [
       "Educational Option"
@@ -558,6 +610,10 @@
           "tenth_grade": {
             "number": 0
           }
+        },
+        "seats_filled_last_year": {
+          "general_education": false,
+          "students_with_disabilities": true
         },
         "eligibility": {
           "priority_groups": [
@@ -589,15 +645,20 @@
         "raw_method": "Ed. Opt."
       }
     ],
+    "hours": {
+      "start": "8:25am",
+      "end": "2:45pm"
+    },
+    "school_website": "https://www.orchardcollegiateacademy.org",
     "flags": {
       "has_shsat": false,
       "has_audition": false,
       "has_screened": false,
       "has_open": true,
       "has_borough_priority": false,
+      "high_impact": false,
       "has_consortium": false,
-      "has_ib": false,
-      "high_impact": false
+      "has_ib": false
     },
     "doe_data": {
       "overview": "Orchard Collegiate Academy (OCA) is a supportive, high-quality community school with a focus on college and career readiness. At OCA, our mission is to educate the whole child, exposing them to an arr\u2026",
@@ -614,6 +675,9 @@
       "interests": [
         "Humanities & Interdisciplinary"
       ],
+      "graduation_rate": 0.93,
+      "attendance_rate": 0.818,
+      "college_career_rate": 0.71,
       "subway": "F to East Broadway; J, M, Z to Essex St",
       "bus": "B39, M14A-SBS, M14D-SBS, M15, M15-SBS, M21, M22, M9, X37, X38",
       "psal_sports_boys": "Volleyball",
@@ -622,10 +686,7 @@
       "advancedplacement_courses": "Algebra II (Advanced Math),AP Biology,AP English Literature and Composition,AP United States History,Chemistry (Advanced Science),World Languages (Advanced World Languages)",
       "diplomaendorsements": "",
       "neighborhood": "Lower East Side",
-      "addtl_info": "College Trips,Community School,Extended Day Program,Health Center,Online Grading System,Orientation,Summer Internships,Summer Orientation,Weekend Programs",
-      "graduation_rate": 0.93,
-      "attendance_rate": 0.818,
-      "college_career_rate": 0.71
+      "addtl_info": "College Trips,Community School,Extended Day Program,Health Center,Online Grading System,Orientation,Summer Internships,Summer Orientation,Weekend Programs"
     },
     "last_verified": "2025-2026",
     "shsat_cutoff_score": null,
@@ -638,6 +699,10 @@
       "rating": "Fair",
       "year": "2024-25",
       "source_url": "https://infohub.nyced.org/docs/default-source/default-document-library/202425-hs-sqr-results.xlsx"
+    },
+    "location": {
+      "lat": 40.71336,
+      "lng": -73.986058
     }
   }
 }
