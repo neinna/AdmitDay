@@ -28,7 +28,7 @@ describe('/shortlist signed out (issue #240)', () => {
       React.createElement(ShortlistClient, { index: [], initialOrder: [], signedIn: false })
     )
 
-    expect(html).toContain('Sign in to see your saved schools.')
+    expect(html).toContain('>Sign in</button> to see your saved schools.')
     expect(html).toContain('Sign in')
     expect(html).toContain('Sign up')
     // None of the signed-in-only list chrome renders.
@@ -55,7 +55,15 @@ describe('/shortlist signed out (issue #240)', () => {
       })
     )
 
-    expect(html).toContain('Sign in to see your saved schools.')
+    expect(html).toContain('>Sign in</button> to see your saved schools.')
     expect(html).not.toContain('Old Cached School')
+  })
+
+  it('renders "Sign in" as a button inside the saved-schools prompt paragraph', () => {
+    const html = renderToStaticMarkup(
+      React.createElement(ShortlistClient, { index: [], initialOrder: [], signedIn: false })
+    )
+
+    expect(html).toMatch(/<p[^>]*>\s*<button[^>]*>Sign in<\/button> to see your saved schools\.<\/p>/)
   })
 })

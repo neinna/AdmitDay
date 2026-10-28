@@ -14,19 +14,22 @@
 
 const createDataset = jest.fn()
 const createDatasetItem = jest.fn()
-const trace = jest.fn()
+const ingestionBatch = jest.fn()
+const scoreCreate = jest.fn()
 const createDatasetRunItem = jest.fn()
-const flushAsync = jest.fn()
+const flush = jest.fn()
 const getDatasetRuns = jest.fn()
 
-jest.mock('langfuse', () => ({
-  Langfuse: jest.fn().mockImplementation(() => ({
-    createDataset,
-    createDatasetItem,
-    trace,
-    createDatasetRunItem,
-    flushAsync,
-    getDatasetRuns,
+jest.mock('@langfuse/client', () => ({
+  LangfuseClient: jest.fn().mockImplementation(() => ({
+    api: {
+      datasets: { create: createDataset, getRuns: getDatasetRuns },
+      datasetItems: { create: createDatasetItem },
+      datasetRunItems: { create: createDatasetRunItem },
+      ingestion: { batch: ingestionBatch },
+    },
+    score: { create: scoreCreate },
+    flush,
   })),
 }))
 
@@ -59,9 +62,9 @@ describe('recordEvalRunSafely', () => {
     process.env.EVAL_LANGFUSE_SECRET_KEY = 'test-secret'
     createDataset.mockResolvedValue(undefined)
     createDatasetItem.mockResolvedValue(undefined)
-    trace.mockReturnValue({ id: 'trace-id', score: jest.fn() })
+    ingestionBatch.mockResolvedValue(undefined)
     createDatasetRunItem.mockResolvedValue(undefined)
-    flushAsync.mockResolvedValue(undefined)
+    flush.mockResolvedValue(undefined)
     getDatasetRuns.mockResolvedValue({ data: [] })
   })
 
