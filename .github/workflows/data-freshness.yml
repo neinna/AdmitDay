@@ -1,0 +1,41 @@
+name: Data freshness
+
+on:
+  schedule:
+    - cron: '0 15 * * 2,5'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  data-freshness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: File a needs-you issue if schools.json is stale
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title='Data refresh: schools.json is stale'
+          days=$(sh scripts/data-staleness.sh)
+          month=$(date -u +%-m)
+          if [ "$month" -ge 4 ] && [ "$month" -le 8 ]; then
+            threshold=35
+          else
+            threshold=8
+          fi
+          echo "schools.json was last changed $days days ago (threshold $threshold)"
+          if [ "$days" -le "$threshold" ]; then
+            exit 0
+          fi
+          open=$(gh issue list --state open --search "in:title \"$title\"" --json title --jq "[.[] | select(.title == \"$title\")] | length")
+          if [ "$open" -gt 0 ]; then
+            echo "An open stale-data issue already exists"
+            exit 0
+          fi
+          gh issue create --label needs-you --title 'Data refresh: schools.json is stale' --body "schools.json on main was last changed $days days ago (threshold $threshold). The VPS cron may be paused or failing: check crontab -l on the VPS and the latest data/weekly-refresh PR."
