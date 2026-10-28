@@ -614,9 +614,8 @@ export function formatMiles(miles: number): string {
 /**
  * Hides schools farther than radiusMiles from startCoords. A no-op until both
  * a starting point and a radius are chosen. A school with no `location` can't
- * be measured against the radius, so it's hidden along with the too-far ones
- * whenever a radius is active — see countHiddenForNoLocation for the count
- * the scope line reports for that specific reason.
+ * be measured, so it is never removed: only schools measured to be farther
+ * than the radius are hidden.
  */
 export function applyRadiusFilter(
   schools: School[],
@@ -625,19 +624,6 @@ export function applyRadiusFilter(
 ): School[] {
   if (startCoords == null || radiusMiles == null) return schools
   return schools.filter(
-    (s) => s.location != null && distanceMiles(s.location, startCoords) <= radiusMiles
+    (s) => s.location == null || distanceMiles(s.location, startCoords) <= radiusMiles
   )
-}
-
-/**
- * Of `schools`, how many applyRadiusFilter hides purely for lacking a
- * `location` (not for being too far) — zero whenever no radius is active.
- */
-export function countHiddenForNoLocation(
-  schools: School[],
-  startCoords: LatLng | null,
-  radiusMiles: number | null
-): number {
-  if (startCoords == null || radiusMiles == null) return 0
-  return schools.filter((s) => s.location == null).length
 }
