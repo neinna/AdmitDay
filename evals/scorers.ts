@@ -116,6 +116,43 @@ export function scoreReasonCoverage(
   }
 }
 
+// Bare numbers only: the look-arounds skip digits inside codes and ordinals
+// (M46X, 01M292, 9th).
+const NUMBER_TOKEN_PATTERN = /(?<![A-Za-z0-9.])\d[\d,]*(?:\.\d+)?(?![A-Za-z0-9])/g
+
+function extractNumberTokens(text: string): string[] {
+  return (text.match(NUMBER_TOKEN_PATTERN) ?? []).map((t) => t.replace(/,/g, ''))
+}
+
+/**
+ * Every number in a school's reason must appear in that school's retrieved
+ * data, or be the rounded integer of a decimal there (4 for 4.17). A reason
+ * whose DBN was not retrieved has no data, so all its numbers are ungrounded.
+ */
+export function scoreNumbersGrounded(
+  retrieved: { dbn: string; chunk: string }[],
+  reasons: { dbn: string; reason: string }[]
+): ScorerResult {
+  const chunks = new Map(retrieved.map((s) => [s.dbn, s.chunk]))
+  const problems: string[] = []
+  for (const { dbn, reason } of reasons) {
+    const chunk = chunks.get(dbn)
+    const known = new Set(chunk === undefined ? [] : extractNumberTokens(chunk))
+    const rounded = new Set<string>()
+    for (const token of Array.from(known)) {
+      if (token.includes('.')) rounded.add(String(Math.round(Number(token))))
+    }
+    const ungrounded = extractNumberTokens(reason).filter(
+      (t) => !known.has(t) && !(/^\d+$/.test(t) && rounded.has(t))
+    )
+    if (ungrounded.length) problems.push(`${dbn}: ${ungrounded.join(', ')}`)
+  }
+  return {
+    pass: problems.length === 0,
+    detail: problems.length ? problems.join('; ') : undefined,
+  }
+}
+
 // A genuine DOE-reported 0 essentially never appears in retrieved chunk text
 // for these stats (see __tests__/rule-missing-data-never-zero.test.ts for the
 // school-detail-page version of the same rule). This is the ask-box
