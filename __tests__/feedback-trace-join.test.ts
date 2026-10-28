@@ -107,6 +107,17 @@ describe('/api/find/ask joins its response traceId to the Langfuse trace (issue 
     const second = await (await askPost(fakeAskRequest('question two', '10.20.0.2'))).json()
     expect(first.traceId).not.toBe(second.traceId)
   })
+
+  it('returns a 32-hex trace id, the OpenTelemetry format Langfuse v5 needs (issue #530)', async () => {
+    mockCreate.mockResolvedValue({
+      model: 'claude-sonnet-5',
+      usage: { input_tokens: 10, output_tokens: 5 },
+      content: [{ type: 'text', text: 'ok' }],
+    })
+
+    const body = await (await askPost(fakeAskRequest('question three', '10.20.0.3'))).json()
+    expect(body.traceId).toMatch(/^[0-9a-f]{32}$/)
+  })
 })
 
 // ── /api/find/feedback: validates input, never surfaces a failed write ─────
