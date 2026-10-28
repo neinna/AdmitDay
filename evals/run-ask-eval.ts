@@ -47,6 +47,7 @@ import {
   scoreHallucination,
   scoreReasonCoverage,
   scoreMissingDataNotShownAsZero,
+  scoreNumbersGrounded,
   ScorerResult,
 } from "./scorers";
 import {
@@ -120,10 +121,12 @@ function scoreAnswer(
     scores.hallucination = scoreHallucination(result.answer, retrievedNames, allSchoolNames);
     scores.coverage = scoreReasonCoverage(result.retrieved, result.reasons);
     scores.missingDataNotShownAsZero = scoreMissingDataNotShownAsZero(result.answer, retrievedChunks);
+    scores.numbersGrounded = scoreNumbersGrounded(result.retrieved, result.reasons);
   } else {
     scores.hallucination = { pass: true, skipped: true };
     scores.coverage = { pass: true, skipped: true };
     scores.missingDataNotShownAsZero = { pass: true, skipped: true };
+    scores.numbersGrounded = { pass: true, skipped: true };
   }
 
   return {
@@ -154,6 +157,7 @@ function buildErrorCaseResult(seedCase: SeedCase, message: string): CaseResult {
       hallucination: failed,
       coverage: failed,
       missingDataNotShownAsZero: failed,
+      numbersGrounded: failed,
     },
   };
 }
@@ -234,6 +238,7 @@ function summarize(results: CaseResult[]): Record<string, { passed: number; tota
     "hallucination",
     "coverage",
     "missingDataNotShownAsZero",
+    "numbersGrounded",
   ];
   const summary: Record<string, { passed: number; total: number; rate: number }> = {};
   for (const name of scorerNames) {
