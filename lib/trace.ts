@@ -26,12 +26,25 @@
 
 import type { LangfuseClient } from "@langfuse/client"
 import * as Sentry from "@sentry/nextjs"
+import { after } from "next/server"
 import { randomBytes } from "crypto"
 
-// Hard ceiling on how long a trace write may run before it is abandoned,
-// so a wedged fetch can never hold up the caller, since nothing on the
-// response path ever awaits this module.
-const WATCHDOG_MS = 3000
+// Hard ceiling on how long a trace write may run before it is abandoned.
+// The send runs inside after(), so this no longer guards the response; it
+// only caps how long the function stays alive. A cold start loads the OTel
+// SDK on first use.
+const WATCHDOG_MS = 10000
+
+// Keep the function alive until the send settles (Vercel freezes it once the
+// response is sent). Outside a request scope after() throws: plain
+// fire-and-forget, as before.
+function keepAlive(work: Promise<void>): void {
+  try {
+    after(() => work)
+  } catch {
+    // Outside a request scope (tests, scripts).
+  }
+}
 
 export type TraceOutcome = "ok" | "provider_error" | "rate_limited" | "bad_request" | "provider_limit"
 
@@ -253,13 +266,14 @@ export function recordLlmTrace(event: LlmTraceEvent): void {
   const payload = buildTracePayload(event)
   if (!payload) return
 
-  withTimeout(sendTrace(payload), WATCHDOG_MS).catch((err) => {
+  const work = withTimeout(sendTrace(payload), WATCHDOG_MS).catch((err) => {
     // Never thrown to the caller, never silent: an empty catch here hid a
     // six-day tracing gap (Oct 16-23, 2026). One Sentry issue per failure
     // kind triggers the existing alert email.
     console.warn("[trace] langfuse send failed:", err instanceof Error ? err.message : String(err))
     Sentry.captureException(err)
   })
+  keepAlive(work)
 }
 
 async function sendFeedback(langfuse: LangfuseClient, payload: UnknownRecord): Promise<void> {
@@ -288,9 +302,10 @@ export function recordLlmFeedback(event: LlmFeedbackEvent): void {
   const payload = buildFeedbackPayload(event)
   if (!payload) return
 
-  withTimeout(sendFeedback(langfuse, payload), WATCHDOG_MS).catch((err) => {
+  const work = withTimeout(sendFeedback(langfuse, payload), WATCHDOG_MS).catch((err) => {
     // Logging only, same as recordLlmTrace.
     console.warn("[trace] langfuse feedback failed:", err instanceof Error ? err.message : String(err))
     Sentry.captureException(err)
   })
+  keepAlive(work)
 }
