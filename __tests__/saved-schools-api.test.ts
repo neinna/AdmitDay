@@ -165,7 +165,7 @@ describe('/api/saved-schools/[listId] — the cross-parent isolation case (issue
   it('signed out: 401, and the database is never queried', async () => {
     mockAuth.mockResolvedValue({ userId: null })
     const res = await GET_BY_ID(new Request('http://test/api/saved-schools/1'), {
-      params: { listId: '1' },
+      params: Promise.resolve({ listId: '1' }),
     })
     expect(res.status).toBe(401)
     expect(mockGetOwnedList).not.toHaveBeenCalled()
@@ -177,7 +177,7 @@ describe('/api/saved-schools/[listId] — the cross-parent isolation case (issue
     mockGetOwnedList.mockResolvedValue(null) // list 1 belongs to parentId 1, not 99
 
     const res = await GET_BY_ID(new Request('http://test/api/saved-schools/1'), {
-      params: { listId: '1' },
+      params: Promise.resolve({ listId: '1' }),
     })
 
     expect(res.status).toBe(404)
@@ -192,7 +192,7 @@ describe('/api/saved-schools/[listId] — the cross-parent isolation case (issue
     mockGetOwnedList.mockResolvedValue({ id: 1, name: 'My list', dbns: ['01M001'] })
 
     const res = await GET_BY_ID(new Request('http://test/api/saved-schools/1'), {
-      params: { listId: '1' },
+      params: Promise.resolve({ listId: '1' }),
     })
 
     expect(res.status).toBe(200)
@@ -202,7 +202,7 @@ describe('/api/saved-schools/[listId] — the cross-parent isolation case (issue
   it('a non-numeric list id 404s without ever reaching the database', async () => {
     mockAuth.mockResolvedValue({ userId: 'owner' })
     const res = await GET_BY_ID(new Request('http://test/api/saved-schools/not-a-number'), {
-      params: { listId: 'not-a-number' },
+      params: Promise.resolve({ listId: 'not-a-number' }),
     })
     expect(res.status).toBe(404)
     expect(mockFindParentId).not.toHaveBeenCalled()

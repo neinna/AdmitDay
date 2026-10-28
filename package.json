@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start -p 3000",
-    "lint": "next lint",
+    "lint": "eslint .",
     "test": "jest",
     "refresh:data": "ts-node --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' --transpile-only scripts/refresh-data.ts",
     "smoke": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/smoke.ts",
@@ -27,10 +27,10 @@
     "@vercel/postgres": "^0.10.0",
     "bcryptjs": "^3.0.3",
     "langfuse": "^3.39.2",
-    "next": "^14.2.35",
+    "next": "^16.4.3",
     "posthog-js": "^1.365.4",
-    "react": "^18",
-    "react-dom": "^18"
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
@@ -38,8 +38,8 @@
     "@types/jest": "^29.5.14",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "autoprefixer": "^10.0.1",
     "dotenv": "^16.0.0",
     "eslint": "^8",
