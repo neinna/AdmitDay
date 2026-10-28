@@ -61,8 +61,12 @@ describe('AccountDeleteClient shows the required confirmation copy and calls the
   it('shows the exact confirmation heading and body from the issue', () => {
     expect(src).toContain('Delete your account?')
     expect(src.replace(/\s+/g, ' ')).toContain(
-      "This permanently deletes your AdmitDay account: your name, email, sign-in, and every saved school. It can"
+      "This permanently deletes your AdmitDay account: your email, sign-in, and every saved school. It can"
     )
+  })
+
+  it('does not list "your name" among the deleted data', () => {
+    expect(src.replace(/\s+/g, ' ')).not.toContain('your name')
   })
 
   it('offers a delete action and a cancel action', () => {

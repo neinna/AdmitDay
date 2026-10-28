@@ -12,11 +12,10 @@ export const metadata: Metadata = {
 // hard filters + ask band + ranked results. Filter state lives in the URL
 // (searchParams, parsed below) so a filtered view is linkable and survives a
 // reload. Reachable only by direct URL for now — nothing links here yet.
-export default async function FindPage({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | string[] | undefined }
+export default async function FindPage(props: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
+  const searchParams = await props.searchParams
   const schools = await getAllSchools()
   const initialFilters = parseFindFilters(searchParams)
 
