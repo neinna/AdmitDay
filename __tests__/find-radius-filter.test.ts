@@ -10,7 +10,7 @@
  *
  * This repo's jest config runs under plain node with no jsdom (see
  * find-ask-textarea.test.ts's convention), so FindRail's rendering is covered
- * with source-text assertions; applyRadiusFilter, countHiddenForNoLocation
+ * with source-text assertions; applyRadiusFilter
  * and rankFindRows are exercised as real unit tests.
  */
 
@@ -18,7 +18,6 @@ import * as fs from 'fs'
 import * as path from 'path'
 import {
   applyRadiusFilter,
-  countHiddenForNoLocation,
   distanceMiles,
   LatLng,
 } from '../lib/school-list-utils'
@@ -92,35 +91,22 @@ describe('applyRadiusFilter (issue #344)', () => {
     expect(applyRadiusFilter([school], START, EXACT_DISTANCE - 0.001)).toEqual([])
   })
 
-  it('hides a school with no location once a radius is active', () => {
+  it('keeps a school with no location when a radius is active', () => {
     const school = makeSchool({ dbn: 'A', location: undefined })
-    expect(applyRadiusFilter([school], START, 3)).toEqual([])
+    expect(applyRadiusFilter([school], START, 3)).toEqual([school])
+  })
+
+  it('keeps near and unlocated schools and drops a far one at a 3 mi radius', () => {
+    const oneMile = makeSchool({ dbn: 'ONE', location: { lat: START.lat + 0.0145, lng: START.lng } })
+    const noLocation = makeSchool({ dbn: 'NOLOC', location: undefined })
+    const tenMiles = makeSchool({ dbn: 'TEN', location: { lat: START.lat + 0.145, lng: START.lng } })
+    const kept = applyRadiusFilter([oneMile, noLocation, tenMiles], START, 3)
+    expect(kept.map((s) => s.dbn)).toEqual(['ONE', 'NOLOC'])
   })
 
   it('keeps a school with no location when no radius is active', () => {
     const school = makeSchool({ dbn: 'A', location: undefined })
     expect(applyRadiusFilter([school], START, null)).toEqual([school])
-  })
-})
-
-// ── countHiddenForNoLocation ──────────────────────────────────────────────────
-
-describe('countHiddenForNoLocation (issue #344)', () => {
-  const withLocation = makeSchool({ dbn: 'A', location: NEAR })
-  const noLocationOne = makeSchool({ dbn: 'B', location: undefined })
-  const noLocationTwo = makeSchool({ dbn: 'C', location: undefined })
-  const schools = [withLocation, noLocationOne, noLocationTwo]
-
-  it('is zero with no starting point', () => {
-    expect(countHiddenForNoLocation(schools, null, 3)).toBe(0)
-  })
-
-  it('is zero with no radius chosen (Any)', () => {
-    expect(countHiddenForNoLocation(schools, START, null)).toBe(0)
-  })
-
-  it('counts only the no-location schools once a radius is active', () => {
-    expect(countHiddenForNoLocation(schools, START, 3)).toBe(2)
   })
 })
 

@@ -30,7 +30,6 @@ import {
   admissionMethodCopy,
   distanceMiles,
   applyRadiusFilter,
-  countHiddenForNoLocation,
 } from '@/lib/school-list-utils'
 import { extractFilters, QueryFilters, appliedSignals, removeSignal } from '@/lib/query-filters'
 import { getUnmetCriteria } from '@/lib/soft-match'
@@ -319,10 +318,6 @@ export default function FindClient({ schools, initialFilters }: Props) {
   // is active.
   const hardFiltered = useMemo(
     () => applyRadiusFilter(railFiltered, startCoords, radiusMiles),
-    [railFiltered, startCoords, radiusMiles]
-  )
-  const hiddenForNoLocation = useMemo(
-    () => countHiddenForNoLocation(railFiltered, startCoords, radiusMiles),
     [railFiltered, startCoords, radiusMiles]
   )
 
@@ -754,11 +749,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
                 </span>
                 <span className="text-[14px] text-muted">
                   match{ranked.length === 1 ? '' : 'es'} {describeFindFilters(filters)}
-                  {startingPoint ? ` · starting from ${startingPoint.label}` : ''}
-                  {radiusMiles != null && hiddenForNoLocation > 0
-                    ? ` · ${hiddenForNoLocation} hidden for no location on file`
-                    : ''}
-                </span>
+                  {startingPoint ? ` · starting from ${startingPoint.label}` : ''}                </span>
               </div>
               <p className="text-[12.5px] text-faint mt-1">
                 Schools admitting 9th graders through this year&rsquo;s NYC high school admissions.
