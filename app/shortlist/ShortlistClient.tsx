@@ -168,7 +168,7 @@ function Header() {
         </div>
       </Link>
       <div className="flex items-center gap-7">
-        <nav className="flex items-center gap-7 text-[14.5px] text-muted">
+        <nav className="flex items-baseline gap-7 text-[14.5px] text-muted">
           <Link href="/find" className="hover:text-ink transition-colors duration-[120ms] ease-out">Find</Link>
           <span className="text-ink font-medium border-b-2 border-accent pb-[3px]">Shortlist</span>
         </nav>
