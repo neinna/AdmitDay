@@ -68,7 +68,7 @@ export default async function Landing() {
             Find your schools
           </h1>
           <p className="text-[16px] min-[700px]:text-[17px] text-muted mt-4 min-[700px]:mt-5 max-w-[540px]">
-            Filter for the must-haves, then describe everything else in your own words.
+            Set your non-negotiables, then describe additional filters in your own words.
           </p>
         </div>
         <div>
@@ -93,8 +93,8 @@ export default async function Landing() {
 
       <section className="grid grid-cols-1 min-[900px]:grid-cols-3 gap-7 min-[900px]:gap-10 px-5 min-[900px]:px-9 py-9 min-[900px]:py-12 border-b border-rule">
         {[
-          { n: '01', t: 'Hard filters', items: ['Borough', 'Size', 'Admission method'] },
-          { n: '02', t: 'Soft filters', items: ['Strong music', 'Soccer', 'Small classes', 'and more'] },
+          { n: '01', t: 'Non-negotiables', items: ['Borough', 'Size', 'Admission method'] },
+          { n: '02', t: 'Additional filters', items: ['Strong music', 'Soccer', 'Small classes', 'and more'] },
           { n: '03', t: 'School details', items: ['Requirements', 'Official NYC DOE data'] },
         ].map((s) => (
           <div key={s.n} className="grid grid-cols-[30px_1fr] min-[900px]:grid-cols-1 gap-x-4 gap-y-2">
