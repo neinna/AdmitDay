@@ -30,7 +30,7 @@ function Cta({ className = '' }: { className?: string }) {
       href="/find"
       className={`inline-block bg-accent text-white text-[15px] font-medium px-[26px] py-[13px] hover:opacity-90 transition-opacity duration-[120ms] ease-out ${className}`}
     >
-      Start with your schools
+      Search schools
     </Link>
   )
 }
@@ -65,10 +65,10 @@ export default async function Landing() {
       <section className="grid grid-cols-1 min-[900px]:grid-cols-[1fr_300px] gap-6 min-[900px]:gap-10 items-end px-5 min-[900px]:px-9 pt-11 min-[900px]:pt-[72px] pb-9 min-[900px]:pb-14 border-b border-rule">
         <div>
           <h1 className="font-display font-bold text-[36px] min-[700px]:text-[56px] leading-[1.02] tracking-[-0.038em] text-ink max-w-[760px]">
-            Every NYC public high school, in one list you can actually use
+            Find your schools
           </h1>
           <p className="text-[16px] min-[700px]:text-[17px] text-muted mt-4 min-[700px]:mt-5 max-w-[540px]">
-            {"Every school's real data, made personal. Filter for the must-haves, then ask in plain English for everything else."}
+            Filter for the must-haves, then describe everything else in your own words.
           </p>
         </div>
         <div>
@@ -121,13 +121,7 @@ export default async function Landing() {
       </section>
 
       <div className="flex flex-col min-[900px]:flex-row justify-between gap-1 px-5 min-[900px]:px-9 py-4 bg-surface-2 border-t border-rule">
-        <span className="text-[13px] text-faint">
-          Independent and not affiliated with, or endorsed by, the New York City Department of
-          Education.
-        </span>
-        <span className="text-[13px] text-faint">
-          Confirm every program on the official listing before you apply.
-        </span>
+        <span className="text-[13px] text-faint">Using NYC DOE data</span>
       </div>
 
       <Footer />

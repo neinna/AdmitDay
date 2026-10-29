@@ -50,12 +50,18 @@ describe('the landing page keeps the product’s promises', () => {
     expect(copy).not.toMatch(/your odds|chance of getting|we predict|guarantee/i)
   })
 
-  it('carries the mandatory non-affiliation line', () => {
-    expect(pageCopy).toMatch(/not affiliated with, or endorsed by, the New York City Department of Education/i)
+  it('names its data source', () => {
+    expect(pageCopy).toContain('Using NYC DOE data')
+    expect(pageCopy).not.toMatch(/not affiliated/i)
   })
 
-  it('tells parents to confirm every program on the official listing', () => {
-    expect(pageSrc).toMatch(/Confirm every program on the official listing before you apply/i)
+  it('does not tell parents to confirm every program', () => {
+    expect(pageSrc).not.toContain('Confirm every program')
+  })
+
+  it('has the new headline and button text', () => {
+    expect(pageCopy).toContain('Find your schools')
+    expect(pageCopy).toContain('Search schools')
   })
 
   it('invents no social proof', () => {
@@ -74,7 +80,7 @@ describe('the landing page keeps the product’s promises', () => {
 
   it('states the new subline exactly', () => {
     expect(pageCopy).toContain(
-      "Every school's real data, made personal. Filter for the must-haves, then ask in plain English for everything else."
+      'Filter for the must-haves, then describe everything else in your own words.'
     )
   })
 
