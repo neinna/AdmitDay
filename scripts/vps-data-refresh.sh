@@ -199,11 +199,17 @@ open_refresh_pr() {
 assert_refresh_pr_files() {
   require_gh_token
 
-  local number="$1"
+  # List from git: GitHub's diff API times out on the 70 MB embeddings file.
+  git -C "$APP_DIR" fetch origin main "$BRANCH"
   local files
-  files="$(gh pr diff "$number" --repo "$REPO" --name-only | sort)"
+  files="$(git -C "$APP_DIR" diff --name-only "origin/main...origin/$BRANCH" | sort)"
 
-  if [ "$files" != "$EXPECTED_DATA_FILES" ]; then
+  local unexpected="$files"
+  if [ -n "$files" ]; then
+    unexpected="$(echo "$files" | grep -vxF "$EXPECTED_DATA_FILES" || true)"
+  fi
+
+  if [ -z "$files" ] || [ -n "$unexpected" ]; then
     echo "Refusing to merge data refresh PR with unexpected files:" >&2
     echo "$files" >&2
     exit 1
