@@ -86,7 +86,7 @@ const PROCESSORS: { label: string; value: string }[] = [
 
 export default function PrivacyPage() {
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-white flex flex-col">
       <header className="flex items-center justify-between px-5 min-[900px]:px-9 py-[18px] border-b border-rule">
         <Link href="/" aria-label="AdmitDay home" className="flex items-center gap-[9px]">
           <span className="w-[9px] h-[9px] bg-accent inline-block" />

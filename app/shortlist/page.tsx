@@ -32,7 +32,7 @@ export default async function ShortlistPage() {
 
   if (!userId) {
     return (
-      <main className="min-h-screen bg-white">
+      <main className="min-h-screen bg-white flex flex-col">
         <ShortlistClient index={[]} initialOrder={[]} details={{}} signedIn={false} />
         <Footer />
       </main>
@@ -76,7 +76,7 @@ export default async function ShortlistPage() {
   }
 
   return (
-    <main className="min-h-screen bg-white">
+    <main className="min-h-screen bg-white flex flex-col">
       <ShortlistClient index={index} initialOrder={initialOrder} details={details} signedIn={true} />
       <Footer />
     </main>
