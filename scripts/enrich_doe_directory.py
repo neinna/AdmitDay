@@ -15,7 +15,7 @@ own metadata says it was last updated 2018-08-16) with two current sources:
 Run directly to rewrite `doe_data` on every school in schools.json in place:
   python3 scripts/enrich_doe_directory.py
 
-It touches only `doe_data` -- it does not re-scrape NYC-SIFT, MySchools, or
+It touches only `doe_data` -- it does not re-scrape MySchools or
 any other part of a school record. build_school_data.py's fetch_doe_directory()
 reuses the download/parse helpers below for the full data refresh.
 """
@@ -48,8 +48,7 @@ SQR_METRIC_ATTENDANCE = "attendance_hs_all"
 # The HS School Quality Report *results* workbook (issue #290) -- a different
 # publication from the long-format Open Data SQR rows above. This is the
 # per-school Performance/Impact score sheet InfoHub publishes once a cycle;
-# it replaces NYC-SIFT's academic score, which its 2026-08-28 terms now
-# forbid scraping and using in an AI app.
+# it replaces the old academic score field.
 SQR_RESULTS_XLSX_URL = (
     "https://infohub.nyced.org/docs/default-source/default-document-library/"
     "202425-hs-sqr-results.xlsx"

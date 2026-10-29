@@ -25,8 +25,7 @@ import {
  * directory (plus School Quality Reports 2024-25 for attendance and a
  * graduation-rate fallback); the literal vintage asserted below moved with it.
  *
- * Issue #337 removed NYC-SIFT as a source entirely; the remaining sources are
- * MySchools, the DOE HS Directory (Fall 2025), and the DOE School Quality
+ * The sources are MySchools, the DOE HS Directory (Fall 2025), and the DOE School Quality
  * Reports (2024-25).
  */
 
