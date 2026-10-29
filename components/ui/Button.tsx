@@ -8,7 +8,7 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const BASE =
-  'font-sans text-[15px] px-[26px] py-[13px] transition-colors duration-[120ms] ease-out inline-flex items-center justify-center leading-none'
+  'font-sans text-[15px] px-[26px] py-[13px] transition-colors duration-[120ms] ease-out inline-flex items-center justify-center leading-none disabled:opacity-50 disabled:cursor-not-allowed'
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary: 'bg-accent text-white font-medium border border-accent',

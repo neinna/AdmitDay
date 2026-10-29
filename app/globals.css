@@ -8,6 +8,22 @@
   100% { transform: scale(1); }
 }
 
+@keyframes ask-progress {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
+.ask-progress-bar {
+  animation: ask-progress 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ask-progress-bar {
+    animation: none;
+    width: 100%;
+  }
+}
+
 /*
  * Issue #405 — the Shortlist print sheet is the artifact a parent carries to
  * the kitchen table, so it prints as a standalone record, not a screenshot of
