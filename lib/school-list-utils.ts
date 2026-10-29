@@ -472,6 +472,49 @@ export function admissionMethodCopy(method: string, school: School): string {
   return `${base} Lowest score offered in ${latest.year}: ${latest.score}`
 }
 
+export interface ProgramLine {
+  code: string;
+  name: string;
+  term: string | null;
+  slug: string | null;
+  cutoff: string | null;
+}
+
+/** Up to `limit` programs for a /find row, de-duplicated by program_code, in data order. */
+export function programLines(
+  school: School,
+  limit = 3,
+): { lines: ProgramLine[]; more: number } {
+  const seen = new Set<string>();
+  const all: ProgramLine[] = [];
+  for (const p of school.programs ?? []) {
+    if (p.program_code) {
+      if (seen.has(p.program_code)) continue;
+      seen.add(p.program_code);
+    }
+    const name = p.program_name ?? "";
+    if (!name) continue;
+    const type = p.admissions_type ?? "";
+    let cutoff: string | null = null;
+    if (type === "SHSAT") {
+      const cutoffs = getShsatCutoffs(school.dbn) ?? [];
+      if (cutoffs.length > 0) {
+        const latest = cutoffs[cutoffs.length - 1];
+        cutoff = `Lowest score offered in ${latest.year}: ${latest.score}`;
+      }
+    }
+    all.push({
+      code: p.program_code ?? "",
+      name,
+      term: type ? admissionMethodTerm(type) : null,
+      slug: type ? admissionMethodSlug(type) : null,
+      cutoff,
+    });
+  }
+  const lines = all.slice(0, limit);
+  return { lines, more: all.length - lines.length };
+}
+
 // ── /find "Starting from" ZIP or subway station + distance (issue #343/#374) ─
 // The starting point is a client-only convenience for sorting/reading the
 // list; it must never leave the browser (no fetch body, no analytics event).

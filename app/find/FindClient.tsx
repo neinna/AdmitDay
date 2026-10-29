@@ -26,15 +26,14 @@ import {
   findFiltersToQueryString,
   trackLabel,
   citywidePercentile,
-  admissionMethods,
-  admissionMethodCopy,
+  programLines,
   distanceMiles,
   applyRadiusFilter,
 } from '@/lib/school-list-utils'
 import { extractFilters, QueryFilters, appliedSignals, removeSignal } from '@/lib/query-filters'
 import { getUnmetCriteria } from '@/lib/soft-match'
 import { MAX_QUESTION_LENGTH } from '@/lib/ask-guardrails'
-import { buildFindRowSummary, MYSCHOOLS_URL } from '@/lib/school-detail-utils'
+import { buildFindRowSummary } from '@/lib/school-detail-utils'
 import { Chip, Button, SchoolRow } from '@/components/ui'
 import FeedbackRow from '@/components/FeedbackRow'
 import FindRail from './FindRail'
@@ -825,7 +824,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
                   school.applicants_per_seat != null
                     ? citywidePercentile(school.applicants_per_seat, schools)
                     : null
-                const methods = admissionMethods(school)
+                const programs = programLines(school)
 
                 return (
                   <SchoolRow
@@ -855,25 +854,41 @@ export default function FindClient({ schools, initialFilters }: Props) {
                     }
                     statLabel="Apps/seat"
                     evidence={
-                      (reason || methods.length > 0) && (
+                      (reason || programs.lines.length > 0) && (
                         <>
                           {reason && <p className="text-[12.5px] text-faint">{reason}</p>}
-                          {methods.length > 0 && (
-                            <p className="text-[13px] text-muted" style={{ textWrap: 'pretty' }}>
-                              {methods.map((method, methodIndex) => (
-                                <span key={method}>
-                                  {methodIndex > 0 && ' · '}
-                                  <a
-                                    href={MYSCHOOLS_URL}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-accent hover:underline"
-                                  >
-                                    {admissionMethodCopy(method, school)}
-                                  </a>
-                                </span>
+                          {programs.lines.length > 0 && (
+                            <div className="flex flex-col gap-1 mt-1">
+                              <div className="font-mono text-[10.5px] tracking-[0.1em] uppercase text-faint">
+                                Programs
+                              </div>
+                              {programs.lines.map((p) => (
+                                <p
+                                  key={p.code || p.name}
+                                  className="text-[13px] text-ink-2"
+                                  style={{ textWrap: 'pretty' }}
+                                >
+                                  {p.name}
+                                  {p.term && (
+                                    <>
+                                      {' · '}
+                                      <Link
+                                        href={`/admission-methods#${p.slug}`}
+                                        className="text-accent hover:underline"
+                                      >
+                                        {p.term}
+                                      </Link>
+                                    </>
+                                  )}
+                                  {p.cutoff && <span className="text-muted">{' · '}{p.cutoff}</span>}
+                                </p>
                               ))}
-                            </p>
+                              {programs.more > 0 && (
+                                <Link href={detailHref} className="text-[13px] text-accent hover:underline">
+                                  +{programs.more} more program{programs.more === 1 ? '' : 's'}
+                                </Link>
+                              )}
+                            </div>
                           )}
                         </>
                       )
