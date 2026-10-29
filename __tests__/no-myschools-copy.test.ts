@@ -11,6 +11,7 @@ const FILES = [
   'app/find/FindClient.tsx',
   'app/page.tsx',
   'lib/school-detail-utils.ts',
+  'lib/data-provenance.ts',
 ]
 
 function visibleLines(file: string): string[] {
