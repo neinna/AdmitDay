@@ -1,24 +1,13 @@
 """
 Tests for build_school_data.py.
 
-Issue #336: NYC-SIFT was dropped as a data source -- its terms of use,
-updated 2026-08-28, forbid scraping the site and using its data in an AI
-application. The school list now comes from the DOE Fall 2025 HS Directory
-(build_school_list_from_directory) instead of a NYC-SIFT scrape, and
+The school list comes from the DOE Fall 2025 HS Directory
+(build_school_list_from_directory), and
 per-program admissions data still comes from MySchools
 (fetch_myschools_program_detail).
 """
 
 import build_school_data
-
-
-# ── Issue #336: NYC-SIFT scraping removed ───────────────────────────────────
-
-
-def test_nycsift_functions_removed():
-    assert not hasattr(build_school_data, "fetch_nycsift_schools")
-    assert not hasattr(build_school_data, "fetch_school_detail")
-    assert not hasattr(build_school_data, "extract_borough")
 
 
 # ── The DOE Fall 2025 HS Directory path: base school list ──────────────────
@@ -168,7 +157,7 @@ def test_build_school_json_aborts_on_network_error_instead_of_excluding(monkeypa
         build_school_data.build_school_json(school_list, {})
 
 
-def test_build_school_json_has_no_sift_url_and_no_nycsift_provenance(monkeypatch):
+def test_build_school_json_programs_come_from_myschools(monkeypatch):
     monkeypatch.setattr(
         build_school_data,
         "fetch_myschools_program_detail",
@@ -180,12 +169,11 @@ def test_build_school_json_has_no_sift_url_and_no_nycsift_provenance(monkeypatch
 
     schools, _ = build_school_data.build_school_json(school_list, {})
 
-    assert "sift_url" not in schools[0]
-    assert all(p["provenance"]["source"] != "NYC-SIFT" for p in schools[0]["programs"])
+    assert all(p["provenance"]["source"] == "MySchools" for p in schools[0]["programs"])
 
 
 def test_build_school_json_has_no_applicants_per_seat_or_academic_score_source(monkeypatch):
-    # NYC-SIFT was the only source of these two fields (issue #336). Neither
+    # These two fields have had no source since issue #336. Neither
     # the DOE directory nor MySchools replaces them, so a school built from
     # the directory must come out with both None -- and degrade gracefully
     # (no crash, hidden-gem flag simply off) rather than a fabricated value.

@@ -52,7 +52,7 @@ npm run refresh:data
 
 The pipeline runs `build_school_data.py`, validates counts and required fields, writes the validated JSON and `data/schema-summary.json`, rebuilds embeddings with `scripts/embed-schools.ts`, and then seeds Postgres with `scripts/seed-schools.ts`. Embeddings run before the DB update so a provider/key failure cannot leave `/find` data ahead of RAG. It refuses to write if the scrape looks structurally wrong, such as a large school-count drop, duplicate DBNs, or missing required fields.
 
-The refresh fails loudly if MySchools coverage drops too far: at least 95% of schools must have a program with both `program_code` and `provenance.source == "MySchools"`, or validation rejects the scrape. NYC-SIFT is no longer a source; its terms forbid scraping, so it was removed from the pipeline.
+The refresh fails loudly if MySchools coverage drops too far: at least 95% of schools must have a program with both `program_code` and `provenance.source == "MySchools"`, or validation rejects the scrape.
 
 Source roles:
 

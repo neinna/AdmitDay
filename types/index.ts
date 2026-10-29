@@ -59,7 +59,7 @@ export interface DoeData {
 }
 
 export interface SchoolProgram {
-  // Compatibility fields from the older NYC-SIFT-shaped program rows.
+  // Compatibility fields from the older program-row shape.
   program?: string
   admissions_type?: string
   raw_method?: string
