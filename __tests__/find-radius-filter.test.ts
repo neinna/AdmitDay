@@ -222,12 +222,12 @@ describe('FindClient wires radiusDisabled off startCoords, not the raw input (is
 describe('no Distance option is added to the sort control (issue #344/#361/#395/#400)', () => {
   const findClientSrc = readSource('app/find/FindClient.tsx')
 
-  it('the ask-reasons label is unchanged — still "Sorted by your ask"', () => {
-    expect(findClientSrc).toContain("'Sorted by your ask'")
+  it('the "Sorted by your ask" label is gone', () => {
+    expect(findClientSrc).not.toContain('Sorted by your ask')
   })
 
   it('FindClient does not introduce a "Distance" sort option', () => {
-    const startIdx = findClientSrc.indexOf('Sorted by your ask')
+    const startIdx = findClientSrc.indexOf('{askReasons.length > 0 ? (')
     const endIdx = findClientSrc.indexOf('</div>', findClientSrc.indexOf('Fewest applicants', startIdx))
     const sortControlBlock = findClientSrc.slice(startIdx, endIdx)
     expect(sortControlBlock).not.toContain('Distance')

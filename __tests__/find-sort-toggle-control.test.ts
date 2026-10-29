@@ -86,7 +86,8 @@ describe('the sort toggle segmented control (issue #435)', () => {
     expect(src).toContain('<span>Sort</span>')
   })
 
-  it('leaves the "Sorted by your ask" branch untouched', () => {
-    expect(src).toContain("askReasons.length > 0 ? (\n                'Sorted by your ask'")
+  it('no longer has a "Sorted by your ask" label', () => {
+    expect(src).toContain('askReasons.length > 0 ? (')
+    expect(src).not.toContain('Sorted by your ask')
   })
 })
