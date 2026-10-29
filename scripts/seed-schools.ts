@@ -20,7 +20,7 @@ import dotenv from "dotenv";
 // Load env vars from .env.local
 dotenv.config({ path: path.resolve(process.cwd(), ".env.local") });
 
-import { sql } from "@vercel/postgres";
+import { sql } from "../lib/db";
 
 interface School {
   dbn: string;

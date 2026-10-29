@@ -11,7 +11,7 @@
  */
 
 const mockSql = jest.fn()
-jest.mock('@vercel/postgres', () => ({
+jest.mock('@/lib/db', () => ({
   sql: (...args: unknown[]) => mockSql(...args),
 }))
 

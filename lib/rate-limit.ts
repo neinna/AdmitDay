@@ -19,7 +19,7 @@
  * The global daily ceiling resets at UTC midnight.
  */
 
-import { sql } from '@vercel/postgres'
+import { sql } from '@/lib/db'
 import type { NextRequest } from 'next/server'
 
 export const MAX_REQUESTS = 15

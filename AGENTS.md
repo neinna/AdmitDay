@@ -36,7 +36,7 @@ These are the shared rules for any coding agent working in this repo: Claude Cod
 
 The app already runs on:
 
-- **Vercel Postgres** (`@vercel/postgres`, see `lib/load-schools.ts`) for anything persisted, including counters and small operational tables. Tables are created with `CREATE TABLE IF NOT EXISTS` on first use; there is no migration tool.
+- **Vercel Postgres** (`@neondatabase/serverless` through `lib/db.ts`, see `lib/load-schools.ts`) for anything persisted, including counters and small operational tables. Tables are created with `CREATE TABLE IF NOT EXISTS` on first use; there is no migration tool.
 - **`data/school-embeddings.json`**, loaded into memory by `lib/rag.ts`, for retrieval.
 - **Sentry** for errors, **PostHog** for product analytics, **Langfuse** (`lib/trace.ts`) for LLM tracing.
 

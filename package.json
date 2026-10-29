@@ -25,7 +25,6 @@
     "@opentelemetry/otlp-exporter-base": "0.223.0",
     "@opentelemetry/sdk-trace-base": "^2.0.1",
     "@sentry/nextjs": "^10.47.0",
-    "@vercel/postgres": "^0.10.0",
     "bcryptjs": "^3.0.3",
     "next": "^16.4.3",
     "posthog-js": "^1.365.4",
