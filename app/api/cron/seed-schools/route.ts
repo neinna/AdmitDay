@@ -7,7 +7,7 @@
  * gitignored and never reaches Vercel) and upserts it into Postgres.
  */
 
-import { sql } from '@vercel/postgres'
+import { sql } from '@/lib/db'
 import schools from '@/schools.json'
 import { validateSchoolData } from '@/lib/validate-school-data'
 import { ensureSchema } from '@/lib/load-schools'

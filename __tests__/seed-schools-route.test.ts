@@ -11,7 +11,7 @@ import path from 'path'
 const mockSql = jest.fn()
 const mockQuery = jest.fn()
 
-jest.mock('@vercel/postgres', () => ({
+jest.mock('@/lib/db', () => ({
   sql: Object.assign(
     (...args: unknown[]) => mockSql(...args),
     { query: (...args: unknown[]) => mockQuery(...args) }

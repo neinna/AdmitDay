@@ -14,7 +14,7 @@
  */
 
 import { auth, clerkClient } from '@clerk/nextjs/server'
-import { sql } from '@vercel/postgres'
+import { sql } from '@/lib/db'
 import * as Sentry from '@sentry/nextjs'
 import { ensureSchema } from '@/lib/saved-lists-db'
 

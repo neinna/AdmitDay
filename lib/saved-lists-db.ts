@@ -1,4 +1,4 @@
-import { sql } from '@vercel/postgres'
+import { sql } from '@/lib/db'
 
 /**
  * Issue #200 — saved lists move from localStorage to Postgres behind the

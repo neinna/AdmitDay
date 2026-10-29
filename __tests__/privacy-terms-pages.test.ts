@@ -88,7 +88,7 @@ describe('/privacy content matches the product as it actually exists', () => {
     // Every service named here must appear as a real dependency/integration
     // elsewhere in the codebase — a listed processor that isn't wired up is
     // worse than an unlisted one that is.
-    expect(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf-8')).toMatch(/@vercel\/postgres/)
+    expect(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf-8')).toMatch(/@neondatabase\/serverless/)
     expect(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf-8')).toMatch(/@anthropic-ai\/sdk/)
     expect(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf-8')).toMatch(/"openai"/)
     expect(fs.readFileSync(path.join(__dirname, '../package.json'), 'utf-8')).toMatch(/@sentry\/nextjs/)

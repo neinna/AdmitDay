@@ -20,7 +20,7 @@ jest.mock('@/lib/saved-lists-db', () => ({
   ensureSchema: (...args: unknown[]) => mockEnsureSchema(...args),
 }))
 
-jest.mock('@vercel/postgres', () => ({
+jest.mock('@/lib/db', () => ({
   sql: (...args: unknown[]) => mockSql(...args),
 }))
 
