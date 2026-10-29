@@ -613,7 +613,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
         </Link>
         <div className="flex items-center gap-[28px]">
           <nav className="flex items-baseline gap-[28px] text-[14.5px] text-muted">
-            <span className="text-ink font-medium border-b-2 border-accent pb-[3px]">Find</span>
+            <span className="text-ink font-medium border-b-2 border-accent pb-[3px]">Search</span>
             <Link href="/shortlist" className="hover:text-ink transition-colors duration-[120ms] ease-out">
               Shortlist
               {hydrated && shortlistLoadFailed ? (
@@ -660,7 +660,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
           <div className="flex flex-col gap-[18px] px-9 pt-[34px] pb-[26px] border-b border-rule">
             <div className="flex flex-col gap-2">
               <h1 className="font-display font-bold text-[44px] leading-[1.02] tracking-[-0.038em] text-ink">
-                Find Schools
+                Search Schools
               </h1>
             </div>
 

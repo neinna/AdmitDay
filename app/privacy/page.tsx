@@ -97,7 +97,7 @@ export default function PrivacyPage() {
         </Link>
         <div className="flex items-center gap-7">
           <nav className="flex items-center gap-7 text-[14.5px] text-muted">
-            <Link href="/find" className="hover:text-ink transition-colors duration-[120ms] ease-out">Find</Link>
+            <Link href="/find" className="hover:text-ink transition-colors duration-[120ms] ease-out">Search</Link>
             <Link href="/shortlist" className="hover:text-ink transition-colors duration-[120ms] ease-out">Shortlist</Link>
           </nav>
           <AuthControls />
