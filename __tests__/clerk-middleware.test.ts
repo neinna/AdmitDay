@@ -3,7 +3,7 @@ import * as path from 'path'
 
 // Issue #199: Clerk middleware is wired in but protects nothing.
 describe('middleware.ts (Clerk)', () => {
-  const source = fs.readFileSync(path.join(__dirname, '../middleware.ts'), 'utf8')
+  const source = fs.readFileSync(path.join(__dirname, '../proxy.ts'), 'utf8')
 
   it('uses clerkMiddleware with no route protection', () => {
     expect(source).toContain('export default clerkMiddleware()')
