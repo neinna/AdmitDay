@@ -93,15 +93,22 @@ export default async function Landing() {
 
       <section className="grid grid-cols-1 min-[900px]:grid-cols-3 gap-7 min-[900px]:gap-10 px-5 min-[900px]:px-9 py-9 min-[900px]:py-12 border-b border-rule">
         {[
-          { n: '01', t: 'Set your filters', b: 'Borough, size, how a school admits.' },
-          { n: '02', t: 'Describe the rest', b: 'Strong music, soccer, small classes.' },
-          { n: '03', t: 'Open a school', b: 'Real requirements, linked to the official listing.' },
+          { n: '01', t: 'Hard filters', items: ['Borough', 'Size', 'Admission method'] },
+          { n: '02', t: 'Soft filters', items: ['Strong music', 'Soccer', 'Small classes', 'and more'] },
+          { n: '03', t: 'School details', items: ['Requirements', 'Official NYC DOE data'] },
         ].map((s) => (
           <div key={s.n} className="grid grid-cols-[30px_1fr] min-[900px]:grid-cols-1 gap-x-4 gap-y-2">
             <span className="font-mono text-[13px] text-row-index pt-[3px] min-[900px]:pt-0">{s.n}</span>
             <div className="flex flex-col gap-1 min-[900px]:gap-2">
               <h3 className="text-[16px] min-[700px]:text-[17px] font-bold text-ink">{s.t}</h3>
-              <p className="text-[14.5px] text-ink-2 leading-[1.5]">{s.b}</p>
+              <ul className="flex flex-wrap gap-x-2 gap-y-1 text-[14.5px] text-ink-2 leading-[1.5]">
+                {s.items.map((item, i) => (
+                  <li key={item}>
+                    {i > 0 && <span className="text-faint mr-2" aria-hidden="true">·</span>}
+                    {item}
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
         ))}
@@ -119,10 +126,6 @@ export default async function Landing() {
           </div>
         ))}
       </section>
-
-      <div className="flex flex-col min-[900px]:flex-row justify-between gap-1 px-5 min-[900px]:px-9 py-4 bg-surface-2 border-t border-rule">
-        <span className="text-[13px] text-faint">Using NYC DOE data</span>
-      </div>
 
       <Footer />
     </main>

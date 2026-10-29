@@ -51,8 +51,13 @@ describe('the landing page keeps the product’s promises', () => {
   })
 
   it('names its data source', () => {
-    expect(pageCopy).toContain('Using NYC DOE data')
+    expect(pageCopy).not.toContain('Using NYC DOE data')
     expect(pageCopy).not.toMatch(/not affiliated/i)
+  })
+
+  it('shows the steps as Hard filters, Soft filters and School details', () => {
+    for (const t of ['Hard filters', 'Soft filters', 'School details']) expect(pageSrc).toContain(t)
+    for (const t of ['Set your filters', 'Describe the rest', 'Open a school']) expect(pageSrc).not.toContain(t)
   })
 
   it('does not tell parents to confirm every program', () => {
