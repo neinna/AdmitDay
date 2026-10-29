@@ -493,7 +493,7 @@ export interface ProgramRow {
 }
 
 /**
- * MySchools rows have distinct program names/codes. Older NYC-SIFT-shaped
+ * MySchools rows have distinct program names/codes. Older program
  * rows only had an admissions_type + raw_method string and sometimes repeated
  * the identical pair many times. Collapse exact duplicates while preserving
  * distinct MySchools programs.
@@ -596,7 +596,7 @@ export function buildMySchoolsUrl(dbn: string): string {
  * next to the MySchools link even when a parent never clicks through (issue
  * #438). Every program for a school is fetched in the same pass, so the
  * first one with a recorded fetch date speaks for the school. Null when no
- * program has provenance (e.g. older NYC-SIFT-shaped rows).
+ * program has provenance (e.g. older program rows).
  */
 export function buildMySchoolsCheckedLabel(school: School): string | null {
   const fetchedAt = school.programs?.find((p) => p.provenance?.fetched_at)?.provenance?.fetched_at

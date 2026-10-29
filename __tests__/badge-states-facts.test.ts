@@ -7,7 +7,7 @@ import SchoolRow from '../components/ui/SchoolRow'
 // #266 (Inna, 2026-09-18): the "Hidden gem" badge is renamed to the two facts
 // behind it.
 // #334: the underlying rule and source changed to flags.high_impact (impact
-// percentile >= 80, DOE School Quality Reports 2024-25); NYC-SIFT is retired.
+// percentile >= 80, DOE School Quality Reports 2024-25).
 const files = ['app/school/[dbn]/SchoolDetailClient.tsx', 'components/ui/SchoolRow.tsx']
 
 describe('school badge states facts, not a verdict', () => {
@@ -17,20 +17,19 @@ describe('school badge states facts, not a verdict', () => {
     expect(src).not.toMatch(/>\s*Hidden gem\s*</)
   })
 
-  it.each(files)('%s badge tooltip cites DOE, not NYC-SIFT', (f) => {
+  it.each(files)('%s badge tooltip cites DOE', (f) => {
     const src = fs.readFileSync(path.join(__dirname, '..', f), 'utf8')
     expect(src).toContain('Students grow more here than at 80%+ of NYC high schools (DOE, 2024-25)')
   })
 })
 
 describe('badge title text (issue #334)', () => {
-  it.each(files)('%s: title contains DOE and no NYC-SIFT or applicants-per-seat language', (f) => {
+  it.each(files)('%s: title contains DOE and no applicants-per-seat language', (f) => {
     const src = fs.readFileSync(path.join(__dirname, '..', f), 'utf8')
     const match = src.match(/title="([^"]*)"[^>]*text-gem/)
     expect(match).not.toBeNull()
     const title = match![1]
     expect(title).toContain('DOE')
-    expect(title).not.toContain('NYC-SIFT')
     expect(title).not.toContain('applicants per seat')
   })
 })

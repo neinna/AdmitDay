@@ -12,7 +12,7 @@ function s(over: Partial<School> & { dbn: string }): School {
     name: 'S', borough: 'Brooklyn', size: 'Medium', total_students: 1,
     applicants_per_seat: 1, academic_score_pct: 1, survey_score_pct: 1,
     admissions_types: ['Open'], programs: [{} as never], flags: {} as School['flags'],
-    doe_data: {} as School['doe_data'], sift_url: '', last_verified: '', ...over,
+    doe_data: {} as School['doe_data'], last_verified: '', ...over,
   } as School
 }
 
