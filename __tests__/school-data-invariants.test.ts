@@ -28,7 +28,7 @@
  *    legitimately carry 0 (not null) for this field. We assert >= 0, not
  *    > 0, so a genuine negative (corruption) still fails.
  *  - admissions tracks: build_school_data.py's own fetch_school_detail()
- *    falls back to [] when a school's SIFT detail page fails to parse, and
+ *    falls back to [] when a school's detail page fails to parse, and
  *    the scraper already prints a "Missing admissions" count as an expected,
  *    non-zero metric. ~11% (51/457) of real schools currently have an empty
  *    admissions_types array. We bound that ratio (catches a scraper

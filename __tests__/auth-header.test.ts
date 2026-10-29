@@ -66,7 +66,7 @@ describe('AuthControls is wired into the header on every page (issue #199)', () 
 
 describe('No route gating (issue #199)', () => {
   it('middleware.ts wires Clerk but protects no route — route gating is out of scope for this slice (see clerk-middleware.test.ts)', () => {
-    const source = fs.readFileSync(path.join(__dirname, '..', 'middleware.ts'), 'utf8')
+    const source = fs.readFileSync(path.join(__dirname, '..', 'proxy.ts'), 'utf8')
     expect(source).toContain('clerkMiddleware()')
     expect(source).not.toMatch(/protect\(|createRouteMatcher/)
   })

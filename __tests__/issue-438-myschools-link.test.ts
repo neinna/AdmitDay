@@ -103,7 +103,7 @@ describe('buildMySchoolsCheckedLabel', () => {
     expect(buildMySchoolsCheckedLabel(school)).toBe('From DOE data, checked September 18, 2026')
   })
 
-  it('returns null when no program carries a fetched_at (older NYC-SIFT-shaped rows)', () => {
+  it('returns null when no program carries a fetched_at (older program rows)', () => {
     const school = makeSchool({
       programs: [{ admissions_type: 'SHSAT', raw_method: 'SHSAT' }] as unknown as School['programs'],
     })

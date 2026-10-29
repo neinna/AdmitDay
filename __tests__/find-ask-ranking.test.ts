@@ -178,7 +178,7 @@ describe('the prose answer block is gone; the error path is untouched (issue #32
   })
 
   it('keeps the loading line and the Applied signals chips untouched', () => {
-    expect(src).toContain('Searching schools and generating an answer…')
+    expect(src).toContain('{askLoading && <AskPending />}')
     expect(src).toContain('Applied')
     expect(src).toContain('onClick={() => removeChip(signal.kind, signal.value)}')
   })

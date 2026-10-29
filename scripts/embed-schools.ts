@@ -112,7 +112,6 @@ export interface School {
   programs: SchoolProgram[];
   flags: SchoolFlags;
   doe_data: DoeData;
-  sift_url: string;
   shsat_cutoff_score: number | null;
   [key: string]: unknown;
 }
