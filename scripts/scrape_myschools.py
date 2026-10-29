@@ -10,8 +10,8 @@ and is not wired into any pipeline. Integration is a follow-up issue.
 ## Why this scrapes a JSON endpoint, not HTML
 
 The issue's starting assumption was that https://www.myschools.nyc/en/schools/
-is server-rendered HTML, matching the technique `build_school_data.py` uses
-against NYC-SIFT. That turned out not to hold: fetching that URL returns an
+is server-rendered HTML, matching the technique `build_school_data.py` used
+for an earlier source. That turned out not to hold: fetching that URL returns an
 Angular single-page-app shell with an empty mount point (`<div id="app">`) --
 there is no program data in the initial HTML to parse.
 

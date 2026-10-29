@@ -33,10 +33,6 @@ describe('Footer disclaimer text', () => {
     expect(footerSource).not.toContain('Every effort was made to keep this data current.')
   })
 
-  it('does NOT contain the old NYC-SIFT disclaimer', () => {
-    expect(footerSource).not.toContain('Data from NYC-SIFT and NYC DOE Open Data')
-  })
-
   it('links to /disclaimers instead of carrying the paragraph inline (#476)', () => {
     expect(footerSource).toContain('href="/disclaimers"')
   })
@@ -328,7 +324,6 @@ function makeGroup(type: string, count: number, startIndex: number): SectionGrou
       has_open: true, has_borough_priority: false, is_hidden_gem: false, has_consortium: false, has_ib: false,
     },
     doe_data: { overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '' },
-    sift_url: '',
     last_verified: '',
   })) as any[]
   return { type: type as any, label: type, schools, startIndex }
@@ -753,7 +748,6 @@ function makeSchool38(overrides: {
       has_ib: false,
     },
     doe_data: { overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '' },
-    sift_url: '',
     last_verified: '',
   }
 }
