@@ -351,7 +351,7 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
           <div className="flex items-baseline justify-between gap-4 mb-3">
             <Eyebrow>Your ranking</Eyebrow>
             <span className="text-[12.5px] text-faint">
-              Use ↑ ↓ — this order is the one you&rsquo;ll enter in MySchools
+              Use ↑ ↓ to put these in the order you&rsquo;d rank them
             </span>
           </div>
 

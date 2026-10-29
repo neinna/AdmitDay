@@ -109,7 +109,7 @@ export default async function Landing() {
 
       <section className="grid grid-cols-1 min-[900px]:grid-cols-3 gap-7 min-[900px]:gap-10 px-5 min-[900px]:px-9 py-9 min-[900px]:py-12 border-b border-rule">
         {[
-          { t: 'Where the data comes from', b: "NYC Department of Education's MySchools. Every fact links to its source, with the date it was fetched." },
+          { t: 'Where the data comes from', b: "The NYC Department of Education's public school directory. Every fact links to its source, with the date it was fetched." },
           { t: 'What the AI does', b: 'Reads only that data, and gives one reason for each school it puts at the top of your list.' },
           { t: 'What it never does', b: "We never predict admission. Your question goes to our AI provider to answer it; we don't store its text." },
         ].map((s) => (
