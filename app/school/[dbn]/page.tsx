@@ -32,7 +32,7 @@ export async function generateMetadata({
   const schools = await getAllSchools()
   const school = findSchoolByDbn(schools, dbn)
   if (!school) return { title: 'AdmitDay' }
-  return { title: `${formatSchoolName(school.name)} · AdmitDay` }
+  return { title: `AdmitDay: ${formatSchoolName(school.name)}` }
 }
 
 // Issue #116: the school detail view. Server component — loads via
