@@ -92,7 +92,7 @@ describe('data provenance — summary line', () => {
   it('reports the oldest known vintage, since that is the honest summary', () => {
     const note = summariseDataVintage()
     expect(note).toContain('2024-25')
-    expect(note).toMatch(/confirm at MySchools/i)
+    expect(note).toMatch(/confirm with the DOE/i)
   })
 
   it('does not imply the data was verified for the current cycle', () => {

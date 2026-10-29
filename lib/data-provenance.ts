@@ -77,7 +77,7 @@ export const SQR_DATASET_PUBLISHED = '2024-25'
 export const DATA_SOURCES: readonly SourceProvenance[] = [
   {
     key: 'myschools',
-    label: 'MySchools',
+    label: 'DOE admissions site',
     covers: 'School list, size, applicants per seat, programs, and admissions tracks',
     // We do not record a scrape date yet, so we claim none.
     publishedLabel: null,
@@ -141,5 +141,5 @@ export function summariseDataVintage(
   const oldest = dated.reduce((a, b) =>
     (a.publishedLabel as string) <= (b.publishedLabel as string) ? a : b
   )
-  return `DOE data published ${oldest.publishedLabel} · Confirm at MySchools before you apply.`
+  return `DOE data published ${oldest.publishedLabel} · Confirm with the DOE before you apply.`
 }
