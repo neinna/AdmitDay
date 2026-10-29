@@ -18,6 +18,14 @@ jest.mock('@vercel/postgres', () => ({
   ),
 }))
 
+// ensureSchema (lib/load-schools) now runs through lib/db, so mock it the same way.
+jest.mock('@/lib/db', () => ({
+  sql: Object.assign(
+    (...args: unknown[]) => mockSql(...args),
+    { query: (...args: unknown[]) => mockQuery(...args) }
+  ),
+}))
+
 const mockValidateSchoolData = jest.fn()
 
 jest.mock('@/lib/validate-school-data', () => ({

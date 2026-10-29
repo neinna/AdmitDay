@@ -1,4 +1,4 @@
-import { sql } from '@vercel/postgres'
+import { sql } from '@/lib/db'
 import { School } from '@/types'
 
 // School data lives in Vercel Postgres. data/schools.json is gitignored scraped
