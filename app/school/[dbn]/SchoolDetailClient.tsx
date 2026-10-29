@@ -249,7 +249,7 @@ export default function SchoolDetailClient({
               onClick={() => posthog?.capture('myschools_link_clicked', { dbn: school.dbn })}
               className="block text-center border border-border text-[13.5px] text-accent py-[10px] hover:bg-surface-2 transition-colors duration-[120ms] ease-out"
             >
-              Find <span className="font-mono">{school.dbn}</span> on MySchools ↗
+              Find <span className="font-mono">{school.dbn}</span> in the DOE directory ↗
             </a>
             {myschoolsCheckedLabel && (
               <span className="text-[11px] text-faint text-center">{myschoolsCheckedLabel}</span>
@@ -319,7 +319,7 @@ export default function SchoolDetailClient({
                     <span className="text-[13.5px] text-muted">{p.method}</span>
                     {p.seatsLeftLastYear && (
                       <span
-                        title={`Some seats were still open after last year's offers (MySchools${p.seatsLeftLastYear.cycle ? `, ${p.seatsLeftLastYear.cycle}` : ''}).`}
+                        title={`Some seats were still open after last year's offers (DOE data${p.seatsLeftLastYear.cycle ? `, ${p.seatsLeftLastYear.cycle}` : ''}).`}
                         className="col-span-1 min-[900px]:col-span-2 text-[12.5px] text-faint"
                       >
                         Seats left last year
@@ -374,7 +374,7 @@ export default function SchoolDetailClient({
                   }}
                   className="text-[13.5px] font-medium border border-accent px-[14px] py-2 whitespace-nowrap text-accent hover:bg-accent hover:text-white transition-colors duration-[120ms] ease-out"
                 >
-                  Find <span className="font-mono">{school.dbn}</span> on MySchools ↗
+                  Find <span className="font-mono">{school.dbn}</span> in the DOE directory ↗
                 </a>
                 {myschoolsCheckedLabel && (
                   <span className="text-[11px] text-faint whitespace-nowrap">{myschoolsCheckedLabel}</span>
