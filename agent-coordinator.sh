@@ -766,6 +766,76 @@ except Exception:
   return 0
 }
 
+# advance_one_behind_pr: main requires branches to be up to date, so each merge
+# puts every other open PR behind. Rather than update them all at once (they
+# would race), update at most one per call: the lowest-numbered task-* PR that
+# is behind main with a green latest "test" run, and only when no task-* PR has
+# a "test" run queued or in progress. update-branch only; never merges.
+advance_one_behind_pr() {
+  local PRS NUM REF DETAIL SUMMARY INFLIGHT=0 CANDIDATES=""
+  PRS=$(gh_api GET "/pulls?state=open&per_page=100" | python3 -c "
+import json, re, sys
+try:
+    prs = json.load(sys.stdin)
+except Exception:
+    prs = []
+for pr in prs:
+    ref = (pr.get('head') or {}).get('ref') or ''
+    if re.match(r'^task-[0-9]+-', ref):
+        print(pr.get('number'))
+" 2>>"$LOG_FILE")
+
+  for NUM in $PRS; do
+    DETAIL=$(gh_api GET "/pulls/${NUM}")
+    SUMMARY=$(
+      {
+        echo "$DETAIL"
+        echo "@@@"
+        local SHA
+        SHA=$(echo "$DETAIL" | python3 -c "
+import json, sys
+try:
+    print((json.load(sys.stdin).get('head') or {}).get('sha') or '')
+except Exception:
+    print('')
+" 2>>"$LOG_FILE")
+        [ -n "$SHA" ] && gh_api GET "/commits/${SHA}/check-runs?per_page=100"
+      } | python3 -c "
+import json, sys
+detail, _, runs = sys.stdin.read().partition('@@@')
+try:
+    state = json.loads(detail).get('mergeable_state') or ''
+except Exception:
+    state = ''
+try:
+    runs = [r for r in (json.loads(runs).get('check_runs') or []) if r.get('name') == 'test']
+except Exception:
+    runs = []
+runs.sort(key=lambda r: (r.get('started_at') or '', r.get('id') or 0))
+inflight = any(r.get('status') in ('queued', 'in_progress') for r in runs)
+ok = bool(runs) and runs[-1].get('status') == 'completed' and runs[-1].get('conclusion') == 'success'
+print(f\"{'1' if inflight else '0'}\t{state}\t{'1' if ok else '0'}\")
+" 2>>"$LOG_FILE"
+    )
+    local IF STATE OK
+    IFS=$'\t' read -r IF STATE OK <<< "$SUMMARY"
+    if [ "$IF" = "1" ]; then
+      INFLIGHT=1
+      break
+    fi
+    if [ "$STATE" = "behind" ] && [ "$OK" = "1" ]; then
+      CANDIDATES="${CANDIDATES}${NUM}"$'\n'
+    fi
+  done
+
+  [ "$INFLIGHT" = "1" ] && return 0
+  NUM=$(printf '%s' "$CANDIDATES" | sort -n | head -n 1)
+  [ -z "$NUM" ] && return 0
+  log "Advance: updating PR #${NUM} (behind main)"
+  gh_api PUT "/pulls/${NUM}/update-branch" > /dev/null
+  return 0
+}
+
 maybe_reconcile_open_prs() {
   local NOW LAST
   NOW=$(date +%s)
@@ -1911,6 +1981,7 @@ telegram "Coordinator started, watching for ${TRIGGER_LABEL} issues (PR flow —
 while true; do
   maybe_self_update_or_exit
   maybe_reconcile_open_prs
+  advance_one_behind_pr || log "Advance: pass errored, continuing"
   handle_telegram_commands
 
   ISSUE_NUMBERS=$(curl -sL \
