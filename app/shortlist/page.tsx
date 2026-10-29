@@ -7,7 +7,7 @@ import type { ListSchool, ListSchoolDetail } from '@/lib/saved-list-utils'
 import ShortlistClient from './ShortlistClient'
 
 export const metadata: Metadata = {
-  title: 'Shortlist · AdmitDay',
+  title: 'AdmitDay: Shortlist',
 }
 
 /**

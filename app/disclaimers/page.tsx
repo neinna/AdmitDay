@@ -4,7 +4,7 @@ import Footer from '@/components/Footer'
 import AuthControls from '@/components/AuthControls'
 
 export const metadata: Metadata = {
-  title: 'Disclaimers · AdmitDay',
+  title: 'AdmitDay: Disclaimers',
 }
 
 export default function DisclaimersPage() {

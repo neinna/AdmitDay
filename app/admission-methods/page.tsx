@@ -10,7 +10,7 @@ import {
 } from '@/lib/school-list-utils'
 
 export const metadata: Metadata = {
-  title: 'Admission methods · AdmitDay',
+  title: 'AdmitDay: Admission methods',
 }
 
 export default function AdmissionMethodsPage() {
