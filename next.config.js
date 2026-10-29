@@ -17,6 +17,13 @@ if (!process.env.VERCEL) {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Next 15 dropped the client router cache for dynamic pages (Next 14 kept
+  // them 30 s). /find is dynamic and ships all 426 schools (~560 KB gzipped),
+  // so after the Next 16 upgrade (#556) every menu click re-downloaded it.
+  // 30 s restores Next 14's behaviour.
+  experimental: {
+    staleTimes: { dynamic: 30 },
+  },
   // Issue #283: /my-schools was renamed to /shortlist. Permanent redirect so
   // bookmarks and shared links still resolve.
   async redirects() {
