@@ -5,7 +5,7 @@ import { parseFindFilters } from '@/lib/school-list-utils'
 import FindClient from './FindClient'
 
 export const metadata: Metadata = {
-  title: 'Search schools · AdmitDay',
+  title: 'AdmitDay: Search',
 }
 
 // Issue #114: rebuilt to the approved design (design/find-screen.html) — rail

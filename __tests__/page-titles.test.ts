@@ -3,7 +3,7 @@ import * as path from 'path'
 
 /**
  * Issue #287: every route below / should carry its own page title
- * ("<Thing> · AdmitDay"), not the bare "AdmitDay" the root layout sets by
+ * ("AdmitDay: <Thing>"), not the bare "AdmitDay" the root layout sets by
  * default. / is exempt — it stays "AdmitDay".
  */
 
@@ -26,11 +26,12 @@ describe('/ keeps the bare "AdmitDay" title', () => {
 })
 
 const STATIC_TITLE_ROUTES: [string, string][] = [
-  ['app/find/page.tsx', 'Search schools · AdmitDay'],
-  ['app/shortlist/page.tsx', 'Shortlist · AdmitDay'],
-  ['app/privacy/page.tsx', 'Privacy · AdmitDay'],
-  ['app/disclaimers/page.tsx', 'Disclaimers · AdmitDay'],
-  ['app/terms/page.tsx', 'Terms · AdmitDay'],
+  ['app/find/page.tsx', 'AdmitDay: Search'],
+  ['app/shortlist/page.tsx', 'AdmitDay: Shortlist'],
+  ['app/admission-methods/page.tsx', 'AdmitDay: Admission methods'],
+  ['app/privacy/page.tsx', 'AdmitDay: Privacy'],
+  ['app/disclaimers/page.tsx', 'AdmitDay: Disclaimers'],
+  ['app/terms/page.tsx', 'AdmitDay: Terms'],
 ]
 
 describe('every other route exports a title other than the bare "AdmitDay" (issue #287)', () => {
@@ -41,9 +42,9 @@ describe('every other route exports a title other than the bare "AdmitDay" (issu
     expect(src).toContain(`title: '${expectedTitle}'`)
   })
 
-  it('app/school/[dbn]/page.tsx exports generateMetadata building "<School name> · AdmitDay"', () => {
+  it('app/school/[dbn]/page.tsx exports generateMetadata building "AdmitDay: <School name>"', () => {
     const src = readSource('app/school/[dbn]/page.tsx')
     expect(src).toContain('export async function generateMetadata(')
-    expect(src).toMatch(/title:\s*`\$\{formatSchoolName\(school\.name\)\} · AdmitDay`/)
+    expect(src).toMatch(/title:\s*`AdmitDay: \$\{formatSchoolName\(school\.name\)\}`/)
   })
 })

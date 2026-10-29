@@ -5,7 +5,7 @@ import AuthControls from '@/components/AuthControls'
 import { Eyebrow, DefinitionRow } from '@/components/ui'
 
 export const metadata: Metadata = {
-  title: 'Privacy · AdmitDay',
+  title: 'AdmitDay: Privacy',
 }
 
 /**
