@@ -435,6 +435,29 @@ export const ADMISSION_METHOD_COPY: Record<string, string> = {
   'Language Program': "Language program: admission considers English-learner status or the program's target language",
 }
 
+/** "Screened" from "Screened: the school ranks…". Unknown methods return themselves. */
+export function admissionMethodTerm(method: string): string {
+  const copy = ADMISSION_METHOD_COPY[method]
+  if (!copy) return method
+  const i = copy.indexOf(': ')
+  return i === -1 ? copy : copy.slice(0, i)
+}
+
+/** The approved explanation after the term, verbatim. */
+export function admissionMethodMeaning(method: string): string {
+  const copy = ADMISSION_METHOD_COPY[method] ?? ''
+  const i = copy.indexOf(': ')
+  return i === -1 ? copy : copy.slice(i + 2)
+}
+
+/** Anchor id on /admission-methods, e.g. "screened-assessment". */
+export function admissionMethodSlug(method: string): string {
+  return admissionMethodTerm(method)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
 /**
  * The approved row copy for one admissions method this school uses. SHSAT
  * names only the most recent published offer cutoff, with its year, so the
