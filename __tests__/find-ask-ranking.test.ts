@@ -165,7 +165,7 @@ describe('the prose answer block is gone; the error path is untouched (issue #32
   })
 
   it('still renders askAnswerError in an alert paragraph, unchanged', () => {
-    expect(src).toContain('{askAnswerError && (')
+    expect(src).toContain('{askAnswerError && !askLoading && (')
     expect(src).toContain('role="alert"')
     expect(src).toContain('{askAnswerError}')
   })
