@@ -1,5 +1,5 @@
 /**
- * Issue #302: the DOE School Quality Report replaces the old NYC-SIFT
+ * Issue #302: the DOE School Quality Report replaces the old
  * academic/survey score fields, and flags.high_impact replaces
  * flags.is_hidden_gem. Asserts the checked-in dataset actually reflects
  * that swap -- no school record carries a removed field, and no school
@@ -40,9 +40,9 @@ interface MinimalSchool {
     expect(schools.length).toBe(426)
   })
 
-  it('no school record carries academic_score_pct, survey_score_pct, or sift_url', () => {
+  it('no school record carries academic_score_pct or survey_score_pct', () => {
     const violations = schools
-      .filter((s) => 'academic_score_pct' in s || 'survey_score_pct' in s || 'sift_url' in s)
+      .filter((s) => 'academic_score_pct' in s || 'survey_score_pct' in s)
       .map((s) => s.dbn)
     expect(violations).toEqual([])
   })

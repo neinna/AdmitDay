@@ -26,7 +26,7 @@ describe('private SHSAT practice tool stays removed', () => {
   })
 
   it('middleware.ts no longer gates /shsat (#199 reintroduced it for Clerk only)', () => {
-    const mw = path.join(root, 'middleware.ts')
+    const mw = path.join(root, 'proxy.ts')
     if (fs.existsSync(mw)) {
       expect(fs.readFileSync(mw, 'utf8')).not.toMatch(/shsat/i)
     }

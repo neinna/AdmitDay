@@ -176,7 +176,7 @@ describe('validateSchoolData', () => {
 })
 
 // ── Issue #189: MySchools coverage threshold ────────────────────────────────
-// Issue #337 removed the NYC-SIFT fallback: a program with any provenance
+// A program with any provenance
 // source other than "MySchools" is now flagged invalid outright, rather than
 // tolerated as a recognized fallback. A MySchools program without a
 // program_code still counts as a valid record -- it just doesn't count
@@ -259,14 +259,14 @@ describe('validateSchoolData MySchools coverage threshold (issue #189)', () => {
     expect(strict.errors.some((e) => e.includes('MySchools coverage 448/457'))).toBe(true)
   })
 
-  it('flags a program with an unrecognized provenance source as invalid (NYC-SIFT is no longer tolerated)', () => {
+  it('flags a program with an unrecognized provenance source as invalid', () => {
     const schools = makeValidSchools(1) as any[]
     schools[0].programs = [
       {
         program_name: 'Screened',
         admissions_type: 'Screened',
         provenance: {
-          source: 'NYC-SIFT',
+          source: 'Unknown source',
           url: 'https://example.com/school.phtml?id=00X100',
           fetched_at: '2026-09-12T00:00:00+00:00',
         },
