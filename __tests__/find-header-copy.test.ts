@@ -40,11 +40,15 @@ describe('/find header copy (issue #401)', () => {
   })
 
   it('adds the one-line description under the label', () => {
-    expect(src).toContain("Anything the filters can&rsquo;t capture — in your own words.")
+    expect(src).toContain('Describe any additional filters in your own words.')
   })
 
-  it('renames the submit button from "Ask" to "Refine list"', () => {
-    expect(src).toMatch(/<Button type="submit" disabled=\{askLoading\}>\s*Refine list/)
+  it('places the page title before the two-column grid', () => {
+    expect(src.indexOf('Search Schools')).toBeLessThan(src.indexOf('grid-cols-[316px_1fr]'))
+  })
+
+  it('labels the submit button "Find schools"', () => {
+    expect(src).toMatch(/<Button type="submit" disabled=\{askLoading\}>\s*Find schools/)
     expect(src).not.toMatch(/<Button type="submit" disabled=\{askLoading\}>\s*Ask\s*<\/Button>/)
   })
 

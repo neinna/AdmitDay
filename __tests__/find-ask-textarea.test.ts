@@ -49,7 +49,7 @@ describe('/find ask box is a multi-line textarea (issue #325)', () => {
     expect(src).toContain('border border-border-strong')
     expect(src).toContain('font-mono text-[13px] text-accent')
     expect(src).toContain('›')
-    expect(src).toMatch(/<Button type="submit" disabled=\{askLoading\}>\s*Refine list/)
+    expect(src).toMatch(/<Button type="submit" disabled=\{askLoading\}>\s*Find schools/)
   })
 
   it('auto-grows the textarea height from its scrollHeight as askText changes', () => {

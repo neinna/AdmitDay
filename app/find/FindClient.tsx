@@ -627,6 +627,12 @@ export default function FindClient({ schools, initialFilters }: Props) {
         </div>
       </header>
 
+      <div className="px-9 pt-[34px] pb-[26px] border-b border-rule">
+        <h1 className="font-display font-bold text-[44px] leading-[1.02] tracking-[-0.038em] text-ink">
+          Search Schools
+        </h1>
+      </div>
+
       <div className="grid grid-cols-1 min-[900px]:grid-cols-[316px_1fr]">
         <div>
           <button
@@ -659,14 +665,8 @@ export default function FindClient({ schools, initialFilters }: Props) {
         <div className="flex flex-col">
           <div className="flex flex-col gap-[18px] px-9 pt-[34px] pb-[26px] border-b border-rule">
             <div className="flex flex-col gap-2">
-              <h1 className="font-display font-bold text-[44px] leading-[1.02] tracking-[-0.038em] text-ink">
-                Search Schools
-              </h1>
-            </div>
-
-            <div className="flex flex-col gap-2">
               <p className="text-[15.5px] text-muted max-w-[560px]" style={{ textWrap: 'pretty' }}>
-                Anything the filters can&rsquo;t capture — in your own words.
+                Describe any additional filters in your own words.
               </p>
             </div>
 
@@ -688,7 +688,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
                 />
               </div>
               <Button type="submit" disabled={askLoading}>
-                Refine list
+                Find schools
               </Button>
             </form>
             <div className="flex items-center gap-3">
