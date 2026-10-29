@@ -183,6 +183,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
   // Set only when a paste is clipped to MAX_QUESTION_LENGTH (issue #325);
   // cleared on the next real edit so the notice doesn't linger forever.
   const [pasteWasTrimmed, setPasteWasTrimmed] = useState(false)
+  const [askFocused, setAskFocused] = useState(false)
   const askTextareaRef = useRef<HTMLTextAreaElement>(null)
   const [askFilters, setAskFilters] = useState<QueryFilters | null>(null)
   const [askAnswer, setAskAnswer] = useState('')
@@ -683,7 +684,9 @@ export default function FindClient({ schools, initialFilters }: Props) {
                   placeholder="She wants a strong CS program and a real soccer team, and we're in Sunset Park."
                   disabled={askLoading}
                   maxLength={MAX_QUESTION_LENGTH}
-                  rows={3}
+                  onFocus={() => setAskFocused(true)}
+                  onBlur={() => setAskFocused(false)}
+                  rows={2}
                   className="flex-1 text-[15px] text-ink outline-none placeholder:text-faint bg-transparent resize-none max-h-[11rem] overflow-y-auto"
                 />
               </div>
@@ -692,14 +695,16 @@ export default function FindClient({ schools, initialFilters }: Props) {
               </Button>
             </form>
             <div className="flex items-center gap-3">
-              <p
-                className={`font-mono text-[12px] ${
-                  MAX_QUESTION_LENGTH - askText.length <= 50 ? 'text-red-700' : 'text-faint'
-                }`}
-                aria-live={MAX_QUESTION_LENGTH - askText.length <= 50 ? 'polite' : undefined}
-              >
-                {askText.length} / {MAX_QUESTION_LENGTH}
-              </p>
+              {(askFocused || MAX_QUESTION_LENGTH - askText.length <= 50) && (
+                <p
+                  className={`font-mono text-[12px] ${
+                    MAX_QUESTION_LENGTH - askText.length <= 50 ? 'text-red-700' : 'text-faint'
+                  }`}
+                  aria-live={MAX_QUESTION_LENGTH - askText.length <= 50 ? 'polite' : undefined}
+                >
+                  {askText.length} / {MAX_QUESTION_LENGTH}
+                </p>
+              )}
               {pasteWasTrimmed && (
                 <p role="status" className="font-mono text-[12px] text-faint">
                   Pasted text was trimmed to {MAX_QUESTION_LENGTH} characters.
@@ -725,17 +730,10 @@ export default function FindClient({ schools, initialFilters }: Props) {
               </div>
             )}
 
-            {(askAnswerError || askAnswer) && !askLoading && (
-              <div className="border border-rule px-4 py-3 flex flex-col gap-2">
-                {askAnswerError && (
-                  <p role="alert" className="text-[13.5px] text-red-700">
-                    {askAnswerError}
-                  </p>
-                )}
-                {!askAnswerError && askAnswer && (
-                  <FeedbackRow key={askTraceId ?? 'no-trace'} screen="find_ask" traceId={askTraceId ?? undefined} />
-                )}
-              </div>
+            {askAnswerError && !askLoading && (
+              <p role="alert" className="text-[13.5px] text-red-700">
+                {askAnswerError}
+              </p>
             )}
           </div>
 
@@ -749,13 +747,12 @@ export default function FindClient({ schools, initialFilters }: Props) {
                   match{ranked.length === 1 ? '' : 'es'} {describeFindFilters(filters)}
                   {startingPoint ? ` · starting from ${startingPoint.label}` : ''}                </span>
               </div>
-              <p className="text-[12.5px] text-faint mt-1">
-                Schools admitting 9th graders through this year&rsquo;s NYC high school admissions.
-              </p>
             </div>
             <div className="shrink-0 whitespace-nowrap font-mono text-[11.5px] tracking-[0.1em] uppercase text-faint">
               {askReasons.length > 0 ? (
-                'Sorted by your ask'
+                askAnswer && !askAnswerError && !askLoading ? (
+                  <FeedbackRow key={askTraceId ?? 'no-trace'} screen="find_ask" traceId={askTraceId ?? undefined} />
+                ) : null
               ) : (
                 <span className="inline-flex items-center gap-3">
                   <span>Sort</span>

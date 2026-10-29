@@ -144,8 +144,9 @@ describe('the sort toggle UI (issue #400)', () => {
     expect(src).toContain('Fewest applicants')
   })
 
-  it('only shows the toggle when askReasons is empty; ask ordering still reads "Sorted by your ask"', () => {
-    expect(src).toContain("askReasons.length > 0 ? (\n                'Sorted by your ask'")
+  it('only shows the toggle when askReasons is empty; ask ordering no longer shows "Sorted by your ask"', () => {
+    expect(src).toContain('askReasons.length > 0 ? (')
+    expect(src).not.toContain('Sorted by your ask')
   })
 
   it('passes sortMode into rankFindRows', () => {

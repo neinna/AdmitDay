@@ -28,7 +28,7 @@ describe('/find ask box is a multi-line textarea (issue #325)', () => {
     const textareaIdx = src.indexOf('<textarea')
     const closeIdx = src.indexOf('/>', textareaIdx)
     const textareaTag = src.slice(textareaIdx, closeIdx)
-    expect(textareaTag).toContain('rows={3}')
+    expect(textareaTag).toContain('rows={2}')
     expect(textareaTag).toContain('max-h-[11rem]')
     expect(textareaTag).toContain('overflow-y-auto')
   })
@@ -80,11 +80,12 @@ describe('Enter submits, Shift+Enter inserts a newline (issue #325)', () => {
 })
 
 describe('the character counter always renders (issue #325)', () => {
-  it('is not gated behind a near-limit condition anymore', () => {
-    expect(src).not.toMatch(/MAX_QUESTION_LENGTH - askText\.length <= 50\s*&&/)
+  it('is not gated behind the near-limit condition alone', () => {
+    expect(src).not.toMatch(/\{MAX_QUESTION_LENGTH - askText\.length <= 50\s*&&/)
   })
 
-  it('renders "{length} / {MAX_QUESTION_LENGTH}" unconditionally, so it shows at 0 and at every length', () => {
+  it('shows the counter only while the box has focus or near the limit', () => {
+    expect(src).toContain('(askFocused || MAX_QUESTION_LENGTH - askText.length <= 50) &&')
     expect(src).toContain('{askText.length} / {MAX_QUESTION_LENGTH}')
   })
 

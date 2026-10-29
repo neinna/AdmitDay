@@ -21,12 +21,12 @@ function readSource(relPath: string): string {
 const src = readSource('app/find/FindClient.tsx')
 
 describe('the sort label reflects the active ordering (issue #362/#400)', () => {
-  it('reads "Sorted by your ask" when askReasons is non-empty', () => {
-    expect(src).toContain("askReasons.length > 0 ? (\n                'Sorted by your ask'")
+  it('no longer reads "Sorted by your ask" when askReasons is non-empty', () => {
+    expect(src).not.toContain('Sorted by your ask')
   })
 
   it('keeps the existing font-mono, uppercase, tracking and muted styling untouched', () => {
-    const labelIdx = src.indexOf("askReasons.length > 0 ? (\n                'Sorted by your ask'")
+    const labelIdx = src.indexOf('{askReasons.length > 0 ? (')
     expect(labelIdx).toBeGreaterThan(-1)
     const before = src.slice(Math.max(0, labelIdx - 200), labelIdx)
     expect(before).toContain('font-mono text-[11.5px] tracking-[0.1em] uppercase text-faint')
@@ -37,7 +37,7 @@ describe('the sort label reflects the active ordering (issue #362/#400)', () => 
   })
 
   it('does not gate the ask-reasons label on the starting point', () => {
-    const labelIdx = src.indexOf("askReasons.length > 0 ? (\n                'Sorted by your ask'")
+    const labelIdx = src.indexOf('{askReasons.length > 0 ? (')
     const labelLine = src.slice(labelIdx - 5, labelIdx + 60)
     expect(labelLine).not.toMatch(/startCoords|startingPoint/)
   })
