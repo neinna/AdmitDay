@@ -38,7 +38,7 @@ test('signed-out parent flow', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Every NYC public high school')
     await expect(page.getByRole('link', { name: 'AdmitDay home' })).toHaveAttribute('href', '/')
-    await expect(page.getByRole('link', { name: 'Find', exact: true })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Search', exact: true })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Shortlist', exact: true })).toBeVisible()
   })
 

@@ -26,7 +26,7 @@ describe('/ keeps the bare "AdmitDay" title', () => {
 })
 
 const STATIC_TITLE_ROUTES: [string, string][] = [
-  ['app/find/page.tsx', 'Find schools · AdmitDay'],
+  ['app/find/page.tsx', 'Search schools · AdmitDay'],
   ['app/shortlist/page.tsx', 'Shortlist · AdmitDay'],
   ['app/privacy/page.tsx', 'Privacy · AdmitDay'],
   ['app/disclaimers/page.tsx', 'Disclaimers · AdmitDay'],

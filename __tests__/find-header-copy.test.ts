@@ -25,9 +25,9 @@ function readSource(relPath: string): string {
 const src = readSource('app/find/FindClient.tsx')
 
 describe('/find header copy (issue #401)', () => {
-  it('titles the page "Find Schools" in Title Case', () => {
-    expect(src).toContain('Find Schools')
-    expect(src).not.toContain('>\n                Find schools\n')
+  it('titles the page "Search Schools" in Title Case', () => {
+    expect(src).toContain('Search Schools')
+    expect(src).not.toContain('>\n                Search schools\n')
   })
 
   it('removes the old "Filters set the floor" subtitle entirely', () => {
