@@ -559,6 +559,14 @@ export function buildRequirementBlocks(school: School): RequirementBlock[] {
     if (track.toLowerCase().includes('audition') && (school.doe_data?.audition_information?.length ?? 0) > 0) {
       fields.push({ label: 'Audition', value: (school.doe_data!.audition_information ?? []).join('; ') })
     }
+    const descriptions: string[] = []
+    for (const p of school.programs ?? []) {
+      const d = typeof p.admissions_method_description === 'string' ? p.admissions_method_description.trim() : ''
+      if (p.admissions_type === track && d && !descriptions.includes(d)) descriptions.push(d)
+    }
+    if (descriptions.length > 0 && !(track === 'SHSAT' && school.doe_data?.prgdesc)) {
+      fields.push({ label: 'Admissions', value: descriptions.join(' ') })
+    }
     // Requirements text isn't keyed by track in the source data, so a school
     // with only one non-SHSAT track gets all of it; multi-track schools show
     // it on the primary (first-listed) track only, to avoid repeating the

@@ -731,6 +731,48 @@ describe('buildRequirementBlocks', () => {
       value: 'Reviewed',
     })
   })
+
+  describe('DOE admissions method description', () => {
+    const doe = { overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '' }
+    const prog = (admissions_type: string, desc?: string) =>
+      ({ admissions_type, admissions_method_description: desc }) as unknown as School['programs'][number]
+    const grades = 'Students are admitted based on their course grades'
+
+    it('shows one Admissions field for identical descriptions', () => {
+      const school = makeSchool({
+        admissions_types: ['Screened'],
+        doe_data: { ...doe, requirements: {} },
+        programs: [prog('Screened', grades), prog('Screened', grades)],
+      })
+      expect(buildRequirementBlocks(school)[0].fields).toEqual([{ label: 'Admissions', value: grades }])
+    })
+
+    it('joins different descriptions with a space in data order', () => {
+      const school = makeSchool({
+        admissions_types: ['Screened'],
+        programs: [prog('Screened', ' First. '), prog('Screened', 'Second.')],
+      })
+      expect(buildRequirementBlocks(school)[0].fields).toEqual([{ label: 'Admissions', value: 'First. Second.' }])
+    })
+
+    it('adds no field when programs have no description', () => {
+      const school = makeSchool({
+        admissions_types: ['Screened'],
+        programs: [prog('Screened', ''), prog('Screened'), prog('Open', 'Other track')],
+      })
+      expect(buildRequirementBlocks(school)[0].fields).toEqual([])
+    })
+
+    it('keeps a single Admissions field for SHSAT with prgdesc', () => {
+      const school = makeSchool({
+        admissions_types: ['SHSAT'],
+        doe_data: { ...doe, prgdesc: 'SHSAT only.' },
+        programs: [prog('SHSAT', 'Program text')],
+      })
+      const fields = buildRequirementBlocks(school)[0].fields
+      expect(fields.filter((f) => f.label === 'Admissions')).toEqual([{ label: 'Admissions', value: 'SHSAT only.' }])
+    })
+  })
 })
 
 // ── Provenance ───────────────────────────────────────────────────────────────
