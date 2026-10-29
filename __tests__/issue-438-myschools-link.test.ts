@@ -83,7 +83,7 @@ describe('buildMySchoolsCheckedLabel', () => {
         },
       ] as unknown as School['programs'],
     })
-    expect(buildMySchoolsCheckedLabel(school)).toBe('From MySchools, checked August 7, 2026')
+    expect(buildMySchoolsCheckedLabel(school)).toBe('From DOE data, checked August 7, 2026')
   })
 
   it('falls back to a later program when an earlier one has no provenance', () => {
@@ -100,7 +100,7 @@ describe('buildMySchoolsCheckedLabel', () => {
         },
       ] as unknown as School['programs'],
     })
-    expect(buildMySchoolsCheckedLabel(school)).toBe('From MySchools, checked September 18, 2026')
+    expect(buildMySchoolsCheckedLabel(school)).toBe('From DOE data, checked September 18, 2026')
   })
 
   it('returns null when no program carries a fetched_at (older NYC-SIFT-shaped rows)', () => {
@@ -141,17 +141,17 @@ describe('SchoolDetailClient — MySchools link points at the school (issue #438
     expect(occurrences).toBe(2)
   })
 
-  it('labels the link "on MySchools", not "Open in MySchools" (issue #482)', () => {
-    expect(src).toContain('on MySchools ↗')
+  it('labels the link "in the DOE directory", not "Open in MySchools" (issue #482)', () => {
+    expect(src).toContain('in the DOE directory ↗')
     expect(src).not.toContain('Open in MySchools')
   })
 })
 
-describe('school-detail-utils.ts — the "From MySchools, checked ..." copy (issue #438)', () => {
+describe('school-detail-utils.ts — the "From DOE data, checked ..." copy (issue #438)', () => {
   const src = readSource('lib/school-detail-utils.ts')
 
-  it('the checked-date sentence names MySchools explicitly', () => {
-    expect(src).toContain('From MySchools, checked')
+  it('the checked-date sentence names the DOE data, not MySchools', () => {
+    expect(src).toContain('From DOE data, checked')
   })
 })
 

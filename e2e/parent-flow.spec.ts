@@ -80,7 +80,7 @@ test('signed-out parent flow', async ({ page }) => {
     const programsHeading = page.getByText('Programs', { exact: true })
     await expect(programsHeading).toBeVisible()
     // Scoped to the Programs block (its grandparent), not the whole page —
-    // "Find" is also part of the "Find {dbn} on MySchools" link text below it.
+    // "Find" is also part of the "Find {dbn} in the DOE directory" link text below it.
     const programsSection = await programsHeading.locator('xpath=../..').innerText()
     expect(ADMISSION_METHODS.some((method) => programsSection.includes(method))).toBe(true)
 
@@ -89,7 +89,7 @@ test('signed-out parent flow', async ({ page }) => {
     // carries the DBN from the current /school/{dbn} URL.
     const dbn = new URL(page.url()).pathname.match(/\/school\/([^/?]+)/)?.[1] ?? ''
     expect(dbn.length).toBeGreaterThanOrEqual(3)
-    await expect(page.getByRole('link', { name: /on MySchools/ }).first()).toHaveAttribute(
+    await expect(page.getByRole('link', { name: /in the DOE directory/ }).first()).toHaveAttribute(
       'href',
       `${MYSCHOOLS_URL}/en/schools/high-school/`
     )

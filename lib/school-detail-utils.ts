@@ -609,7 +609,7 @@ export function buildMySchoolsCheckedLabel(school: School): string | null {
     month: 'long',
     day: 'numeric',
   })
-  return `From MySchools, checked ${formatted}`
+  return `From DOE data, checked ${formatted}`
 }
 
 /** "2025-2026" -> "2025–26 admissions". Falls back to the raw string if it isn't that shape. */
