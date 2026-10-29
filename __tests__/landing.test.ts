@@ -51,8 +51,14 @@ describe('the landing page keeps the product’s promises', () => {
   })
 
   it('names its data source', () => {
-    expect(pageCopy).toContain('Using NYC DOE data')
+    expect(pageCopy).not.toContain('Using NYC DOE data')
     expect(pageCopy).not.toMatch(/not affiliated/i)
+  })
+
+  it('shows the steps as Non-negotiables, Additional filters and School details', () => {
+    for (const t of ['Non-negotiables', 'Additional filters', 'School details']) expect(pageSrc).toContain(t)
+    for (const t of ['Hard filters', 'Soft filters']) expect(pageSrc).not.toContain(t)
+    for (const t of ['Set your filters', 'Describe the rest', 'Open a school']) expect(pageSrc).not.toContain(t)
   })
 
   it('does not tell parents to confirm every program', () => {
@@ -80,7 +86,7 @@ describe('the landing page keeps the product’s promises', () => {
 
   it('states the new subline exactly', () => {
     expect(pageCopy).toContain(
-      'Filter for the must-haves, then describe everything else in your own words.'
+      'Set your non-negotiables, then describe additional filters in your own words.'
     )
   })
 
