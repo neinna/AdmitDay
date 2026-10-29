@@ -1,5 +1,8 @@
 import * as fs from 'fs'
 import * as path from 'path'
+import React from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import Button from '../components/ui/Button'
 
 // Issue #113 — design foundation: token layer + fonts + five UI primitives.
 // This repo's jest setup runs in the `node` test environment (see
@@ -209,6 +212,12 @@ describe('Button primitive (issue #113)', () => {
 
   it('defaults to the primary variant', () => {
     expect(src).toContain("variant = 'primary'")
+  })
+
+  it('a disabled Button renders with the disabled styling', () => {
+    const html = renderToStaticMarkup(React.createElement(Button, { disabled: true }, 'Go'))
+    expect(html).toContain('disabled:opacity-50')
+    expect(html).toContain('disabled=""')
   })
 })
 
