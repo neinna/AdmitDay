@@ -38,6 +38,7 @@ import { buildFindRowSummary, MYSCHOOLS_URL } from '@/lib/school-detail-utils'
 import { Chip, Button, SchoolRow } from '@/components/ui'
 import FeedbackRow from '@/components/FeedbackRow'
 import FindRail from './FindRail'
+import AskPending from './AskPending'
 
 interface AskSource {
   name: string
@@ -706,9 +707,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
                 </p>
               )}
             </div>
-            {askLoading && (
-              <p className="font-mono text-[12px] text-faint">Searching schools and generating an answer…</p>
-            )}
+            {askLoading && <AskPending />}
 
             {signals.length > 0 && (
               <div className="flex flex-wrap gap-2 items-center">

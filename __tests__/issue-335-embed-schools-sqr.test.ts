@@ -64,7 +64,6 @@ function makeSchool(overrides: Partial<School> = {}): School {
     programs: [],
     flags: makeFlags(),
     doe_data: makeDoeData(),
-    sift_url: '',
     shsat_cutoff_score: null,
     ...overrides,
   }
