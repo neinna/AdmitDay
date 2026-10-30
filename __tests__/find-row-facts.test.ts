@@ -74,7 +74,7 @@ describe('buildFindRowFacts (issue #164)', () => {
         zip: '',
         graduation_rate: 0.94,
         college_career_rate: 0.88,
-        advancedplacement_courses: 'Calculus AB, Biology, US History',
+        advancedplacement_courses: 'AP Calculus AB, AP Biology, AP US History',
       },
     })
     expect(buildFindRowFacts(school)).toEqual([
@@ -99,7 +99,7 @@ describe('buildFindRowFacts (issue #164)', () => {
         phone: '',
         address: '',
         zip: '',
-        advancedplacement_courses: 'Calculus AB',
+        advancedplacement_courses: 'AP Calculus AB',
       },
     })
     expect(buildFindRowFacts(school)).toEqual(['1 AP course'])
