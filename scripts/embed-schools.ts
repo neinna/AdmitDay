@@ -183,7 +183,9 @@ export function buildIdentityParts(school: School): string[] {
     `${school.name} is a ${school.size} high school in ${school.borough}, located in the ${d.neighborhood || "N/A"} neighborhood.`
   );
   parts.push(
-    `It has ${school.total_students} students with an applicants-per-seat ratio of ${school.applicants_per_seat}.`
+    typeof school.applicants_per_seat === "number"
+      ? `It has ${school.total_students} students and ${school.applicants_per_seat} applicants per seat.`
+      : `It has ${school.total_students} students.`
   );
 
   if (school.admissions_types.length > 0) {

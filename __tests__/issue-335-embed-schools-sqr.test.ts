@@ -95,6 +95,16 @@ describe('issue #335: embed-schools identity chunk reflects sqr / flags.high_imp
     expect(text).not.toContain('Students grow more here than at 80%+')
   })
 
+  it('issue #670: omits applicants per seat when null, includes it when a number', () => {
+    const missing = makeSchool({ applicants_per_seat: null as unknown as number })
+    for (const part of buildIdentityParts(missing)) {
+      expect(part).not.toContain('null')
+    }
+
+    const present = makeSchool({ applicants_per_seat: 2.3 })
+    expect(buildIdentityParts(present).some((p) => p.includes('2.3 applicants per seat'))).toBe(true)
+  })
+
   it('never writes the retired hidden-gem or old score language into any chunk', () => {
     const schools = [
       makeSchool({
