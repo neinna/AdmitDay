@@ -85,17 +85,16 @@ export function toggleExpandedDbn(expanded: Set<string>, dbn: string): Set<strin
   return next
 }
 
-type DetailField = { label: string; value: string | null }
+type DetailField = { label: string; value: string | null; href?: string }
 
 /**
  * The field set the print block (#405) renders. Issue #408 reuses this for
  * the in-page expand panel too, rather than a second field list.
  */
 function buildDetailFields(school: ListSchool, detail?: ListSchoolDetail): DetailField[] {
+  const website = detail?.school_website || detail?.doe_data.website || null
   return [
-    { label: 'Borough', value: school.borough || null },
-    { label: 'Neighborhood', value: school.neighborhood ?? null },
-    { label: 'Address', value: detail?.doe_data.address ?? null },
+    { label: 'Location', value: [detail?.doe_data.address, school.neighborhood, school.borough].filter(Boolean).join(', ') || null },
     {
       label: 'Admissions tracks',
       value: (school.admissions_types ?? []).map(trackLabel).join(', ') || null,
@@ -122,7 +121,7 @@ function buildDetailFields(school: ListSchool, detail?: ListSchoolDetail): Detai
     },
     { label: 'Subway', value: detail?.doe_data.subway ?? null },
     { label: 'Bus', value: detail?.doe_data.bus ?? null },
-    { label: 'Website', value: detail?.school_website || detail?.doe_data.website || null },
+    { label: 'Website', value: website, href: website ? (/^https?:\/\//.test(website) ? website : `https://${website}`) : undefined },
   ].filter((f) => f.value != null && f.value !== '')
 }
 
@@ -136,7 +135,13 @@ function SchoolDetailFields({ school, detail }: { school: ListSchool; detail?: L
         {fields.map((f) => (
           <div key={f.label} className="flex gap-3 py-1 text-[13px] border-b border-rule-light">
             <dt className="w-[180px] shrink-0 text-faint">{f.label}</dt>
-            <dd className="text-ink-2">{f.value}</dd>
+            <dd className="text-ink-2">
+              {f.href ? (
+                <a href={f.href} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">{f.value}</a>
+              ) : (
+                f.value
+              )}
+            </dd>
           </div>
         ))}
       </dl>
@@ -352,7 +357,8 @@ export default function ShortlistClient({ index, initialOrder, programs, details
           <h2 className="font-display font-bold text-[22px] tracking-[-0.02em] text-ink">
             {String(i + 1).padStart(2, '0')} — {program.name}
           </h2>
-          <p className="font-mono text-[13px] text-faint mb-3">{school.name} · {school.dbn} · {code}</p>
+          <p className="font-mono text-[13px] text-faint">School: {school.name}</p>
+          <p className="font-mono text-[13px] text-faint mb-3">Program: {program.name} · {school.dbn} · {code}</p>
           <SchoolDetailFields school={school} detail={details[school.dbn]} />
         </div>
       ))}
@@ -393,17 +399,23 @@ export default function ShortlistClient({ index, initialOrder, programs, details
                         {String(i + 1).padStart(2, '0')}
                       </span>
                       <div className="min-w-0">
-                        <Link
-                          href={`/school/${program.dbn}`}
-                          onClick={() =>
-                            posthog?.capture('school_detail_viewed', { dbn: program.dbn, from: 'my_schools' })
-                          }
-                          className="text-[15px] font-semibold text-ink hover:text-accent"
-                        >
-                          {program.name}
-                        </Link>
+                        <p className="text-[15px] text-ink">
+                          <span className="text-faint">School:</span>{' '}
+                          <Link
+                            href={`/school/${program.dbn}`}
+                            onClick={() =>
+                              posthog?.capture('school_detail_viewed', { dbn: program.dbn, from: 'my_schools' })
+                            }
+                            className="font-semibold text-ink hover:text-accent"
+                          >
+                            {school.name}
+                          </Link>
+                        </p>
+                        <p className="text-[14px] text-ink-2 mt-[2px]">
+                          <span className="text-faint">Program:</span> {program.name}
+                        </p>
                         <p className="text-[12.5px] text-muted mt-[2px]">
-                          {school.name} · {[school.neighborhood, school.borough].filter(Boolean).join(', ')}
+                          {[school.neighborhood, school.borough].filter(Boolean).join(', ')}
                           <span className="font-mono ml-2 text-faint">{school.dbn}</span>
                           <span className="font-mono ml-2 text-faint">{code}</span>
                         </p>
@@ -460,7 +472,7 @@ export default function ShortlistClient({ index, initialOrder, programs, details
                           onClick={() => toggleExpanded(code)}
                           aria-expanded={isExpanded}
                           aria-controls={detailPanelId}
-                          aria-label={isExpanded ? `Collapse ${school.name}` : `Expand ${school.name}`}
+                          aria-label={isExpanded ? `Collapse ${program.name}` : `Expand ${program.name}`}
                           className="w-[23px] h-[23px] border border-border text-[12px] text-ink hover:border-muted"
                         >
                           {isExpanded ? '−' : '+'}
@@ -469,7 +481,7 @@ export default function ShortlistClient({ index, initialOrder, programs, details
                           type="button"
                           onClick={() => move(sectionCodes, i, -1)}
                           disabled={i === 0}
-                          aria-label={`Move ${school.name} up`}
+                          aria-label={`Move ${program.name} up`}
                           className="w-[23px] h-[23px] border border-border text-[12px] text-ink disabled:text-border disabled:cursor-default hover:border-muted"
                         >
                           ↑
@@ -478,7 +490,7 @@ export default function ShortlistClient({ index, initialOrder, programs, details
                           type="button"
                           onClick={() => move(sectionCodes, i, 1)}
                           disabled={i === section.rows.length - 1}
-                          aria-label={`Move ${school.name} down`}
+                          aria-label={`Move ${program.name} down`}
                           className="w-[23px] h-[23px] border border-border text-[12px] text-ink disabled:text-border disabled:cursor-default hover:border-muted"
                         >
                           ↓
@@ -486,7 +498,7 @@ export default function ShortlistClient({ index, initialOrder, programs, details
                         <button
                           type="button"
                           onClick={() => remove(code)}
-                          aria-label={`Remove ${school.name}`}
+                          aria-label={`Remove ${program.name}`}
                           className="w-[23px] h-[23px] text-[13px] text-faint hover:text-ink"
                         >
                           ×

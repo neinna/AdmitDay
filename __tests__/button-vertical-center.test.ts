@@ -31,9 +31,8 @@ describe('Button base classes vertically center the label (issue #420)', () => {
     expect(match).not.toBeNull()
     const base = match![1]
     expect(base).toContain('font-sans')
-    expect(base).toContain('text-[15px]')
-    expect(base).toContain('px-[26px]')
-    expect(base).toContain('py-[13px]')
+    // Size classes moved out of BASE into the md size (issue #625).
+    expect(src).toMatch(/md:\s*'text-\[15px\] px-\[26px\] py-\[13px\]'/)
     expect(base).toContain('transition-colors')
     expect(base).toContain('duration-[120ms]')
     expect(base).toContain('ease-out')
