@@ -121,3 +121,24 @@ describe('extractFilters negation (issue #258: respect "not X" when extracting s
     expect(filters.interests).not.toContain('Engineering')
   })
 })
+
+describe('extractFilters math alias (issue #642: math narrows to Science & Math)', () => {
+  it('maps "math" in a natural ask to Science & Math', () => {
+    const filters = extractFilters('he likes building things like PCs and is starting to like math')
+    expect(filters.interests).toContain('Science & Math')
+  })
+
+  it('maps "mathematics" to Science & Math', () => {
+    expect(extractFilters('she loves mathematics').interests).toContain('Science & Math')
+  })
+
+  it('does not apply Science & Math when math is negated', () => {
+    expect(extractFilters('anything but math').interests).not.toContain('Science & Math')
+  })
+
+  it('keeps Computer Science alongside Science & Math', () => {
+    const filters = extractFilters('computer science and math')
+    expect(filters.interests).toContain('Computer Science')
+    expect(filters.interests).toContain('Science & Math')
+  })
+})

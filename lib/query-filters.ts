@@ -78,6 +78,9 @@ const INTEREST_ALIASES: Record<string, string> = {
   humanities: "Humanities & Interdisciplinary",
   jrotc: "JROTC",
   music: "Performing Arts",
+  math: "Science & Math",
+  maths: "Science & Math",
+  mathematics: "Science & Math",
 };
 
 // Negation cues (issue #258): a subject mentioned right after one of these,
