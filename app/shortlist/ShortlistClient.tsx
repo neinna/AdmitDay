@@ -307,7 +307,7 @@ export default function ShortlistClient({ index, initialOrder, programs, details
           <p className="mt-5 text-[15px] text-muted">
             Nothing saved yet.{' '}
             <Link href="/find" className="text-accent underline underline-offset-[3px]">
-              Find schools
+              Search
             </Link>{' '}
             and add the ones you want to compare.
           </p>
