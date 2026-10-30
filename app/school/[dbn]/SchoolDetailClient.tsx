@@ -32,6 +32,7 @@ import {
   TrendSparkline,
   MissingMark,
 } from '@/components/ui'
+import Button from '@/components/ui/Button'
 import SiteHeader from './SiteHeader'
 
 const PROGRAMS_CAP = 6
@@ -332,16 +333,17 @@ export default function SchoolDetailClient({
                       const code = p.code
                       const added = hydrated && addedCodes.has(code)
                       return (
-                        <button
+                        <Button
                           type="button"
+                          variant="outline"
+                          size="sm"
+                          selected={added}
                           aria-label={`${added ? 'Remove' : 'Add'} ${p.name}`}
                           onClick={() => toggleAdded(code)}
-                          className={`text-center text-[13px] font-medium py-[6px] transition-colors duration-[120ms] ease-out hover:bg-ink hover:text-white ${
-                            added ? 'border border-ink text-ink' : 'bg-ink text-white'
-                          }`}
+                          className="hover:bg-ink hover:text-white"
                         >
                           {added ? 'Remove' : 'Add'}
-                        </button>
+                        </Button>
                       )
                     })()}
                     {p.code && saveErrorCodes.has(p.code) && (
