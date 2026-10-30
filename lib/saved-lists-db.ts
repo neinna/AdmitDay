@@ -1,19 +1,16 @@
 import { sql } from '@/lib/db'
 
 /**
- * Issue #200 — saved lists move from localStorage to Postgres behind the
- * Clerk session from #199. Schema is deliberately parent-scoped rather than
+ * Issue #200 — saved lists live in Postgres behind the Clerk session from
+ * #199. A saved list holds programs (`list_programs`), not schools. Schema is deliberately parent-scoped rather than
  * account-scoped (see the issue): a family applies for more than one child
  * over time, so `school_lists` is a table, not a single column on `parents`.
- * Nothing here stores anything about a child — `dbn` is a public DOE school
- * identifier.
+ * Nothing here stores anything about a child — `dbn` and `program_code` are
+ * public DOE identifiers.
  *
  * This module never reads the session itself (no Clerk import) — callers
  * pass a `parentId` they already resolved from `auth()`, which keeps every
- * query here provably scoped to whoever the caller decided that is. The one
- * exception, `getOwnedList`, takes a caller-supplied listId AND the caller's
- * own parentId and returns data only when both match — the guard against the
- * IDOR risk called out in the issue.
+ * query here provably scoped to whoever the caller decided that is.
  *
  * Table creation follows the CREATE TABLE IF NOT EXISTS convention already
  * used by lib/load-schools.ts and lib/rate-limit.ts — this repo has no
@@ -43,16 +40,7 @@ export function ensureSchema(): Promise<void> {
           updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
         )
       `
-      await sql`
-        CREATE TABLE IF NOT EXISTS list_schools (
-          id SERIAL PRIMARY KEY,
-          list_id INTEGER NOT NULL REFERENCES school_lists(id),
-          dbn TEXT NOT NULL,
-          position INTEGER NOT NULL,
-          added_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-          UNIQUE (list_id, dbn)
-        )
-      `
+      await sql`DROP TABLE IF EXISTS list_schools`
       await sql`
         CREATE TABLE IF NOT EXISTS list_programs (
           id SERIAL PRIMARY KEY,
@@ -117,57 +105,6 @@ async function createDefaultList(parentId: number): Promise<number> {
   return rows[0].id
 }
 
-async function orderedDbns(listId: number): Promise<string[]> {
-  const { rows } = await sql<{ dbn: string }>`
-    SELECT dbn FROM list_schools WHERE list_id = ${listId} ORDER BY position ASC
-  `
-  return rows.map((r) => r.dbn)
-}
-
-/** A signed-in parent's saved dbns, in rank order. [] if they have no list yet. */
-export async function getSavedDbns(parentId: number): Promise<string[]> {
-  await ensureSchema()
-  const listId = await getDefaultListId(parentId)
-  if (listId === null) return []
-  return orderedDbns(listId)
-}
-
-/** Adds dbn to the parent's list, creating it (named "My list") on first save. */
-export async function addSavedSchool(parentId: number, dbn: string): Promise<string[]> {
-  await ensureSchema()
-  let listId = await getDefaultListId(parentId)
-  if (listId === null) listId = await createDefaultList(parentId)
-
-  await sql`
-    INSERT INTO list_schools (list_id, dbn, position)
-    SELECT ${listId}, ${dbn}, COALESCE(MAX(position), -1) + 1 FROM list_schools WHERE list_id = ${listId}
-    ON CONFLICT (list_id, dbn) DO NOTHING
-  `
-  return orderedDbns(listId)
-}
-
-/** Removing from a parent with no list is a no-op that returns []. */
-export async function removeSavedSchool(parentId: number, dbn: string): Promise<string[]> {
-  await ensureSchema()
-  const listId = await getDefaultListId(parentId)
-  if (listId === null) return []
-  await sql`DELETE FROM list_schools WHERE list_id = ${listId} AND dbn = ${dbn}`
-  return orderedDbns(listId)
-}
-
-/** Re-ranks the parent's existing saved schools to match `order`. Dbns not already saved are ignored — this reorders, it does not add. */
-export async function reorderSavedSchools(parentId: number, order: string[]): Promise<string[]> {
-  await ensureSchema()
-  const listId = await getDefaultListId(parentId)
-  if (listId === null) return []
-  for (let i = 0; i < order.length; i++) {
-    await sql`
-      UPDATE list_schools SET position = ${i} WHERE list_id = ${listId} AND dbn = ${order[i]}
-    `
-  }
-  return orderedDbns(listId)
-}
-
 export interface SavedProgram {
   dbn: string
   program_code: string
@@ -222,26 +159,4 @@ export async function reorderSavedPrograms(parentId: number, order: string[]): P
     `
   }
   return orderedPrograms(listId)
-}
-
-export interface OwnedList {
-  id: number
-  name: string
-  dbns: string[]
-}
-
-/**
- * Fetches a list by id, but only ever returns it when parentId matches the
- * list's owner. "Doesn't exist" and "belongs to someone else" both return
- * null — the caller must turn both into the same 404, or list ids become
- * enumerable. This is the query the issue's reviewer-risk note is about.
- */
-export async function getOwnedList(listId: number, parentId: number): Promise<OwnedList | null> {
-  await ensureSchema()
-  const { rows } = await sql<{ id: number; name: string }>`
-    SELECT id, name FROM school_lists WHERE id = ${listId} AND parent_id = ${parentId}
-  `
-  const list = rows[0]
-  if (!list) return null
-  return { id: list.id, name: list.name, dbns: await orderedDbns(list.id) }
 }

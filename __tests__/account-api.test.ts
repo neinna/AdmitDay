@@ -4,7 +4,7 @@
  * Issue #241 (part of #179): DELETE /api/account removes our Postgres rows
  * and the Clerk user. Mocks @clerk/nextjs/server (auth/clerkClient),
  * @vercel/postgres, and @sentry/nextjs directly — same "import and call the
- * handler" approach as __tests__/saved-schools-api.test.ts.
+ * handler" approach as __tests__/saved-programs-api.test.ts.
  */
 
 const mockAuth = jest.fn()
@@ -65,7 +65,6 @@ describe('DELETE /api/account — signed in', () => {
     const [strings, ...values] = mockSql.mock.calls[0]
     const text = strings.join('|')
     expect(text).toContain('DELETE FROM parents')
-    expect(text).toContain('DELETE FROM list_schools')
     expect(text).toContain('DELETE FROM school_lists')
     expect(values).toEqual(['user_1'])
 

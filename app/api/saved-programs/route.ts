@@ -1,8 +1,7 @@
 /**
  * app/api/saved-programs/route.ts
  *
- * The signed-in read/write path for a family's saved programs, modelled on
- * /api/saved-schools. Every handler resolves parentId from the session
+ * The signed-in read/write path for a family's saved programs. Every handler resolves parentId from the session
  * (`auth()`), never from the request body. Signed-out requests get 401 and
  * never touch Postgres.
  */
