@@ -12,7 +12,8 @@
     "smoke": "ts-node --compiler-options '{\"module\":\"commonjs\"}' scripts/smoke.ts",
     "e2e": "playwright test",
     "eval:ask": "ts-node --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' --transpile-only evals/run-ask-eval.ts",
-    "eval:retrieval": "ts-node --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' --transpile-only evals/run-retrieval-eval.ts"
+    "eval:retrieval": "ts-node --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' --transpile-only evals/run-retrieval-eval.ts",
+    "eval:retrieval:ask": "ts-node --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' --transpile-only evals/run-retrieval-eval.ts --ask"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
