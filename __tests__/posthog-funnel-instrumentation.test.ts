@@ -153,11 +153,11 @@ describe('FindClient — rail filter events (issue #196)', () => {
 describe('FindClient — save and detail-view events (issue #196)', () => {
   const src = readSource('app/find/FindClient.tsx')
 
-  it('toggleAdded computes the next Set from the closure, not a setAddedDbns updater, before capturing', () => {
+  it('toggleAdded computes the next Set from the closure, not a setAddedCodes updater, before capturing', () => {
     const start = src.indexOf('function toggleAdded')
     const end = src.indexOf('function removeChip')
     const body = src.slice(start, end)
-    expect(body).not.toMatch(/setAddedDbns\(\s*\(/)
+    expect(body).not.toMatch(/setAddedCodes\(\s*\(/)
     expect(body).toContain("posthog?.capture(adding ? 'school_saved' : 'school_removed'")
     expect(body).toContain('list_size_after: next.size')
   })

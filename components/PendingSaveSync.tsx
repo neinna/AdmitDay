@@ -4,14 +4,16 @@ import { useEffect, useRef } from 'react'
 import { useAuth } from '@clerk/nextjs'
 
 // Issue #240: the signed-out Save flow (FindClient, SchoolDetailClient)
-// stashes the clicked { dbn, program_code } here as JSON before opening the sign-up modal, since
-// there's no account yet to save it against.
+// stashes the clicked { dbn, program_code } here as JSON before opening the
+// sign-up modal, since there's no account yet to save it against.
 export const PENDING_SAVE_KEY = 'admitday:pendingSave'
 
 /**
  * Lives in the root layout next to AuthPosthogSync. Once isSignedIn turns
- * true, posts the pending { dbn, program_code } (if any) to /api/saved-programs and
- * clears the key. Any other value (e.g. an old bare DBN) is dropped unposted. Leaves the key in place on failure so the next page load retries.
+ * true, posts the pending { dbn, program_code } (if any) to
+ * /api/saved-programs and clears the key. Any other value (e.g. an old bare
+ * DBN) is dropped unposted. Leaves the key in place on failure so the next
+ * page load retries.
  */
 export default function PendingSaveSync() {
   const { isSignedIn, isLoaded } = useAuth()

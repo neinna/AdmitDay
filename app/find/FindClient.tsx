@@ -422,7 +422,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
 
   async function toggleAdded(dbn: string, code: string) {
     // Issue #240: saving a school requires an account. Signed out, stash the
-    // clicked DBN and open sign-up — PendingSaveSync saves it once the
+    // clicked school and program and open sign-up — PendingSaveSync saves it once the
     // account exists.
     if (!isSignedIn) {
       try {
