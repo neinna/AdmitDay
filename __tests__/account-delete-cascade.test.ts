@@ -61,6 +61,11 @@ function createFakePostgres() {
     { list_id: 20, dbn: '02M002' },
   ]
 
+  const programs: { list_id: number; dbn: string; program_code: string }[] = [
+    { list_id: 10, dbn: '01M001', program_code: 'A1' },
+    { list_id: 20, dbn: '02M002', program_code: 'B1' },
+  ]
+
   const impl = jest.fn((strings: readonly string[], ...values: unknown[]) => {
     const text = strings.join('|')
     if (!text.includes('DELETE FROM parents')) {
@@ -71,6 +76,11 @@ function createFakePostgres() {
     const parent = parents.find((p) => p.clerk_user_id === clerkUserId)
     if (parent) {
       const listIds = lists.filter((l) => l.parent_id === parent.id).map((l) => l.id)
+      if (text.includes('DELETE FROM list_programs')) {
+        for (let i = programs.length - 1; i >= 0; i--) {
+          if (listIds.includes(programs[i].list_id)) programs.splice(i, 1)
+        }
+      }
       for (let i = schools.length - 1; i >= 0; i--) {
         if (listIds.includes(schools[i].list_id)) schools.splice(i, 1)
       }
@@ -85,7 +95,7 @@ function createFakePostgres() {
     return Promise.resolve({ rows: [] })
   })
 
-  return { impl, parents, lists, schools }
+  return { impl, parents, lists, schools, programs }
 }
 
 beforeEach(() => {
@@ -109,4 +119,17 @@ it("deleting parent A's account removes their rows from all three tables and lea
   expect(parents.some((p) => p.clerk_user_id === 'user_b')).toBe(true)
   expect(lists.some((l) => l.parent_id === 2)).toBe(true)
   expect(schools.some((s) => s.list_id === 20)).toBe(true)
+})
+
+it("deleting parent A's account removes A's list_programs rows only", async () => {
+  const { impl, programs } = createFakePostgres()
+  mockSql.mockImplementation(impl)
+  mockAuth.mockResolvedValue({ userId: 'user_a' })
+  mockClerkClient.mockResolvedValue({ users: { deleteUser: jest.fn().mockResolvedValue(undefined) } })
+
+  const res = await DELETE()
+
+  expect(res.status).toBe(200)
+  expect(programs.some((p) => p.list_id === 10)).toBe(false)
+  expect(programs.some((p) => p.list_id === 20)).toBe(true)
 })
