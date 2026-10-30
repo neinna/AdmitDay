@@ -66,10 +66,8 @@ describe('/shortlist print detail block (issue #405)', () => {
     // Rank, name, dbn.
     expect(html).toContain('01M292')
     expect(html).toContain('Orchard Collegiate Academy')
-    // Borough, neighborhood, address.
-    expect(html).toContain('Manhattan')
-    expect(html).toContain('Lower East Side')
-    expect(html).toContain('220 Henry Street')
+    // One Location row: address, neighborhood, borough.
+    expect(html).toContain('220 Henry Street, Lower East Side, Manhattan')
     // Admissions track, via the existing trackLabel abbreviation.
     expect(html).toContain('Ed Opt')
     // Applicants per seat.
@@ -88,7 +86,8 @@ describe('/shortlist print detail block (issue #405)', () => {
     expect(html).toContain('F to East Broadway')
     expect(html).toContain('B39')
     // Website -- school_website takes priority over doe_data.website.
-    expect(html).toContain('https://oca.example.org')
+    expect(html).toContain('href="https://oca.example.org"')
+    expect(html).toContain('target="_blank"')
     // Program name + method.
     expect(html).toContain('Orchard Collegiate Academy')
     expect(html).toContain('Ed. Opt.')
