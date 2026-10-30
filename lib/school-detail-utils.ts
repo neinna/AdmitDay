@@ -587,9 +587,9 @@ export const PROVENANCE_SOURCE = 'MySchools + NYC DOE Open Data'
 // official link" rule — so every link points at the directory itself.
 export const MYSCHOOLS_URL = 'https://www.myschools.nyc'
 
-/** The DOE's public school page, which works signed out. */
+/** The school's MySchools page, which loads signed out as of 2026-10-30. */
 export function buildDoeSchoolUrl(dbn: string): string {
-  return `https://www.schools.nyc.gov/schools/${dbn.slice(2)}`
+  return `https://www.myschools.nyc/en/schools/high-school/${dbn}/`
 }
 
 /**

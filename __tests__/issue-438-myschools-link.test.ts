@@ -57,15 +57,15 @@ function readSource(relPath: string): string {
 
 describe('buildDoeSchoolUrl', () => {
   it('links the school\'s own DOE page, without the district prefix', () => {
-    expect(buildDoeSchoolUrl('02M475')).toBe('https://www.schools.nyc.gov/schools/M475')
+    expect(buildDoeSchoolUrl('02M475')).toBe('https://www.myschools.nyc/en/schools/high-school/02M475/')
   })
 
   it('uses a different DBN to produce a different URL', () => {
-    expect(buildDoeSchoolUrl('24Q610')).toBe('https://www.schools.nyc.gov/schools/Q610')
+    expect(buildDoeSchoolUrl('24Q610')).toBe('https://www.myschools.nyc/en/schools/high-school/24Q610/')
   })
 
   it('builds the DOE page for 13K430', () => {
-    expect(buildDoeSchoolUrl('13K430')).toBe('https://www.schools.nyc.gov/schools/K430')
+    expect(buildDoeSchoolUrl('30Q575')).toBe('https://www.myschools.nyc/en/schools/high-school/30Q575/')
   })
 })
 
