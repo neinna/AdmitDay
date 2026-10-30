@@ -28,7 +28,6 @@ import { extractMatchCount } from './find-count'
 const ADMISSION_METHODS = Object.keys(ADMISSION_METHOD_COPY)
 
 const MIN_SCHOOLS = 400
-const MYSCHOOLS_URL = 'https://www.myschools.nyc'
 
 test('signed-out parent flow', async ({ page }) => {
   // Issue #286: no PostHog events from a scripted run.
@@ -80,18 +79,17 @@ test('signed-out parent flow', async ({ page }) => {
     const programsHeading = page.getByText('Programs', { exact: true })
     await expect(programsHeading).toBeVisible()
     // Scoped to the Programs block (its grandparent), not the whole page —
-    // "Find" is also part of the "Find {dbn} in the DOE directory" link text below it.
+    // "Find" is also part of the "Official DOE page" link text below it.
     const programsSection = await programsHeading.locator('xpath=../..').innerText()
     expect(ADMISSION_METHODS.some((method) => programsSection.includes(method))).toBe(true)
 
-    // Issue #482: per-school MySchools pages require a MySchools login, so the
-    // link goes to the public High School directory instead, and its label
-    // carries the DBN from the current /school/{dbn} URL.
+    // Issue #608: the link goes to the school's own public DOE page, built from
+    // the DBN in the current /school/{dbn} URL.
     const dbn = new URL(page.url()).pathname.match(/\/school\/([^/?]+)/)?.[1] ?? ''
     expect(dbn.length).toBeGreaterThanOrEqual(3)
-    await expect(page.getByRole('link', { name: /in the DOE directory/ }).first()).toHaveAttribute(
+    await expect(page.getByRole('link', { name: /Official DOE page/ }).first()).toHaveAttribute(
       'href',
-      `${MYSCHOOLS_URL}/en/schools/high-school/`
+      `https://www.schools.nyc.gov/schools/${dbn.slice(2)}`
     )
   })
 

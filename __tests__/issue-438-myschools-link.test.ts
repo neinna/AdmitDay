@@ -10,7 +10,7 @@
 import * as fs from 'fs'
 import * as path from 'path'
 import { School, SchoolFlags } from '../types'
-import { buildMySchoolsUrl, buildMySchoolsCheckedLabel } from '../lib/school-detail-utils'
+import { buildDoeSchoolUrl,buildMySchoolsCheckedLabel } from '../lib/school-detail-utils'
 
 function makeFlags(overrides: Partial<SchoolFlags> = {}): SchoolFlags {
   return {
@@ -55,17 +55,17 @@ function readSource(relPath: string): string {
   return fs.readFileSync(path.join(__dirname, '..', relPath), 'utf-8')
 }
 
-describe('buildMySchoolsUrl', () => {
-  it('builds the per-school listing URL from the DBN', () => {
-    expect(buildMySchoolsUrl('03M485')).toBe('https://www.myschools.nyc/en/schools/high-school/')
+describe('buildDoeSchoolUrl', () => {
+  it('links the school\'s own DOE page, without the district prefix', () => {
+    expect(buildDoeSchoolUrl('02M475')).toBe('https://www.schools.nyc.gov/schools/M475')
   })
 
   it('uses a different DBN to produce a different URL', () => {
-    expect(buildMySchoolsUrl('13K430')).toBe('https://www.myschools.nyc/en/schools/high-school/')
+    expect(buildDoeSchoolUrl('24Q610')).toBe('https://www.schools.nyc.gov/schools/Q610')
   })
 
-  it('returns the public directory URL for 13K430 (issue #482)', () => {
-    expect(buildMySchoolsUrl('13K430')).toBe('https://www.myschools.nyc/en/schools/high-school/')
+  it('builds the DOE page for 13K430', () => {
+    expect(buildDoeSchoolUrl('13K430')).toBe('https://www.schools.nyc.gov/schools/K430')
   })
 })
 
@@ -118,13 +118,13 @@ describe('buildMySchoolsCheckedLabel', () => {
 describe('SchoolDetailClient — MySchools link points at the school (issue #438)', () => {
   const src = readSource('app/school/[dbn]/SchoolDetailClient.tsx')
 
-  it('builds both links from the school DBN via buildMySchoolsUrl, not a shared homepage constant', () => {
-    expect(src).toContain('buildMySchoolsUrl(school.dbn)')
+  it('builds both links from the school DBN via buildDoeSchoolUrl, not a shared homepage constant', () => {
+    expect(src).toContain('buildDoeSchoolUrl(school.dbn)')
     expect(src).not.toContain('MYSCHOOLS_URL')
   })
 
-  it('both anchors use the derived myschoolsUrl href', () => {
-    const occurrences = src.split('href={myschoolsUrl}').length - 1
+  it('both anchors use the derived doeSchoolUrl href', () => {
+    const occurrences = src.split('href={doeSchoolUrl}').length - 1
     expect(occurrences).toBe(2)
   })
 
@@ -141,8 +141,9 @@ describe('SchoolDetailClient — MySchools link points at the school (issue #438
     expect(occurrences).toBe(2)
   })
 
-  it('labels the link "in the DOE directory", not "Open in MySchools" (issue #482)', () => {
-    expect(src).toContain('in the DOE directory ↗')
+  it('labels the link "Official DOE page ↗", not "Open in MySchools" or the directory', () => {
+    expect(src).toContain('Official DOE page ↗')
+    expect(src).not.toMatch(/in the DOE dir/)
     expect(src).not.toContain('Open in MySchools')
   })
 })

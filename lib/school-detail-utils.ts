@@ -587,16 +587,9 @@ export const PROVENANCE_SOURCE = 'MySchools + NYC DOE Open Data'
 // official link" rule — so every link points at the directory itself.
 export const MYSCHOOLS_URL = 'https://www.myschools.nyc'
 
-/**
- * MySchools' per-school pages (issue #438's original target) render blank
- * unless the visitor is logged in to MySchools (confirmed 2026-09-25 for
- * 13K430, signed out). The public High School directory works signed out, so
- * every link points there instead; `dbn` is kept so call sites don't change,
- * and the link's label carries the code so the parent can search for it
- * (issue #482).
- */
-export function buildMySchoolsUrl(dbn: string): string {
-  return 'https://www.myschools.nyc/en/schools/high-school/'
+/** The DOE's public school page, which works signed out. */
+export function buildDoeSchoolUrl(dbn: string): string {
+  return `https://www.schools.nyc.gov/schools/${dbn.slice(2)}`
 }
 
 /**
