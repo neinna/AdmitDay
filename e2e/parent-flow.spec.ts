@@ -83,13 +83,13 @@ test('signed-out parent flow', async ({ page }) => {
     const programsSection = await programsHeading.locator('xpath=../..').innerText()
     expect(ADMISSION_METHODS.some((method) => programsSection.includes(method))).toBe(true)
 
-    // Issue #608: the link goes to the school's own public DOE page, built from
+    // Issue #609: the link goes to the school's own MySchools page, built from
     // the DBN in the current /school/{dbn} URL.
     const dbn = new URL(page.url()).pathname.match(/\/school\/([^/?]+)/)?.[1] ?? ''
     expect(dbn.length).toBeGreaterThanOrEqual(3)
     await expect(page.getByRole('link', { name: /Official DOE page/ }).first()).toHaveAttribute(
       'href',
-      `https://www.schools.nyc.gov/schools/${dbn.slice(2)}`
+      `https://www.myschools.nyc/en/schools/high-school/${dbn}/`
     )
   })
 
