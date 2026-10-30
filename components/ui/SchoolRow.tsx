@@ -66,7 +66,7 @@ export default function SchoolRow({
       <div className="relative z-10 order-3 min-[900px]:order-none max-[899px]:w-full">{action}</div>
 
       {evidence && (
-        <div className="order-4 min-[900px]:order-none min-[900px]:col-span-4 flex flex-col gap-1 pt-1">
+        <div className="relative z-10 order-4 min-[900px]:order-none min-[900px]:col-span-4 flex flex-col gap-1 pt-1">
           {evidence}
         </div>
       )}
