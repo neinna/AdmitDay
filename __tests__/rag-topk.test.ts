@@ -16,10 +16,11 @@ describe('/find ask API top-K (issue #328: raised from 5 to a named ASK_RETRIEVA
     expect(src).toMatch(/export const ASK_RETRIEVAL_COUNT\s*=\s*20/)
   })
 
-  it('calls searchSchools with ASK_RETRIEVAL_COUNT, not a literal', () => {
+  it('calls searchSchools with ASK_POOL_COUNT (issue #645), not a literal', () => {
     // issue #231: searchSchools also takes the active /find rail filters as a
     // third argument, so this now tolerates trailing args after the count.
-    expect(src).toMatch(/searchSchools\(\s*question\s*,\s*ASK_RETRIEVAL_COUNT\s*[,)]/)
+    expect(src).toMatch(/export const ASK_POOL_COUNT\s*=\s*60/)
+    expect(src).toMatch(/searchSchools\(\s*question\s*,\s*ASK_POOL_COUNT\s*[,)]/)
   })
 
   it('no longer uses a hardcoded topK literal (5 or 10)', () => {
