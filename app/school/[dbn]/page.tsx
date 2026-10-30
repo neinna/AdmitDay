@@ -32,7 +32,13 @@ export async function generateMetadata({
   const schools = await getAllSchools()
   const school = findSchoolByDbn(schools, dbn)
   if (!school) return { title: 'AdmitDay' }
-  return { title: `AdmitDay: ${formatSchoolName(school.name)}` }
+  const name = formatSchoolName(school.name)
+  const description = `${name}: programs, admissions methods and DOE data on AdmitDay.`
+  return {
+    title: `AdmitDay: ${formatSchoolName(school.name)}`,
+    description,
+    openGraph: { title: `AdmitDay: ${name}`, description },
+  }
 }
 
 // Issue #116: the school detail view. Server component — loads via

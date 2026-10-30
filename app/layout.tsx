@@ -44,6 +44,19 @@ export function generateMetadata(): Metadata {
   return {
     title: 'AdmitDay',
     description: "Find NYC public high schools that match your student's profile.",
+    metadataBase: new URL('https://www.admitday.com'),
+    openGraph: {
+      title: 'AdmitDay',
+      description: "Find NYC public high schools that match your student's profile.",
+      url: 'https://www.admitday.com',
+      siteName: 'AdmitDay',
+      type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: 'AdmitDay',
+      description: "Find NYC public high schools that match your student's profile.",
+    },
     other: {
       ...Sentry.getTraceData()
     }
