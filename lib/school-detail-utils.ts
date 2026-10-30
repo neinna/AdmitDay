@@ -35,6 +35,8 @@ export interface StatCell {
   value: string
   label: string
   missing?: true
+  /** Tooltip and aria-label for a cell that shows an unknown marker instead of a figure. */
+  title?: string
 }
 
 interface StatField {
@@ -122,13 +124,18 @@ export function buildStatCellsWithMissing(school: School): StatCell[] {
     if (isPresent(value)) {
       return { key: f.key, value: f.format(value), label: f.gridLabel }
     }
+    if (f.key === 'applicantsPerSeat') {
+      return { key: f.key, label: f.gridLabel, value: '—', title: 'Not reported in DOE data' }
+    }
     return { key: f.key, label: f.gridLabel, value: '', missing: true }
   })
 }
 
-/** Sentence-form labels (lowercase, natural reading order) for stats DOE did not publish. */
+/** Sentence-form labels (lowercase, natural reading order) for stats DOE did not publish. Applicants per seat shows `—` in the grid instead. */
 export function getMissingStatLabels(school: School): string[] {
-  return STAT_FIELDS.filter((f) => !isPresent(f.get(school))).map((f) => f.sentenceLabel)
+  return STAT_FIELDS.filter((f) => f.key !== 'applicantsPerSeat' && !isPresent(f.get(school))).map(
+    (f) => f.sentenceLabel
+  )
 }
 
 function capitalize(s: string): string {
