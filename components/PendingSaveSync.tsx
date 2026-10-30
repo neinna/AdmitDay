@@ -4,14 +4,16 @@ import { useEffect, useRef } from 'react'
 import { useAuth } from '@clerk/nextjs'
 
 // Issue #240: the signed-out Save flow (FindClient, SchoolDetailClient)
-// stashes the clicked DBN here before opening the sign-up modal, since
-// there's no account yet to save it against.
+// stashes the clicked { dbn, program_code } here as JSON before opening the
+// sign-up modal, since there's no account yet to save it against.
 export const PENDING_SAVE_KEY = 'admitday:pendingSave'
 
 /**
  * Lives in the root layout next to AuthPosthogSync. Once isSignedIn turns
- * true, posts the pending DBN (if any) to /api/saved-schools and clears the
- * key. Leaves the key in place on failure so the next page load retries.
+ * true, posts the pending { dbn, program_code } (if any) to
+ * /api/saved-programs and clears the key. Any other value (e.g. an old bare
+ * DBN) is dropped unposted. Leaves the key in place on failure so the next
+ * page load retries.
  */
 export default function PendingSaveSync() {
   const { isSignedIn, isLoaded } = useAuth()
@@ -26,18 +28,41 @@ export default function PendingSaveSync() {
     if (firedRef.current) return
     firedRef.current = true
 
-    let dbn: string | null = null
+    let raw: string | null = null
     try {
-      dbn = sessionStorage.getItem(PENDING_SAVE_KEY)
+      raw = sessionStorage.getItem(PENDING_SAVE_KEY)
     } catch {
       return
     }
-    if (!dbn) return
+    if (!raw) return
 
-    fetch('/api/saved-schools', {
+    let pending: { dbn: string; program_code: string } | null = null
+    try {
+      const parsed = JSON.parse(raw)
+      if (
+        parsed &&
+        typeof parsed === 'object' &&
+        typeof parsed.dbn === 'string' &&
+        typeof parsed.program_code === 'string'
+      ) {
+        pending = { dbn: parsed.dbn, program_code: parsed.program_code }
+      }
+    } catch {
+      // not JSON — fall through and drop it
+    }
+    if (!pending) {
+      try {
+        sessionStorage.removeItem(PENDING_SAVE_KEY)
+      } catch {
+        // ignore
+      }
+      return
+    }
+
+    fetch('/api/saved-programs', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dbn }),
+      body: JSON.stringify(pending),
     })
       .then((res) => {
         if (!res.ok) return

@@ -82,9 +82,13 @@ describe('FindClient — row link wiring keeps Add independent and preserves det
   })
 
   it('keeps the Add/Remove button wired to toggleAdded, independent of the row link', () => {
-    const actionStart = src.indexOf('action={')
-    const actionBlock = src.slice(actionStart, actionStart + 400)
-    expect(actionBlock).toContain('onClick={() => toggleAdded(school.dbn)}')
-    expect(actionBlock).not.toContain('<Link')
+    const blockStart = src.indexOf('programs.lines.map')
+    const buttonIdx = src.indexOf('onClick={() => toggleAdded(school.dbn, p.code)}', blockStart)
+    expect(blockStart).toBeGreaterThan(-1)
+    expect(buttonIdx).toBeGreaterThan(blockStart)
+    // The button's own element (from the preceding <Button) holds no <Link.
+    const buttonEl = src.slice(src.lastIndexOf('<Button', buttonIdx), src.indexOf('</Button>', buttonIdx))
+    expect(buttonEl).not.toContain('<Link')
+    expect(src).toContain('action={null}')
   })
 })

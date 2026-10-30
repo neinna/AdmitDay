@@ -35,16 +35,28 @@ describe('components/PendingSaveSync.tsx', () => {
     expect(src).toContain('isSignedIn')
   })
 
-  it('reads the pending dbn from sessionStorage and posts it to /api/saved-schools', () => {
+  it('reads the pending { dbn, program_code } from sessionStorage and posts it to /api/saved-programs', () => {
     expect(src).toContain('sessionStorage.getItem(PENDING_SAVE_KEY)')
-    expect(src).toContain("fetch('/api/saved-schools'")
+    expect(src).toContain('JSON.parse(raw)')
+    expect(src).toContain("fetch('/api/saved-programs'")
     expect(src).toContain("method: 'POST'")
-    expect(src).toContain('body: JSON.stringify({ dbn })')
+    expect(src).toContain('body: JSON.stringify(pending)')
+    expect(src).not.toContain('saved-schools')
+  })
+
+  it('drops a value that is not an object with string dbn and program_code, without posting', () => {
+    expect(src).toContain("typeof parsed.dbn === 'string'")
+    expect(src).toContain("typeof parsed.program_code === 'string'")
+    const dropIdx = src.indexOf('if (!pending)')
+    const postIdx = src.indexOf("fetch('/api/saved-programs'")
+    const dropBlock = src.slice(dropIdx, postIdx)
+    expect(dropBlock).toContain('sessionStorage.removeItem(PENDING_SAVE_KEY)')
+    expect(dropBlock).toContain('return')
   })
 
   it('clears the key only after a successful save, so a failed POST is retried on the next load', () => {
-    const postIdx = src.indexOf("fetch('/api/saved-schools'")
-    const removeIdx = src.indexOf('sessionStorage.removeItem(PENDING_SAVE_KEY)')
+    const postIdx = src.indexOf("fetch('/api/saved-programs'")
+    const removeIdx = src.lastIndexOf('sessionStorage.removeItem(PENDING_SAVE_KEY)')
     const okCheckIdx = src.indexOf('res.ok')
     const catchIdx = src.indexOf('.catch(')
 

@@ -4,7 +4,7 @@ import * as path from 'path'
 /**
  * __tests__/find-save-failure-handling.test.ts
  *
- * Issue #332 — a failed /api/saved-schools save (a 4xx/5xx response, which
+ * Issue #332 — a failed /api/saved-programs save (a 4xx/5xx response, which
  * `fetch` resolves rather than throws) was rendered exactly like a
  * successful one: the optimistic add stuck, `school_saved` fired anyway,
  * and a failed initial load silently rendered as "nothing saved". This
@@ -20,8 +20,8 @@ function readSource(relPath: string): string {
 const src = readSource('app/find/FindClient.tsx')
 
 describe('toggleAdded checks the response and rolls back on failure (issue #332)', () => {
-  it('still calls fetch(\'/api/saved-schools\') for the save/remove request', () => {
-    expect(src).toContain("fetch('/api/saved-schools'")
+  it('still calls fetch(\'/api/saved-programs\') for the save/remove request', () => {
+    expect(src).toContain("fetch('/api/saved-programs'")
   })
 
   it('checks res.ok rather than only catching a thrown error', () => {
@@ -29,8 +29,8 @@ describe('toggleAdded checks the response and rolls back on failure (issue #332)
     expect(src).toMatch(/if\s*\(!ok\)/)
   })
 
-  it('rolls the optimistic addedDbns update back to its pre-click value on failure', () => {
-    const rollbackIdx = src.indexOf('setAddedDbns(previous)')
+  it('rolls the optimistic addedCodes update back to its pre-click value on failure', () => {
+    const rollbackIdx = src.indexOf('setAddedCodes(previous)')
     expect(rollbackIdx).toBeGreaterThan(-1)
     const ifNotOkIdx = src.indexOf('if (!ok)')
     expect(ifNotOkIdx).toBeGreaterThan(-1)
@@ -38,7 +38,7 @@ describe('toggleAdded checks the response and rolls back on failure (issue #332)
   })
 
   it('records a per-row save error on failure and clears it on a later success', () => {
-    expect(src).toContain('saveErrorDbns')
+    expect(src).toContain('saveErrorCodes')
     expect(src).toContain('Couldn&rsquo;t save — try again.')
   })
 
@@ -53,7 +53,7 @@ describe('toggleAdded checks the response and rolls back on failure (issue #332)
 })
 
 describe('the initial saved-schools load distinguishes failure from an empty list (issue #332)', () => {
-  it('sets a load-failure flag in the catch branch instead of only clearing addedDbns', () => {
+  it('sets a load-failure flag in the catch branch instead of only clearing addedCodes', () => {
     const catchIdx = src.indexOf('.catch(')
     const loadFailedTrueIdx = src.indexOf('setShortlistLoadFailed(true)')
     expect(catchIdx).toBeGreaterThan(-1)

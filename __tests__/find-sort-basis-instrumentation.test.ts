@@ -26,6 +26,11 @@ describe('FindClient — school_saved gets sort_basis, row_position, has_startin
   const end = src.indexOf('function removeChip')
   const body = src.slice(start, end)
 
+  it('takes the program code and reports it as program_code after dbn', () => {
+    expect(src).toContain('async function toggleAdded(dbn: string, code: string)')
+    expect(body).toMatch(/dbn,\s+program_code: code,\s+list_size_after: next\.size/)
+  })
+
   it('computes sort_basis from askReasons at save time: "ask" when non-empty, else "fit"', () => {
     expect(body).toContain("sort_basis: askReasons.length > 0 ? 'ask' : 'fit'")
   })

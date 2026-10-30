@@ -834,7 +834,8 @@ describe('FindClient links each row to /school/[dbn] without swallowing Add (iss
 
   it('keeps the Add/Remove button as a separate action, not inside the name link', () => {
     const nameLinkStart = src.indexOf('name={')
-    const actionStart = src.indexOf('action={')
+    // The Add buttons now live in the evidence block (issue #613), after the name.
+    const actionStart = src.indexOf('evidence={')
     expect(actionStart).toBeGreaterThan(nameLinkStart)
     const nameBlock = src.slice(nameLinkStart, actionStart)
     // The name Link block must not itself contain the toggleAdded button.

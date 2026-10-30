@@ -195,10 +195,10 @@ export default function FindClient({ schools, initialFilters }: Props) {
   // moment a new ask starts so a rating can never attach to a stale trace.
   const [askTraceId, setAskTraceId] = useState<string | null>(null)
 
-  const [addedDbns, setAddedDbns] = useState<Set<string>>(new Set())
+  const [addedCodes, setAddedCodes] = useState<Set<string>>(new Set())
   const [hydrated, setHydrated] = useState(false)
   const [shortlistLoadFailed, setShortlistLoadFailed] = useState(false)
-  const [saveErrorDbns, setSaveErrorDbns] = useState<Set<string>>(new Set())
+  const [saveErrorCodes, setSaveErrorCodes] = useState<Set<string>>(new Set())
 
   // "Starting from" ZIP or subway station (issue #343/#374) — a client-only
   // convenience for reading distance on each row. Persisted to localStorage
@@ -267,27 +267,33 @@ export default function FindClient({ schools, initialFilters }: Props) {
   }, [filters, pathname, router])
 
   // Issue #200/#240: saving a school requires an account, so the only saved
-  // list is Postgres via /api/saved-schools. Waits for Clerk to finish
+  // list is Postgres via /api/saved-programs. Waits for Clerk to finish
   // loading (isLoaded) so a signed-in family's first render never briefly
   // shows an empty list. Signed out, there is no list — any list left over
   // from before accounts existed is discarded by clearing the old key.
   useEffect(() => {
     if (!isLoaded) return
     if (isSignedIn) {
-      fetch('/api/saved-schools')
+      fetch('/api/saved-programs')
         .then((res) => {
-          if (!res.ok) throw new Error('failed to load saved schools')
+          if (!res.ok) throw new Error('failed to load saved programs')
           return res.json()
         })
         .then((data) => {
-          setAddedDbns(new Set(Array.isArray(data.dbns) ? data.dbns : []))
+          setAddedCodes(
+            new Set(
+              Array.isArray(data.programs)
+                ? data.programs.map((p: { program_code: string }) => p.program_code)
+                : []
+            )
+          )
           setShortlistLoadFailed(false)
         })
         .catch(() => {
           // A failed load must never look like a parent who has saved
           // nothing — keep the set empty but flag it as a load failure so
           // the nav can say so instead of showing "0 saved".
-          setAddedDbns(new Set())
+          setAddedCodes(new Set())
           setShortlistLoadFailed(true)
         })
         .finally(() => setHydrated(true))
@@ -414,13 +420,13 @@ export default function FindClient({ schools, initialFilters }: Props) {
     setFilters(EMPTY_FIND_FILTERS)
   }
 
-  async function toggleAdded(dbn: string) {
+  async function toggleAdded(dbn: string, code: string) {
     // Issue #240: saving a school requires an account. Signed out, stash the
-    // clicked DBN and open sign-up — PendingSaveSync saves it once the
+    // clicked school and program and open sign-up — PendingSaveSync saves it once the
     // account exists.
     if (!isSignedIn) {
       try {
-        sessionStorage.setItem(PENDING_SAVE_KEY, dbn)
+        sessionStorage.setItem(PENDING_SAVE_KEY, JSON.stringify({ dbn, program_code: code }))
       } catch {
         // ignore
       }
@@ -428,19 +434,19 @@ export default function FindClient({ schools, initialFilters }: Props) {
       return
     }
 
-    const previous = addedDbns
-    const adding = !previous.has(dbn)
+    const previous = addedCodes
+    const adding = !previous.has(code)
     const next = new Set(previous)
-    if (adding) next.add(dbn)
-    else next.delete(dbn)
-    setAddedDbns(next)
+    if (adding) next.add(code)
+    else next.delete(code)
+    setAddedCodes(next)
 
     let ok: boolean
     try {
-      const res = await fetch('/api/saved-schools', {
+      const res = await fetch('/api/saved-programs', {
         method: adding ? 'POST' : 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dbn }),
+        body: JSON.stringify(adding ? { dbn, program_code: code } : { program_code: code }),
       })
       ok = res.ok
     } catch {
@@ -450,15 +456,15 @@ export default function FindClient({ schools, initialFilters }: Props) {
     if (!ok) {
       // Roll back the optimistic update — a failed save must never be
       // shown to the parent as added (or a failed remove as gone).
-      setAddedDbns(previous)
-      setSaveErrorDbns((prev) => new Set(prev).add(dbn))
+      setAddedCodes(previous)
+      setSaveErrorCodes((prev) => new Set(prev).add(code))
       return
     }
 
-    setSaveErrorDbns((prev) => {
-      if (!prev.has(dbn)) return prev
+    setSaveErrorCodes((prev) => {
+      if (!prev.has(code)) return prev
       const next = new Set(prev)
-      next.delete(dbn)
+      next.delete(code)
       return next
     })
     // Issue #363: which ordering produced this row, and where in it —
@@ -470,6 +476,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
     const rowPosition = visible.findIndex((row) => row.school.dbn === dbn) + 1
     posthog?.capture(adding ? 'school_saved' : 'school_removed', {
       dbn,
+      program_code: code,
       list_size_after: next.size,
       ...(adding && {
         sort_basis: askReasons.length > 0 ? 'ask' : 'fit',
@@ -596,7 +603,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
     }
   }
 
-  const addedCount = hydrated ? addedDbns.size : 0
+  const addedCount = hydrated ? addedCodes.size : 0
 
   return (
     <div className="max-w-[1120px] mx-auto bg-surface">
@@ -793,7 +800,6 @@ export default function FindClient({ schools, initialFilters }: Props) {
               </div>
             ) : (
               visible.map(({ school, reason }, i) => {
-                const added = addedDbns.has(school.dbn)
                 const neighborhood = school.doe_data?.neighborhood || school.borough
                 const tracks = (school.admissions_types ?? []).map(trackLabel).join(', ') || '—'
                 const students =
@@ -859,27 +865,45 @@ export default function FindClient({ schools, initialFilters }: Props) {
                               <div className="font-mono text-[10.5px] tracking-[0.1em] uppercase text-faint">
                                 Programs
                               </div>
-                              {programs.lines.map((p) => (
-                                <p
-                                  key={p.code || p.name}
-                                  className="text-[13px] text-ink-2"
-                                  style={{ textWrap: 'pretty' }}
-                                >
-                                  {p.name}
-                                  {p.term && (
-                                    <>
-                                      {' · '}
-                                      <Link
-                                        href={`/admission-methods#${p.slug}`}
-                                        className="text-accent hover:underline"
-                                      >
-                                        {p.term}
-                                      </Link>
-                                    </>
-                                  )}
-                                  {p.cutoff && <span className="text-muted">{' · '}{p.cutoff}</span>}
-                                </p>
-                              ))}
+                              {programs.lines.map((p) => {
+                                const added = addedCodes.has(p.code)
+                                return (
+                                  <div key={p.code || p.name}>
+                                    <div className="flex items-baseline justify-between gap-3">
+                                      <p className="text-[13px] text-ink-2" style={{ textWrap: 'pretty' }}>
+                                        {p.name}
+                                        {p.term && (
+                                          <>
+                                            {' · '}
+                                            <Link
+                                              href={`/admission-methods#${p.slug}`}
+                                              className="text-accent hover:underline"
+                                            >
+                                              {p.term}
+                                            </Link>
+                                          </>
+                                        )}
+                                        {p.cutoff && <span className="text-muted">{' · '}{p.cutoff}</span>}
+                                      </p>
+                                      {p.code && (
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          selected={added}
+                                          aria-label={`${added ? 'Remove' : 'Add'} ${p.name}`}
+                                          onClick={() => toggleAdded(school.dbn, p.code)}
+                                          className="shrink-0 px-3 py-1 text-[12.5px] hover:bg-ink hover:text-white"
+                                        >
+                                          {added ? 'Remove' : 'Add'}
+                                        </Button>
+                                      )}
+                                    </div>
+                                    {p.code && saveErrorCodes.has(p.code) && (
+                                      <p className="text-[12.5px] text-faint">Couldn&rsquo;t save — try again.</p>
+                                    )}
+                                  </div>
+                                )
+                              })}
                               {programs.more > 0 && (
                                 <Link href={detailHref} className="text-[13px] text-accent hover:underline">
                                   +{programs.more} more program{programs.more === 1 ? '' : 's'}
@@ -890,24 +914,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
                         </>
                       )
                     }
-                    action={
-                      <div className="flex flex-col gap-1 items-center max-[899px]:items-stretch">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          selected={added}
-                          onClick={() => toggleAdded(school.dbn)}
-                          className="w-24 max-[899px]:w-full text-center hover:bg-ink hover:text-white"
-                        >
-                          {added ? 'Remove' : 'Add'}
-                        </Button>
-                        {saveErrorDbns.has(school.dbn) && (
-                          <p className="text-[12.5px] text-faint text-center max-[899px]:text-left">
-                            Couldn&rsquo;t save — try again.
-                          </p>
-                        )}
-                      </div>
-                    }
+                    action={null}
                   />
                 )
               })
