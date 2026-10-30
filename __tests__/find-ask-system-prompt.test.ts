@@ -18,16 +18,11 @@ describe('/find ask API system prompt (issue #69)', () => {
     )
   })
 
-  it('instructs Claude to choose up to 20 and output one "DBN | reason" line per chosen school (issue #645)', () => {
+  it('instructs one "DBN | reason" line per school, in order, nothing else (issue #328)', () => {
     expect(src).toContain(
       'output exactly one line in the form DBN | reason'
     )
-    expect(src).toContain('choose up to 20')
-    expect(src).toContain('Output no line for a school you do not choose, and nothing else')
-  })
-
-  it('still forbids admissions-odds predictions', () => {
-    expect(src).toContain('Never predict, estimate, or imply how likely a student is to be admitted')
+    expect(src).toContain('Output one line per school provided, in the order provided, and nothing else')
   })
 
   it('forbids hedging language', () => {

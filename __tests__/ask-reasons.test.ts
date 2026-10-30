@@ -50,12 +50,12 @@ describe('ASK_RETRIEVAL_COUNT (issue #328)', () => {
     expect(ASK_RETRIEVAL_COUNT).toBe(20)
   })
 
-  it('searchSchools is called with the 60-school pool (issue #645)', async () => {
+  it('is what searchSchools is called with', async () => {
     mockCreate.mockResolvedValue(textMessage('01M001 | Small classes.'))
     await answerQuestion({ question: 'Which schools have small classes?' })
     expect(mockSearchSchools).toHaveBeenCalledWith(
       'Which schools have small classes?',
-      60,
+      20,
       {}
     )
   })
