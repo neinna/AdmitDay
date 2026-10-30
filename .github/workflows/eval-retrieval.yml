@@ -54,10 +54,18 @@ jobs:
             echo "Embeddings: committed file" >> "$GITHUB_STEP_SUMMARY"
           fi
           npm run eval:retrieval | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Run ask eval (Claude's picks)
+        shell: bash
+        env:
+          OPENAI_API_KEY: ${{ secrets.EVAL_OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.EVAL_ANTHROPIC_API_KEY }}
+        run: npm run eval:retrieval:ask | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Upload retrieval results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: retrieval-results
-          path: evals/results/retrieval-*.json
+          path: |
+            evals/results/retrieval-*.json
+            evals/results/ask-*.json
           if-no-files-found: ignore

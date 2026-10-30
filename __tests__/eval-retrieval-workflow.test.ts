@@ -50,4 +50,17 @@ describe('eval-retrieval workflow', () => {
     expect(paths).toContain("'scripts/embed-schools.ts'");
     expect(paths).toContain("'data/school-embeddings.json'");
   });
+
+  it('runs the ask eval with the Anthropic eval key and shell: bash', () => {
+    const step = yml.split("- name: Run ask eval")[1].split('- name:')[0];
+    expect(step).toMatch(/shell:\s*bash/);
+    expect(step).toMatch(/npm run eval:retrieval:ask/);
+    expect(step).toMatch(
+      /ANTHROPIC_API_KEY:\s*\$\{\{\s*secrets\.EVAL_ANTHROPIC_API_KEY\s*\}\}/,
+    );
+  });
+
+  it('uploads ask results too', () => {
+    expect(yml).toContain('evals/results/ask-*.json');
+  });
 });
