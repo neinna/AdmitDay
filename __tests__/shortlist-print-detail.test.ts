@@ -18,6 +18,7 @@ jest.mock('@clerk/nextjs', () => ({
   UserButton: () => null,
 }))
 
+import { withPrograms } from './helpers/shortlist-programs'
 import ShortlistClient from '@/app/shortlist/ShortlistClient'
 
 describe('/shortlist print detail block (issue #405)', () => {
@@ -34,7 +35,7 @@ describe('/shortlist print detail block (issue #405)', () => {
             neighborhood: 'Lower East Side',
           },
         ],
-        initialOrder: ['01M292'],
+        ...withPrograms([], ['01M292']),
         details: {
           '01M292': {
             total_students: 258,
@@ -108,7 +109,7 @@ describe('/shortlist print detail block (issue #405)', () => {
             neighborhood: null,
           },
         ],
-        initialOrder: ['02Q999'],
+        ...withPrograms([], ['02Q999']),
         details: {},
         signedIn: true,
       })
@@ -155,7 +156,7 @@ describe('/shortlist print detail block (issue #405)', () => {
             neighborhood: null,
           },
         ],
-        initialOrder: ['01M001', '02Q002'],
+        ...withPrograms([], ['01M001', '02Q002']),
         details: {},
         signedIn: true,
       })

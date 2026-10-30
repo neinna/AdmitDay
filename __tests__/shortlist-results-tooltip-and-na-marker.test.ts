@@ -19,6 +19,7 @@ jest.mock('@clerk/nextjs', () => ({
   UserButton: () => null,
 }))
 
+import { withPrograms } from './helpers/shortlist-programs'
 import ShortlistClient from '@/app/shortlist/ShortlistClient'
 import type { ListSchool, ListSchoolDetail } from '@/lib/saved-list-utils'
 
@@ -52,7 +53,7 @@ function render(index: ListSchool[], details: Record<string, ListSchoolDetail> =
   return renderToStaticMarkup(
     React.createElement(ShortlistClient, {
       index,
-      initialOrder: [index[0].dbn],
+      ...withPrograms(index, [index[0].dbn]),
       details,
       signedIn: true,
     })

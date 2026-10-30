@@ -18,6 +18,7 @@ jest.mock('@clerk/nextjs', () => ({
   UserButton: () => null,
 }))
 
+import { withPrograms } from './helpers/shortlist-programs'
 import ShortlistClient from '@/app/shortlist/ShortlistClient'
 
 describe('/shortlist print button (issue #393)', () => {
@@ -34,7 +35,7 @@ describe('/shortlist print button (issue #393)', () => {
             neighborhood: null,
           },
         ],
-        initialOrder: ['01M001'],
+        ...withPrograms([], ['01M001']),
         signedIn: true,
       })
     )

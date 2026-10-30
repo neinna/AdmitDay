@@ -12,9 +12,9 @@ import AuthControls from '@/components/AuthControls'
 import {
   bucketForSchool,
   moveItem,
-  resolveSavedSchools,
   type ListSchool,
   type ListSchoolDetail,
+  type ShortlistProgram,
 } from '@/lib/saved-list-utils'
 
 /**
@@ -37,8 +37,10 @@ import {
 type Props = {
   /** Slim index of every school — the client resolves saved dbns against it. */
   index: ListSchool[]
-  /** The signed-in parent's saved dbns, in rank order, fetched server-side from Postgres (issue #200). Empty when signed out. */
+  /** The signed-in parent's saved program codes, in rank order, fetched server-side from Postgres (issue #200). Empty when signed out. */
   initialOrder: string[]
+  /** The saved programs, keyed by program code. */
+  programs: Record<string, ShortlistProgram>
   /** Print-only detail (issue #405), keyed by dbn, for schools on the saved list only. */
   details?: Record<string, ListSchoolDetail>
   /** Whether the request that rendered this page had a session (issue #240). Signed out, there is no list — saving a school requires an account. */
@@ -178,7 +180,7 @@ function Header() {
   )
 }
 
-export default function ShortlistClient({ index, initialOrder, details = {}, signedIn }: Props) {
+export default function ShortlistClient({ index, initialOrder, programs, details = {}, signedIn }: Props) {
   const posthog = usePostHog()
   const [order, setOrder] = useState<string[]>(initialOrder)
   const [notice, setNotice] = useState<string | null>(null)
@@ -210,7 +212,7 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
   const persist = async (next: string[]) => {
     setOrder(next)
     try {
-      const res = await fetch('/api/saved-schools', {
+      const res = await fetch('/api/saved-programs', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ order: next }),
@@ -221,15 +223,24 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
     }
   }
 
-  const saved = useMemo(() => resolveSavedSchools(index, order), [index, order])
+  const saved = useMemo(() => {
+    const byDbn = new Map(index.map((s) => [s.dbn, s]))
+    const rows: { code: string; program: ShortlistProgram; school: ListSchool }[] = []
+    for (const code of order) {
+      const program = programs[code]
+      const school = program ? byDbn.get(program.dbn) : undefined
+      if (program && school) rows.push({ code, program, school })
+    }
+    return rows
+  }, [index, order, programs])
 
   const sections = useMemo(() => {
-    const shsat = saved.filter((s) => bucketForSchool(s) === 'shsat')
-    const main = saved.filter((s) => bucketForSchool(s) !== 'shsat')
+    const shsat = saved.filter((r) => bucketForSchool(r.school) === 'shsat')
+    const main = saved.filter((r) => bucketForSchool(r.school) !== 'shsat')
     return [
-      { label: 'SHSAT', schools: shsat },
-      { label: 'Main List', schools: main },
-    ].filter((section) => section.schools.length > 0)
+      { label: 'SHSAT', rows: shsat },
+      { label: 'Main List', rows: main },
+    ].filter((section) => section.rows.length > 0)
   }, [saved])
 
   const move = (sectionDbns: string[], localIndex: number, dir: -1 | 1) => {
@@ -240,22 +251,22 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
     }
   }
 
-  const remove = async (dbn: string) => {
-    const next = order.filter((d) => d !== dbn)
+  const remove = async (code: string) => {
+    const next = order.filter((c) => c !== code)
     setOrder(next)
     try {
-      const res = await fetch('/api/saved-schools', {
+      const res = await fetch('/api/saved-programs', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dbn }),
+        body: JSON.stringify({ program_code: code }),
       })
       if (!res.ok) throw new Error('remove failed')
     } catch {
       /* the ranking already updated locally; storage failure is surfaced below */
     }
-    const school = index.find((s) => s.dbn === dbn)
-    setNotice(school ? `Removed ${school.name}.` : 'Removed.')
-    posthog?.capture('school_removed', { dbn, list_size_after: next.length })
+    const program = programs[code]
+    setNotice(`Removed ${program.name}.`)
+    posthog?.capture('school_removed', { dbn: program.dbn, program_code: code, list_size_after: next.length })
   }
 
   const toggleExpanded = (dbn: string) => {
@@ -330,18 +341,18 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
         </p>
       </div>
 
-      {saved.map((school, i) => (
+      {saved.map(({ code, program, school }, i) => (
         <div
-          key={school.dbn}
+          key={code}
           className={`hidden print:block break-inside-avoid px-5 py-6${i > 0 ? ' break-before-page' : ''}`}
         >
           <p className="font-mono text-[10px] uppercase tracking-[0.1em] text-faint border-b border-rule pb-2 mb-4">
             Shortlist
           </p>
           <h2 className="font-display font-bold text-[22px] tracking-[-0.02em] text-ink">
-            {String(i + 1).padStart(2, '0')} — {school.name}
+            {String(i + 1).padStart(2, '0')} — {program.name}
           </h2>
-          <p className="font-mono text-[13px] text-faint mb-3">{school.dbn}</p>
+          <p className="font-mono text-[13px] text-faint mb-3">{school.name} · {school.dbn} · {code}</p>
           <SchoolDetailFields school={school} detail={details[school.dbn]} />
         </div>
       ))}
@@ -357,7 +368,7 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
 
           <div className="grid grid-cols-[46px_1fr_auto] min-[700px]:grid-cols-[46px_minmax(0,24rem)_132px_90px_76px_84px] gap-3 pb-2 border-b border-rule font-mono text-[10px] uppercase tracking-[0.1em] text-faint">
             <span>Rank</span>
-            <span>School</span>
+            <span>Program</span>
             <span className="hidden min-[700px]:block">Track</span>
             <span className="hidden min-[700px]:block">Results</span>
             <span className="hidden min-[700px]:block">Apps/seat</span>
@@ -365,35 +376,36 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
           </div>
 
           {sections.map((section) => {
-            const sectionDbns = section.schools.map((s) => s.dbn)
+            const sectionCodes = section.rows.map((r) => r.code)
             return (
               <div key={section.label}>
                 <Eyebrow className="pt-4 pb-[7px]">{section.label}</Eyebrow>
-                {section.schools.map((school, i) => {
+                {section.rows.map(({ code, program, school }, i) => {
                   const ratio = school.applicants_per_seat
                   const resultsPctl = details[school.dbn]?.sqr?.performance_pctl
                   const competitionPctl = ratio != null ? citywidePercentile(ratio, index) : null
-                  const isExpanded = expandedDbns.has(school.dbn)
-                  const detailPanelId = `shortlist-detail-${school.dbn}`
+                  const isExpanded = expandedDbns.has(code)
+                  const detailPanelId = `shortlist-detail-${code}`
                   return (
-                    <Fragment key={school.dbn}>
+                    <Fragment key={code}>
                     <div className="grid grid-cols-[46px_1fr_auto] min-[700px]:grid-cols-[46px_minmax(0,24rem)_132px_90px_76px_84px] gap-3 items-start py-[11px] border-b border-rule-light hover:bg-surface-2 transition-colors duration-[120ms] ease-out">
                       <span className="font-mono text-[16px] font-medium text-ink">
                         {String(i + 1).padStart(2, '0')}
                       </span>
                       <div className="min-w-0">
                         <Link
-                          href={`/school/${school.dbn}`}
+                          href={`/school/${program.dbn}`}
                           onClick={() =>
-                            posthog?.capture('school_detail_viewed', { dbn: school.dbn, from: 'my_schools' })
+                            posthog?.capture('school_detail_viewed', { dbn: program.dbn, from: 'my_schools' })
                           }
                           className="text-[15px] font-semibold text-ink hover:text-accent"
                         >
-                          {school.name}
+                          {program.name}
                         </Link>
                         <p className="text-[12.5px] text-muted mt-[2px]">
-                          {[school.neighborhood, school.borough].filter(Boolean).join(', ')}
+                          {school.name} · {[school.neighborhood, school.borough].filter(Boolean).join(', ')}
                           <span className="font-mono ml-2 text-faint">{school.dbn}</span>
+                          <span className="font-mono ml-2 text-faint">{code}</span>
                         </p>
                         <p className="min-[700px]:hidden text-[13px] text-ink-2 mt-1">
                           {(school.admissions_types ?? []).map(trackLabel).join(', ') || '—'}
@@ -417,7 +429,7 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
                         </p>
                       </div>
                       <span className="hidden min-[700px]:block text-[13.5px] text-ink-2">
-                        {(school.admissions_types ?? []).map(trackLabel).join(', ')}
+                        {program.term ?? '—'}
                       </span>
                       <span
                         className="hidden min-[700px]:block font-mono text-[13px] text-ink"
@@ -445,7 +457,7 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
                       <div className="flex items-center gap-1 justify-end">
                         <button
                           type="button"
-                          onClick={() => toggleExpanded(school.dbn)}
+                          onClick={() => toggleExpanded(code)}
                           aria-expanded={isExpanded}
                           aria-controls={detailPanelId}
                           aria-label={isExpanded ? `Collapse ${school.name}` : `Expand ${school.name}`}
@@ -455,7 +467,7 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
                         </button>
                         <button
                           type="button"
-                          onClick={() => move(sectionDbns, i, -1)}
+                          onClick={() => move(sectionCodes, i, -1)}
                           disabled={i === 0}
                           aria-label={`Move ${school.name} up`}
                           className="w-[23px] h-[23px] border border-border text-[12px] text-ink disabled:text-border disabled:cursor-default hover:border-muted"
@@ -464,8 +476,8 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
                         </button>
                         <button
                           type="button"
-                          onClick={() => move(sectionDbns, i, 1)}
-                          disabled={i === section.schools.length - 1}
+                          onClick={() => move(sectionCodes, i, 1)}
+                          disabled={i === section.rows.length - 1}
                           aria-label={`Move ${school.name} down`}
                           className="w-[23px] h-[23px] border border-border text-[12px] text-ink disabled:text-border disabled:cursor-default hover:border-muted"
                         >
@@ -473,7 +485,7 @@ export default function ShortlistClient({ index, initialOrder, details = {}, sig
                         </button>
                         <button
                           type="button"
-                          onClick={() => remove(school.dbn)}
+                          onClick={() => remove(code)}
                           aria-label={`Remove ${school.name}`}
                           className="w-[23px] h-[23px] text-[13px] text-faint hover:text-ink"
                         >

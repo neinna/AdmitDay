@@ -27,7 +27,7 @@ describe('/shortlist is gated server-side (issue #200, updated by #240)', () => 
     const authIdx = src.indexOf('await auth()')
     const ifNoUserIdx = src.indexOf('if (!userId)')
     const getAllSchoolsIdx = src.indexOf('await getAllSchools()')
-    const getSavedDbnsIdx = src.indexOf('getSavedDbns(')
+    const getSavedProgramsIdx = src.indexOf('getSavedPrograms(')
 
     expect(authIdx).toBeGreaterThan(-1)
     expect(ifNoUserIdx).toBeGreaterThan(authIdx)
@@ -35,7 +35,7 @@ describe('/shortlist is gated server-side (issue #200, updated by #240)', () => 
     // after it in source order, matching the early-return control flow — a
     // signed-out request never reaches either fetch.
     expect(getAllSchoolsIdx).toBeGreaterThan(ifNoUserIdx)
-    expect(getSavedDbnsIdx).toBeGreaterThan(ifNoUserIdx)
+    expect(getSavedProgramsIdx).toBeGreaterThan(ifNoUserIdx)
   })
 
   it('still renders the route (no redirect) so a signed-out visit can show a sign-in prompt (#240)', () => {
@@ -50,7 +50,7 @@ describe('/shortlist is gated server-side (issue #200, updated by #240)', () => 
 
   it('resolves saved dbns by the session-derived parentId, not a client-supplied id', () => {
     expect(src).toContain('findParentId(userId)')
-    expect(src).toContain('getSavedDbns(parentId)')
+    expect(src).toContain('getSavedPrograms(parentId)')
   })
 })
 
@@ -62,8 +62,8 @@ describe('ShortlistClient reads its list from server-provided props, not localSt
     expect(src).not.toMatch(/admitday_my_schools_order/)
   })
 
-  it('persists reorder and remove through the saved-schools API rather than localStorage', () => {
-    expect(src).toContain("fetch('/api/saved-schools'")
+  it('persists reorder and remove through the saved-programs API rather than localStorage', () => {
+    expect(src).toContain("fetch('/api/saved-programs'")
     expect(src).toContain("method: 'PUT'")
     expect(src).toContain("method: 'DELETE'")
     expect(src).not.toMatch(/localStorage\.setItem/)
