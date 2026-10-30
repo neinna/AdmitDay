@@ -32,6 +32,14 @@ interface SeedCase {
   expect: Expect;
 }
 
+/** One GitHub notice annotation carrying every case line (workflow-command escaping). */
+export function formatRetrievalNotice(passed: number, total: number, lines: string[]): string {
+  const body = lines
+    .map((l) => l.replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A"))
+    .join("%0A");
+  return `::notice title=Retrieval eval ${passed}/${total}::${body}`;
+}
+
 async function main(): Promise<void> {
   if (!process.env.OPENAI_API_KEY) {
     console.error("OPENAI_API_KEY is required");
@@ -49,6 +57,7 @@ async function main(): Promise<void> {
 
   const rows: Record<string, unknown>[] = [];
   let passed = 0;
+  const lines: string[] = [];
 
   for (const c of seed.cases) {
     let results: string[];
@@ -74,10 +83,15 @@ async function main(): Promise<void> {
     }
     if (row.pass) passed++;
     rows.push({ ...row, top20: results.slice(0, ASK_RETRIEVAL_COUNT) });
-    console.log(`${c.id}  ${row.pass ? "pass" : "FAIL"}  ${summary}`);
+    const line = `${c.id}  ${row.pass ? "pass" : "FAIL"}  ${summary}`;
+    lines.push(line);
+    console.log(line);
   }
 
   console.log(`Retrieval: ${passed}/${seed.cases.length} passed`);
+  if (process.env.GITHUB_ACTIONS === "true") {
+    console.log(formatRetrievalNotice(passed, seed.cases.length, lines));
+  }
 
   const outDir = path.resolve(process.cwd(), "evals", "results");
   fs.mkdirSync(outDir, { recursive: true });
@@ -88,7 +102,9 @@ async function main(): Promise<void> {
   );
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
