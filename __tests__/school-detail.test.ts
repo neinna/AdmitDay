@@ -8,6 +8,7 @@ import { School, SchoolFlags } from '../types'
 import { FindFilters } from '../lib/school-list-utils'
 import {
   findSchoolByDbn,
+  buildFindRowFacts,
   formatSchoolName,
   buildStatCells,
   buildStatCellsWithMissing,
@@ -491,6 +492,18 @@ describe('buildActivityGroups + getMissingActivityLabels', () => {
       },
     })
     expect(getMissingActivityLabels(school)).toEqual(['PSAL teams', 'AP courses'])
+  })
+
+  it('keeps only entries starting with "AP " in the AP list and the row-fact count (issue #669)', () => {
+    const school = makeSchool({
+      doe_data: {
+        overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '',
+        advancedplacement_courses: 'Algebra II (Advanced Math),AP Biology,AP Calculus AB',
+      },
+    })
+    const ap = buildActivityGroups(school).find((g) => g.key === 'apCourses')
+    expect(ap?.items).toEqual(['AP Biology', 'AP Calculus AB'])
+    expect(buildFindRowFacts(school)).toContain('2 AP courses')
   })
 
   it('returns [] when every group has at least one item', () => {
