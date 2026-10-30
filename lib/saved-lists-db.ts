@@ -53,6 +53,17 @@ export function ensureSchema(): Promise<void> {
           UNIQUE (list_id, dbn)
         )
       `
+      await sql`
+        CREATE TABLE IF NOT EXISTS list_programs (
+          id SERIAL PRIMARY KEY,
+          list_id INTEGER NOT NULL REFERENCES school_lists(id),
+          dbn TEXT NOT NULL,
+          program_code TEXT NOT NULL,
+          position INTEGER NOT NULL,
+          added_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+          UNIQUE (list_id, program_code)
+        )
+      `
     })().catch((err) => {
       schemaReady = null
       throw err
@@ -155,6 +166,62 @@ export async function reorderSavedSchools(parentId: number, order: string[]): Pr
     `
   }
   return orderedDbns(listId)
+}
+
+export interface SavedProgram {
+  dbn: string
+  program_code: string
+}
+
+async function orderedPrograms(listId: number): Promise<SavedProgram[]> {
+  const { rows } = await sql<SavedProgram>`
+    SELECT dbn, program_code FROM list_programs WHERE list_id = ${listId} ORDER BY position ASC
+  `
+  return rows
+}
+
+/** A signed-in parent's saved programs, in rank order. [] if they have no list yet. */
+export async function getSavedPrograms(parentId: number): Promise<SavedProgram[]> {
+  await ensureSchema()
+  const listId = await getDefaultListId(parentId)
+  if (listId === null) return []
+  return orderedPrograms(listId)
+}
+
+/** Adds the program to the parent's list, creating it (named "My list") on first save. */
+export async function addSavedProgram(parentId: number, item: SavedProgram): Promise<SavedProgram[]> {
+  await ensureSchema()
+  let listId = await getDefaultListId(parentId)
+  if (listId === null) listId = await createDefaultList(parentId)
+
+  await sql`
+    INSERT INTO list_programs (list_id, dbn, program_code, position)
+    SELECT ${listId}, ${item.dbn}, ${item.program_code}, COALESCE(MAX(position), -1) + 1 FROM list_programs WHERE list_id = ${listId}
+    ON CONFLICT (list_id, program_code) DO NOTHING
+  `
+  return orderedPrograms(listId)
+}
+
+/** Removing from a parent with no list is a no-op that returns []. */
+export async function removeSavedProgram(parentId: number, programCode: string): Promise<SavedProgram[]> {
+  await ensureSchema()
+  const listId = await getDefaultListId(parentId)
+  if (listId === null) return []
+  await sql`DELETE FROM list_programs WHERE list_id = ${listId} AND program_code = ${programCode}`
+  return orderedPrograms(listId)
+}
+
+/** Re-ranks the parent's saved programs to match `order` (program codes). Codes not already saved are ignored. */
+export async function reorderSavedPrograms(parentId: number, order: string[]): Promise<SavedProgram[]> {
+  await ensureSchema()
+  const listId = await getDefaultListId(parentId)
+  if (listId === null) return []
+  for (let i = 0; i < order.length; i++) {
+    await sql`
+      UPDATE list_programs SET position = ${i} WHERE list_id = ${listId} AND program_code = ${order[i]}
+    `
+  }
+  return orderedPrograms(listId)
 }
 
 export interface OwnedList {

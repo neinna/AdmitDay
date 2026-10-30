@@ -73,6 +73,17 @@ describe('DELETE /api/account — signed in', () => {
     expect(res.status).toBe(200)
   })
 
+  it('also deletes the parent\'s list_programs rows', async () => {
+    mockDeleteUser.mockResolvedValue(undefined)
+
+    await DELETE()
+
+    const [strings] = mockSql.mock.calls[0]
+    const text = strings.join('|')
+    expect(text).toContain('DELETE FROM list_programs')
+    expect(text.indexOf('DELETE FROM list_programs')).toBeLessThan(text.indexOf('DELETE FROM school_lists'))
+  })
+
   it('deletes the database rows before calling Clerk', async () => {
     const order: string[] = []
     mockSql.mockImplementation(() => {
