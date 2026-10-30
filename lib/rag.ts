@@ -50,7 +50,7 @@ interface SchoolEmbedding {
   dbn: string;
   name: string;
   borough: string;
-  chunkType: "full" | "identity" | "academics" | "activities";
+  chunkType: "full" | "identity" | "focus" | "programs" | "academics" | "activities" | "sports";
   chunk: string;
   embedding: number[];
   metadata: SchoolMetadata;
@@ -323,7 +323,7 @@ export async function searchSchools(
   const topSchools = ranked.slice(0, topK);
 
   // Build results: concatenate all chunks per school in a logical order
-  const chunkOrder = ["identity", "full", "academics", "activities"];
+  const chunkOrder = ["identity", "full", "focus", "programs", "academics", "activities", "sports"];
 
   return topSchools.map((school) => {
     // Sort chunks by the defined order
