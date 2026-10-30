@@ -76,7 +76,7 @@ describe('FindClient and SchoolDetailClient branch on sign-in state for saves (i
 
   it.each([
     ['FindClient', findSrc, "fetch('/api/saved-programs'"],
-    ['SchoolDetailClient', detailSrc, "fetch('/api/saved-schools'"],
+    ['SchoolDetailClient', detailSrc, "fetch('/api/saved-programs'"],
   ])('%s uses useAuth from @clerk/nextjs to branch signed-in saves to Postgres', (_name, src, fetchPath) => {
     expect(src).toContain('useAuth')
     expect(src).toContain("from '@clerk/nextjs'")
@@ -102,6 +102,12 @@ describe('FindClient and SchoolDetailClient branch on sign-in state for saves (i
     expect(src).toContain('openSignUp()')
     expect(src).toContain("import { PENDING_SAVE_KEY } from '@/components/PendingSaveSync'")
     expect(src).toContain('sessionStorage.setItem(PENDING_SAVE_KEY')
+  })
+
+  it('SchoolDetailClient stashes the pending save as JSON { dbn, program_code }', () => {
+    expect(detailSrc).toContain(
+      'JSON.stringify({ dbn: school.dbn, program_code: code })'
+    )
   })
 
   it('FindClient stashes the pending save as JSON { dbn, program_code }', () => {

@@ -94,7 +94,8 @@ export default function SchoolDetailClient({
   const posthog = usePostHog()
   const { isSignedIn, isLoaded } = useAuth()
   const { openSignUp } = useClerk()
-  const [addedDbns, setAddedDbns] = useState<Set<string>>(new Set())
+  const [savedPrograms, setSavedPrograms] = useState<{ dbn: string; program_code: string }[]>([])
+  const [saveErrorCodes, setSaveErrorCodes] = useState<Set<string>>(new Set())
   const [hydrated, setHydrated] = useState(false)
   const [programsExpanded, setProgramsExpanded] = useState(false)
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({})
@@ -103,21 +104,24 @@ export default function SchoolDetailClient({
   // mismatch, since server-rendered markup can't know its value.
   const [startingPoint, setStartingPoint] = useState<StartingPoint | null>(null)
 
+  const addedCodes = new Set(savedPrograms.map((p) => p.program_code))
+  const savedDbns = new Set(savedPrograms.map((p) => p.dbn))
+
   useEffect(() => {
     setStartingPoint(loadStartingPoint())
   }, [])
 
   // Issue #200/#240: saving a school requires an account, so the only saved
-  // list is Postgres via /api/saved-schools. Signed out, there is no list —
+  // list is Postgres via /api/saved-programs. Signed out, there is no list —
   // any list left over from before accounts existed is discarded by clearing
   // the old key.
   useEffect(() => {
     if (!isLoaded) return
     if (isSignedIn) {
-      fetch('/api/saved-schools')
-        .then((res) => (res.ok ? res.json() : { dbns: [] }))
-        .then((data) => setAddedDbns(new Set(Array.isArray(data.dbns) ? data.dbns : [])))
-        .catch(() => setAddedDbns(new Set()))
+      fetch('/api/saved-programs')
+        .then((res) => (res.ok ? res.json() : { programs: [] }))
+        .then((data) => setSavedPrograms(Array.isArray(data.programs) ? data.programs : []))
+        .catch(() => setSavedPrograms([]))
         .finally(() => setHydrated(true))
       return
     }
@@ -129,13 +133,13 @@ export default function SchoolDetailClient({
     setHydrated(true)
   }, [isLoaded, isSignedIn])
 
-  async function toggleAdded() {
-    // Issue #240: saving a school requires an account. Signed out, stash the
-    // clicked DBN and open sign-up — PendingSaveSync saves it once the
-    // account exists.
+  async function toggleAdded(code: string) {
+    // Issue #240: saving requires an account. Signed out, stash the clicked
+    // program and open sign-up — PendingSaveSync saves it once the account
+    // exists.
     if (!isSignedIn) {
       try {
-        sessionStorage.setItem(PENDING_SAVE_KEY, school.dbn)
+        sessionStorage.setItem(PENDING_SAVE_KEY, JSON.stringify({ dbn: school.dbn, program_code: code }))
       } catch {
         // ignore
       }
@@ -143,34 +147,50 @@ export default function SchoolDetailClient({
       return
     }
 
-    const next = new Set(addedDbns)
-    const adding = !next.has(school.dbn)
-    if (adding) next.add(school.dbn)
-    else next.delete(school.dbn)
-    setAddedDbns(next)
+    const previous = savedPrograms
+    const adding = !previous.some((p) => p.program_code === code)
+    const next = adding
+      ? [...previous, { dbn: school.dbn, program_code: code }]
+      : previous.filter((p) => p.program_code !== code)
+    setSavedPrograms(next)
 
+    let ok = false
     try {
-      await fetch('/api/saved-schools', {
+      const res = await fetch('/api/saved-programs', {
         method: adding ? 'POST' : 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dbn: school.dbn }),
+        body: JSON.stringify(
+          adding ? { dbn: school.dbn, program_code: code } : { program_code: code }
+        ),
       })
+      ok = res.ok
     } catch {
-      // ignore
+      ok = false
     }
+
+    if (!ok) {
+      setSavedPrograms(previous)
+      setSaveErrorCodes((prev) => new Set(prev).add(code))
+      return
+    }
+    setSaveErrorCodes((prev) => {
+      const cleared = new Set(prev)
+      cleared.delete(code)
+      return cleared
+    })
 
     posthog?.capture(adding ? 'school_saved' : 'school_removed', {
       dbn: school.dbn,
-      list_size_after: next.size,
+      program_code: code,
+      list_size_after: next.length,
     })
   }
 
   const doeSchoolUrl = buildDoeSchoolUrl(school.dbn)
   const myschoolsCheckedLabel = buildMySchoolsCheckedLabel(school)
 
-  const addedCount = hydrated ? addedDbns.size : 0
-  const added = hydrated && addedDbns.has(school.dbn)
-  const alsoOnYourList = alsoOnYourListIndex.filter((s) => hydrated && addedDbns.has(s.dbn)).slice(0, 4)
+  const addedCount = hydrated ? addedCodes.size : 0
+  const alsoOnYourList = alsoOnYourListIndex.filter((s) => hydrated && savedDbns.has(s.dbn)).slice(0, 4)
 
   const visiblePrograms = programsExpanded ? programs : programs.slice(0, PROGRAMS_CAP)
 
@@ -232,15 +252,6 @@ export default function SchoolDetailClient({
           </div>
         </div>
         <div className="flex flex-row min-[900px]:flex-col gap-2">
-          <button
-            type="button"
-            onClick={toggleAdded}
-            className={`flex-1 text-center text-[14px] font-medium py-[11px] transition-colors duration-[120ms] ease-out hover:bg-ink hover:text-white ${
-              added ? 'border border-ink text-ink' : 'bg-ink text-white'
-            }`}
-          >
-            {added ? 'On your list · Remove' : 'Add to list'}
-          </button>
           <div className="flex-1 flex flex-col gap-1">
             <a
               href={doeSchoolUrl}
@@ -308,7 +319,7 @@ export default function SchoolDetailClient({
                 {visiblePrograms.map((p, i) => (
                   <div
                     key={`${p.name}-${i}`}
-                    className={`grid grid-cols-1 min-[900px]:grid-cols-[1fr_190px] gap-4 py-[11px] px-2 -mx-2 hover:bg-surface-2 transition-colors duration-[120ms] ease-out ${
+                    className={`grid grid-cols-1 min-[900px]:grid-cols-[1fr_190px_88px] gap-4 py-[11px] px-2 -mx-2 hover:bg-surface-2 transition-colors duration-[120ms] ease-out ${
                       i < visiblePrograms.length - 1 ? 'border-b border-rule-light' : ''
                     }`}
                   >
@@ -317,10 +328,31 @@ export default function SchoolDetailClient({
                       {p.code && <span className="ml-2 font-mono text-[12px] text-faint">{p.code}</span>}
                     </span>
                     <span className="text-[13.5px] text-muted">{p.method}</span>
+                    {p.code && (() => {
+                      const code = p.code
+                      const added = hydrated && addedCodes.has(code)
+                      return (
+                        <button
+                          type="button"
+                          aria-label={`${added ? 'Remove' : 'Add'} ${p.name}`}
+                          onClick={() => toggleAdded(code)}
+                          className={`text-center text-[13px] font-medium py-[6px] transition-colors duration-[120ms] ease-out hover:bg-ink hover:text-white ${
+                            added ? 'border border-ink text-ink' : 'bg-ink text-white'
+                          }`}
+                        >
+                          {added ? 'Remove' : 'Add'}
+                        </button>
+                      )
+                    })()}
+                    {p.code && saveErrorCodes.has(p.code) && (
+                      <span className="col-span-1 min-[900px]:col-span-3 text-[12.5px] text-faint">
+                        Couldn&rsquo;t save — try again.
+                      </span>
+                    )}
                     {p.seatsLeftLastYear && (
                       <span
                         title={`Some seats were still open after last year's offers (DOE data${p.seatsLeftLastYear.cycle ? `, ${p.seatsLeftLastYear.cycle}` : ''}).`}
-                        className="col-span-1 min-[900px]:col-span-2 text-[12.5px] text-faint"
+                        className="col-span-1 min-[900px]:col-span-3 text-[12.5px] text-faint"
                       >
                         Seats left last year
                       </span>

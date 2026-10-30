@@ -223,16 +223,17 @@ describe('SchoolDetailClient — save and MySchools-link events (issue #196)', (
     expect(src).toContain("from 'posthog-js/react'")
   })
 
-  it('toggleAdded computes the next Set from the closure before capturing (no updater-form double-invoke risk)', () => {
+  it('toggleAdded computes the next array from the closure before capturing (no updater-form double-invoke risk)', () => {
     const start = src.indexOf('function toggleAdded')
     const end = src.indexOf('const addedCount')
     const body = src.slice(start, end)
-    expect(body).not.toMatch(/setAddedDbns\(\s*\(/)
+    expect(body).not.toMatch(/setSavedPrograms\(\s*\(/)
     expect(body).toContain("posthog?.capture(adding ? 'school_saved' : 'school_removed'")
-    expect(body).toContain('list_size_after: next.size')
+    expect(body).toContain('program_code: code')
+    expect(body).toContain('list_size_after: next.length')
   })
 
-  it('fires myschools_link_clicked with dbn on both MySchools links (header button and requirements block)', () => {
+  it('fires myschools_link_clicked with dbn on both MySchools links (header DOE link and requirements block)', () => {
     const occurrences = src.split(
       "posthog?.capture('myschools_link_clicked', { dbn: school.dbn })"
     ).length - 1
