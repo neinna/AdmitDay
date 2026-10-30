@@ -17,7 +17,7 @@ export default function AskPending() {
         <div className="ask-progress-bar absolute inset-y-0 left-0 w-1/4 bg-accent" />
       </div>
       <p role="status" className="font-mono text-[12px] text-ink-2">
-        Searching schools and writing an answer
+        Searching
         <span aria-hidden="true"> · {seconds}s</span>
       </p>
     </div>
