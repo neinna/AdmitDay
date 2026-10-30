@@ -1,0 +1,145 @@
+{
+  "description": "Retrieval relevance cases (Inna, 2026-10-30). Each case passes when its expectation holds within the top ASK_RETRIEVAL_COUNT results of searchSchools with no rail filters.",
+  "cases": [
+    {
+      "id": "ret-001",
+      "question": "he likes building things like PCs and is starting to like math",
+      "filters": {},
+      "expect": {
+        "type": "all_of",
+        "dbns": ["02M475", "13K430", "10X445", "05M692", "11X288"]
+      }
+    },
+    {
+      "id": "ret-002",
+      "question": "she wants to be a doctor and loves biology",
+      "filters": {},
+      "expect": {
+        "type": "all_of",
+        "dbns": ["02M420", "09X413", "18K633", "10X237"]
+      }
+    },
+    {
+      "id": "ret-003",
+      "question": "my son loves airplanes and wants to learn to fly",
+      "filters": {},
+      "expect": {
+        "type": "all_of",
+        "dbns": ["24Q610", "11X545"]
+      }
+    },
+    {
+      "id": "ret-004",
+      "question": "she wants to learn to code and build apps",
+      "filters": {},
+      "expect": {
+        "type": "all_of",
+        "dbns": ["02M546", "10X264"]
+      }
+    },
+    {
+      "id": "ret-005",
+      "question": "he loves cooking and wants to be a chef",
+      "filters": {},
+      "expect": {
+        "type": "all_of",
+        "dbns": ["02M288", "02M296"]
+      }
+    },
+    {
+      "id": "ret-006",
+      "question": "wants to be a lawyer, loves debate",
+      "filters": {},
+      "expect": {
+        "type": "all_of",
+        "dbns": ["03M492", "06M467", "02M305"]
+      }
+    },
+    {
+      "id": "ret-007",
+      "question": "plays guitar and sings, wants a music school",
+      "filters": {},
+      "expect": {
+        "type": "all_of",
+        "dbns": ["03M485", "30Q501", "02M519"]
+      }
+    },
+    {
+      "id": "ret-008",
+      "question": "draws all the time and wants to do animation",
+      "filters": {},
+      "expect": {
+        "type": "all_of",
+        "dbns": ["02M630", "15K429"]
+      }
+    },
+    {
+      "id": "ret-009",
+      "question": "loves the ocean and boats",
+      "filters": {},
+      "expect": {
+        "type": "all_of",
+        "dbns": ["02M551"]
+      }
+    },
+    {
+      "id": "ret-010",
+      "question": "wants to study Mandarin",
+      "filters": {},
+      "expect": {
+        "type": "all_of",
+        "dbns": ["02M545", "25Q281"]
+      }
+    },
+    {
+      "id": "ret-011",
+      "question": "I'm looking for a school with strong IEP support",
+      "filters": {},
+      "expect": {
+        "type": "min_share",
+        "k": 10,
+        "admissions_types": ["ASD / ACES", "D75 Inclusion"]
+      }
+    },
+    {
+      "id": "ret-012",
+      "question": "I'm looking for a school where scientific research is strong",
+      "filters": {},
+      "expect": {
+        "type": "min_of",
+        "k": 3,
+        "dbns": ["31R605", "05M692", "01M539", "04M435", "10X445", "02M475", "26Q430", "22K405"]
+      }
+    },
+    {
+      "id": "ret-013",
+      "question": "I'm looking for a school that is strong in humanities",
+      "filters": {},
+      "expect": {
+        "type": "min_of",
+        "k": 3,
+        "dbns": ["25Q525", "10X696", "14K449", "03M479", "02M412", "02M416", "01M696", "24Q299"]
+      }
+    },
+    {
+      "id": "ret-014",
+      "question": "I'm looking for a school strong in visual art",
+      "filters": {},
+      "expect": {
+        "type": "min_of",
+        "k": 2,
+        "dbns": ["02M630", "03M485", "30Q501", "15K656", "10X437"]
+      }
+    },
+    {
+      "id": "ret-015",
+      "question": "a strong academic school that offers exposure to different subjects across humanities, arts, language, and sciences",
+      "filters": {},
+      "expect": {
+        "type": "min_of",
+        "k": 3,
+        "dbns": ["03M479", "02M412", "02M416", "02M418", "02M411", "15K684", "25Q525", "13K430", "26Q430", "22K405", "01M696"]
+      }
+    }
+  ]
+}
