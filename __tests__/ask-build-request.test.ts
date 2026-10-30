@@ -23,7 +23,7 @@ describe('buildAskRequest (issue #450)', () => {
     const request = buildAskRequest('What schools are good?', 'some school context')
 
     expect(request.system).toContain('You are an experienced NYC high school admissions consultant.')
-    expect(request.system).toContain('output exactly one line in the form DBN | reason')
+    expect(request.system).toContain('add one entry to picks with dbn set to')
   })
 
   it('embeds the school context and the question into a single user message', () => {
