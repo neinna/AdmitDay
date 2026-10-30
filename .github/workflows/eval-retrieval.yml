@@ -2,6 +2,11 @@ name: eval-retrieval
 
 on:
   workflow_dispatch:
+    inputs:
+      reembed:
+        description: 'Rebuild data/school-embeddings.json from schools.json before the eval'
+        type: boolean
+        default: false
   pull_request:
     paths:
       - 'lib/rag.ts'
@@ -20,16 +25,35 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
+        with:
+          fetch-depth: 0
       - name: Set up Node.js
         uses: actions/setup-node@3235b876344d2a9aa001b8d1453c930bba69e610 # v3
         with:
           node-version: '20'
       - name: Install dependencies
         run: npm ci
-      - name: Run retrieval eval
+      - name: Detect chunk builder change
+        id: changed
+        if: github.event_name == 'pull_request'
+        run: git diff --quiet origin/${{ github.base_ref }}...HEAD -- scripts/embed-schools.ts || echo "embed=true" >> "$GITHUB_OUTPUT"
+      - name: Rebuild embeddings (CI only, not committed)
+        if: github.event.inputs.reembed == 'true' || steps.changed.outputs.embed == 'true'
         env:
           OPENAI_API_KEY: ${{ secrets.EVAL_OPENAI_API_KEY }}
-        run: npm run eval:retrieval | tee -a "$GITHUB_STEP_SUMMARY"
+        run: npx ts-node --compiler-options '{"module":"commonjs","moduleResolution":"node"}' --transpile-only scripts/embed-schools.ts
+      - name: Run retrieval eval
+        shell: bash
+        env:
+          OPENAI_API_KEY: ${{ secrets.EVAL_OPENAI_API_KEY }}
+          REEMBED: ${{ github.event.inputs.reembed == 'true' || steps.changed.outputs.embed == 'true' }}
+        run: |
+          if [ "$REEMBED" = "true" ]; then
+            echo "Embeddings: rebuilt in CI" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "Embeddings: committed file" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          npm run eval:retrieval | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Upload retrieval results
         if: always()
         uses: actions/upload-artifact@v4
