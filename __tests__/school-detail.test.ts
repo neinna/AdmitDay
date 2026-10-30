@@ -1,5 +1,8 @@
 import * as fs from 'fs'
 import * as path from 'path'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import StatGrid from '../components/ui/StatGrid'
 import { notFound } from 'next/navigation'
 import { School, SchoolFlags } from '../types'
 import { FindFilters } from '../lib/school-list-utils'
@@ -255,14 +258,31 @@ describe('buildStatCellsWithMissing (issue #472)', () => {
       'Attendance rate',
       'College and career',
     ])
-    expect(cells.filter((c) => c.missing).map((c) => c.key)).toEqual(['applicantsPerSeat', 'impact'])
+    expect(cells.filter((c) => c.missing).map((c) => c.key)).toEqual(['impact'])
+    expect(cells.find((c) => c.key === 'totalStudents')?.missing).toBeUndefined()
+  })
+
+  it('always renders an Applicants per seat cell: "—" with a title when null', () => {
+    const cells = buildStatCellsWithMissing(makeSchool({ applicants_per_seat: null }))
     expect(cells.find((c) => c.key === 'applicantsPerSeat')).toEqual({
       key: 'applicantsPerSeat',
       label: 'Applicants per seat',
-      value: '',
-      missing: true,
+      value: '—',
+      title: 'Not reported in DOE data',
     })
-    expect(cells.find((c) => c.key === 'totalStudents')?.missing).toBeUndefined()
+    const html = renderToStaticMarkup(createElement(StatGrid, { stats: cells }))
+    expect(html).toContain('title="Not reported in DOE data"')
+    expect(html).toContain('aria-label="Not reported in DOE data"')
+    expect(html).toContain('—')
+  })
+
+  it('renders a present applicants per seat value unchanged', () => {
+    const cells = buildStatCellsWithMissing(makeSchool({ applicants_per_seat: 1.4 }))
+    const cell = cells.find((c) => c.key === 'applicantsPerSeat')
+    expect(cell?.value).toBe('1.4')
+    expect(cell?.title).toBeUndefined()
+    const html = renderToStaticMarkup(createElement(StatGrid, { stats: cells }))
+    expect(html).toContain('1.4')
   })
 
   it('marks no cell as missing when every stat is published', () => {
@@ -350,8 +370,9 @@ describe('getMissingStatLabels + buildNotReportedStatsSentence (NOT REPORTED —
     })
     const sentence = buildNotReportedStatsSentence(getMissingStatLabels(school))
     expect(sentence).toBe(
-      'Applicants per seat, results percentile, impact percentile, and college & career rate are not published for this school. That is a gap in the DOE data, not a low result.'
+      'Results percentile, impact percentile, and college & career rate are not published for this school. That is a gap in the DOE data, not a low result.'
     )
+    expect(getMissingStatLabels(school)).not.toContain('applicants per seat')
   })
 
   it('uses singular "is" for exactly one missing stat', () => {

@@ -19,7 +19,11 @@ export default function StatGrid({ stats, noteText = DEFAULT_NOTE }: Props) {
           {stat.missing ? (
             <MissingMark kind="not_reported" className="text-[22px] min-[901px]:text-[24px]" />
           ) : (
-            <span className="font-mono text-[22px] min-[901px]:text-[24px] font-medium text-ink tracking-[-0.02em]">
+            <span
+              className="font-mono text-[22px] min-[901px]:text-[24px] font-medium text-ink tracking-[-0.02em]"
+              title={stat.title}
+              aria-label={stat.title}
+            >
               {stat.value}
             </span>
           )}
