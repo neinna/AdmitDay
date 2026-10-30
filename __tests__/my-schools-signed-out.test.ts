@@ -20,12 +20,13 @@ jest.mock('@clerk/nextjs', () => ({
   UserButton: () => null,
 }))
 
+import { withPrograms } from './helpers/shortlist-programs'
 import ShortlistClient from '@/app/shortlist/ShortlistClient'
 
 describe('/shortlist signed out (issue #240)', () => {
   it('shows the sign-in prompt and the Sign in / Sign up controls, with no saved list', () => {
     const html = renderToStaticMarkup(
-      React.createElement(ShortlistClient, { index: [], initialOrder: [], signedIn: false })
+      React.createElement(ShortlistClient, { index: [], initialOrder: [], programs: {}, signedIn: false })
     )
 
     expect(html).toContain('>Sign in</button> to see your saved schools.')
@@ -50,7 +51,7 @@ describe('/shortlist signed out (issue #240)', () => {
             neighborhood: null,
           },
         ],
-        initialOrder: ['01M001'],
+        ...withPrograms([], ['01M001']),
         signedIn: false,
       })
     )
@@ -61,7 +62,7 @@ describe('/shortlist signed out (issue #240)', () => {
 
   it('renders "Sign in" as a button inside the saved-schools prompt paragraph', () => {
     const html = renderToStaticMarkup(
-      React.createElement(ShortlistClient, { index: [], initialOrder: [], signedIn: false })
+      React.createElement(ShortlistClient, { index: [], initialOrder: [], programs: {}, signedIn: false })
     )
 
     expect(html).toMatch(/<p[^>]*>\s*<button[^>]*>Sign in<\/button> to see your saved schools\.<\/p>/)

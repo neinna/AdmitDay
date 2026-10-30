@@ -11,6 +11,14 @@ export type ListSchool = Pick<
   'dbn' | 'name' | 'borough' | 'admissions_types' | 'applicants_per_seat'
 > & { neighborhood?: string | null }
 
+/** One saved program on the Shortlist; `term` is the admission-method term, null when the type is empty. */
+export type ShortlistProgram = {
+  program_code: string
+  dbn: string
+  name: string
+  term: string | null
+}
+
 /**
  * Everything the print-only detail block needs beyond `ListSchool` (issue
  * #405). Keyed by dbn and populated server-side only for the schools that are

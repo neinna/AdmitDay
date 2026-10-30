@@ -20,6 +20,7 @@ jest.mock('@clerk/nextjs', () => ({
   UserButton: () => null,
 }))
 
+import { withPrograms } from './helpers/shortlist-programs'
 import ShortlistClient, { moveWithinSection } from '@/app/shortlist/ShortlistClient'
 
 function makeIndex() {
@@ -64,7 +65,7 @@ describe('/shortlist SHSAT / Main List split (issue #406)', () => {
     const html = renderToStaticMarkup(
       React.createElement(ShortlistClient, {
         index: makeIndex(),
-        initialOrder: ['02M475', '13K430', '01M292', '02Q999'],
+        ...withPrograms(makeIndex(), ['02M475', '13K430', '01M292', '02Q999']),
         signedIn: true,
       })
     )
@@ -91,7 +92,7 @@ describe('/shortlist SHSAT / Main List split (issue #406)', () => {
     const html = renderToStaticMarkup(
       React.createElement(ShortlistClient, {
         index: makeIndex().filter((s) => s.dbn !== '02M475' && s.dbn !== '13K430'),
-        initialOrder: ['01M292', '02Q999'],
+        ...withPrograms(makeIndex(), ['01M292', '02Q999']),
         signedIn: true,
       })
     )
@@ -107,7 +108,7 @@ describe('/shortlist SHSAT / Main List split (issue #406)', () => {
     const html = renderToStaticMarkup(
       React.createElement(ShortlistClient, {
         index: makeIndex().filter((s) => s.dbn === '02M475' || s.dbn === '13K430'),
-        initialOrder: ['02M475', '13K430'],
+        ...withPrograms(makeIndex(), ['02M475', '13K430']),
         signedIn: true,
       })
     )
@@ -147,5 +148,31 @@ describe('moveWithinSection (issue #406)', () => {
     // not swap it with S1, the next item in the raw array but a school in
     // the other section.
     expect(moveWithinSection(order, mainDbns, 1, 1)).toBe(order)
+  })
+})
+
+describe('/shortlist flat program ranking (issue #615)', () => {
+  it('keeps two programs of one school apart by another school’s program, in saved order', () => {
+    const index = makeIndex().filter((s) => s.dbn === '01M292' || s.dbn === '02Q999')
+    const programs = {
+      A1: { program_code: 'A1', dbn: '01M292', name: 'Alpha One', term: null },
+      B1: { program_code: 'B1', dbn: '02Q999', name: 'Beta One', term: 'Screened' },
+      A2: { program_code: 'A2', dbn: '01M292', name: 'Alpha Two', term: null },
+    }
+    const html = renderToStaticMarkup(
+      React.createElement(ShortlistClient, {
+        index,
+        initialOrder: ['A1', 'B1', 'A2'],
+        programs,
+        signedIn: true,
+      })
+    )
+    const ranking = html.slice(html.indexOf('Your ranking'))
+    const a1 = ranking.indexOf('Alpha One')
+    const b1 = ranking.indexOf('Beta One')
+    const a2 = ranking.indexOf('Alpha Two')
+    expect(a1).toBeGreaterThan(-1)
+    expect(b1).toBeGreaterThan(a1)
+    expect(a2).toBeGreaterThan(b1)
   })
 })

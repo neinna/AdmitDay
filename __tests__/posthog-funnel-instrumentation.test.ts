@@ -204,12 +204,12 @@ describe('ShortlistClient — shortlist_viewed, school_removed, and detail-view 
   it('fires school_removed with the post-removal list size when a school is removed', () => {
     const start = src.indexOf('const remove = ')
     const body = src.slice(start, start + 700)
-    expect(body).toContain("posthog?.capture('school_removed', { dbn, list_size_after: next.length })")
+    expect(body).toContain("posthog?.capture('school_removed', { dbn: program.dbn, program_code: code, list_size_after: next.length })")
   })
 
   it('fires school_detail_viewed with from: "my_schools" on the row link click (property value unchanged by #283)', () => {
     expect(src).toContain(
-      "posthog?.capture('school_detail_viewed', { dbn: school.dbn, from: 'my_schools' })"
+      "posthog?.capture('school_detail_viewed', { dbn: program.dbn, from: 'my_schools' })"
     )
   })
 })

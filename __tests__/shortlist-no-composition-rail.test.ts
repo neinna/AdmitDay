@@ -16,6 +16,7 @@ jest.mock('@clerk/nextjs', () => ({
   UserButton: () => null,
 }))
 
+import { withPrograms } from './helpers/shortlist-programs'
 import ShortlistClient from '@/app/shortlist/ShortlistClient'
 
 function makeIndex() {
@@ -36,7 +37,7 @@ describe('/shortlist no composition rail (issue #483)', () => {
     const html = renderToStaticMarkup(
       React.createElement(ShortlistClient, {
         index,
-        initialOrder: index.map((s) => s.dbn),
+        ...withPrograms(index, index.map((s) => s.dbn)),
         signedIn: true,
       })
     )

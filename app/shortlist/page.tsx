@@ -2,8 +2,9 @@ import type { Metadata } from 'next'
 import { auth } from '@clerk/nextjs/server'
 import Footer from '@/components/Footer'
 import { getAllSchools } from '@/lib/load-schools'
-import { findParentId, getSavedDbns } from '@/lib/saved-lists-db'
-import type { ListSchool, ListSchoolDetail } from '@/lib/saved-list-utils'
+import { findParentId, getSavedPrograms } from '@/lib/saved-lists-db'
+import { admissionMethodTerm } from '@/lib/school-list-utils'
+import type { ListSchool, ListSchoolDetail, ShortlistProgram } from '@/lib/saved-list-utils'
 import ShortlistClient from './ShortlistClient'
 
 export const metadata: Metadata = {
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
  * client resolve the session's saved DBNs against it — a few fields per
  * school rather than the full record, which keeps the payload small.
  *
- * Nothing here is a client import: `getAllSchools`, `getSavedDbns`, and the
+ * Nothing here is a client import: `getAllSchools`, `getSavedPrograms`, and the
  * index shaping are server-side, and the only thing handed across the
  * boundary is plain data.
  */
@@ -33,7 +34,7 @@ export default async function ShortlistPage() {
   if (!userId) {
     return (
       <main className="min-h-screen bg-white flex flex-col">
-        <ShortlistClient index={[]} initialOrder={[]} details={{}} signedIn={false} />
+        <ShortlistClient index={[]} initialOrder={[]} programs={{}} details={{}} signedIn={false} />
         <Footer />
       </main>
     )
@@ -41,7 +42,7 @@ export default async function ShortlistPage() {
 
   const schools = await getAllSchools()
   const parentId = await findParentId(userId)
-  const initialOrder = parentId === null ? [] : await getSavedDbns(parentId)
+  const savedPrograms = parentId === null ? [] : await getSavedPrograms(parentId)
 
   const index: ListSchool[] = schools.map((s) => ({
     dbn: s.dbn,
@@ -54,7 +55,22 @@ export default async function ShortlistPage() {
 
   // Print detail (issue #405) only for schools actually on the list — the
   // index above ships for all schools and must stay slim.
-  const savedSet = new Set(initialOrder)
+  const schoolByDbn = new Map(schools.map((s) => [s.dbn, s]))
+  const programs: Record<string, ShortlistProgram> = {}
+  const initialOrder: string[] = []
+  for (const item of savedPrograms) {
+    const school = schoolByDbn.get(item.dbn)
+    const program = school?.programs.find((p) => p.program_code === item.program_code)
+    if (!school || !program) continue
+    programs[item.program_code] = {
+      program_code: item.program_code,
+      dbn: item.dbn,
+      name: program.program_name ?? program.program ?? item.program_code,
+      term: program.admissions_type ? admissionMethodTerm(program.admissions_type) : null,
+    }
+    initialOrder.push(item.program_code)
+  }
+  const savedSet = new Set(initialOrder.map((code) => programs[code].dbn))
   const details: Record<string, ListSchoolDetail> = {}
   for (const s of schools) {
     if (!savedSet.has(s.dbn)) continue
@@ -77,7 +93,7 @@ export default async function ShortlistPage() {
 
   return (
     <main className="min-h-screen bg-white flex flex-col">
-      <ShortlistClient index={index} initialOrder={initialOrder} details={details} signedIn={true} />
+      <ShortlistClient index={index} initialOrder={initialOrder} programs={programs} details={details} signedIn={true} />
       <Footer />
     </main>
   )

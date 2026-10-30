@@ -31,6 +31,7 @@ jest.mock('@clerk/nextjs', () => ({
 
 import * as fs from 'fs'
 import * as path from 'path'
+import { withPrograms } from './helpers/shortlist-programs'
 import ShortlistClient, { toggleExpandedDbn } from '@/app/shortlist/ShortlistClient'
 import type { ListSchool, ListSchoolDetail } from '@/lib/saved-list-utils'
 
@@ -97,15 +98,15 @@ describe('/shortlist row expand panel — default render (issue #408)', () => {
     const html = renderToStaticMarkup(
       React.createElement(ShortlistClient, {
         index: makeIndex(),
-        initialOrder: ['02M475'],
+        ...withPrograms(makeIndex(), ['02M475']),
         details: { '02M475': makeDetail({ doe_data: { address: '123 Test St', website: '' } }) },
         signedIn: true,
       })
     )
 
     expect(html).toContain('aria-expanded="false"')
-    expect(html).toContain('aria-controls="shortlist-detail-02M475"')
-    expect(html).not.toContain('id="shortlist-detail-02M475"')
+    expect(html).toContain('aria-controls="shortlist-detail-P-02M475"')
+    expect(html).not.toContain('id="shortlist-detail-P-02M475"')
     // The address only appears in the (always-rendered, CSS-hidden) print
     // block, never in the collapsed in-page panel.
     expect(html.match(/123 Test St/g)?.length).toBe(1)
@@ -115,7 +116,7 @@ describe('/shortlist row expand panel — default render (issue #408)', () => {
     const html = renderToStaticMarkup(
       React.createElement(ShortlistClient, {
         index: makeIndex(),
-        initialOrder: ['02M475', '01M292'],
+        ...withPrograms(makeIndex(), ['02M475', '01M292']),
         details: {},
         signedIn: true,
       })
@@ -132,7 +133,7 @@ describe('/shortlist row expand — wiring (issue #408)', () => {
   it('ties aria-expanded and aria-controls to component state, not the print block', () => {
     expect(src).toMatch(/aria-expanded=\{isExpanded\}/)
     expect(src).toMatch(/aria-controls=\{detailPanelId\}/)
-    expect(src).toContain('const detailPanelId = `shortlist-detail-${school.dbn}`')
+    expect(src).toContain('const detailPanelId = `shortlist-detail-${code}`')
   })
 
   it('reuses the same SchoolDetailFields component for both the print block and the expand panel (no second field list)', () => {
@@ -150,14 +151,14 @@ describe('/shortlist row expand — wiring (issue #408)', () => {
   })
 
   it('the expand/collapse button never appears inside a school_detail_viewed capture call', () => {
-    const idx = src.indexOf('toggleExpanded(school.dbn)')
+    const idx = src.indexOf('toggleExpanded(code)')
     expect(idx).toBeGreaterThan(-1)
     const nearby = src.slice(Math.max(0, idx - 200), idx + 200)
     expect(nearby).not.toContain('school_detail_viewed')
   })
 
   it('the disclosure control is a real <button>, not a link or div', () => {
-    const idx = src.indexOf('toggleExpanded(school.dbn)')
+    const idx = src.indexOf('toggleExpanded(code)')
     const buttonStart = src.lastIndexOf('<button', idx)
     expect(buttonStart).toBeGreaterThan(-1)
     expect(src.slice(buttonStart, idx)).not.toContain('</button>')
