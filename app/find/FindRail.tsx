@@ -113,9 +113,12 @@ export default function FindRail({
         )}
       </div>
 
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-3" aria-describedby={radiusDisabled ? 'radius-hint' : undefined}>
         <div className="font-mono text-[11px] tracking-[0.12em] uppercase text-faint">Distance</div>
         <SegmentedControl options={RADIUS_OPTIONS} value={radiusValue} onChange={onRadiusChange} disabled={radiusDisabled} />
+        {radiusDisabled && (
+          <p id="radius-hint" className="text-[12.5px] text-faint">Enter a ZIP or subway station first.</p>
+        )}
       </div>
 
       <div className="flex flex-col gap-3">
