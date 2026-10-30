@@ -22,7 +22,7 @@ import {
   RequirementBlock,
   SqrTrendCell,
   chipIsMatched,
-  buildMySchoolsUrl,
+  buildDoeSchoolUrl,
   buildMySchoolsCheckedLabel,
 } from '@/lib/school-detail-utils'
 import {
@@ -165,7 +165,7 @@ export default function SchoolDetailClient({
     })
   }
 
-  const myschoolsUrl = buildMySchoolsUrl(school.dbn)
+  const doeSchoolUrl = buildDoeSchoolUrl(school.dbn)
   const myschoolsCheckedLabel = buildMySchoolsCheckedLabel(school)
 
   const addedCount = hydrated ? addedDbns.size : 0
@@ -243,13 +243,13 @@ export default function SchoolDetailClient({
           </button>
           <div className="flex-1 flex flex-col gap-1">
             <a
-              href={myschoolsUrl}
+              href={doeSchoolUrl}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => posthog?.capture('myschools_link_clicked', { dbn: school.dbn })}
               className="block text-center border border-border text-[13.5px] text-accent py-[10px] hover:bg-surface-2 transition-colors duration-[120ms] ease-out"
             >
-              Find <span className="font-mono">{school.dbn}</span> in the DOE directory ↗
+              Official DOE page ↗
             </a>
             {myschoolsCheckedLabel && (
               <span className="text-[11px] text-faint text-center">{myschoolsCheckedLabel}</span>
@@ -365,7 +365,7 @@ export default function SchoolDetailClient({
               </span>
               <div className="flex flex-col items-start min-[521px]:items-end gap-1">
                 <a
-                  href={myschoolsUrl}
+                  href={doeSchoolUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => {
@@ -374,7 +374,7 @@ export default function SchoolDetailClient({
                   }}
                   className="text-[13.5px] font-medium border border-accent px-[14px] py-2 whitespace-nowrap text-accent hover:bg-accent hover:text-white transition-colors duration-[120ms] ease-out"
                 >
-                  Find <span className="font-mono">{school.dbn}</span> in the DOE directory ↗
+                  Official DOE page ↗
                 </a>
                 {myschoolsCheckedLabel && (
                   <span className="text-[11px] text-faint whitespace-nowrap">{myschoolsCheckedLabel}</span>
