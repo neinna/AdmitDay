@@ -8,7 +8,8 @@
  */
 
 const PRICE_PER_MILLION_TOKENS_USD: Record<string, { input: number; output: number }> = {
-  "claude-sonnet-5": { input: 3, output: 15 },
+  "claude-sonnet-5": { input: 2, output: 10 },
+  "claude-haiku-5-5": { input: 0.1, output: 0.5 },
 };
 
 // Issue #450: the Anthropic Batch API is 50% off every token (input and

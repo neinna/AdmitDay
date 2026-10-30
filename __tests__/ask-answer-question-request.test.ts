@@ -46,6 +46,24 @@ beforeEach(() => {
   })
 })
 
+describe('ASK_MODEL (issue #666)', () => {
+  afterEach(() => {
+    delete process.env.ASK_MODEL
+  })
+
+  it('defaults to claude-sonnet-5 when ASK_MODEL is unset', () => {
+    expect(buildAskRequest('q', 'ctx').model).toBe('claude-sonnet-5')
+  })
+
+  it('uses ASK_MODEL when set before the module is imported', () => {
+    process.env.ASK_MODEL = 'claude-haiku-5-5'
+    jest.isolateModules(() => {
+      const { buildAskRequest: build } = require('../lib/ask')
+      expect(build('q', 'ctx').model).toBe('claude-haiku-5-5')
+    })
+  })
+})
+
 describe('answerQuestion request parity with buildAskRequest (issue #450)', () => {
   it('calls messages.create with exactly buildAskRequest(question, schoolContext)', async () => {
     const question = 'Which schools fit my daughter?'

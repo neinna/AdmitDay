@@ -13,7 +13,11 @@ import { estimateCostUsd } from '../lib/model-cost'
 describe('estimateCostUsd (issue #450 batch discount)', () => {
   it('defaults to full list price when isBatch is not passed', () => {
     const cost = estimateCostUsd('claude-sonnet-5', 1_000_000, 1_000_000)
-    expect(cost).toBe(3 + 15)
+    expect(cost).toBe(2 + 10)
+  })
+
+  it('prices claude-haiku-5-5 at $0.10 / $0.50 per million tokens', () => {
+    expect(estimateCostUsd('claude-haiku-5-5', 1_000_000, 1_000_000)).toBeCloseTo(0.6, 10)
   })
 
   it('halves the cost when isBatch is true', () => {
@@ -21,7 +25,7 @@ describe('estimateCostUsd (issue #450 batch discount)', () => {
     const batchCost = estimateCostUsd('claude-sonnet-5', 1_000_000, 1_000_000, true)
 
     expect(batchCost).toBe((syncCost as number) / 2)
-    expect(batchCost).toBe(9)
+    expect(batchCost).toBe(6)
   })
 
   it('still returns undefined for an unknown model regardless of isBatch', () => {

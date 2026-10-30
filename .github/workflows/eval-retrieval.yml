@@ -7,6 +7,10 @@ on:
         description: 'Rebuild data/school-embeddings.json from schools.json before the eval'
         type: boolean
         default: false
+      ask_model:
+        description: 'Model for the ask eval (blank = production default)'
+        type: string
+        default: ''
   pull_request:
     paths:
       - 'lib/rag.ts'
@@ -62,7 +66,10 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.EVAL_OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.EVAL_ANTHROPIC_API_KEY }}
-        run: npm run eval:retrieval:ask | tee -a "$GITHUB_STEP_SUMMARY"
+          ASK_MODEL: ${{ github.event.inputs.ask_model }}
+        run: |
+          echo "Ask model: ${ASK_MODEL:-default}" >> "$GITHUB_STEP_SUMMARY"
+          npm run eval:retrieval:ask | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Upload retrieval results
         if: always()
         uses: actions/upload-artifact@v4

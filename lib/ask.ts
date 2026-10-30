@@ -37,6 +37,8 @@ const SYSTEM_PROMPT =
 // again, so it's a single named constant rather than a literal at the call site.
 export const ASK_RETRIEVAL_COUNT = 20;
 
+export const ASK_MODEL = process.env.ASK_MODEL || "claude-sonnet-5";
+
 export interface AnswerQuestionResult {
   answer: string;
   guardrail: Guardrail;
@@ -121,7 +123,7 @@ export function buildAskRequest(
   schoolContext: string
 ): Anthropic.MessageCreateParamsNonStreaming {
   return {
-    model: "claude-sonnet-5",
+    model: ASK_MODEL,
     max_tokens: 1500,
     thinking: { type: "disabled" },
     system: SYSTEM_PROMPT,

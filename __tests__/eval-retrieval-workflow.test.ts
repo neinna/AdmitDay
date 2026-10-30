@@ -70,6 +70,13 @@ describe('eval-retrieval workflow', () => {
     expect(step).toMatch(/git diff --quiet[^\n]*-- lib\/ask\.ts[^\n]*ask=true/);
   });
 
+  it('declares an ask_model input and passes it to the ask step as ASK_MODEL', () => {
+    expect(yml).toMatch(/inputs:[\s\S]*\n\s*ask_model:/);
+    const step = yml.split('- name: Run ask eval')[1].split('- name:')[0];
+    expect(step).toMatch(/ASK_MODEL:\s*\$\{\{\s*github\.event\.inputs\.ask_model\s*\}\}/);
+    expect(step).toContain('GITHUB_STEP_SUMMARY');
+  });
+
   it('uploads ask results too', () => {
     expect(yml).toContain('evals/results/ask-*.json');
   });
