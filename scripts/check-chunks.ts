@@ -18,7 +18,7 @@ interface SchoolEmbeddingEntry {
   dbn: string;
   name: string;
   borough: string;
-  chunkType: "full" | "identity" | "academics" | "activities";
+  chunkType: "full" | "identity" | "focus" | "programs" | "academics" | "activities" | "sports";
   chunk: string;
   embedding: number[];
   metadata: Record<string, unknown>;

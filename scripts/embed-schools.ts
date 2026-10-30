@@ -136,7 +136,7 @@ export interface SchoolEmbedding {
   };
 }
 
-type ChunkType = "full" | "identity" | "programs" | "academics" | "activities";
+type ChunkType = "full" | "identity" | "focus" | "programs" | "academics" | "activities" | "sports";
 
 function isPresent(value: unknown): boolean {
   if (value === null || value === undefined) return false;
@@ -308,13 +308,45 @@ function buildAcademicsParts(school: School): string[] {
 }
 
 /**
- * Activities chunk: extracurriculars, sports, additional info.
+ * Focus chunk: short, topical summary (focus areas, program names, AP courses,
+ * academic opportunities) so academic-strength asks match it closely.
+ */
+export function buildFocusParts(school: School): string[] {
+  const d = school.doe_data;
+  const parts: string[] = [`${school.name}, a ${school.size} high school in ${school.borough}.`];
+
+  if (d.interests.length > 0) parts.push(`Focus areas: ${d.interests.join(", ")}.`);
+
+  const names = [
+    ...new Set((school.programs ?? []).map((p) => p.program_name).filter((n): n is string => Boolean(n))),
+  ].join("; ");
+  if (names) parts.push(`Programs: ${names}.`);
+
+  if (d.advancedplacement_courses) parts.push(`AP courses: ${d.advancedplacement_courses}`);
+  if (d.academic_opportunities) parts.push(`Academic opportunities: ${d.academic_opportunities}`);
+
+  return parts;
+}
+
+/**
+ * Activities chunk: extracurriculars, additional info.
  */
 function buildActivitiesParts(school: School): string[] {
   const d = school.doe_data;
   const parts: string[] = [];
 
   if (d.extracurriculars) parts.push(`Extracurriculars: ${d.extracurriculars}`);
+  if (d.addtl_info) parts.push(`Additional info: ${d.addtl_info}`);
+
+  return parts;
+}
+
+/**
+ * Sports chunk: PSAL sports lists.
+ */
+export function buildSportsParts(school: School): string[] {
+  const d = school.doe_data;
+  const parts: string[] = [];
 
   const sports: string[] = [];
   if (d.psal_sports_boys) sports.push(`Boys: ${d.psal_sports_boys}`);
@@ -323,8 +355,6 @@ function buildActivitiesParts(school: School): string[] {
   if (sports.length > 0) {
     parts.push(`Sports: ${sports.join(". ")}`);
   }
-
-  if (d.addtl_info) parts.push(`Additional info: ${d.addtl_info}`);
 
   return parts;
 }
@@ -338,14 +368,22 @@ interface ChunkResult {
   chunk: string;
 }
 
-function schoolToChunks(school: School): ChunkResult[] {
+export function schoolToChunks(school: School): ChunkResult[] {
   // Build the full text first to check length
   const identityParts = buildIdentityParts(school);
   const programParts = buildProgramParts(school);
   const academicsParts = buildAcademicsParts(school);
   const activitiesParts = buildActivitiesParts(school);
 
-  const allParts = [...identityParts, ...programParts, ...academicsParts, ...activitiesParts];
+  const sportsParts = buildSportsParts(school);
+
+  const allParts = [
+    ...identityParts,
+    ...programParts,
+    ...academicsParts,
+    ...activitiesParts,
+    ...sportsParts,
+  ];
   const fullText = allParts.join("\n");
 
   // Small school: one chunk
@@ -362,6 +400,12 @@ function schoolToChunks(school: School): ChunkResult[] {
     chunkType: "identity",
     chunk: identityParts.join("\n"),
   });
+
+  // Focus chunk: short and topical, no identity prefix (first line names the school)
+  const focusParts = buildFocusParts(school);
+  if (focusParts.length > 1) {
+    chunks.push({ chunkType: "focus", chunk: focusParts.join("\n") });
+  }
 
   // Programs chunk: only if MySchools per-program content exists
   if (programParts.length > 0) {
@@ -384,6 +428,14 @@ function schoolToChunks(school: School): ChunkResult[] {
     chunks.push({
       chunkType: "activities",
       chunk: prefix + "\n" + activitiesParts.join("\n"),
+    });
+  }
+
+  // Sports chunk: only if there's content
+  if (sportsParts.length > 0) {
+    chunks.push({
+      chunkType: "sports",
+      chunk: prefix + "\n" + sportsParts.join("\n"),
     });
   }
 
