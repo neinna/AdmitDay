@@ -60,6 +60,16 @@ describe('eval-retrieval workflow', () => {
     );
   });
 
+  it('runs the ask eval only on dispatch or when lib/ask.ts changed', () => {
+    const step = yml.split('- name: Run ask eval')[1].split('- name:')[0];
+    expect(step).toMatch(/if:.*workflow_dispatch.*steps\.changed\.outputs\.ask/);
+  });
+
+  it('detects a lib/ask.ts change against the PR base', () => {
+    const step = yml.split('- name: Detect chunk builder change')[1].split('- name:')[0];
+    expect(step).toMatch(/git diff --quiet[^\n]*-- lib\/ask\.ts[^\n]*ask=true/);
+  });
+
   it('uploads ask results too', () => {
     expect(yml).toContain('evals/results/ask-*.json');
   });
