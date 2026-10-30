@@ -18,11 +18,10 @@ describe('/find ask API system prompt (issue #69)', () => {
     )
   })
 
-  it('instructs one "DBN | reason" line per school, in order, nothing else (issue #328)', () => {
-    expect(src).toContain(
-      'output exactly one line in the form DBN | reason'
-    )
-    expect(src).toContain('Output one line per school provided, in the order provided, and nothing else')
+  it('instructs one picks entry per school, in order (issue #673)', () => {
+    expect(src).toContain('add one entry to picks with dbn set to')
+    expect(src).toContain('Keep the schools in the order provided.')
+    expect(src).toContain('set off_topic to true and leave picks empty')
   })
 
   it('forbids hedging language', () => {
