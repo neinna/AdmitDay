@@ -8,8 +8,8 @@ import * as path from 'path'
  * session from #199. This repo's .tsx tests are source-text assertions (see
  * __tests__/auth-header.test.ts) rather than rendered-component tests, so
  * these follow the same convention; the executable behavior of the new
- * lib/saved-lists-db.ts and app/api/saved-schools/** routes is covered by
- * __tests__/saved-lists-db.test.ts and __tests__/saved-schools-api.test.ts.
+ * lib/saved-lists-db.ts and app/api/saved-programs/** routes is covered by
+ * __tests__/saved-lists-db.test.ts and __tests__/saved-programs-api.test.ts.
  */
 
 function readSource(relPath: string): string {

@@ -2,7 +2,7 @@
  * __tests__/saved-programs-api.test.ts
  *
  * /api/saved-programs: auth gate, validation, and response shapes. Mocks Clerk
- * and @/lib/saved-lists-db the same way saved-schools-api.test.ts does.
+ * and @/lib/saved-lists-db the same way the other API tests do.
  */
 
 const mockAuth = jest.fn()

@@ -21,7 +21,7 @@ import { extractMatchCount } from './find-count'
  * own opt-out call succeeding before the pages under test fire events.
  *
  * DBN borough letters (K = Brooklyn) come from the DOE code format this repo
- * already validates against in app/api/saved-schools/route.ts
+ * already validates against in app/api/saved-programs/route.ts
  * (`/^\d{2}[MKXQR]\d{3}$/`), not from a guess.
  */
 
