@@ -94,7 +94,7 @@ test('signed-out parent flow', async ({ page }) => {
   })
 
   await test.step('Save while signed out opens the Clerk sign-up box — stop there', async () => {
-    await page.getByRole('button', { name: 'Add to list' }).click()
+    await page.getByRole('button', { name: /^Add / }).first().click()
     // Whatever Clerk's exact copy is, a sign-up form always has a way to
     // enter an email — that's the signal a real form mounted, not a no-op.
     await expect(
