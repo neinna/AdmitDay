@@ -36,7 +36,9 @@ jobs:
       - name: Detect chunk builder change
         id: changed
         if: github.event_name == 'pull_request'
-        run: git diff --quiet origin/${{ github.base_ref }}...HEAD -- scripts/embed-schools.ts || echo "embed=true" >> "$GITHUB_OUTPUT"
+        run: |
+          git diff --quiet origin/${{ github.base_ref }}...HEAD -- scripts/embed-schools.ts || echo "embed=true" >> "$GITHUB_OUTPUT"
+          git diff --quiet origin/${{ github.base_ref }}...HEAD -- lib/ask.ts || echo "ask=true" >> "$GITHUB_OUTPUT"
       - name: Rebuild embeddings (CI only, not committed)
         if: github.event.inputs.reembed == 'true' || steps.changed.outputs.embed == 'true'
         env:
@@ -55,6 +57,7 @@ jobs:
           fi
           npm run eval:retrieval | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Run ask eval (Claude's picks)
+        if: github.event_name == 'workflow_dispatch' || steps.changed.outputs.ask == 'true'
         shell: bash
         env:
           OPENAI_API_KEY: ${{ secrets.EVAL_OPENAI_API_KEY }}
