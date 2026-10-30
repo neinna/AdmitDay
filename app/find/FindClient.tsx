@@ -889,10 +889,11 @@ export default function FindClient({ schools, initialFilters }: Props) {
                                         <Button
                                           type="button"
                                           variant="outline"
+                                          size="sm"
                                           selected={added}
                                           aria-label={`${added ? 'Remove' : 'Add'} ${p.name}`}
                                           onClick={() => toggleAdded(school.dbn, p.code)}
-                                          className="shrink-0 px-3 py-1 text-[12.5px] hover:bg-ink hover:text-white"
+                                          className="shrink-0 hover:bg-ink hover:text-white"
                                         >
                                           {added ? 'Remove' : 'Add'}
                                         </Button>
