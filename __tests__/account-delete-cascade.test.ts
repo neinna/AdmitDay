@@ -3,8 +3,8 @@
  *
  * Issue #241 (part of #179) — the specific case the issue's Tests section
  * calls out: with a fake Postgres holding two parents, deleting parent A must
- * leave zero rows for A in all three tables (parents, school_lists,
- * list_schools) and leave parent B's rows untouched. Unlike
+ * leave zero rows for A in the tables (parents, school_lists,
+ * list_programs) and leave parent B's rows untouched. Unlike
  * __tests__/saved-lists-db.test.ts's fake (which answers one query per call),
  * this fake interprets the single multi-statement CTE the route sends and
  * applies its cascade effect directly, since that's the actual shape of the
@@ -42,10 +42,6 @@ interface ListRow {
   id: number
   parent_id: number
 }
-interface SchoolRow {
-  list_id: number
-  dbn: string
-}
 
 function createFakePostgres() {
   const parents: ParentRow[] = [
@@ -56,11 +52,6 @@ function createFakePostgres() {
     { id: 10, parent_id: 1 },
     { id: 20, parent_id: 2 },
   ]
-  const schools: SchoolRow[] = [
-    { list_id: 10, dbn: '01M001' },
-    { list_id: 20, dbn: '02M002' },
-  ]
-
   const programs: { list_id: number; dbn: string; program_code: string }[] = [
     { list_id: 10, dbn: '01M001', program_code: 'A1' },
     { list_id: 20, dbn: '02M002', program_code: 'B1' },
@@ -81,9 +72,6 @@ function createFakePostgres() {
           if (listIds.includes(programs[i].list_id)) programs.splice(i, 1)
         }
       }
-      for (let i = schools.length - 1; i >= 0; i--) {
-        if (listIds.includes(schools[i].list_id)) schools.splice(i, 1)
-      }
       for (let i = lists.length - 1; i >= 0; i--) {
         if (listIds.includes(lists[i].id)) lists.splice(i, 1)
       }
@@ -95,15 +83,15 @@ function createFakePostgres() {
     return Promise.resolve({ rows: [] })
   })
 
-  return { impl, parents, lists, schools, programs }
+  return { impl, parents, lists, programs }
 }
 
 beforeEach(() => {
   jest.clearAllMocks()
 })
 
-it("deleting parent A's account removes their rows from all three tables and leaves parent B untouched", async () => {
-  const { impl, parents, lists, schools } = createFakePostgres()
+it("deleting parent A's account removes their rows from every table and leaves parent B untouched", async () => {
+  const { impl, parents, lists } = createFakePostgres()
   mockSql.mockImplementation(impl)
   mockAuth.mockResolvedValue({ userId: 'user_a' })
   mockClerkClient.mockResolvedValue({ users: { deleteUser: jest.fn().mockResolvedValue(undefined) } })
@@ -114,11 +102,9 @@ it("deleting parent A's account removes their rows from all three tables and lea
 
   expect(parents.some((p) => p.clerk_user_id === 'user_a')).toBe(false)
   expect(lists.some((l) => l.parent_id === 1)).toBe(false)
-  expect(schools.some((s) => s.list_id === 10)).toBe(false)
 
   expect(parents.some((p) => p.clerk_user_id === 'user_b')).toBe(true)
   expect(lists.some((l) => l.parent_id === 2)).toBe(true)
-  expect(schools.some((s) => s.list_id === 20)).toBe(true)
 })
 
 it("deleting parent A's account removes A's list_programs rows only", async () => {
