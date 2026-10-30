@@ -417,7 +417,12 @@ export default function FindClient({ schools, initialFilters }: Props) {
     if (filters.boroughs.length > 0) posthog?.capture('filter_cleared', { filter_type: 'borough' })
     if (filters.tracks.length > 0) posthog?.capture('filter_cleared', { filter_type: 'track' })
     if (filters.size) posthog?.capture('filter_cleared', { filter_type: 'size' })
+    if (startingPoint) posthog?.capture('filter_cleared', { filter_type: 'starting_point' })
     setFilters(EMPTY_FIND_FILTERS)
+    setStartingPointInput('')
+    setStartingPoint(null)
+    setRadiusMiles(null)
+    saveStartingPoint(null)
   }
 
   async function toggleAdded(dbn: string, code: string) {
