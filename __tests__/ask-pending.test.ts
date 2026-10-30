@@ -7,7 +7,8 @@ describe('AskPending (issue #582)', () => {
 
   it('renders a status line with the seconds counter at 0', () => {
     expect(html).toContain('role="status"')
-    expect(html).toContain('Searching schools and writing an answer')
+    expect(html).toMatch(/Searching\s*<span aria-hidden="true"> · (<!-- -->)?0(<!-- -->)?s<\/span>/)
+    expect(html).not.toContain('schools and writing an answer')
     expect(html).toContain('0s')
   })
 
