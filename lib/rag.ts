@@ -62,6 +62,8 @@ export interface SearchResult {
   borough: string;
   /** All chunks for this school, concatenated. Claude sees the full picture. */
   chunk: string;
+  /** Identity chunk then focus chunk (or the full chunk), joined with "\n". */
+  card: string;
   metadata: SchoolMetadata;
   /** Cosine similarity of the best-matching chunk for this school. */
   score: number;
@@ -335,11 +337,19 @@ export async function searchSchools(
     // For multi-chunk schools, concatenate all chunks with a separator.
     const combinedChunk = sortedChunks.map((c) => c.chunk).join("\n\n");
 
+    // The card is the compact view used for large candidate pools: identity
+    // plus focus, or the single "full" chunk.
+    const card = sortedChunks
+      .filter((c) => c.chunkType === "identity" || c.chunkType === "focus" || c.chunkType === "full")
+      .map((c) => c.chunk)
+      .join("\n");
+
     return {
       dbn: school.dbn,
       name: school.name,
       borough: school.borough,
       chunk: combinedChunk,
+      card,
       metadata: school.metadata,
       score: school.bestScore,
       matchedChunkType: school.matchedChunkType,

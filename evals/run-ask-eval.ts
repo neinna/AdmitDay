@@ -37,7 +37,7 @@
 import fs from "fs";
 import path from "path";
 import Anthropic from "@anthropic-ai/sdk";
-import { answerQuestion, buildAskRequest, buildAnswerResult, buildSchoolContext, ASK_RETRIEVAL_COUNT, AnswerQuestionResult } from "../lib/ask";
+import { answerQuestion, buildAskRequest, buildAnswerResult, buildPoolContext, ASK_POOL_COUNT, AnswerQuestionResult } from "../lib/ask";
 import { searchSchools } from "../lib/rag";
 import { estimateCostUsd } from "../lib/model-cost";
 import { pollBatchUntilEnded, indexBatchResultsByCustomId } from "./batch";
@@ -119,7 +119,7 @@ function scoreAnswer(
 
   if (DESCRIPTIVE_GUARDRAILS.has(result.guardrail)) {
     scores.hallucination = scoreHallucination(result.answer, retrievedNames, allSchoolNames);
-    scores.coverage = scoreReasonCoverage(result.retrieved, result.reasons);
+    scores.coverage = scoreReasonCoverage(result.sources,result.reasons);
     scores.missingDataNotShownAsZero = scoreMissingDataNotShownAsZero(result.answer, retrievedChunks);
     scores.numbersGrounded = scoreNumbersGrounded(result.retrieved, result.reasons);
   } else {
@@ -188,8 +188,8 @@ async function runBatch(cases: SeedCase[], allSchoolNames: string[]): Promise<Ca
 
   const perCase = await Promise.all(
     cases.map(async (seedCase) => {
-      const results = await searchSchools(seedCase.question, ASK_RETRIEVAL_COUNT, seedCase.filters);
-      const schoolContext = buildSchoolContext(results);
+      const results = await searchSchools(seedCase.question, ASK_POOL_COUNT, seedCase.filters);
+      const schoolContext = buildPoolContext(results);
       return { seedCase, results, request: buildAskRequest(seedCase.question, schoolContext) };
     })
   );

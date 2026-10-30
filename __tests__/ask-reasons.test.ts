@@ -22,10 +22,10 @@ jest.mock('@/lib/rag', () => ({
   searchSchools: (...args: unknown[]) => mockSearchSchools(...args),
 }))
 
-import { answerQuestion, ASK_RETRIEVAL_COUNT } from '@/lib/ask'
+import { answerQuestion, ASK_RETRIEVAL_COUNT, ASK_POOL_COUNT } from '@/lib/ask'
 
 const SCHOOLS = [
-  { dbn: '01M001', name: 'Test High School', borough: 'Manhattan', score: 0.9, matchedChunkType: 'identity', chunk: 'Test High School chunk.' },
+  { dbn: '01M001', name: 'Test High School', borough: 'Manhattan', score: 0.9, matchedChunkType: 'identity', chunk: 'Test High School chunk.', card: 'Test High School chunk.' },
   { dbn: '02M002', name: 'Second High School', borough: 'Manhattan', score: 0.8, matchedChunkType: 'identity', chunk: 'Second High School chunk.' },
   { dbn: '03M003', name: 'Third High School', borough: 'Brooklyn', score: 0.7, matchedChunkType: 'identity', chunk: 'Third High School chunk.' },
 ]
@@ -55,7 +55,7 @@ describe('ASK_RETRIEVAL_COUNT (issue #328)', () => {
     await answerQuestion({ question: 'Which schools have small classes?' })
     expect(mockSearchSchools).toHaveBeenCalledWith(
       'Which schools have small classes?',
-      20,
+      ASK_POOL_COUNT,
       {}
     )
   })
