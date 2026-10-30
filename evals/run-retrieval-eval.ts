@@ -21,7 +21,7 @@
 
 import fs from "fs";
 import path from "path";
-import { ASK_RETRIEVAL_COUNT, answerQuestion } from "../lib/ask";
+import { ASK_MODEL, ASK_RETRIEVAL_COUNT, answerQuestion } from "../lib/ask";
 import { searchSchools } from "../lib/rag";
 import { scoreAllOf, scoreMinOf, scoreMinShare } from "./retrieval-scorers";
 
@@ -42,12 +42,14 @@ export function formatRetrievalNotice(
   passed: number,
   total: number,
   lines: string[],
-  label = "Retrieval"
+  label = "Retrieval",
+  model?: string
 ): string {
   const body = lines
     .map((l) => l.replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A"))
     .join("%0A");
-  return `::notice title=${label} eval ${passed}/${total}::${body}`;
+  const suffix = model ? ` (${model})` : "";
+  return `::notice title=${label} eval ${passed}/${total}${suffix}::${body}`;
 }
 
 export async function main(argv: string[] = process.argv.slice(2)): Promise<void> {
@@ -126,7 +128,7 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<void
 
   console.log(`${label}: ${passed}/${seed.cases.length} passed`);
   if (process.env.GITHUB_ACTIONS === "true") {
-    console.log(formatRetrievalNotice(passed, seed.cases.length, lines, label));
+    console.log(formatRetrievalNotice(passed, seed.cases.length, lines, label, ask ? ASK_MODEL : undefined));
   }
 
   const outDir = path.resolve(process.cwd(), "evals", "results");
