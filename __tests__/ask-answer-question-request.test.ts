@@ -34,7 +34,7 @@ jest.mock('../lib/rag', () => ({
   searchSchools: jest.fn().mockResolvedValue(fakeResults),
 }))
 
-import { answerQuestion, buildAskRequest, buildSchoolContext } from '../lib/ask'
+import { answerQuestion, buildAskRequest, buildPoolContext } from '../lib/ask'
 
 beforeEach(() => {
   mockCreate.mockReset()
@@ -70,7 +70,7 @@ describe('answerQuestion request parity with buildAskRequest (issue #450)', () =
 
     await answerQuestion({ question })
 
-    const expectedRequest = buildAskRequest(question, buildSchoolContext(fakeResults as any))
+    const expectedRequest = buildAskRequest(question, buildPoolContext(fakeResults as any))
     expect(mockCreate).toHaveBeenCalledTimes(1)
     expect(mockCreate).toHaveBeenCalledWith(expectedRequest)
   })
