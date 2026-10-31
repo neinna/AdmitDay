@@ -9,6 +9,7 @@
 
 import { randomUUID, createHash } from "crypto";
 import * as Sentry from "@sentry/nextjs";
+import { scrubError } from "@/lib/scrub-error";
 import { NextRequest } from "next/server";
 import { HardFilters } from "@/lib/rag";
 import { checkRateLimit } from "@/lib/rate-limit";
@@ -144,8 +145,9 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     // Log the real error (vendor detail, status, request id) to Sentry —
     // never let any part of it reach the client.
-    Sentry.captureException(err);
+    // Classify on the original message first; scrubbing may rewrite it in place.
     const { status, body, classification } = classifyProviderError(err);
+    Sentry.captureException(scrubError(err));
     recordLlmTrace({
       route: "find_ask",
       sessionId,
