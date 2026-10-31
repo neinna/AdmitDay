@@ -11,6 +11,9 @@ on:
         description: 'Model for the ask eval (blank = production default)'
         type: string
         default: ''
+  schedule:
+    - cron: '30 13 * * *'   # daily 13:30 UTC, after the Mon/Thu 12:00-12:30 data refresh
+    - cron: '45 13 * * 1'   # Mondays: also Claude's picks, batched
   pull_request:
     paths:
       - 'lib/rag.ts'
@@ -24,7 +27,7 @@ on:
 jobs:
   eval-retrieval:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 360
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     steps:
       - name: Checkout code
@@ -61,9 +64,10 @@ jobs:
           fi
           npm run eval:retrieval | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Run ask eval (Claude's picks)
-        if: github.event_name == 'workflow_dispatch' || steps.changed.outputs.ask == 'true'
+        if: github.event_name == 'workflow_dispatch' || steps.changed.outputs.ask == 'true' || github.event.schedule == '45 13 * * 1'
         shell: bash
         env:
+          EVAL_TRIGGER: ${{ github.event_name == 'schedule' && 'weekly' || 'sync' }}
           OPENAI_API_KEY: ${{ secrets.EVAL_OPENAI_API_KEY }}
           ANTHROPIC_API_KEY: ${{ secrets.EVAL_ANTHROPIC_API_KEY }}
           ASK_MODEL: ${{ github.event.inputs.ask_model }}

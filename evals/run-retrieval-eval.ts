@@ -21,7 +21,16 @@
 
 import fs from "fs";
 import path from "path";
-import { ASK_MODEL, ASK_RETRIEVAL_COUNT, answerQuestion } from "../lib/ask";
+import Anthropic from "@anthropic-ai/sdk";
+import {
+  ASK_MODEL,
+  ASK_RETRIEVAL_COUNT,
+  answerQuestion,
+  buildAnswerResult,
+  prepareAskRequest,
+  type AnswerQuestionResult,
+} from "../lib/ask";
+import { indexBatchResultsByCustomId, pollBatchUntilEnded } from "./batch";
 import { searchSchools } from "../lib/rag";
 import { scoreAllOf, scoreMinOf, scoreMinShare } from "./retrieval-scorers";
 
@@ -75,13 +84,58 @@ export async function main(argv: string[] = process.argv.slice(2)): Promise<void
   let passed = 0;
   const lines: string[] = [];
 
+  // Weekly runs send every case through one half-price batch instead of
+  // calling answerQuestion per case.
+  const batched = ask && process.env.EVAL_TRIGGER === "weekly";
+  const batchAnswers: Record<string, AnswerQuestionResult | Error> = {};
+  if (batched) {
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const prepared: Record<string, Awaited<ReturnType<typeof prepareAskRequest>>> = {};
+    const requests: { custom_id: string; params: Anthropic.MessageCreateParamsNonStreaming }[] = [];
+    for (const c of seed.cases) {
+      try {
+        prepared[c.id] = await prepareAskRequest(c.question, c.filters);
+        requests.push({ custom_id: c.id, params: prepared[c.id].request });
+      } catch (err) {
+        batchAnswers[c.id] = err instanceof Error ? err : new Error(String(err));
+      }
+    }
+    const batch = await client.messages.batches.create({ requests });
+    console.log(`Batch ${batch.id} created — polling until it ends...`);
+    const ended = await pollBatchUntilEnded({
+      retrieve: () => client.messages.batches.retrieve(batch.id),
+      sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+    });
+    const items: Anthropic.Messages.MessageBatchIndividualResponse[] = [];
+    for await (const item of await client.messages.batches.results(ended.id)) items.push(item);
+    const byId = indexBatchResultsByCustomId(items);
+    for (const c of seed.cases) {
+      if (!prepared[c.id]) continue;
+      const result = byId[c.id];
+      if (!result) {
+        batchAnswers[c.id] = new Error("missing from batch results");
+      } else if (result.type !== "succeeded") {
+        batchAnswers[c.id] = new Error(`batch result ${result.type}`);
+      } else {
+        batchAnswers[c.id] = buildAnswerResult(result.message, c.question, prepared[c.id].results);
+      }
+    }
+  }
+
   for (const c of seed.cases) {
     let results: string[] = [];
     let guardrail: string | undefined;
     let error: string | undefined;
     try {
       if (ask) {
-        const answer = await answerQuestion({ question: c.question, filters: c.filters });
+        let answer: AnswerQuestionResult;
+        if (batched) {
+          const got = batchAnswers[c.id];
+          if (got instanceof Error) throw got;
+          answer = got;
+        } else {
+          answer = await answerQuestion({ question: c.question, filters: c.filters });
+        }
         results = answer.reasons.map((r) => r.dbn);
         guardrail = answer.guardrail;
       } else {

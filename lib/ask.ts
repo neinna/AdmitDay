@@ -260,6 +260,20 @@ export function buildAnswerResult(
   };
 }
 
+// Issue #662: retrieval plus request assembly, shared by answerQuestion and
+// the eval's batch path so an eval can never drift from production's pool
+// size or context builder.
+export async function prepareAskRequest(
+  question: string,
+  filters: HardFilters = {}
+): Promise<{ results: SearchResult[]; request: Anthropic.MessageCreateParamsNonStreaming }> {
+  // Retrieve the top ASK_RETRIEVAL_COUNT most relevant schools,
+  // restricted to the active /find rail filters (issue #231)
+  const results = await searchSchools(question, ASK_RETRIEVAL_COUNT, filters);
+  const request = buildAskRequest(question, buildSchoolContext(results));
+  return { results, request };
+}
+
 export async function answerQuestion({
   question,
   filters = {},
@@ -267,17 +281,12 @@ export async function answerQuestion({
   question: string;
   filters?: HardFilters;
 }): Promise<AnswerQuestionResult> {
-  // Step 1: Retrieve the top ASK_RETRIEVAL_COUNT most relevant schools,
-  // restricted to the active /find rail filters (issue #231)
-  const results = await searchSchools(question, ASK_RETRIEVAL_COUNT, filters);
+  const { results, request } = await prepareAskRequest(question, filters);
 
-  // Step 2: Build context from retrieved schools
-  const schoolContext = buildSchoolContext(results);
-
-  // Step 3: Send to Claude with the retrieved context
+  // Send to Claude with the retrieved context
   let message: Anthropic.Message;
   try {
-    message = await getAnthropicClient().messages.create(buildAskRequest(question, schoolContext));
+    message = await getAnthropicClient().messages.create(request);
   } catch (err) {
     // Issue #354: an Anthropic account usage-limit hit is a known, distinct
     // shape of failure — the parent gets the approved PROVIDER_LIMIT copy
