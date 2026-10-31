@@ -18,10 +18,12 @@ describe('/find ask API system prompt (issue #69)', () => {
     )
   })
 
-  it('instructs one picks entry per school, in order (issue #673)', () => {
-    expect(src).toContain('add one entry to picks with dbn set to')
-    expect(src).toContain('Keep the schools in the order provided.')
+  it('instructs choosing fitting schools, up to 20, most fitting first (issue #683)', () => {
+    expect(src).toContain('add them to picks, most fitting first, up to 20.')
+    expect(src).toContain('Include every school that fits')
+    expect(src).toContain('set dbn to the DBN shown in that school')
     expect(src).toContain('set off_topic to true and leave picks empty')
+    expect(src).toContain('Never predict, estimate, or imply how likely a student is to be admitted')
   })
 
   it('forbids hedging language', () => {

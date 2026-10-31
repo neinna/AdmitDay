@@ -26,7 +26,7 @@ jest.mock('../lib/rag', () => ({
   searchSchools: (...args: unknown[]) => mockSearch(...args),
 }))
 
-import { answerQuestion, prepareAskRequest, ASK_RETRIEVAL_COUNT } from '../lib/ask'
+import { answerQuestion, prepareAskRequest, ASK_POOL_COUNT } from '../lib/ask'
 
 beforeEach(() => {
   mockCreate.mockReset()
@@ -50,6 +50,6 @@ describe('prepareAskRequest (issue #662)', () => {
 
     expect(results).toEqual(fakeResults)
     expect(mockCreate).toHaveBeenCalledWith(request)
-    expect(mockSearch).toHaveBeenCalledWith(question, ASK_RETRIEVAL_COUNT, filters)
+    expect(mockSearch).toHaveBeenCalledWith(question, ASK_POOL_COUNT, filters)
   })
 })
