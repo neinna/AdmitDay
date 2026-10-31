@@ -39,7 +39,7 @@ describe('no "MySchools" in parent-facing copy (issue #564)', () => {
 
   it('uses the new wording', () => {
     const read = (f: string) => fs.readFileSync(path.join(__dirname, '..', f), 'utf8')
-    expect(read('app/find/FindClient.tsx')).toContain('Confirm with the DOE before you apply.')
+    expect(read('app/find/FindClient.tsx')).not.toContain('Requirements and deadlines from DOE data')
     expect(read('app/shortlist/ShortlistClient.tsx')).toContain('to put these in the order you&rsquo;d rank them')
     expect(read('app/page.tsx')).toContain("The NYC Department of Education's public school directory.")
     expect(read('app/school/[dbn]/SchoolDetailClient.tsx')).toContain('(DOE data')

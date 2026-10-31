@@ -939,9 +939,6 @@ export default function FindClient({ schools, initialFilters }: Props) {
                 </button>
               )}
             </div>
-            <div className="text-[13px] text-faint">
-              Requirements and deadlines from DOE data · Confirm with the DOE before you apply.
-            </div>
           </div>
         </div>
       </div>
