@@ -3,6 +3,7 @@
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from "@sentry/nextjs";
+import { scrubEvent } from "./lib/sentry-filters";
 
 // Only Vercel deployments should report to Sentry. Without this guard, the
 // coding agent's own VPS checkout — which deliberately has no secrets (#232)
@@ -33,6 +34,7 @@ if (process.env.VERCEL) {
     //   TypeError: Cannot read properties of null (reading 'digest')
     // This is a Next.js bug — the stack trace contains no app code — so we
     // drop these events rather than alerting on them.
+    // Also redacts credential-like text from messages (see lib/scrub-error.ts).
     beforeSend(event, hint) {
       const err = hint?.originalException;
       if (
@@ -41,6 +43,7 @@ if (process.env.VERCEL) {
       ) {
         return null;
       }
+      scrubEvent(event); // redacts in place
       return event;
     },
   });

@@ -4,6 +4,7 @@
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from "@sentry/nextjs";
+import { scrubEvent } from "./lib/sentry-filters";
 
 // Only Vercel deployments should report to Sentry. Without this guard, the
 // coding agent's own VPS checkout — which deliberately has no secrets (#232)
@@ -24,5 +25,7 @@ if (process.env.VERCEL) {
 
     // See instrumentation-client.ts: PII is deliberately not sent anywhere.
     sendDefaultPii: false,
+
+    beforeSend: (event) => scrubEvent(event),
   });
 }

@@ -10,6 +10,7 @@
  */
 
 import * as Sentry from "@sentry/nextjs";
+import { scrubError } from "./scrub-error";
 import Anthropic from "@anthropic-ai/sdk";
 import { searchSchools, HardFilters, SearchResult } from "./rag";
 import {
@@ -314,7 +315,7 @@ export async function answerQuestion({
     // access on ..." date) is logged here instead, so the existing Sentry
     // alert this issue relies on still fires.
     if (classifyProviderError(err).classification === "usage_limit") {
-      Sentry.captureException(err);
+      Sentry.captureException(scrubError(err));
       return {
         answer: PROVIDER_LIMIT,
         guardrail: "provider_limit",
