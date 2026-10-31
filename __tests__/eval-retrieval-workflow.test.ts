@@ -77,6 +77,21 @@ describe('eval-retrieval workflow', () => {
     expect(step).toContain('GITHUB_STEP_SUMMARY');
   });
 
+  it('runs on both schedules', () => {
+    expect(yml).toContain("cron: '30 13 * * *'");
+    expect(yml).toContain("cron: '45 13 * * 1'");
+  });
+
+  it('runs the ask step on the Monday cron and sets EVAL_TRIGGER', () => {
+    const step = yml.split('- name: Run ask eval')[1].split('- name:')[0];
+    expect(step).toContain("github.event.schedule == '45 13 * * 1'");
+    expect(step).toMatch(/EVAL_TRIGGER:\s*\$\{\{.*'weekly'.*\}\}/);
+  });
+
+  it('allows a batch to poll for hours', () => {
+    expect(yml).toMatch(/timeout-minutes:\s*360/);
+  });
+
   it('uploads ask results too', () => {
     expect(yml).toContain('evals/results/ask-*.json');
   });
