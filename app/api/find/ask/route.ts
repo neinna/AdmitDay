@@ -145,8 +145,9 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     // Log the real error (vendor detail, status, request id) to Sentry —
     // never let any part of it reach the client.
-    Sentry.captureException(scrubError(err));
+    // Classify on the original message first; scrubbing may rewrite it in place.
     const { status, body, classification } = classifyProviderError(err);
+    Sentry.captureException(scrubError(err));
     recordLlmTrace({
       route: "find_ask",
       sessionId,

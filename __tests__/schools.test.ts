@@ -555,22 +555,24 @@ describe('Issue #18: instrumentation.ts onRequestError null guard', () => {
 
 describe('Issue #18: sentry.server.config.ts beforeSend null-digest filter', () => {
   const serverConfigSource = fs.readFileSync(path.join(__dirname, '../sentry.server.config.ts'), 'utf-8')
+  // The filter lives in lib/sentry-filters.ts (serverBeforeSend) and is behaviour-tested
+  // in scrub-error.test.ts; the config must wire it in.
+  const filterSource = fs.readFileSync(path.join(__dirname, '../lib/sentry-filters.ts'), 'utf-8')
 
-  it('has a beforeSend hook defined', () => {
-    expect(serverConfigSource).toContain('beforeSend')
+  it('has a beforeSend hook defined that uses serverBeforeSend', () => {
+    expect(serverConfigSource).toContain('beforeSend: serverBeforeSend')
   })
 
   it('filters TypeError with the null-digest message', () => {
-    expect(serverConfigSource).toContain("Cannot read properties of null (reading 'digest')")
+    expect(filterSource).toContain("Cannot read properties of null (reading 'digest')")
   })
 
   it('returns null (drops the event) for the null-digest TypeError', () => {
-    // The filter should return null to drop matching events
-    expect(serverConfigSource).toContain('return null')
+    expect(filterSource).toContain('return null')
   })
 
-  it('returns the event unchanged for other errors', () => {
-    expect(serverConfigSource).toContain('return event')
+  it('returns the event for other errors', () => {
+    expect(filterSource).toContain('return scrubEvent(event)')
   })
 })
 
