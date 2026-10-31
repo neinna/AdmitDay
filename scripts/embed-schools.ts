@@ -457,6 +457,20 @@ async function embedBatch(texts: string[]): Promise<number[][]> {
 }
 
 // ---------------------------------------------------------------------------
+// Output size: GitHub rejects files over 100 MB, so round and fail at 95 MB
+// ---------------------------------------------------------------------------
+
+export const MAX_OUTPUT_BYTES = 95 * 1024 * 1024;
+
+export function roundEmbedding(embedding: number[]): number[] {
+  return embedding.map((v) => Math.round(v * 1e6) / 1e6);
+}
+
+export function isWithinSizeLimit(sizeBytes: number): boolean {
+  return sizeBytes <= MAX_OUTPUT_BYTES;
+}
+
+// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
@@ -527,7 +541,7 @@ async function main() {
     borough: c.school.borough,
     chunkType: c.chunkType,
     chunk: c.chunk,
-    embedding: allEmbeddings[i],
+    embedding: roundEmbedding(allEmbeddings[i]),
     metadata: {
       size: c.school.size,
       total_students: c.school.total_students,
@@ -548,10 +562,17 @@ async function main() {
   }
 
   const outputPath = path.join(outputDir, "school-embeddings.json");
-  fs.writeFileSync(outputPath, JSON.stringify(output, null, 2));
+  fs.writeFileSync(outputPath, JSON.stringify(output));
 
+  const sizeBytes = fs.statSync(outputPath).size;
   console.log(`\nSaved ${output.length} embeddings to ${outputPath}`);
-  console.log(`File size: ${(fs.statSync(outputPath).size / 1024 / 1024).toFixed(1)} MB`);
+  console.log(`File size: ${(sizeBytes / 1024 / 1024).toFixed(1)} MB`);
+  if (!isWithinSizeLimit(sizeBytes)) {
+    console.error(
+      `data/school-embeddings.json is ${(sizeBytes / 1024 / 1024).toFixed(1)} MB; GitHub rejects files over 100 MB`
+    );
+    process.exit(1);
+  }
 }
 
 if (require.main === module) {
