@@ -12,6 +12,7 @@ import {
   loadStartingPoint,
   distanceMiles,
   formatMiles,
+  nearestStations,
 } from '@/lib/school-list-utils'
 import { PENDING_SAVE_KEY } from '@/components/PendingSaveSync'
 import {
@@ -69,6 +70,9 @@ interface Props {
   alsoOnYourListIndex: AlsoOnListEntry[]
 }
 
+const NEAREST_SUBWAY_TITLE =
+  'Our estimate from subway station locations. DOE lists no subway for this school.'
+
 export default function SchoolDetailClient({
   school,
   name,
@@ -104,6 +108,10 @@ export default function SchoolDetailClient({
   // during render (rather than after mount) would produce a hydration
   // mismatch, since server-rendered markup can't know its value.
   const [startingPoint, setStartingPoint] = useState<StartingPoint | null>(null)
+
+  const nearby =
+    subwayLines.length === 0 && school.location ? nearestStations(school.location) : []
+  const nearbyText = `Nearest: ${nearby.map((n) => `${n.name} ${formatMiles(n.miles)}`).join(' · ')}`
 
   const addedCodes = new Set(savedPrograms.map((p) => p.program_code))
   const savedDbns = new Set(savedPrograms.map((p) => p.dbn))
@@ -518,6 +526,10 @@ export default function SchoolDetailClient({
                       </span>
                     ))}
                   </div>
+                ) : nearby.length > 0 ? (
+                  <span className="text-[13px] text-ink-2" title={NEAREST_SUBWAY_TITLE}>
+                    {nearbyText}
+                  </span>
                 ) : (
                   <MissingMark kind="not_reported" className="text-[13px]" />
                 )}
