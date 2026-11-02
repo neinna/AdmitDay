@@ -348,10 +348,11 @@ describe('SchoolDetailClient — DOE rating line (issue #333)', () => {
     expect(src).toMatch(/school\.sqr\s*&&/)
   })
 
-  it('links "DOE rating" to sqr.source_url in a new tab', () => {
-    expect(src).toMatch(
-      /<a\s+href=\{school\.sqr\.source_url\}[\s\S]{0,80}target="_blank"[\s\S]{0,80}rel="noopener noreferrer"[\s\S]{0,40}>\s*DOE rating\s*<\/a>/
-    )
+  it('renders "DOE rating" as plain text with no link to the source spreadsheet (issue #710)', () => {
+    expect(src).not.toMatch(/source_url/)
+    expect(src).not.toMatch(/<a\s[^>]*>\s*DOE rating/)
+    expect(src).not.toContain('View source record')
+    expect(src).not.toMatch(/sourceUrl/)
   })
 
   it('shows the rating and year next to the link', () => {
