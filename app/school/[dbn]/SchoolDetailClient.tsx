@@ -19,6 +19,7 @@ import {
   ShsatCutoffRow,
   ActivityGroup,
   ProgramRow,
+  formatProgramSeats,
   RequirementBlock,
   SqrTrendCell,
   chipIsMatched,
@@ -343,12 +344,19 @@ export default function SchoolDetailClient({
                         Couldn&rsquo;t save — try again.
                       </span>
                     )}
-                    {p.seatsLeftLastYear && (
+                    {formatProgramSeats(p) && (
                       <span
-                        title={`Some seats were still open after last year's offers (DOE data${p.seatsLeftLastYear.cycle ? `, ${p.seatsLeftLastYear.cycle}` : ''}).`}
+                        title={[
+                          p.seats?.ge &&
+                            `${p.seats.ge.applicants} applicants for ${p.seats.ge.seats} general-education seats`,
+                          p.seatsLeftLastYear &&
+                            `Some seats were still open after last year's offers (DOE data${p.seatsLeftLastYear.cycle ? `, ${p.seatsLeftLastYear.cycle}` : ''}).`,
+                        ]
+                          .filter(Boolean)
+                          .join('. ')}
                         className="col-span-1 min-[900px]:col-span-3 text-[12.5px] text-faint"
                       >
-                        Seats left last year
+                        {formatProgramSeats(p)}
                       </span>
                     )}
                   </div>
