@@ -883,3 +883,16 @@ describe('lib/school-list-utils.ts exports ADDED_SCHOOLS_KEY (issue #116)', () =
     expect(src).toContain("export const ADDED_SCHOOLS_KEY = 'admitday_find_added_schools'")
   })
 })
+
+describe('school detail bottom bar', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'app/school/[dbn]/SchoolDetailClient.tsx'), 'utf8')
+
+  it('no longer shows the "DOE data as reported" footer line', () => {
+    expect(src).not.toContain('estimate admission chances')
+    expect(src).not.toContain('publishes DOE data')
+  })
+
+  it('keeps the back to results link', () => {
+    expect(src).toContain('Back to results')
+  })
+})
