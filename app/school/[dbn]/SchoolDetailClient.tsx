@@ -542,7 +542,7 @@ export default function SchoolDetailClient({
               {address && <DefinitionRow labelWidth={92} label="Address" value={address} className="pt-[3px]" />}
               {distance != null && (
                 <div className="text-[13.5px] text-ink-2">
-                  {formatMiles(distance)} from your starting point
+                  {formatMiles(distance)} from {startingPoint?.label}
                 </div>
               )}
               {directionsHref && (
