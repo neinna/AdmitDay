@@ -24,10 +24,10 @@ describe('SchoolRow "Strong student growth" badge placement (issue #436)', () =>
 
   it('never breaks the badge text across lines, regardless of name length', () => {
     const html = render(true)
-    const badgeMatch = html.match(/<span[^>]*>Strong student growth<\/span>/)
-    expect(badgeMatch).not.toBeNull()
-    const badgeTag = badgeMatch![0]
-    expect(badgeTag).toMatch(/class="[^"]*\bwhitespace-nowrap\b[^"]*"/)
+    expect(html).toContain('<span>Strong student growth</span>')
+    const markMatch = html.match(/<span[^>]*><span[^>]*><\/span><span>Strong student growth<\/span>/)
+    expect(markMatch).not.toBeNull()
+    expect(markMatch![0]).toMatch(/class="[^"]*\bwhitespace-nowrap\b[^"]*"/)
   })
 
   it('places the badge after the metadata line rather than beside the name', () => {

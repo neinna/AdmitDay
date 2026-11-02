@@ -8,7 +8,7 @@
 
 import * as fs from 'fs'
 import * as path from 'path'
-import { dedupePrograms } from '@/lib/school-detail-utils'
+import { dedupePrograms, formatProgramSeats } from '@/lib/school-detail-utils'
 import { School } from '@/types'
 
 function program(overrides: Partial<School['programs'][number]>): School['programs'][number] {
@@ -55,8 +55,10 @@ describe('SchoolDetailClient: seats left last year copy', () => {
     'utf8'
   )
 
-  it('shows the "Seats left last year" label', () => {
-    expect(src).toContain('Seats left last year')
+  it('shows the "Seats left last year" label in the joined seats line', () => {
+    expect(src).toContain('formatProgramSeats(p)')
+    const line = formatProgramSeats({ name: 'Dance', method: 'Audition', seatsLeftLastYear: {} })
+    expect(line).toContain('Seats left last year')
   })
 
   it('hover text names MySchools and the cycle, and never the opposite claim', () => {

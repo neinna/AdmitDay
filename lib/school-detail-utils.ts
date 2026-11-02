@@ -45,6 +45,7 @@ interface StatField {
   sentenceLabel: string
   get: (school: School) => number | null | undefined
   format: (value: number) => string
+  title?: (value: number) => string
 }
 
 const pct = (v: number) => `${Math.round(v)}%`
@@ -69,17 +70,19 @@ const STAT_FIELDS: StatField[] = [
   },
   {
     key: 'results',
-    gridLabel: 'Results',
+    gridLabel: 'Results vs NYC HS',
     sentenceLabel: 'results percentile',
     get: (s) => s.sqr?.performance_pctl,
-    format: (v) => `better than ${Math.round(v)}% of NYC high schools`,
+    format: (v) => `${Math.round(v)}%`,
+    title: (v) => `Results better than ${Math.round(v)}% of NYC high schools (DOE)`,
   },
   {
     key: 'impact',
-    gridLabel: 'Impact',
+    gridLabel: 'Growth vs NYC HS',
     sentenceLabel: 'impact percentile',
     get: (s) => s.sqr?.impact_pctl,
-    format: (v) => `grow more than at ${Math.round(v)}% of schools`,
+    format: (v) => `${Math.round(v)}%`,
+    title: (v) => `Students grow more here than at ${Math.round(v)}% of schools (DOE)`,
   },
   {
     key: 'graduationRate',
@@ -114,6 +117,7 @@ export function buildStatCells(school: School): StatCell[] {
     key: f.key,
     value: f.format(f.get(school) as number),
     label: f.gridLabel,
+    ...(f.title ? { title: f.title(f.get(school) as number) } : {}),
   }))
 }
 
@@ -122,7 +126,12 @@ export function buildStatCellsWithMissing(school: School): StatCell[] {
   return STAT_FIELDS.map((f) => {
     const value = f.get(school)
     if (isPresent(value)) {
-      return { key: f.key, value: f.format(value), label: f.gridLabel }
+      return {
+        key: f.key,
+        value: f.format(value),
+        label: f.gridLabel,
+        ...(f.title ? { title: f.title(value) } : {}),
+      }
     }
     if (f.key === 'applicantsPerSeat') {
       return { key: f.key, label: f.gridLabel, value: '—', title: 'Not reported in DOE data' }
@@ -498,6 +507,37 @@ export interface ProgramRow {
   code?: string
   /** Present only when general_education.all_seats_filled is false last cycle (issue #304). */
   seatsLeftLastYear?: { cycle?: string }
+  seats?: { ge?: SeatCount; swd?: SeatCount }
+}
+
+export interface SeatCount {
+  seats: number
+  applicants: number
+}
+
+function toSeatCount(v: unknown): SeatCount | undefined {
+  const c = v as { seats?: unknown; applicants?: unknown } | null | undefined
+  if (typeof c?.seats === 'number' && c.seats > 0 && typeof c.applicants === 'number') {
+    return { seats: c.seats, applicants: c.applicants }
+  }
+  return undefined
+}
+
+/** One-line seat shorthand for a program row, e.g. "6.3 apps/seat · 207 seats". */
+export function formatProgramSeats(row: ProgramRow): string | null {
+  const parts: string[] = []
+  const { ge, swd } = row.seats ?? {}
+  if (ge) {
+    parts.push(`${(ge.applicants / ge.seats).toFixed(1)} apps/seat`, `${ge.seats.toLocaleString()} seats`)
+  }
+  if (swd) {
+    parts.push(
+      `SWD ${(swd.applicants / swd.seats).toFixed(1)} apps/seat`,
+      `${swd.seats.toLocaleString()} seats`
+    )
+  }
+  if (row.seatsLeftLastYear) parts.push('Seats left last year')
+  return parts.length ? parts.join(' · ') : null
 }
 
 /**
@@ -521,6 +561,13 @@ export function dedupePrograms(programs: School['programs']): ProgramRow[] {
     const row: ProgramRow = code ? { name, method, code } : { name, method }
     if (p.seats_filled_last_year?.general_education === false) {
       row.seatsLeftLastYear = { cycle: p.provenance?.admissions_cycle }
+    }
+    const ge = toSeatCount(p.seats?.general_education)
+    const swd = toSeatCount(p.seats?.students_with_disabilities)
+    if (ge || swd) {
+      row.seats = {}
+      if (ge) row.seats.ge = ge
+      if (swd) row.seats.swd = swd
     }
     rows.push(row)
   }
