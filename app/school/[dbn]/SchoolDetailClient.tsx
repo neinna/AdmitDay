@@ -62,7 +62,6 @@ interface Props {
   busRoutes: string[]
   provenanceRows: { key: string; label: string; value: string }[]
   dataVintageNote: string | null
-  sourceUrl?: string
   backHref: string
   backLabel: string
   positionLabel: string | null
@@ -87,7 +86,6 @@ export default function SchoolDetailClient({
   busRoutes,
   provenanceRows,
   dataVintageNote,
-  sourceUrl,
   backHref,
   backLabel,
   positionLabel,
@@ -274,10 +272,7 @@ export default function SchoolDetailClient({
         <StatGrid stats={statCells} />
         {school.sqr && (
           <div className="pt-3 text-[13px] text-ink-2">
-            <a href={school.sqr.source_url} target="_blank" rel="noopener noreferrer" className="text-accent">
-              DOE rating
-            </a>
-            : {school.sqr.rating} · {school.sqr.year}
+            DOE rating: {school.sqr.rating} · {school.sqr.year}
           </div>
         )}
         {sqrTrends.length > 0 && (
@@ -581,11 +576,6 @@ export default function SchoolDetailClient({
                 <DefinitionRow key={row.key} labelWidth={92} label={row.label} value={row.value} />
               ))}
             </div>
-            {sourceUrl && (
-              <a href={sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[13.5px] text-accent">
-                View source record ↗
-              </a>
-            )}
             {dataVintageNote && <p className="text-[13px] text-faint">{dataVintageNote}</p>}
           </div>
         </div>
