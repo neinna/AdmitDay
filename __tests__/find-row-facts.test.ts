@@ -89,6 +89,22 @@ describe('buildFindRowFacts (issue #164)', () => {
     )
   })
 
+  it('counts AP entries as published, including ones not starting with "AP "', () => {
+    const school = makeSchool({
+      doe_data: {
+        overview: '',
+        language: '',
+        extracurriculars: '',
+        website: '',
+        phone: '',
+        address: '',
+        zip: '',
+        advancedplacement_courses: 'Algebra II (Advanced Math),AP Biology,AP Calculus AB',
+      },
+    })
+    expect(buildFindRowFacts(school)).toEqual(['3 AP courses'])
+  })
+
   it('singularizes a single AP course', () => {
     const school = makeSchool({
       doe_data: {
