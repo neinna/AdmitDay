@@ -122,7 +122,6 @@ export default async function SchoolDetailPage(props: {
         busRoutes={busRoutes}
         provenanceRows={provenanceRows}
         dataVintageNote={dataVintageNote}
-        sourceUrl={school.sqr?.source_url}
         backHref={backHref}
         backLabel={backLabel}
         positionLabel={positionLabel}
