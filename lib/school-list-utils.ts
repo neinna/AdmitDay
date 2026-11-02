@@ -708,3 +708,20 @@ export function applyRadiusFilter(
     (s) => s.location == null || distanceMiles(s.location, startCoords) <= radiusMiles
   )
 }
+
+/** Closest subway stations to `point` within `maxMiles`, nearest first, one per station name. */
+export function nearestStations(
+  point: LatLng,
+  limit = 2,
+  maxMiles = 1
+): { name: string; miles: number }[] {
+  const best = new Map<string, { name: string; miles: number }>()
+  for (const s of RAW_STATIONS) {
+    const miles = distanceMiles(point, s)
+    if (miles > maxMiles) continue
+    const key = s.name.toLowerCase()
+    const prev = best.get(key)
+    if (!prev || miles < prev.miles) best.set(key, { name: s.name, miles })
+  }
+  return [...best.values()].sort((a, b) => a.miles - b.miles).slice(0, limit)
+}
