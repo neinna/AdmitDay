@@ -14,6 +14,7 @@ import {
   INITIAL_COUNT,
   PAGE_SIZE,
   ADDED_SCHOOLS_KEY,
+  LAST_ASK_KEY,
   StartingPoint,
   loadStartingPoint,
   saveStartingPoint,
@@ -215,6 +216,32 @@ export default function FindClient({ schools, initialFilters }: Props) {
   // Sort toggle (issue #400) — only consulted when the ask hasn't produced
   // reasons yet (rankFindRows ignores it otherwise). Defaults to Results.
   const [sortMode, setSortMode] = useState<FindSortMode>('results')
+
+  // Restore the last ask when coming back to Search (issue #703). Only when
+  // the rail filters in the URL match the ones the ask was sent with; no
+  // fetch and no analytics events.
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(LAST_ASK_KEY)
+      if (!raw) return
+      const saved = JSON.parse(raw)
+      if (
+        findFiltersToQueryString(saved.filters) !==
+        findFiltersToQueryString(filters)
+      ) {
+        return
+      }
+      setAskText(saved.question)
+      setAskFilters(saved.askFilters)
+      setAskAnswer(saved.answer)
+      setAskSources(saved.sources)
+      setAskReasons(saved.reasons)
+      setAskTraceId(saved.traceId)
+    } catch {
+      // unreadable or missing storage — start with an empty ask
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     if (!startingPointInput) setRadiusMiles(null)
@@ -592,6 +619,22 @@ export default function FindClient({ schools, initialFilters }: Props) {
       const reasons: AskReason[] = Array.isArray(data.reasons) ? data.reasons : []
       setAskReasons(reasons)
       setAskTraceId(typeof data.traceId === 'string' ? data.traceId : null)
+      try {
+        sessionStorage.setItem(
+          LAST_ASK_KEY,
+          JSON.stringify({
+            question: trimmed,
+            filters,
+            askFilters: extractFilters(askText),
+            answer: typeof data.answer === 'string' ? data.answer : '',
+            sources,
+            reasons,
+            traceId: typeof data.traceId === 'string' ? data.traceId : null,
+          })
+        )
+      } catch {
+        // storage unavailable or full — restoring the ask is a convenience
+      }
       posthog?.capture('ask_answered', {
         latency_ms: Date.now() - startedAt,
         source_count: sources.length,
