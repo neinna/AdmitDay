@@ -598,9 +598,6 @@ export default function SchoolDetailClient({
         <Link href={backHref} className="text-[13.5px] text-accent">
           ‹ Back to results
         </Link>
-        <span className="text-[13px] text-faint">
-          AdmitDay publishes DOE data as reported. We don&rsquo;t estimate admission chances.
-        </span>
       </div>
     </div>
   )
