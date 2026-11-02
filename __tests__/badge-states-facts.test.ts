@@ -26,7 +26,7 @@ describe('school badge states facts, not a verdict', () => {
 describe('badge title text (issue #334)', () => {
   it.each(files)('%s: title contains DOE and no applicants-per-seat language', (f) => {
     const src = fs.readFileSync(path.join(__dirname, '..', f), 'utf8')
-    const match = src.match(/title="([^"]*)"[^>]*text-gem/)
+    const match = src.match(/title="([^"]*)"[^>]*Strong student growth/)
     expect(match).not.toBeNull()
     const title = match![1]
     expect(title).toContain('DOE')
