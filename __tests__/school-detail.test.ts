@@ -1,11 +1,11 @@
-import * as fs from 'fs'
-import * as path from 'path'
-import { createElement } from 'react'
-import { renderToStaticMarkup } from 'react-dom/server'
-import StatGrid from '../components/ui/StatGrid'
-import { notFound } from 'next/navigation'
-import { School, SchoolFlags } from '../types'
-import { FindFilters } from '../lib/school-list-utils'
+import * as fs from "fs";
+import * as path from "path";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import StatGrid from "../components/ui/StatGrid";
+import { notFound } from "next/navigation";
+import { School, SchoolFlags } from "../types";
+import { FindFilters } from "../lib/school-list-utils";
 import {
   findSchoolByDbn,
   buildFindRowFacts,
@@ -33,7 +33,7 @@ import {
   describeBackFilters,
   parseMatchedSignals,
   MYSCHOOLS_URL,
-} from '../lib/school-detail-utils'
+} from "../lib/school-detail-utils";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -48,51 +48,54 @@ function makeFlags(overrides: Partial<SchoolFlags> = {}): SchoolFlags {
     has_consortium: false,
     has_ib: false,
     ...overrides,
-  }
+  };
 }
 
 function makeSchool(
-  overrides: Omit<Partial<School>, 'flags'> & {
-    dbn?: string
-    flags?: Partial<SchoolFlags>
-    academic_score_pct?: number | null
-  } = {}
+  overrides: Omit<Partial<School>, "flags"> & {
+    dbn?: string;
+    flags?: Partial<SchoolFlags>;
+    academic_score_pct?: number | null;
+  } = {},
 ): School {
-  const { academic_score_pct, ...schoolOverrides } = overrides
+  const { academic_score_pct, ...schoolOverrides } = overrides;
   return {
-    dbn: schoolOverrides.dbn ?? 'X000',
-    name: schoolOverrides.name ?? 'Test School',
-    borough: schoolOverrides.borough ?? 'Brooklyn',
-    size: schoolOverrides.size ?? 'medium',
+    dbn: schoolOverrides.dbn ?? "X000",
+    name: schoolOverrides.name ?? "Test School",
+    borough: schoolOverrides.borough ?? "Brooklyn",
+    size: schoolOverrides.size ?? "medium",
     total_students: null,
     applicants_per_seat: null,
-    sqr: academic_score_pct != null ? { performance_pctl: academic_score_pct } : undefined,
+    sqr:
+      academic_score_pct != null
+        ? { performance_pctl: academic_score_pct }
+        : undefined,
     admissions_types: schoolOverrides.admissions_types ?? [],
     programs: schoolOverrides.programs ?? [],
     doe_data: {
-      overview: '',
-      language: '',
-      extracurriculars: '',
-      website: '',
-      phone: '',
-      address: '',
-      zip: '',
+      overview: "",
+      language: "",
+      extracurriculars: "",
+      website: "",
+      phone: "",
+      address: "",
+      zip: "",
       ...schoolOverrides.doe_data,
     },
-    last_verified: '',
+    last_verified: "",
     ...schoolOverrides,
     flags: makeFlags(schoolOverrides.flags),
-  }
+  };
 }
 
 function readSource(relPath: string): string {
-  return fs.readFileSync(path.join(__dirname, '..', relPath), 'utf-8')
+  return fs.readFileSync(path.join(__dirname, "..", relPath), "utf-8");
 }
 
 // ── makeSchool/makeFlags fixture helpers (issue #265) ───────────────────────
 
-describe('makeSchool flags fixture', () => {
-  it('defaults every flag to false when none are given', () => {
+describe("makeSchool flags fixture", () => {
+  it("defaults every flag to false when none are given", () => {
     expect(makeSchool().flags).toEqual({
       has_shsat: false,
       has_audition: false,
@@ -102,262 +105,352 @@ describe('makeSchool flags fixture', () => {
       high_impact: false,
       has_consortium: false,
       has_ib: false,
-    })
-  })
+    });
+  });
 
-  it('merges a partial flags override on top of the defaults', () => {
-    const school = makeSchool({ flags: { has_shsat: true } })
-    expect(school.flags.has_shsat).toBe(true)
-    expect(school.flags.has_audition).toBe(false)
-    expect(school.flags.has_ib).toBe(false)
-  })
-})
+  it("merges a partial flags override on top of the defaults", () => {
+    const school = makeSchool({ flags: { has_shsat: true } });
+    expect(school.flags.has_shsat).toBe(true);
+    expect(school.flags.has_audition).toBe(false);
+    expect(school.flags.has_ib).toBe(false);
+  });
+});
 
 // ── findSchoolByDbn — the lookup that drives 404 vs render (issue #116) ─────
 
-describe('findSchoolByDbn', () => {
-  const schools = [makeSchool({ dbn: '13K430', name: 'Brooklyn Technical High School' }), makeSchool({ dbn: '02M475' })]
+describe("findSchoolByDbn", () => {
+  const schools = [
+    makeSchool({ dbn: "13K430", name: "Brooklyn Technical High School" }),
+    makeSchool({ dbn: "02M475" }),
+  ];
 
-  it('returns the matching school for a known dbn', () => {
-    expect(findSchoolByDbn(schools, '13K430')?.name).toBe('Brooklyn Technical High School')
-  })
+  it("returns the matching school for a known dbn", () => {
+    expect(findSchoolByDbn(schools, "13K430")?.name).toBe(
+      "Brooklyn Technical High School",
+    );
+  });
 
-  it('returns undefined for an unknown dbn', () => {
-    expect(findSchoolByDbn(schools, '99Z999')).toBeUndefined()
-  })
-})
+  it("returns undefined for an unknown dbn", () => {
+    expect(findSchoolByDbn(schools, "99Z999")).toBeUndefined();
+  });
+});
 
-describe('page.tsx — 404s an unknown dbn, renders a known one (issue #116)', () => {
-  const src = readSource('app/school/[dbn]/page.tsx')
+describe("page.tsx — 404s an unknown dbn, renders a known one (issue #116)", () => {
+  const src = readSource("app/school/[dbn]/page.tsx");
 
-  it('loads schools via getAllSchools', () => {
-    expect(src).toContain('getAllSchools()')
-  })
+  it("loads schools via getAllSchools", () => {
+    expect(src).toContain("getAllSchools()");
+  });
 
-  it('looks up the school with findSchoolByDbn', () => {
-    expect(src).toContain('const { dbn } = await props.params')
-    expect(src).toContain('findSchoolByDbn(schools, dbn)')
-  })
+  it("looks up the school with findSchoolByDbn", () => {
+    expect(src).toContain("const { dbn } = await props.params");
+    expect(src).toContain("findSchoolByDbn(schools, dbn)");
+  });
 
-  it('calls notFound() when the lookup fails, before rendering anything', () => {
-    expect(src).toContain('if (!school) notFound()')
-  })
+  it("calls notFound() when the lookup fails, before rendering anything", () => {
+    expect(src).toContain("if (!school) notFound()");
+  });
 
-  it('calling next/navigation notFound() throws the real 404 digest (verifies the 404 mechanism page.tsx relies on)', () => {
-    expect(() => notFound()).toThrow()
+  it("calling next/navigation notFound() throws the real 404 digest (verifies the 404 mechanism page.tsx relies on)", () => {
+    expect(() => notFound()).toThrow();
     try {
-      notFound()
+      notFound();
     } catch (e) {
       // Next 15+ renamed the digest from NEXT_NOT_FOUND.
-      expect((e as { digest?: string }).digest).toBe('NEXT_HTTP_ERROR_FALLBACK;404')
+      expect((e as { digest?: string }).digest).toBe(
+        "NEXT_HTTP_ERROR_FALLBACK;404",
+      );
     }
-  })
-})
+  });
+});
 
-describe('formatSchoolName', () => {
+describe("formatSchoolName", () => {
   it('moves a trailing ", The" to a leading "The "', () => {
-    expect(formatSchoolName('Boys and Girls High School, The')).toBe('The Boys and Girls High School')
-  })
+    expect(formatSchoolName("Boys and Girls High School, The")).toBe(
+      "The Boys and Girls High School",
+    );
+  });
 
-  it('leaves other names unchanged', () => {
-    expect(formatSchoolName('Brooklyn Technical High School')).toBe('Brooklyn Technical High School')
-  })
-})
+  it("leaves other names unchanged", () => {
+    expect(formatSchoolName("Brooklyn Technical High School")).toBe(
+      "Brooklyn Technical High School",
+    );
+  });
+});
 
 // ── The numbers: absent stats are omitted, never zeroed (issue #116) ────────
 
-describe('buildStatCells', () => {
-  it('renders only the stats DOE actually published, in the fixed design order', () => {
+describe("buildStatCells", () => {
+  it("renders only the stats DOE actually published, in the fixed design order", () => {
     const school = makeSchool({
       applicants_per_seat: 4.1,
       total_students: 5900,
       academic_score_pct: null,
       doe_data: {
-        overview: '',
-        language: '',
-        extracurriculars: '',
-        website: '',
-        phone: '',
-        address: '',
-        zip: '',
+        overview: "",
+        language: "",
+        extracurriculars: "",
+        website: "",
+        phone: "",
+        address: "",
+        zip: "",
         graduation_rate: 0.96,
         attendance_rate: 0.95,
         college_career_rate: null,
       },
-    })
-    const cells = buildStatCells(school)
+    });
+    const cells = buildStatCells(school);
     expect(cells.map((c) => c.label)).toEqual([
-      'Applicants per seat',
-      'Total students',
-      'Graduation rate',
-      'Attendance rate',
-    ])
-  })
+      "Applicants per seat",
+      "Total students",
+      "Graduation rate",
+      "Attendance rate",
+    ]);
+  });
 
-  it('formats applicants per seat to one decimal, students with thousands separators, and rates as rounded percentages', () => {
+  it("formats applicants per seat to one decimal, students with thousands separators, and rates as rounded percentages", () => {
     const school = makeSchool({
       applicants_per_seat: 4.123,
       total_students: 5900,
       doe_data: {
-        overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '',
+        overview: "",
+        language: "",
+        extracurriculars: "",
+        website: "",
+        phone: "",
+        address: "",
+        zip: "",
         graduation_rate: 0.964,
       },
-    })
-    const cells = buildStatCells(school)
-    expect(cells.find((c) => c.label === 'Applicants per seat')?.value).toBe('4.1')
-    expect(cells.find((c) => c.label === 'Total students')?.value).toBe('5,900')
-    expect(cells.find((c) => c.label === 'Graduation rate')?.value).toBe('96%')
-  })
+    });
+    const cells = buildStatCells(school);
+    expect(cells.find((c) => c.label === "Applicants per seat")?.value).toBe(
+      "4.1",
+    );
+    expect(cells.find((c) => c.label === "Total students")?.value).toBe(
+      "5,900",
+    );
+    expect(cells.find((c) => c.label === "Graduation rate")?.value).toBe("96%");
+  });
 
-  it('never renders a stat as 0 or a dash when the underlying value is null — the field is absent entirely', () => {
-    const school = makeSchool({ applicants_per_seat: null, total_students: null })
-    const cells = buildStatCells(school)
-    expect(cells.some((c) => c.label === 'Applicants per seat')).toBe(false)
-    expect(cells.some((c) => c.label === 'Total students')).toBe(false)
-    expect(cells.map((c) => c.value)).not.toContain('0')
-    expect(cells.map((c) => c.value)).not.toContain('—')
-  })
+  it("never renders a stat as 0 or a dash when the underlying value is null — the field is absent entirely", () => {
+    const school = makeSchool({
+      applicants_per_seat: null,
+      total_students: null,
+    });
+    const cells = buildStatCells(school);
+    expect(cells.some((c) => c.label === "Applicants per seat")).toBe(false);
+    expect(cells.some((c) => c.label === "Total students")).toBe(false);
+    expect(cells.map((c) => c.value)).not.toContain("0");
+    expect(cells.map((c) => c.value)).not.toContain("—");
+  });
 
-  it('does render a genuine DOE-reported 0 (not the same as missing)', () => {
-    const school = makeSchool({ academic_score_pct: 0 })
-    const cells = buildStatCells(school)
-    expect(cells.find((c) => c.label === 'Results')?.value).toBe('better than 0% of NYC high schools')
-  })
+  it("does render a genuine DOE-reported 0 (not the same as missing)", () => {
+    const school = makeSchool({ academic_score_pct: 0 });
+    const cells = buildStatCells(school);
+    expect(cells.find((c) => c.label === "Results vs NYC HS")?.value).toBe(
+      "0%",
+    );
+  });
 
-  it('returns every field when all seven stats are present', () => {
+  it("returns every field when all seven stats are present", () => {
     const school = makeSchool({
       applicants_per_seat: 4.1,
       total_students: 5900,
       sqr: { performance_pctl: 94, impact_pctl: 88 },
       doe_data: {
-        overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '',
-        graduation_rate: 0.96, attendance_rate: 0.95, college_career_rate: 0.91,
+        overview: "",
+        language: "",
+        extracurriculars: "",
+        website: "",
+        phone: "",
+        address: "",
+        zip: "",
+        graduation_rate: 0.96,
+        attendance_rate: 0.95,
+        college_career_rate: 0.91,
       },
-    })
-    expect(buildStatCells(school)).toHaveLength(7)
-  })
-})
+    });
+    expect(buildStatCells(school)).toHaveLength(7);
+  });
+});
 
-describe('buildStatCellsWithMissing (issue #472)', () => {
-  it('returns every STAT_FIELDS entry in order, marking only the missing ones', () => {
+describe("buildStatCellsWithMissing (issue #472)", () => {
+  it("returns every STAT_FIELDS entry in order, marking only the missing ones", () => {
     const school = makeSchool({
       applicants_per_seat: null,
       total_students: 5900,
       sqr: { performance_pctl: 72 },
       doe_data: {
-        overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '',
-        graduation_rate: 0.96, attendance_rate: 0.95, college_career_rate: 0.91,
+        overview: "",
+        language: "",
+        extracurriculars: "",
+        website: "",
+        phone: "",
+        address: "",
+        zip: "",
+        graduation_rate: 0.96,
+        attendance_rate: 0.95,
+        college_career_rate: 0.91,
       },
-    })
-    const cells = buildStatCellsWithMissing(school)
+    });
+    const cells = buildStatCellsWithMissing(school);
     expect(cells.map((c) => c.label)).toEqual([
-      'Applicants per seat',
-      'Total students',
-      'Results',
-      'Impact',
-      'Graduation rate',
-      'Attendance rate',
-      'College and career',
-    ])
-    expect(cells.filter((c) => c.missing).map((c) => c.key)).toEqual(['impact'])
-    expect(cells.find((c) => c.key === 'totalStudents')?.missing).toBeUndefined()
-  })
+      "Applicants per seat",
+      "Total students",
+      "Results vs NYC HS",
+      "Growth vs NYC HS",
+      "Graduation rate",
+      "Attendance rate",
+      "College and career",
+    ]);
+    expect(cells.filter((c) => c.missing).map((c) => c.key)).toEqual([
+      "impact",
+    ]);
+    expect(
+      cells.find((c) => c.key === "totalStudents")?.missing,
+    ).toBeUndefined();
+  });
 
   it('always renders an Applicants per seat cell: "—" with a title when null', () => {
-    const cells = buildStatCellsWithMissing(makeSchool({ applicants_per_seat: null }))
-    expect(cells.find((c) => c.key === 'applicantsPerSeat')).toEqual({
-      key: 'applicantsPerSeat',
-      label: 'Applicants per seat',
-      value: '—',
-      title: 'Not reported in DOE data',
-    })
-    const html = renderToStaticMarkup(createElement(StatGrid, { stats: cells }))
-    expect(html).toContain('title="Not reported in DOE data"')
-    expect(html).toContain('aria-label="Not reported in DOE data"')
-    expect(html).toContain('—')
-  })
+    const cells = buildStatCellsWithMissing(
+      makeSchool({ applicants_per_seat: null }),
+    );
+    expect(cells.find((c) => c.key === "applicantsPerSeat")).toEqual({
+      key: "applicantsPerSeat",
+      label: "Applicants per seat",
+      value: "—",
+      title: "Not reported in DOE data",
+    });
+    const html = renderToStaticMarkup(
+      createElement(StatGrid, { stats: cells }),
+    );
+    expect(html).toContain('title="Not reported in DOE data"');
+    expect(html).toContain('aria-label="Not reported in DOE data"');
+    expect(html).toContain("—");
+  });
 
-  it('renders a present applicants per seat value unchanged', () => {
-    const cells = buildStatCellsWithMissing(makeSchool({ applicants_per_seat: 1.4 }))
-    const cell = cells.find((c) => c.key === 'applicantsPerSeat')
-    expect(cell?.value).toBe('1.4')
-    expect(cell?.title).toBeUndefined()
-    const html = renderToStaticMarkup(createElement(StatGrid, { stats: cells }))
-    expect(html).toContain('1.4')
-  })
+  it("renders a present applicants per seat value unchanged", () => {
+    const cells = buildStatCellsWithMissing(
+      makeSchool({ applicants_per_seat: 1.4 }),
+    );
+    const cell = cells.find((c) => c.key === "applicantsPerSeat");
+    expect(cell?.value).toBe("1.4");
+    expect(cell?.title).toBeUndefined();
+    const html = renderToStaticMarkup(
+      createElement(StatGrid, { stats: cells }),
+    );
+    expect(html).toContain("1.4");
+  });
 
-  it('marks no cell as missing when every stat is published', () => {
+  it("marks no cell as missing when every stat is published", () => {
     const school = makeSchool({
       applicants_per_seat: 4.1,
       total_students: 5900,
       sqr: { performance_pctl: 94, impact_pctl: 88 },
       doe_data: {
-        overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '',
-        graduation_rate: 0.96, attendance_rate: 0.95, college_career_rate: 0.91,
+        overview: "",
+        language: "",
+        extracurriculars: "",
+        website: "",
+        phone: "",
+        address: "",
+        zip: "",
+        graduation_rate: 0.96,
+        attendance_rate: 0.95,
+        college_career_rate: 0.91,
       },
-    })
-    const cells = buildStatCellsWithMissing(school)
-    expect(cells).toHaveLength(7)
-    expect(cells.some((c) => c.missing)).toBe(false)
-  })
-})
+    });
+    const cells = buildStatCellsWithMissing(school);
+    expect(cells).toHaveLength(7);
+    expect(cells.some((c) => c.missing)).toBe(false);
+  });
+});
 
 // ── Results/Impact stats replace the old "Academic score" (issue #333) ─────
 
-describe('buildStatCells — Results and Impact (issue #333)', () => {
-  it('renders both stats with their new labels and copy for a school with sqr', () => {
-    const school = makeSchool({ sqr: { performance_pctl: 72, impact_pctl: 41 } })
-    const cells = buildStatCells(school)
-    expect(cells.find((c) => c.label === 'Results')?.value).toBe('better than 72% of NYC high schools')
-    expect(cells.find((c) => c.label === 'Impact')?.value).toBe('grow more than at 41% of schools')
-  })
+describe("buildStatCells — Results and Impact (issue #333)", () => {
+  it("renders both stats with their new labels and copy for a school with sqr", () => {
+    const school = makeSchool({
+      sqr: { performance_pctl: 72, impact_pctl: 41 },
+    });
+    const cells = buildStatCells(school);
+    expect(cells.find((c) => c.label === "Results vs NYC HS")?.value).toBe(
+      "72%",
+    );
+    expect(cells.find((c) => c.label === "Results vs NYC HS")?.title).toBe(
+      "Results better than 72% of NYC high schools (DOE)",
+    );
+    expect(cells.find((c) => c.label === "Growth vs NYC HS")?.value).toBe(
+      "41%",
+    );
+    expect(cells.find((c) => c.label === "Growth vs NYC HS")?.title).toBe(
+      "Students grow more here than at 41% of schools (DOE)",
+    );
+  });
 
-  it('renders neither Results nor Impact when sqr is absent', () => {
-    const school = makeSchool({})
-    const cells = buildStatCells(school)
-    expect(cells.some((c) => c.label === 'Results')).toBe(false)
-    expect(cells.some((c) => c.label === 'Impact')).toBe(false)
-  })
+  it("renders neither Results nor Impact when sqr is absent", () => {
+    const school = makeSchool({});
+    const cells = buildStatCells(school);
+    expect(cells.some((c) => c.label === "Results vs NYC HS")).toBe(false);
+    expect(cells.some((c) => c.label === "Growth vs NYC HS")).toBe(false);
+  });
 
-  it('no longer has a survey score stat', () => {
-    const school = makeSchool({ sqr: { performance_pctl: 72, impact_pctl: 41 } })
-    const cells = buildStatCells(school)
-    expect(cells.some((c) => c.label === 'Survey score')).toBe(false)
-    expect(cells.some((c) => c.key === 'surveyScore')).toBe(false)
-    expect(getMissingStatLabels(makeSchool({}))).not.toContain('survey score')
-  })
-})
+  it("no longer has a survey score stat", () => {
+    const school = makeSchool({
+      sqr: { performance_pctl: 72, impact_pctl: 41 },
+    });
+    const cells = buildStatCells(school);
+    expect(cells.some((c) => c.label === "Survey score")).toBe(false);
+    expect(cells.some((c) => c.key === "surveyScore")).toBe(false);
+    expect(getMissingStatLabels(makeSchool({}))).not.toContain("survey score");
+  });
+});
 
-describe('SchoolDetailClient — DOE rating line (issue #333)', () => {
-  const src = readSource('app/school/[dbn]/SchoolDetailClient.tsx')
+describe("SchoolDetailClient — DOE rating line (issue #333)", () => {
+  const src = readSource("app/school/[dbn]/SchoolDetailClient.tsx");
 
-  it('only renders the rating line when school.sqr is present', () => {
-    expect(src).toMatch(/school\.sqr\s*&&/)
-  })
+  it("only renders the rating line when school.sqr is present", () => {
+    expect(src).toMatch(/school\.sqr\s*&&/);
+  });
 
   it('links "DOE rating" to sqr.source_url in a new tab', () => {
     expect(src).toMatch(
-      /<a\s+href=\{school\.sqr\.source_url\}[\s\S]{0,80}target="_blank"[\s\S]{0,80}rel="noopener noreferrer"[\s\S]{0,40}>\s*DOE rating\s*<\/a>/
-    )
-  })
+      /<a\s+href=\{school\.sqr\.source_url\}[\s\S]{0,80}target="_blank"[\s\S]{0,80}rel="noopener noreferrer"[\s\S]{0,40}>\s*DOE rating\s*<\/a>/,
+    );
+  });
 
-  it('shows the rating and year next to the link', () => {
-    expect(src).toMatch(/DOE rating[\s\S]{0,120}\{school\.sqr\.rating\}[\s\S]{0,20}·[\s\S]{0,20}\{school\.sqr\.year\}/)
-  })
-})
+  it("shows the rating and year next to the link", () => {
+    expect(src).toMatch(
+      /DOE rating[\s\S]{0,120}\{school\.sqr\.rating\}[\s\S]{0,20}·[\s\S]{0,20}\{school\.sqr\.year\}/,
+    );
+  });
+});
 
-describe('getMissingStatLabels + buildNotReportedStatsSentence (NOT REPORTED — issue #116)', () => {
-  it('returns an empty list and a null sentence when nothing is missing', () => {
+describe("getMissingStatLabels + buildNotReportedStatsSentence (NOT REPORTED — issue #116)", () => {
+  it("returns an empty list and a null sentence when nothing is missing", () => {
     const school = makeSchool({
-      applicants_per_seat: 1, total_students: 1, sqr: { performance_pctl: 1, impact_pctl: 1 },
+      applicants_per_seat: 1,
+      total_students: 1,
+      sqr: { performance_pctl: 1, impact_pctl: 1 },
       doe_data: {
-        overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '',
-        graduation_rate: 1, attendance_rate: 1, college_career_rate: 1,
+        overview: "",
+        language: "",
+        extracurriculars: "",
+        website: "",
+        phone: "",
+        address: "",
+        zip: "",
+        graduation_rate: 1,
+        attendance_rate: 1,
+        college_career_rate: 1,
       },
-    })
-    expect(getMissingStatLabels(school)).toEqual([])
-    expect(buildNotReportedStatsSentence(getMissingStatLabels(school))).toBeNull()
-  })
+    });
+    expect(getMissingStatLabels(school)).toEqual([]);
+    expect(
+      buildNotReportedStatsSentence(getMissingStatLabels(school)),
+    ).toBeNull();
+  });
 
   it('produces the required "gap in the DOE data, not a low result" sentence for multiple missing stats', () => {
     const school = makeSchool({
@@ -365,534 +458,686 @@ describe('getMissingStatLabels + buildNotReportedStatsSentence (NOT REPORTED —
       total_students: 320,
       academic_score_pct: null,
       doe_data: {
-        overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '',
-        graduation_rate: 0.71, attendance_rate: 0.88, college_career_rate: null,
+        overview: "",
+        language: "",
+        extracurriculars: "",
+        website: "",
+        phone: "",
+        address: "",
+        zip: "",
+        graduation_rate: 0.71,
+        attendance_rate: 0.88,
+        college_career_rate: null,
       },
-    })
-    const sentence = buildNotReportedStatsSentence(getMissingStatLabels(school))
+    });
+    const sentence = buildNotReportedStatsSentence(
+      getMissingStatLabels(school),
+    );
     expect(sentence).toBe(
-      'Results percentile, impact percentile, and college & career rate are not published for this school. That is a gap in the DOE data, not a low result.'
-    )
-    expect(getMissingStatLabels(school)).not.toContain('applicants per seat')
-  })
+      "Results percentile, impact percentile, and college & career rate are not published for this school. That is a gap in the DOE data, not a low result.",
+    );
+    expect(getMissingStatLabels(school)).not.toContain("applicants per seat");
+  });
 
   it('uses singular "is" for exactly one missing stat', () => {
-    const sentence = buildNotReportedStatsSentence(['academic score'])
+    const sentence = buildNotReportedStatsSentence(["academic score"]);
     expect(sentence).toBe(
-      'Academic score is not published for this school. That is a gap in the DOE data, not a low result.'
-    )
-  })
+      "Academic score is not published for this school. That is a gap in the DOE data, not a low result.",
+    );
+  });
 
   it('uses "and" (no comma) for exactly two missing stats', () => {
-    const sentence = buildNotReportedStatsSentence(['academic score', 'survey score'])
+    const sentence = buildNotReportedStatsSentence([
+      "academic score",
+      "survey score",
+    ]);
     expect(sentence).toBe(
-      'Academic score and survey score are not published for this school. That is a gap in the DOE data, not a low result.'
-    )
-  })
-})
+      "Academic score and survey score are not published for this school. That is a gap in the DOE data, not a low result.",
+    );
+  });
+});
 
 // ── SHSAT cutoffs: three published years for specialized schools (issue #192) ──
 
-describe('buildShsatCutoffRows', () => {
-  it('returns all published years, oldest first, for a specialized school', () => {
-    const school = makeSchool({ dbn: '13K430', flags: { has_shsat: true } })
-    const rows = buildShsatCutoffRows(school)
-    expect(rows.map((r) => r.year)).toEqual(['2024', '2025', '2026'])
-    expect(rows.map((r) => r.score)).toEqual([507, 505, 506])
-  })
+describe("buildShsatCutoffRows", () => {
+  it("returns all published years, oldest first, for a specialized school", () => {
+    const school = makeSchool({ dbn: "13K430", flags: { has_shsat: true } });
+    const rows = buildShsatCutoffRows(school);
+    expect(rows.map((r) => r.year)).toEqual(["2024", "2025", "2026"]);
+    expect(rows.map((r) => r.score)).toEqual([507, 505, 506]);
+  });
 
-  it('returns an empty array for a school that does not have the SHSAT track', () => {
-    const school = makeSchool({ dbn: '13K430', flags: { has_shsat: false } })
-    expect(buildShsatCutoffRows(school)).toEqual([])
-  })
+  it("returns an empty array for a school that does not have the SHSAT track", () => {
+    const school = makeSchool({ dbn: "13K430", flags: { has_shsat: false } });
+    expect(buildShsatCutoffRows(school)).toEqual([]);
+  });
 
-  it('returns an empty array for a school flagged has_shsat with no published cutoff row', () => {
-    const school = makeSchool({ dbn: '99Z999', flags: { has_shsat: true } })
-    expect(buildShsatCutoffRows(school)).toEqual([])
-  })
-})
+  it("returns an empty array for a school flagged has_shsat with no published cutoff row", () => {
+    const school = makeSchool({ dbn: "99Z999", flags: { has_shsat: true } });
+    expect(buildShsatCutoffRows(school)).toEqual([]);
+  });
+});
 
 // ── Activities: groups with nothing are dropped, NOT OFFERED (issue #116) ──
 
-describe('parseCommaList', () => {
-  it('splits and trims a comma-separated DOE field', () => {
-    expect(parseCommaList('AP Biology, AP Calculus AB,  AP Chemistry')).toEqual([
-      'AP Biology', 'AP Calculus AB', 'AP Chemistry',
-    ])
-  })
+describe("parseCommaList", () => {
+  it("splits and trims a comma-separated DOE field", () => {
+    expect(parseCommaList("AP Biology, AP Calculus AB,  AP Chemistry")).toEqual(
+      ["AP Biology", "AP Calculus AB", "AP Chemistry"],
+    );
+  });
 
-  it('returns [] for empty/undefined input', () => {
-    expect(parseCommaList('')).toEqual([])
-    expect(parseCommaList(undefined)).toEqual([])
-    expect(parseCommaList(null)).toEqual([])
-  })
-})
+  it("returns [] for empty/undefined input", () => {
+    expect(parseCommaList("")).toEqual([]);
+    expect(parseCommaList(undefined)).toEqual([]);
+    expect(parseCommaList(null)).toEqual([]);
+  });
+});
 
-describe('parsePsalSports', () => {
-  it('suffixes boys/girls sports and leaves coed unsuffixed', () => {
+describe("parsePsalSports", () => {
+  it("suffixes boys/girls sports and leaves coed unsuffixed", () => {
     const school = makeSchool({
       doe_data: {
-        overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '',
-        psal_sports_boys: 'Soccer, Basketball',
-        psal_sports_girls: 'Soccer, Volleyball',
-        psal_sports_coed: 'Fencing',
+        overview: "",
+        language: "",
+        extracurriculars: "",
+        website: "",
+        phone: "",
+        address: "",
+        zip: "",
+        psal_sports_boys: "Soccer, Basketball",
+        psal_sports_girls: "Soccer, Volleyball",
+        psal_sports_coed: "Fencing",
       },
-    })
+    });
     expect(parsePsalSports(school)).toEqual([
-      'Soccer, boys', 'Basketball, boys', 'Soccer, girls', 'Volleyball, girls', 'Fencing',
-    ])
-  })
+      "Soccer, boys",
+      "Basketball, boys",
+      "Soccer, girls",
+      "Volleyball, girls",
+      "Fencing",
+    ]);
+  });
 
-  it('returns [] when no PSAL fields are present', () => {
-    expect(parsePsalSports(makeSchool())).toEqual([])
-  })
-})
+  it("returns [] when no PSAL fields are present", () => {
+    expect(parsePsalSports(makeSchool())).toEqual([]);
+  });
+});
 
-describe('parseExtracurriculars', () => {
-  it('keeps short comma/semicolon-separated activity names', () => {
-    expect(parseExtracurriculars('Robotics team, Math team, Model UN')).toEqual([
-      'Robotics team', 'Math team', 'Model UN',
-    ])
-  })
+describe("parseExtracurriculars", () => {
+  it("keeps short comma/semicolon-separated activity names", () => {
+    expect(parseExtracurriculars("Robotics team, Math team, Model UN")).toEqual(
+      ["Robotics team", "Math team", "Model UN"],
+    );
+  });
 
-  it('drops fragments that read like prose sentences (contain a period)', () => {
+  it("drops fragments that read like prose sentences (contain a period)", () => {
     const result = parseExtracurriculars(
-      'Chess Club, Debate Club; the school also runs a Saturday tutoring program for students.'
-    )
-    expect(result).toEqual(['Chess Club', 'Debate Club'])
-  })
+      "Chess Club, Debate Club; the school also runs a Saturday tutoring program for students.",
+    );
+    expect(result).toEqual(["Chess Club", "Debate Club"]);
+  });
 
-  it('drops overly long fragments even without punctuation', () => {
-    const result = parseExtracurriculars('Yearbook, this fragment has way more than six words in it so it should drop')
-    expect(result).toEqual(['Yearbook'])
-  })
+  it("drops overly long fragments even without punctuation", () => {
+    const result = parseExtracurriculars(
+      "Yearbook, this fragment has way more than six words in it so it should drop",
+    );
+    expect(result).toEqual(["Yearbook"]);
+  });
 
   it('strips a leading "Label:" section header from the first item', () => {
-    expect(parseExtracurriculars('Clubs: Art, Band, Chess')).toEqual(['Art', 'Band', 'Chess'])
-  })
-})
+    expect(parseExtracurriculars("Clubs: Art, Band, Chess")).toEqual([
+      "Art",
+      "Band",
+      "Chess",
+    ]);
+  });
+});
 
-describe('buildActivityGroups + getMissingActivityLabels', () => {
-  it('includes only groups that have at least one item, in the fixed order', () => {
+describe("buildActivityGroups + getMissingActivityLabels", () => {
+  it("includes only groups that have at least one item, in the fixed order", () => {
     const school = makeSchool({
       doe_data: {
-        overview: '', language: 'Spanish', extracurriculars: '', website: '', phone: '', address: '', zip: '',
-        advancedplacement_courses: 'AP Biology',
+        overview: "",
+        language: "Spanish",
+        extracurriculars: "",
+        website: "",
+        phone: "",
+        address: "",
+        zip: "",
+        advancedplacement_courses: "AP Biology",
       },
-    })
-    const groups = buildActivityGroups(school)
-    expect(groups.map((g) => g.key)).toEqual(['apCourses', 'languages'])
-  })
+    });
+    const groups = buildActivityGroups(school);
+    expect(groups.map((g) => g.key)).toEqual(["apCourses", "languages"]);
+  });
 
-  it('lists PSAL teams and AP courses as missing when both are absent, matching the design\'s 5b example', () => {
+  it("lists PSAL teams and AP courses as missing when both are absent, matching the design's 5b example", () => {
     const school = makeSchool({
       doe_data: {
-        overview: '', language: 'Spanish', extracurriculars: 'Student government, Yearbook',
-        website: '', phone: '', address: '', zip: '',
+        overview: "",
+        language: "Spanish",
+        extracurriculars: "Student government, Yearbook",
+        website: "",
+        phone: "",
+        address: "",
+        zip: "",
       },
-    })
-    expect(getMissingActivityLabels(school)).toEqual(['PSAL teams', 'AP courses'])
-  })
+    });
+    expect(getMissingActivityLabels(school)).toEqual([
+      "PSAL teams",
+      "AP courses",
+    ]);
+  });
 
   it('shows the DOE AP list as published, including entries not starting with "AP " (issue #694)', () => {
     const school = makeSchool({
       doe_data: {
-        overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '',
-        advancedplacement_courses: 'Algebra II (Advanced Math),AP Biology,AP Calculus AB',
+        overview: "",
+        language: "",
+        extracurriculars: "",
+        website: "",
+        phone: "",
+        address: "",
+        zip: "",
+        advancedplacement_courses:
+          "Algebra II (Advanced Math),AP Biology,AP Calculus AB",
       },
-    })
-    const ap = buildActivityGroups(school).find((g) => g.key === 'apCourses')
-    expect(ap?.items).toEqual(['Algebra II (Advanced Math)', 'AP Biology', 'AP Calculus AB'])
-    expect(buildFindRowFacts(school)).toContain('3 AP courses')
-  })
+    });
+    const ap = buildActivityGroups(school).find((g) => g.key === "apCourses");
+    expect(ap?.items).toEqual([
+      "Algebra II (Advanced Math)",
+      "AP Biology",
+      "AP Calculus AB",
+    ]);
+    expect(buildFindRowFacts(school)).toContain("3 AP courses");
+  });
 
-  it('returns [] when every group has at least one item', () => {
+  it("returns [] when every group has at least one item", () => {
     const school = makeSchool({
       doe_data: {
-        overview: '', language: 'Spanish', extracurriculars: 'Yearbook', website: '', phone: '', address: '', zip: '',
-        psal_sports_coed: 'Fencing',
-        advancedplacement_courses: 'AP Biology',
+        overview: "",
+        language: "Spanish",
+        extracurriculars: "Yearbook",
+        website: "",
+        phone: "",
+        address: "",
+        zip: "",
+        psal_sports_coed: "Fencing",
+        advancedplacement_courses: "AP Biology",
       },
-    })
-    expect(getMissingActivityLabels(school)).toEqual([])
-  })
-})
+    });
+    expect(getMissingActivityLabels(school)).toEqual([]);
+  });
+});
 
-describe('buildMissingActivityGroups (issue #473)', () => {
-  it('returns the PSAL group with its label when a school has no PSAL teams', () => {
+describe("buildMissingActivityGroups (issue #473)", () => {
+  it("returns the PSAL group with its label when a school has no PSAL teams", () => {
     const school = makeSchool({
       doe_data: {
-        overview: '', language: 'Spanish', extracurriculars: 'Yearbook', website: '', phone: '', address: '', zip: '',
-        advancedplacement_courses: 'AP Biology',
+        overview: "",
+        language: "Spanish",
+        extracurriculars: "Yearbook",
+        website: "",
+        phone: "",
+        address: "",
+        zip: "",
+        advancedplacement_courses: "AP Biology",
       },
-    })
-    const missing = buildMissingActivityGroups(school)
-    expect(missing).toContainEqual({ key: 'psalSports', label: 'PSAL sports' })
-  })
+    });
+    const missing = buildMissingActivityGroups(school);
+    expect(missing).toContainEqual({ key: "psalSports", label: "PSAL sports" });
+  });
 
-  it('returns [] when every group is present', () => {
+  it("returns [] when every group is present", () => {
     const school = makeSchool({
       doe_data: {
-        overview: '', language: 'Spanish', extracurriculars: 'Yearbook', website: '', phone: '', address: '', zip: '',
-        psal_sports_coed: 'Fencing',
-        advancedplacement_courses: 'AP Biology',
+        overview: "",
+        language: "Spanish",
+        extracurriculars: "Yearbook",
+        website: "",
+        phone: "",
+        address: "",
+        zip: "",
+        psal_sports_coed: "Fencing",
+        advancedplacement_courses: "AP Biology",
       },
-    })
-    expect(buildMissingActivityGroups(school)).toEqual([])
-  })
-})
+    });
+    expect(buildMissingActivityGroups(school)).toEqual([]);
+  });
+});
 
-describe('buildNotOfferedActivitiesSentence (NOT OFFERED — issue #116)', () => {
-  it('matches the design\'s exact copy for missing PSAL + AP', () => {
-    expect(buildNotOfferedActivitiesSentence(['PSAL teams', 'AP courses'])).toBe(
-      'No PSAL teams and no AP courses are listed for this school.'
-    )
-  })
+describe("buildNotOfferedActivitiesSentence (NOT OFFERED — issue #116)", () => {
+  it("matches the design's exact copy for missing PSAL + AP", () => {
+    expect(
+      buildNotOfferedActivitiesSentence(["PSAL teams", "AP courses"]),
+    ).toBe("No PSAL teams and no AP courses are listed for this school.");
+  });
 
-  it('returns null when nothing is missing', () => {
-    expect(buildNotOfferedActivitiesSentence([])).toBeNull()
-  })
+  it("returns null when nothing is missing", () => {
+    expect(buildNotOfferedActivitiesSentence([])).toBeNull();
+  });
 
-  it('handles a single missing group', () => {
-    expect(buildNotOfferedActivitiesSentence(['PSAL teams'])).toBe(
-      'No PSAL teams are listed for this school.'
-    )
-  })
-})
+  it("handles a single missing group", () => {
+    expect(buildNotOfferedActivitiesSentence(["PSAL teams"])).toBe(
+      "No PSAL teams are listed for this school.",
+    );
+  });
+});
 
-describe('NOT REPORTED vs NOT OFFERED are never blurred (issue #116)', () => {
+describe("NOT REPORTED vs NOT OFFERED are never blurred (issue #116)", () => {
   it('a school with no stats at all gets NOT REPORTED language ("published"/"gap in the DOE data")', () => {
-    const sentence = buildNotReportedStatsSentence(['academic score'])
-    expect(sentence).toMatch(/published/)
-    expect(sentence).toMatch(/gap in the DOE data/)
-    expect(sentence).not.toMatch(/offered/i)
-  })
+    const sentence = buildNotReportedStatsSentence(["academic score"]);
+    expect(sentence).toMatch(/published/);
+    expect(sentence).toMatch(/gap in the DOE data/);
+    expect(sentence).not.toMatch(/offered/i);
+  });
 
   it('a school with no activities in a group gets NOT OFFERED language ("listed for this school")', () => {
-    const sentence = buildNotOfferedActivitiesSentence(['PSAL teams'])
-    expect(sentence).toMatch(/listed for this school/)
-    expect(sentence).not.toMatch(/published/)
-    expect(sentence).not.toMatch(/gap in the DOE data/)
-  })
+    const sentence = buildNotOfferedActivitiesSentence(["PSAL teams"]);
+    expect(sentence).toMatch(/listed for this school/);
+    expect(sentence).not.toMatch(/published/);
+    expect(sentence).not.toMatch(/gap in the DOE data/);
+  });
 
-  it('SchoolDetailClient renders missing activity groups with MissingMark, not a sentence (issue #473)', () => {
-    const src = readSource('app/school/[dbn]/SchoolDetailClient.tsx')
-    expect(src).toMatch(/missingActivityGroups\.map[\s\S]{0,800}MissingMark kind="not_reported"/)
-  })
+  it("SchoolDetailClient renders missing activity groups with MissingMark, not a sentence (issue #473)", () => {
+    const src = readSource("app/school/[dbn]/SchoolDetailClient.tsx");
+    expect(src).toMatch(
+      /missingActivityGroups\.map[\s\S]{0,800}MissingMark kind="not_reported"/,
+    );
+  });
 
-  it('transit (subway/bus) absence uses MissingMark too — it is a data-source gap, not a fact about the school (issue #474)', () => {
-    const src = readSource('app/school/[dbn]/SchoolDetailClient.tsx')
-    expect(src).toMatch(/Subway[\s\S]{0,700}MissingMark kind="not_reported"/)
-    expect(src).toMatch(/Bus[\s\S]{0,700}MissingMark kind="not_reported"/)
-  })
-})
+  it("transit (subway/bus) absence uses MissingMark too — it is a data-source gap, not a fact about the school (issue #474)", () => {
+    const src = readSource("app/school/[dbn]/SchoolDetailClient.tsx");
+    expect(src).toMatch(/Subway[\s\S]{0,700}MissingMark kind="not_reported"/);
+    expect(src).toMatch(/Bus[\s\S]{0,700}MissingMark kind="not_reported"/);
+  });
+});
 
 // ── Matched-ask chip accenting (issue #116) ─────────────────────────────────
 
-describe('chipIsMatched + sortChipsMatchedFirst', () => {
-  it('matches case-insensitively as a substring', () => {
-    expect(chipIsMatched('Soccer, boys', ['Soccer'])).toBe(true)
-    expect(chipIsMatched('Computer Science A', ['computer science'])).toBe(true)
-    expect(chipIsMatched('Basketball', ['Soccer'])).toBe(false)
-  })
+describe("chipIsMatched + sortChipsMatchedFirst", () => {
+  it("matches case-insensitively as a substring", () => {
+    expect(chipIsMatched("Soccer, boys", ["Soccer"])).toBe(true);
+    expect(chipIsMatched("Computer Science A", ["computer science"])).toBe(
+      true,
+    );
+    expect(chipIsMatched("Basketball", ["Soccer"])).toBe(false);
+  });
 
-  it('sorts matched chips first, preserving relative order within each subset', () => {
-    const items = ['Basketball', 'Soccer, boys', 'Volleyball', 'Soccer, girls']
-    expect(sortChipsMatchedFirst(items, ['Soccer'])).toEqual([
-      'Soccer, boys', 'Soccer, girls', 'Basketball', 'Volleyball',
-    ])
-  })
+  it("sorts matched chips first, preserving relative order within each subset", () => {
+    const items = ["Basketball", "Soccer, boys", "Volleyball", "Soccer, girls"];
+    expect(sortChipsMatchedFirst(items, ["Soccer"])).toEqual([
+      "Soccer, boys",
+      "Soccer, girls",
+      "Basketball",
+      "Volleyball",
+    ]);
+  });
 
-  it('returns items unchanged when nothing matches', () => {
-    const items = ['Basketball', 'Volleyball']
-    expect(sortChipsMatchedFirst(items, ['Soccer'])).toEqual(items)
-  })
-})
+  it("returns items unchanged when nothing matches", () => {
+    const items = ["Basketball", "Volleyball"];
+    expect(sortChipsMatchedFirst(items, ["Soccer"])).toEqual(items);
+  });
+});
 
 // ── Getting there: transit parsing + NOT REPORTED (issue #116) ─────────────
 
-describe('parseSubwayLines', () => {
+describe("parseSubwayLines", () => {
   it('extracts distinct line letters/numbers from the "X to Station; Y, Z to Station" format', () => {
-    expect(parseSubwayLines('F to East Broadway; J, M, Z to Delancey St-Essex St')).toEqual([
-      'F', 'J', 'M', 'Z',
-    ])
-  })
+    expect(
+      parseSubwayLines("F to East Broadway; J, M, Z to Delancey St-Essex St"),
+    ).toEqual(["F", "J", "M", "Z"]);
+  });
 
-  it('dedupes a line repeated across segments', () => {
-    expect(parseSubwayLines('1 to 137th St-City College; B, C to 135th St; 1 to Somewhere')).toEqual([
-      '1', 'B', 'C',
-    ])
-  })
+  it("dedupes a line repeated across segments", () => {
+    expect(
+      parseSubwayLines(
+        "1 to 137th St-City College; B, C to 135th St; 1 to Somewhere",
+      ),
+    ).toEqual(["1", "B", "C"]);
+  });
 
-  it('returns [] for empty/undefined', () => {
-    expect(parseSubwayLines('')).toEqual([])
-    expect(parseSubwayLines(undefined)).toEqual([])
-  })
-})
+  it("returns [] for empty/undefined", () => {
+    expect(parseSubwayLines("")).toEqual([]);
+    expect(parseSubwayLines(undefined)).toEqual([]);
+  });
+});
 
-describe('parseBusRoutes', () => {
-  it('splits a comma-separated bus route string', () => {
-    expect(parseBusRoutes('B39, M14A, M14D')).toEqual(['B39', 'M14A', 'M14D'])
-  })
-})
+describe("parseBusRoutes", () => {
+  it("splits a comma-separated bus route string", () => {
+    expect(parseBusRoutes("B39, M14A, M14D")).toEqual(["B39", "M14A", "M14D"]);
+  });
+});
 
-describe('buildNotReportedTransitLabel', () => {
+describe("buildNotReportedTransitLabel", () => {
   it('names the missing mode(s), matching the design\'s "Bus routes" example', () => {
-    expect(buildNotReportedTransitLabel(['bus routes'])).toBe('Bus routes')
-  })
+    expect(buildNotReportedTransitLabel(["bus routes"])).toBe("Bus routes");
+  });
 
   it('joins two missing modes with "and"', () => {
-    expect(buildNotReportedTransitLabel(['subway routes', 'bus routes'])).toBe(
-      'Subway routes and bus routes'
-    )
-  })
+    expect(buildNotReportedTransitLabel(["subway routes", "bus routes"])).toBe(
+      "Subway routes and bus routes",
+    );
+  });
 
-  it('returns null when both modes are present', () => {
-    expect(buildNotReportedTransitLabel([])).toBeNull()
-  })
-})
+  it("returns null when both modes are present", () => {
+    expect(buildNotReportedTransitLabel([])).toBeNull();
+  });
+});
 
 // ── Programs ─────────────────────────────────────────────────────────────────
 
-describe('dedupePrograms', () => {
-  it('collapses exact duplicate (raw_method, admissions_type) rows', () => {
+describe("dedupePrograms", () => {
+  it("collapses exact duplicate (raw_method, admissions_type) rows", () => {
     const programs = [
-      { admissions_type: 'Educational Option', raw_method: 'Ed. Opt.' },
-      { admissions_type: 'Educational Option', raw_method: 'Ed. Opt.' },
-      { admissions_type: 'Open', raw_method: 'Open' },
-    ] as unknown as School['programs']
+      { admissions_type: "Educational Option", raw_method: "Ed. Opt." },
+      { admissions_type: "Educational Option", raw_method: "Ed. Opt." },
+      { admissions_type: "Open", raw_method: "Open" },
+    ] as unknown as School["programs"];
     expect(dedupePrograms(programs)).toEqual([
-      { name: 'Ed. Opt.', method: 'Educational Option' },
-      { name: 'Open', method: 'Open' },
-    ])
-  })
+      { name: "Ed. Opt.", method: "Educational Option" },
+      { name: "Open", method: "Open" },
+    ]);
+  });
 
-  it('falls back to admissions_type as the name when raw_method is missing', () => {
-    const programs = [{ admissions_type: 'SHSAT' }] as unknown as School['programs']
-    expect(dedupePrograms(programs)).toEqual([{ name: 'SHSAT', method: 'SHSAT' }])
-  })
+  it("falls back to admissions_type as the name when raw_method is missing", () => {
+    const programs = [
+      { admissions_type: "SHSAT" },
+    ] as unknown as School["programs"];
+    expect(dedupePrograms(programs)).toEqual([
+      { name: "SHSAT", method: "SHSAT" },
+    ]);
+  });
 
-  it('preserves distinct MySchools program names and codes', () => {
+  it("preserves distinct MySchools program names and codes", () => {
     const programs = [
       {
-        program_name: 'Dance',
-        program_code: 'M80K',
-        admissions_type: 'Audition',
+        program_name: "Dance",
+        program_code: "M80K",
+        admissions_type: "Audition",
         provenance: {
-          source: 'MySchools',
-          url: 'https://www.myschools.nyc/en/api/v2/schools/process/1/03M485/',
-          fetched_at: '2026-08-07T00:00:00+00:00',
+          source: "MySchools",
+          url: "https://www.myschools.nyc/en/api/v2/schools/process/1/03M485/",
+          fetched_at: "2026-08-07T00:00:00+00:00",
         },
       },
       {
-        program_name: 'Drama',
-        program_code: 'M80N',
-        admissions_type: 'Audition',
+        program_name: "Drama",
+        program_code: "M80N",
+        admissions_type: "Audition",
         provenance: {
-          source: 'MySchools',
-          url: 'https://www.myschools.nyc/en/api/v2/schools/process/1/03M485/',
-          fetched_at: '2026-08-07T00:00:00+00:00',
+          source: "MySchools",
+          url: "https://www.myschools.nyc/en/api/v2/schools/process/1/03M485/",
+          fetched_at: "2026-08-07T00:00:00+00:00",
         },
       },
-    ] as unknown as School['programs']
+    ] as unknown as School["programs"];
 
     expect(dedupePrograms(programs)).toEqual([
-      { name: 'Dance', method: 'Audition', code: 'M80K' },
-      { name: 'Drama', method: 'Audition', code: 'M80N' },
-    ])
-  })
+      { name: "Dance", method: "Audition", code: "M80K" },
+      { name: "Drama", method: "Audition", code: "M80N" },
+    ]);
+  });
 
-  it('returns [] for an empty/undefined programs array', () => {
-    expect(dedupePrograms([])).toEqual([])
-    expect(dedupePrograms(undefined as unknown as School['programs'])).toEqual([])
-  })
-})
+  it("returns [] for an empty/undefined programs array", () => {
+    expect(dedupePrograms([])).toEqual([]);
+    expect(dedupePrograms(undefined as unknown as School["programs"])).toEqual(
+      [],
+    );
+  });
+});
 
 // ── Requirements ─────────────────────────────────────────────────────────────
 
-describe('buildRequirementBlocks', () => {
-  it('creates one block per admissions track', () => {
-    const school = makeSchool({ admissions_types: ['SHSAT', 'Screened'] })
-    const blocks = buildRequirementBlocks(school)
-    expect(blocks.map((b) => b.track)).toEqual(['SHSAT', 'Screened'])
-    expect(blocks[0].isPrimary).toBe(true)
-    expect(blocks[1].isPrimary).toBe(false)
-  })
+describe("buildRequirementBlocks", () => {
+  it("creates one block per admissions track", () => {
+    const school = makeSchool({ admissions_types: ["SHSAT", "Screened"] });
+    const blocks = buildRequirementBlocks(school);
+    expect(blocks.map((b) => b.track)).toEqual(["SHSAT", "Screened"]);
+    expect(blocks[0].isPrimary).toBe(true);
+    expect(blocks[1].isPrimary).toBe(false);
+  });
 
-  it('never fabricates a field the DOE data does not have', () => {
-    const school = makeSchool({ admissions_types: ['Open'] })
-    expect(buildRequirementBlocks(school)[0].fields).toEqual([])
-  })
+  it("never fabricates a field the DOE data does not have", () => {
+    const school = makeSchool({ admissions_types: ["Open"] });
+    expect(buildRequirementBlocks(school)[0].fields).toEqual([]);
+  });
 
-  it('surfaces prgdesc as the SHSAT admissions field when present', () => {
+  it("surfaces prgdesc as the SHSAT admissions field when present", () => {
     const school = makeSchool({
-      admissions_types: ['SHSAT'],
+      admissions_types: ["SHSAT"],
       doe_data: {
-        overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '',
-        prgdesc: 'Admission is based solely on the SHSAT score.',
+        overview: "",
+        language: "",
+        extracurriculars: "",
+        website: "",
+        phone: "",
+        address: "",
+        zip: "",
+        prgdesc: "Admission is based solely on the SHSAT score.",
       },
-    })
+    });
     expect(buildRequirementBlocks(school)[0].fields).toContainEqual({
-      label: 'Admissions',
-      value: 'Admission is based solely on the SHSAT score.',
-    })
-  })
+      label: "Admissions",
+      value: "Admission is based solely on the SHSAT score.",
+    });
+  });
 
-  it('turns colon-shaped requirement text into label/value pairs', () => {
+  it("turns colon-shaped requirement text into label/value pairs", () => {
     const school = makeSchool({
-      admissions_types: ['Screened'],
+      admissions_types: ["Screened"],
       doe_data: {
-        overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '',
-        requirements: { requirement1_2: 'Course Grades: English (65-100), Math (66-100)' },
+        overview: "",
+        language: "",
+        extracurriculars: "",
+        website: "",
+        phone: "",
+        address: "",
+        zip: "",
+        requirements: {
+          requirement1_2: "Course Grades: English (65-100), Math (66-100)",
+        },
       },
-    })
+    });
     expect(buildRequirementBlocks(school)[0].fields).toContainEqual({
-      label: 'Course Grades',
-      value: 'English (65-100), Math (66-100)',
-    })
-  })
+      label: "Course Grades",
+      value: "English (65-100), Math (66-100)",
+    });
+  });
 
   it('treats a bare (no-colon) requirement label as "Reviewed"', () => {
     const school = makeSchool({
-      admissions_types: ['Screened'],
+      admissions_types: ["Screened"],
       doe_data: {
-        overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '',
-        requirements: { requirement1_2: 'Attendance' },
+        overview: "",
+        language: "",
+        extracurriculars: "",
+        website: "",
+        phone: "",
+        address: "",
+        zip: "",
+        requirements: { requirement1_2: "Attendance" },
       },
-    })
+    });
     expect(buildRequirementBlocks(school)[0].fields).toContainEqual({
-      label: 'Attendance',
-      value: 'Reviewed',
-    })
-  })
+      label: "Attendance",
+      value: "Reviewed",
+    });
+  });
 
-  describe('DOE admissions method description', () => {
-    const doe = { overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '' }
+  describe("DOE admissions method description", () => {
+    const doe = {
+      overview: "",
+      language: "",
+      extracurriculars: "",
+      website: "",
+      phone: "",
+      address: "",
+      zip: "",
+    };
     const prog = (admissions_type: string, desc?: string) =>
-      ({ admissions_type, admissions_method_description: desc }) as unknown as School['programs'][number]
-    const grades = 'Students are admitted based on their course grades'
+      ({
+        admissions_type,
+        admissions_method_description: desc,
+      }) as unknown as School["programs"][number];
+    const grades = "Students are admitted based on their course grades";
 
-    it('shows one Admissions field for identical descriptions', () => {
+    it("shows one Admissions field for identical descriptions", () => {
       const school = makeSchool({
-        admissions_types: ['Screened'],
+        admissions_types: ["Screened"],
         doe_data: { ...doe, requirements: {} },
-        programs: [prog('Screened', grades), prog('Screened', grades)],
-      })
-      expect(buildRequirementBlocks(school)[0].fields).toEqual([{ label: 'Admissions', value: grades }])
-    })
+        programs: [prog("Screened", grades), prog("Screened", grades)],
+      });
+      expect(buildRequirementBlocks(school)[0].fields).toEqual([
+        { label: "Admissions", value: grades },
+      ]);
+    });
 
-    it('joins different descriptions with a space in data order', () => {
+    it("joins different descriptions with a space in data order", () => {
       const school = makeSchool({
-        admissions_types: ['Screened'],
-        programs: [prog('Screened', ' First. '), prog('Screened', 'Second.')],
-      })
-      expect(buildRequirementBlocks(school)[0].fields).toEqual([{ label: 'Admissions', value: 'First. Second.' }])
-    })
+        admissions_types: ["Screened"],
+        programs: [prog("Screened", " First. "), prog("Screened", "Second.")],
+      });
+      expect(buildRequirementBlocks(school)[0].fields).toEqual([
+        { label: "Admissions", value: "First. Second." },
+      ]);
+    });
 
-    it('adds no field when programs have no description', () => {
+    it("adds no field when programs have no description", () => {
       const school = makeSchool({
-        admissions_types: ['Screened'],
-        programs: [prog('Screened', ''), prog('Screened'), prog('Open', 'Other track')],
-      })
-      expect(buildRequirementBlocks(school)[0].fields).toEqual([])
-    })
+        admissions_types: ["Screened"],
+        programs: [
+          prog("Screened", ""),
+          prog("Screened"),
+          prog("Open", "Other track"),
+        ],
+      });
+      expect(buildRequirementBlocks(school)[0].fields).toEqual([]);
+    });
 
-    it('keeps a single Admissions field for SHSAT with prgdesc', () => {
+    it("keeps a single Admissions field for SHSAT with prgdesc", () => {
       const school = makeSchool({
-        admissions_types: ['SHSAT'],
-        doe_data: { ...doe, prgdesc: 'SHSAT only.' },
-        programs: [prog('SHSAT', 'Program text')],
-      })
-      const fields = buildRequirementBlocks(school)[0].fields
-      expect(fields.filter((f) => f.label === 'Admissions')).toEqual([{ label: 'Admissions', value: 'SHSAT only.' }])
-    })
-  })
-})
+        admissions_types: ["SHSAT"],
+        doe_data: { ...doe, prgdesc: "SHSAT only." },
+        programs: [prog("SHSAT", "Program text")],
+      });
+      const fields = buildRequirementBlocks(school)[0].fields;
+      expect(fields.filter((f) => f.label === "Admissions")).toEqual([
+        { label: "Admissions", value: "SHSAT only." },
+      ]);
+    });
+  });
+});
 
 // ── Provenance ───────────────────────────────────────────────────────────────
 
-describe('formatAdmissionsCycle', () => {
+describe("formatAdmissionsCycle", () => {
   it('formats "2025-2026" as "2025–26 admissions"', () => {
-    expect(formatAdmissionsCycle('2025-2026')).toBe('2025–26 admissions')
-  })
+    expect(formatAdmissionsCycle("2025-2026")).toBe("2025–26 admissions");
+  });
 
-  it('returns null for empty/undefined', () => {
-    expect(formatAdmissionsCycle('')).toBeNull()
-    expect(formatAdmissionsCycle(undefined)).toBeNull()
-  })
-})
+  it("returns null for empty/undefined", () => {
+    expect(formatAdmissionsCycle("")).toBeNull();
+    expect(formatAdmissionsCycle(undefined)).toBeNull();
+  });
+});
 
-describe('MYSCHOOLS_URL', () => {
-  it('points at the real myschools.nyc site rather than a guessed per-school deep link', () => {
-    expect(MYSCHOOLS_URL).toBe('https://www.myschools.nyc')
-  })
-})
+describe("MYSCHOOLS_URL", () => {
+  it("points at the real myschools.nyc site rather than a guessed per-school deep link", () => {
+    expect(MYSCHOOLS_URL).toBe("https://www.myschools.nyc");
+  });
+});
 
 // ── Back navigation (filters survive via the URL, issue #116) ──────────────
 
-describe('describeBackFilters', () => {
-  it('formats boroughs and tracks matching the back-band example in the design', () => {
-    const filters: FindFilters = { boroughs: ['Brooklyn', 'Queens'], tracks: ['Screened'], size: '' }
-    expect(describeBackFilters(filters)).toBe('Brooklyn + Queens, Screened')
-  })
+describe("describeBackFilters", () => {
+  it("formats boroughs and tracks matching the back-band example in the design", () => {
+    const filters: FindFilters = {
+      boroughs: ["Brooklyn", "Queens"],
+      tracks: ["Screened"],
+      size: "",
+    };
+    expect(describeBackFilters(filters)).toBe("Brooklyn + Queens, Screened");
+  });
 
-  it('returns an empty string when no rail filters are active', () => {
-    expect(describeBackFilters({ boroughs: [], tracks: [], size: '' })).toBe('')
-  })
-})
+  it("returns an empty string when no rail filters are active", () => {
+    expect(describeBackFilters({ boroughs: [], tracks: [], size: "" })).toBe(
+      "",
+    );
+  });
+});
 
-describe('parseMatchedSignals', () => {
-  it('splits a comma-joined query param', () => {
-    expect(parseMatchedSignals('Soccer,Computer Science')).toEqual(['Soccer', 'Computer Science'])
-  })
+describe("parseMatchedSignals", () => {
+  it("splits a comma-joined query param", () => {
+    expect(parseMatchedSignals("Soccer,Computer Science")).toEqual([
+      "Soccer",
+      "Computer Science",
+    ]);
+  });
 
-  it('returns [] when absent', () => {
-    expect(parseMatchedSignals(undefined)).toEqual([])
-  })
-})
+  it("returns [] when absent", () => {
+    expect(parseMatchedSignals(undefined)).toEqual([]);
+  });
+});
 
 // ── /find -> /school wiring (issue #116) ────────────────────────────────────
 
-describe('FindClient links each row to /school/[dbn] without swallowing Add (issue #116)', () => {
-  const src = readSource('app/find/FindClient.tsx')
+describe("FindClient links each row to /school/[dbn] without swallowing Add (issue #116)", () => {
+  const src = readSource("app/find/FindClient.tsx");
 
-  it('imports ADDED_SCHOOLS_KEY from lib/school-list-utils instead of redefining it', () => {
-    expect(src).toContain('ADDED_SCHOOLS_KEY')
-    expect(src).not.toContain("const ADDED_SCHOOLS_KEY = '")
-  })
+  it("imports ADDED_SCHOOLS_KEY from lib/school-list-utils instead of redefining it", () => {
+    expect(src).toContain("ADDED_SCHOOLS_KEY");
+    expect(src).not.toContain("const ADDED_SCHOOLS_KEY = '");
+  });
 
-  it('wraps the row name in a Link to /school/${school.dbn}', () => {
-    expect(src).toContain('href={detailHref}')
-    expect(src).toContain('`/school/${school.dbn}?')
-  })
+  it("wraps the row name in a Link to /school/${school.dbn}", () => {
+    expect(src).toContain("href={detailHref}");
+    expect(src).toContain("`/school/${school.dbn}?");
+  });
 
-  it('keeps the Add/Remove button as a separate action, not inside the name link', () => {
-    const nameLinkStart = src.indexOf('name={')
+  it("keeps the Add/Remove button as a separate action, not inside the name link", () => {
+    const nameLinkStart = src.indexOf("name={");
     // The Add buttons now live in the evidence block (issue #613), after the name.
-    const actionStart = src.indexOf('evidence={')
-    expect(actionStart).toBeGreaterThan(nameLinkStart)
-    const nameBlock = src.slice(nameLinkStart, actionStart)
+    const actionStart = src.indexOf("evidence={");
+    expect(actionStart).toBeGreaterThan(nameLinkStart);
+    const nameBlock = src.slice(nameLinkStart, actionStart);
     // The name Link block must not itself contain the toggleAdded button.
-    expect(nameBlock).not.toContain('toggleAdded')
-  })
-})
+    expect(nameBlock).not.toContain("toggleAdded");
+  });
+});
 
-describe('lib/school-list-utils.ts exports ADDED_SCHOOLS_KEY (issue #116)', () => {
-  it('is the same key used previously by FindClient', () => {
-    const src = readSource('lib/school-list-utils.ts')
-    expect(src).toContain("export const ADDED_SCHOOLS_KEY = 'admitday_find_added_schools'")
-  })
-})
+describe("lib/school-list-utils.ts exports ADDED_SCHOOLS_KEY (issue #116)", () => {
+  it("is the same key used previously by FindClient", () => {
+    const src = readSource("lib/school-list-utils.ts");
+    expect(src).toContain(
+      "export const ADDED_SCHOOLS_KEY = 'admitday_find_added_schools'",
+    );
+  });
+});
 
-describe('school detail bottom bar', () => {
-  const src = fs.readFileSync(path.join(__dirname, '..', 'app/school/[dbn]/SchoolDetailClient.tsx'), 'utf8')
+describe("school detail bottom bar", () => {
+  const src = fs.readFileSync(
+    path.join(__dirname, "..", "app/school/[dbn]/SchoolDetailClient.tsx"),
+    "utf8",
+  );
 
   it('no longer shows the "DOE data as reported" footer line', () => {
-    expect(src).not.toContain('estimate admission chances')
-    expect(src).not.toContain('publishes DOE data')
-  })
+    expect(src).not.toContain("estimate admission chances");
+    expect(src).not.toContain("publishes DOE data");
+  });
 
-  it('keeps the back to results link', () => {
-    expect(src).toContain('Back to results')
+  it("keeps the back to results link", () => {
+    expect(src).toContain("Back to results");
+  });
+});
+
+describe('buildStatCellsWithMissing — Results and Growth titles (issue #709)', () => {
+  it('sets short values and titles on present cells', () => {
+    const cells = buildStatCellsWithMissing(makeSchool({ sqr: { performance_pctl: 72.4, impact_pctl: 41 } }))
+    const results = cells.find((c) => c.key === 'results')
+    expect(results?.value).toBe('72%')
+    expect(results?.title).toBe('Results better than 72% of NYC high schools (DOE)')
+    expect(cells.find((c) => c.key === 'impact')?.title).toBe('Students grow more here than at 41% of schools (DOE)')
   })
 })
