@@ -115,6 +115,7 @@ DEFAULT_DELAY_SECONDS = 1.5
 DEFAULT_TIMEOUT_SECONDS = 20
 DEFAULT_MAX_RETRIES = 3
 DEFAULT_CACHE_DIR = Path(__file__).parent / ".myschools_cache"
+CACHE_MAX_AGE_HOURS = 20
 
 DBN_RE = re.compile(r"\b(\d{2}[A-Z]\d{3})\b")
 
@@ -249,6 +250,18 @@ def _cache_path(cache_dir: Path, url: str) -> Path:
     return cache_dir / f"{key}.json"
 
 
+def _cache_is_fresh(fetched_at: Any) -> bool:
+    """True only if `fetched_at` parses as ISO-8601 UTC and is under CACHE_MAX_AGE_HOURS old."""
+    try:
+        when = datetime.fromisoformat(fetched_at)
+    except (TypeError, ValueError):
+        return False
+    if when.tzinfo is None:
+        when = when.replace(tzinfo=timezone.utc)
+    age_hours = (datetime.now(timezone.utc) - when).total_seconds() / 3600
+    return age_hours < CACHE_MAX_AGE_HOURS
+
+
 def fetch_school(
     dbn_or_url: str,
     process_id: int = PROCESS_ID_HIGH_SCHOOL,
@@ -272,7 +285,8 @@ def fetch_school(
         cache_file = _cache_path(cache_dir, url)
         if cache_file.exists():
             cached = json.loads(cache_file.read_text())
-            return cached["raw"], cached["url"], cached["fetched_at"]
+            if _cache_is_fresh(cached.get("fetched_at")):
+                return cached["raw"], cached["url"], cached["fetched_at"]
 
     session = session or requests.Session()
     last_error: Optional[Exception] = None

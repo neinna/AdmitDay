@@ -221,7 +221,7 @@ describe('buildStatCells', () => {
   it('does render a genuine DOE-reported 0 (not the same as missing)', () => {
     const school = makeSchool({ academic_score_pct: 0 })
     const cells = buildStatCells(school)
-    expect(cells.find((c) => c.label === 'Results')?.value).toBe('better than 0% of NYC high schools')
+    expect(cells.find((c) => c.label === 'Results vs NYC HS')?.value).toBe('0%')
   })
 
   it('returns every field when all seven stats are present', () => {
@@ -253,8 +253,8 @@ describe('buildStatCellsWithMissing (issue #472)', () => {
     expect(cells.map((c) => c.label)).toEqual([
       'Applicants per seat',
       'Total students',
-      'Results',
-      'Impact',
+      'Results vs NYC HS',
+      'Growth vs NYC HS',
       'Graduation rate',
       'Attendance rate',
       'College and career',
@@ -286,6 +286,15 @@ describe('buildStatCellsWithMissing (issue #472)', () => {
     expect(html).toContain('1.4')
   })
 
+  it('renders no note cell and sets titles on Results and Growth in the grid', () => {
+    const cells = buildStatCellsWithMissing(makeSchool({ sqr: { performance_pctl: 72, impact_pctl: 41 } }))
+    expect(cells.find((c) => c.key === 'results')?.title).toBe('Results better than 72% of NYC high schools (DOE)')
+    expect(cells.find((c) => c.key === 'impact')?.title).toBe('Students grow more here than at 41% of schools (DOE)')
+    const html = renderToStaticMarkup(createElement(StatGrid, { stats: cells }))
+    expect(html).not.toContain('DOE reported figures')
+    expect(html).toContain('min-[901px]:grid-cols-7')
+  })
+
   it('marks no cell as missing when every stat is published', () => {
     const school = makeSchool({
       applicants_per_seat: 4.1,
@@ -308,15 +317,19 @@ describe('buildStatCells — Results and Impact (issue #333)', () => {
   it('renders both stats with their new labels and copy for a school with sqr', () => {
     const school = makeSchool({ sqr: { performance_pctl: 72, impact_pctl: 41 } })
     const cells = buildStatCells(school)
-    expect(cells.find((c) => c.label === 'Results')?.value).toBe('better than 72% of NYC high schools')
-    expect(cells.find((c) => c.label === 'Impact')?.value).toBe('grow more than at 41% of schools')
+    const results = cells.find((c) => c.label === 'Results vs NYC HS')
+    const impact = cells.find((c) => c.label === 'Growth vs NYC HS')
+    expect(results?.value).toBe('72%')
+    expect(results?.title).toBe('Results better than 72% of NYC high schools (DOE)')
+    expect(impact?.value).toBe('41%')
+    expect(impact?.title).toBe('Students grow more here than at 41% of schools (DOE)')
   })
 
   it('renders neither Results nor Impact when sqr is absent', () => {
     const school = makeSchool({})
     const cells = buildStatCells(school)
-    expect(cells.some((c) => c.label === 'Results')).toBe(false)
-    expect(cells.some((c) => c.label === 'Impact')).toBe(false)
+    expect(cells.some((c) => c.label === 'Results vs NYC HS')).toBe(false)
+    expect(cells.some((c) => c.label === 'Growth vs NYC HS')).toBe(false)
   })
 
   it('no longer has a survey score stat', () => {
