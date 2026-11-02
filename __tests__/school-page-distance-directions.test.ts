@@ -153,7 +153,7 @@ describe('SchoolDetailClient reads the starting point after mount (issue #375)',
 
   it('renders the distance line with the required copy and style', () => {
     expect(src).toMatch(/text-\[13\.5px\] text-ink-2/)
-    expect(src).toContain('from your starting point')
+    expect(src).toContain('from {startingPoint?.label}')
     expect(src).toContain('formatMiles(distance)')
   })
 
