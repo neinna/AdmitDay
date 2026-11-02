@@ -260,7 +260,8 @@ describe('SchoolRow ui primitive (issue #113)', () => {
 
   it('renders the hidden-gem badge on its own line below the metadata, never wrapping inside itself (issue #436)', () => {
     expect(src).toMatch(/\{metadata\}[\s\S]{0,200}isHighImpact/)
-    expect(src).toMatch(/isHighImpact[\s\S]{0,200}whitespace-nowrap/)
+    expect(src).toMatch(/isHighImpact[\s\S]{0,200}<GrowthMark/)
+    expect(readSource('components/ui/GrowthMark.tsx')).toContain('whitespace-nowrap')
   })
 })
 
