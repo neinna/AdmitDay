@@ -507,6 +507,37 @@ export interface ProgramRow {
   code?: string
   /** Present only when general_education.all_seats_filled is false last cycle (issue #304). */
   seatsLeftLastYear?: { cycle?: string }
+  seats?: { ge?: SeatCount; swd?: SeatCount }
+}
+
+export interface SeatCount {
+  seats: number
+  applicants: number
+}
+
+function toSeatCount(v: unknown): SeatCount | undefined {
+  const c = v as { seats?: unknown; applicants?: unknown } | null | undefined
+  if (typeof c?.seats === 'number' && c.seats > 0 && typeof c.applicants === 'number') {
+    return { seats: c.seats, applicants: c.applicants }
+  }
+  return undefined
+}
+
+/** One-line seat shorthand for a program row, e.g. "6.3 apps/seat · 207 seats". */
+export function formatProgramSeats(row: ProgramRow): string | null {
+  const parts: string[] = []
+  const { ge, swd } = row.seats ?? {}
+  if (ge) {
+    parts.push(`${(ge.applicants / ge.seats).toFixed(1)} apps/seat`, `${ge.seats.toLocaleString()} seats`)
+  }
+  if (swd) {
+    parts.push(
+      `SWD ${(swd.applicants / swd.seats).toFixed(1)} apps/seat`,
+      `${swd.seats.toLocaleString()} seats`
+    )
+  }
+  if (row.seatsLeftLastYear) parts.push('Seats left last year')
+  return parts.length ? parts.join(' · ') : null
 }
 
 /**
@@ -530,6 +561,13 @@ export function dedupePrograms(programs: School['programs']): ProgramRow[] {
     const row: ProgramRow = code ? { name, method, code } : { name, method }
     if (p.seats_filled_last_year?.general_education === false) {
       row.seatsLeftLastYear = { cycle: p.provenance?.admissions_cycle }
+    }
+    const ge = toSeatCount(p.seats?.general_education)
+    const swd = toSeatCount(p.seats?.students_with_disabilities)
+    if (ge || swd) {
+      row.seats = {}
+      if (ge) row.seats.ge = ge
+      if (swd) row.seats.swd = swd
     }
     rows.push(row)
   }
