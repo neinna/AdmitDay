@@ -45,6 +45,7 @@ interface StatField {
   sentenceLabel: string
   get: (school: School) => number | null | undefined
   format: (value: number) => string
+  title?: (value: number) => string
 }
 
 const pct = (v: number) => `${Math.round(v)}%`
@@ -69,17 +70,19 @@ const STAT_FIELDS: StatField[] = [
   },
   {
     key: 'results',
-    gridLabel: 'Results',
+    gridLabel: 'Results vs NYC HS',
     sentenceLabel: 'results percentile',
     get: (s) => s.sqr?.performance_pctl,
-    format: (v) => `better than ${Math.round(v)}% of NYC high schools`,
+    format: (v) => `${Math.round(v)}%`,
+    title: (v) => `Results better than ${Math.round(v)}% of NYC high schools (DOE)`,
   },
   {
     key: 'impact',
-    gridLabel: 'Impact',
+    gridLabel: 'Growth vs NYC HS',
     sentenceLabel: 'impact percentile',
     get: (s) => s.sqr?.impact_pctl,
-    format: (v) => `grow more than at ${Math.round(v)}% of schools`,
+    format: (v) => `${Math.round(v)}%`,
+    title: (v) => `Students grow more here than at ${Math.round(v)}% of schools (DOE)`,
   },
   {
     key: 'graduationRate',
@@ -114,6 +117,7 @@ export function buildStatCells(school: School): StatCell[] {
     key: f.key,
     value: f.format(f.get(school) as number),
     label: f.gridLabel,
+    ...(f.title ? { title: f.title(f.get(school) as number) } : {}),
   }))
 }
 
@@ -122,7 +126,12 @@ export function buildStatCellsWithMissing(school: School): StatCell[] {
   return STAT_FIELDS.map((f) => {
     const value = f.get(school)
     if (isPresent(value)) {
-      return { key: f.key, value: f.format(value), label: f.gridLabel }
+      return {
+        key: f.key,
+        value: f.format(value),
+        label: f.gridLabel,
+        ...(f.title ? { title: f.title(value) } : {}),
+      }
     }
     if (f.key === 'applicantsPerSeat') {
       return { key: f.key, label: f.gridLabel, value: '—', title: 'Not reported in DOE data' }

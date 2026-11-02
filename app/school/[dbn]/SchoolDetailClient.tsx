@@ -33,6 +33,7 @@ import {
   MissingMark,
 } from '@/components/ui'
 import Button from '@/components/ui/Button'
+import GrowthMark from '@/components/ui/GrowthMark'
 import SiteHeader from './SiteHeader'
 
 const PROGRAMS_CAP = 6
@@ -246,9 +247,7 @@ export default function SchoolDetailClient({
               </span>
             ))}
             {school.flags.high_impact && (
-              <span title="Students grow more here than at 80%+ of NYC high schools (DOE, 2024-25)" className="font-mono text-[10.5px] tracking-[0.08em] uppercase text-gem bg-gem-bg border border-gem-border px-2 py-1">
-                Strong student growth
-              </span>
+              <GrowthMark title="Students grow more here than at 80%+ of NYC high schools (DOE, 2024-25)" label="Strong student growth" />
             )}
           </div>
         </div>
@@ -288,9 +287,7 @@ export default function SchoolDetailClient({
                 <TrendSparkline points={trend.points} />
                 <span className="text-[13px] text-ink-2">{trend.text}</span>
                 {trend.badge && (
-                  <span className="font-mono text-[10.5px] tracking-[0.08em] uppercase text-gem bg-gem-bg border border-gem-border px-2 py-1">
-                    {trend.badge}
-                  </span>
+                  <GrowthMark label={trend.badge} />
                 )}
               </div>
             ))}
@@ -542,7 +539,7 @@ export default function SchoolDetailClient({
               {address && <DefinitionRow labelWidth={92} label="Address" value={address} className="pt-[3px]" />}
               {distance != null && (
                 <div className="text-[13.5px] text-ink-2">
-                  {formatMiles(distance)} from your starting point
+                  {formatMiles(distance)} from {startingPoint?.label}
                 </div>
               )}
               {directionsHref && (
