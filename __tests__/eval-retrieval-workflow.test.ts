@@ -60,9 +60,15 @@ describe('eval-retrieval workflow', () => {
     );
   });
 
-  it('runs the ask eval only on dispatch or when lib/ask.ts changed', () => {
+  it("runs the Claude's-picks step only on workflow_dispatch", () => {
     const step = yml.split('- name: Run ask eval')[1].split('- name:')[0];
-    expect(step).toMatch(/if:.*workflow_dispatch.*steps\.changed\.outputs\.ask/);
+    expect(step).toMatch(/if:\s*github\.event_name == 'workflow_dispatch'\s*\n/);
+    expect(step).not.toMatch(/steps\.changed\.outputs\.ask/);
+  });
+
+  it('does not trigger on lib/ask.ts', () => {
+    const paths = yml.split('pull_request:')[1].split(/^jobs:/m)[0];
+    expect(paths).not.toContain('lib/ask.ts');
   });
 
   it('detects a lib/ask.ts change against the PR base', () => {
@@ -77,14 +83,13 @@ describe('eval-retrieval workflow', () => {
     expect(step).toContain('GITHUB_STEP_SUMMARY');
   });
 
-  it('runs on both schedules', () => {
+  it('keeps only the nightly schedule', () => {
     expect(yml).toContain("cron: '30 13 * * *'");
-    expect(yml).toContain("cron: '45 13 * * 1'");
+    expect(yml).not.toContain('45 13 * * 1');
   });
 
-  it('runs the ask step on the Monday cron and sets EVAL_TRIGGER', () => {
+  it('sets EVAL_TRIGGER on the ask step', () => {
     const step = yml.split('- name: Run ask eval')[1].split('- name:')[0];
-    expect(step).toContain("github.event.schedule == '45 13 * * 1'");
     expect(step).toMatch(/EVAL_TRIGGER:\s*\$\{\{.*'weekly'.*\}\}/);
   });
 
