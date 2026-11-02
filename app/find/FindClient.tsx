@@ -25,6 +25,7 @@ import {
   describeFindFilters,
   findFilterToLoosen,
   findFiltersToQueryString,
+  isRepeatAsk,
   trackLabel,
   citywidePercentile,
   programLines,
@@ -191,6 +192,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
   const [askSources, setAskSources] = useState<AskSource[]>([])
   const [askReasons, setAskReasons] = useState<AskReason[]>([])
   const [askLoading, setAskLoading] = useState(false)
+  const [lastAsked, setLastAsked] = useState<{ question: string; filtersQs: string } | null>(null)
   const [askAnswerError, setAskAnswerError] = useState('')
   // Trace id of the answer currently on screen (issue #195) — cleared the
   // moment a new ask starts so a rating can never attach to a stale trace.
@@ -237,6 +239,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
       setAskSources(saved.sources)
       setAskReasons(saved.reasons)
       setAskTraceId(saved.traceId)
+      setLastAsked({ question: saved.question, filtersQs: findFiltersToQueryString(filters) })
     } catch {
       // unreadable or missing storage — start with an empty ask
     }
@@ -619,6 +622,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
       const reasons: AskReason[] = Array.isArray(data.reasons) ? data.reasons : []
       setAskReasons(reasons)
       setAskTraceId(typeof data.traceId === 'string' ? data.traceId : null)
+      setLastAsked({ question: trimmed, filtersQs: findFiltersToQueryString(filters) })
       try {
         sessionStorage.setItem(
           LAST_ASK_KEY,
@@ -745,7 +749,7 @@ export default function FindClient({ schools, initialFilters }: Props) {
                   className="flex-1 text-[15px] text-ink outline-none placeholder:text-faint bg-transparent resize-none max-h-[11rem] overflow-y-auto"
                 />
               </div>
-              <Button type="submit" disabled={askLoading}>
+              <Button type="submit" disabled={askLoading || isRepeatAsk(lastAsked, askText, filters)}>
                 Find schools
               </Button>
             </form>

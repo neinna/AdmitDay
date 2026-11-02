@@ -595,6 +595,20 @@ export interface StartingPoint {
 export const STARTING_POINT_KEY = 'admitday_find_starting_point'
 export const LAST_ASK_KEY = 'admitday_find_last_ask'
 
+// Issue #704 — the ask button stays disabled while the ask text and rail
+// filters are exactly what produced the answer already on screen.
+export function isRepeatAsk(
+  lastAsked: { question: string; filtersQs: string } | null,
+  askText: string,
+  filters: FindFilters
+): boolean {
+  return (
+    lastAsked !== null &&
+    askText.trim() === lastAsked.question &&
+    findFiltersToQueryString(filters) === lastAsked.filtersQs
+  )
+}
+
 /**
  * Resolves free-typed "Starting from" input: a 5-digit string is looked up as
  * a NYC ZIP, anything else as an exact (case-insensitive) subway station
