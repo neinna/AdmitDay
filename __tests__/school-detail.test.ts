@@ -494,7 +494,7 @@ describe('buildActivityGroups + getMissingActivityLabels', () => {
     expect(getMissingActivityLabels(school)).toEqual(['PSAL teams', 'AP courses'])
   })
 
-  it('keeps only entries starting with "AP " in the AP list and the row-fact count (issue #669)', () => {
+  it('shows the DOE AP list as published, including entries not starting with "AP " (issue #694)', () => {
     const school = makeSchool({
       doe_data: {
         overview: '', language: '', extracurriculars: '', website: '', phone: '', address: '', zip: '',
@@ -502,8 +502,8 @@ describe('buildActivityGroups + getMissingActivityLabels', () => {
       },
     })
     const ap = buildActivityGroups(school).find((g) => g.key === 'apCourses')
-    expect(ap?.items).toEqual(['AP Biology', 'AP Calculus AB'])
-    expect(buildFindRowFacts(school)).toContain('2 AP courses')
+    expect(ap?.items).toEqual(['Algebra II (Advanced Math)', 'AP Biology', 'AP Calculus AB'])
+    expect(buildFindRowFacts(school)).toContain('3 AP courses')
   })
 
   it('returns [] when every group has at least one item', () => {
@@ -881,5 +881,18 @@ describe('lib/school-list-utils.ts exports ADDED_SCHOOLS_KEY (issue #116)', () =
   it('is the same key used previously by FindClient', () => {
     const src = readSource('lib/school-list-utils.ts')
     expect(src).toContain("export const ADDED_SCHOOLS_KEY = 'admitday_find_added_schools'")
+  })
+})
+
+describe('school detail bottom bar', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'app/school/[dbn]/SchoolDetailClient.tsx'), 'utf8')
+
+  it('no longer shows the "DOE data as reported" footer line', () => {
+    expect(src).not.toContain('estimate admission chances')
+    expect(src).not.toContain('publishes DOE data')
+  })
+
+  it('keeps the back to results link', () => {
+    expect(src).toContain('Back to results')
   })
 })

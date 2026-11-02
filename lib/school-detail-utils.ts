@@ -304,10 +304,6 @@ export function parseCommaList(value: string | undefined | null): string[] {
     .filter(Boolean)
 }
 
-/** DOE files some advanced non-AP courses (e.g. "Algebra II (Advanced Math)") under its AP list; keep only real AP entries. */
-function parseApCourses(school: School): string[] {
-  return parseCommaList(school.doe_data?.advancedplacement_courses).filter((c) => /^AP\s/.test(c))
-}
 
 function parsePsalGroup(value: string | undefined | null, suffix: string): string[] {
   return parseCommaList(value).map((sport) => (suffix ? `${sport}, ${suffix}` : sport))
@@ -352,7 +348,7 @@ const ACTIVITY_GROUP_DEFS: {
     key: 'apCourses',
     label: 'AP courses',
     missingLabel: 'AP courses',
-    get: (s) => parseApCourses(s),
+    get: (s) => parseCommaList(s.doe_data?.advancedplacement_courses),
   },
   {
     key: 'languages',
@@ -433,7 +429,7 @@ export function buildFindRowFacts(school: School): string[] {
     f.format(f.get(school) as number)
   )
 
-  const apCount = parseApCourses(school).length
+  const apCount = parseCommaList(school.doe_data?.advancedplacement_courses).length
   if (apCount > 0) facts.push(`${apCount} AP course${apCount === 1 ? '' : 's'}`)
 
   return facts

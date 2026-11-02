@@ -60,14 +60,21 @@ import {
   REGRESSION_THRESHOLD_POINTS,
   COST_LIMIT_USD,
 } from "./gate";
+import { scoreAllOf, scoreMinOf, scoreMinShare } from "./retrieval-scorers";
 import { recordEvalRunSafely } from "./langfuse-run";
 
 interface SeedCase {
   id: string;
   kind: string;
   question: string;
-  filters?: { boroughs?: string[]; tracks?: string[]; size?: string };
+  filters?: Record<string, unknown>;
+  expect?: Expect;
 }
+
+type Expect =
+  | { type: "all_of"; dbns: string[] }
+  | { type: "min_of"; k: number; dbns: string[] }
+  | { type: "min_share"; k: number; admissions_types: string[] };
 
 interface SeedFile {
   source: string;
@@ -103,11 +110,36 @@ function loadAllSchoolNames(): string[] {
   return Array.from(new Set(schools.map((s) => s.name)));
 }
 
-function scoreAnswer(
+function loadTypesByDbn(): Record<string, string[]> {
+  const schoolsPath = path.resolve(process.cwd(), "schools.json");
+  const schools: { dbn: string; admissions_types?: string[] }[] = JSON.parse(fs.readFileSync(schoolsPath, "utf-8"));
+  const typesByDbn: Record<string, string[]> = {};
+  for (const s of schools) typesByDbn[s.dbn] = s.admissions_types ?? [];
+  return typesByDbn;
+}
+
+let typesByDbnCache: Record<string, string[]> | undefined;
+
+export function scoreRelevance(
+  e: Expect,
+  result: Pick<AnswerQuestionResult, "reasons" | "guardrail">,
+  typesByDbn: Record<string, string[]>
+): ScorerResult {
+  if (result.guardrail !== "none") {
+    return { pass: false, detail: `guardrail ${result.guardrail}` };
+  }
+  const dbns = result.reasons.map((r) => r.dbn);
+  if (e.type === "all_of") return scoreAllOf(dbns, e.dbns);
+  if (e.type === "min_of") return scoreMinOf(dbns, e.dbns, e.k);
+  return scoreMinShare(dbns, typesByDbn, e.admissions_types, e.k);
+}
+
+export function scoreAnswer(
   seedCase: SeedCase,
   result: AnswerQuestionResult,
   allSchoolNames: string[],
-  isBatch: boolean
+  isBatch: boolean,
+  typesByDbn?: Record<string, string[]>
 ): CaseResult {
   const retrievedNames = result.retrieved.map((r) => r.name);
   const retrievedChunks = result.retrieved.map((r) => r.chunk);
@@ -129,6 +161,11 @@ function scoreAnswer(
     scores.numbersGrounded = { pass: true, skipped: true };
   }
 
+  if (seedCase.expect) {
+    typesByDbn ??= typesByDbnCache ??= loadTypesByDbn();
+    scores.relevance = scoreRelevance(seedCase.expect, result, typesByDbn);
+  }
+
   return {
     id: seedCase.id,
     kind: seedCase.kind,
@@ -142,7 +179,7 @@ function scoreAnswer(
 
 // An errored case can't vouch for its own safety — count it as a failure on
 // every scorer rather than silently excluding it.
-function buildErrorCaseResult(seedCase: SeedCase, message: string): CaseResult {
+export function buildErrorCaseResult(seedCase: SeedCase, message: string): CaseResult {
   const failed: ScorerResult = { pass: false, detail: `case failed: ${message}` };
   return {
     id: seedCase.id,
@@ -158,6 +195,7 @@ function buildErrorCaseResult(seedCase: SeedCase, message: string): CaseResult {
       coverage: failed,
       missingDataNotShownAsZero: failed,
       numbersGrounded: failed,
+      ...(seedCase.expect ? { relevance: { pass: false } } : {}),
     },
   };
 }
@@ -239,6 +277,7 @@ function summarize(results: CaseResult[]): Record<string, { passed: number; tota
     "coverage",
     "missingDataNotShownAsZero",
     "numbersGrounded",
+    "relevance",
   ];
   const summary: Record<string, { passed: number; total: number; rate: number }> = {};
   for (const name of scorerNames) {
@@ -393,7 +432,9 @@ async function main() {
   console.log("\nAll gating checks passed.");
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
