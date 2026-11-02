@@ -37,7 +37,8 @@
 import fs from "fs";
 import path from "path";
 import Anthropic from "@anthropic-ai/sdk";
-import { answerQuestion, buildAskRequest, buildAnswerResult, buildPoolContext, ASK_POOL_COUNT, AnswerQuestionResult } from "../lib/ask";
+import { formatRetrievalNotice } from "./run-retrieval-eval";
+import { ASK_MODEL, answerQuestion, buildAskRequest, buildAnswerResult, buildPoolContext, ASK_POOL_COUNT, AnswerQuestionResult } from "../lib/ask";
 import { searchSchools } from "../lib/rag";
 import { estimateCostUsd } from "../lib/model-cost";
 import { pollBatchUntilEnded, indexBatchResultsByCustomId } from "./batch";
@@ -269,16 +270,17 @@ function formatErrorSuffix(error: string | undefined): string {
   return ` — ${error.slice(0, 300)}`;
 }
 
-function summarize(results: CaseResult[]): Record<string, { passed: number; total: number; rate: number }> {
-  const scorerNames = [
-    "noBannedPhrases",
-    "noAdmissionsOddsLanguage",
-    "hallucination",
-    "coverage",
-    "missingDataNotShownAsZero",
-    "numbersGrounded",
-    "relevance",
-  ];
+const scorerNames = [
+  "noBannedPhrases",
+  "noAdmissionsOddsLanguage",
+  "hallucination",
+  "coverage",
+  "missingDataNotShownAsZero",
+  "numbersGrounded",
+  "relevance",
+];
+
+export function summarize(results: CaseResult[]): Record<string, { passed: number; total: number; rate: number }> {
   const summary: Record<string, { passed: number; total: number; rate: number }> = {};
   for (const name of scorerNames) {
     let passed = 0;
@@ -292,6 +294,21 @@ function summarize(results: CaseResult[]): Record<string, { passed: number; tota
     summary[name] = { passed, total, rate: total === 0 ? 1 : passed / total };
   }
   return summary;
+}
+
+export function formatAskNotice(
+  results: CaseResult[],
+  summary: ReturnType<typeof summarize>,
+  model: string
+): string {
+  const lines = scorerNames.map((name) => `${name}  ${summary[name].passed}/${summary[name].total}`);
+  for (const result of results) {
+    const relevance = result.scores.relevance as (ScorerResult & { missing?: string[] }) | undefined;
+    if (!relevance) continue;
+    const missing = relevance.missing?.length ? relevance.missing.join(", ") : "-";
+    lines.push(`${result.id}  ${relevance.pass ? "pass" : "FAIL"}  missing: ${missing}`);
+  }
+  return formatRetrievalNotice(summary.relevance.passed, summary.relevance.total, lines, "Ask", model);
 }
 
 async function main() {
@@ -391,6 +408,9 @@ async function main() {
     )
   );
   console.log(`Summed model cost: $${totalCostUsd.toFixed(4)}`);
+  if (process.env.GITHUB_ACTIONS === "true") {
+    console.log(formatAskNotice(results, summary, ASK_MODEL));
+  }
 
   const resultsDir = path.resolve(process.cwd(), "evals", "results");
   fs.mkdirSync(resultsDir, { recursive: true });

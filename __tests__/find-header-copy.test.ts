@@ -48,7 +48,7 @@ describe('/find header copy (issue #401)', () => {
   })
 
   it('labels the submit button "Find schools"', () => {
-    expect(src).toMatch(/<Button type="submit" disabled=\{askLoading\}>\s*Find schools/)
+    expect(src).toMatch(/<Button type="submit" disabled=\{askLoading \|\| isRepeatAsk\(lastAsked, askText, filters\)\}>\s*Find schools/)
     expect(src).not.toMatch(/<Button type="submit" disabled=\{askLoading\}>\s*Ask\s*<\/Button>/)
   })
 
