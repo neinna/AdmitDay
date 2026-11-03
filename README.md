@@ -25,7 +25,7 @@ AdmitDay is built around a simple product bet: parents do not need more raw info
 AdmitDay's live surfaces are `/find` search, school detail pages, and a signed-in shortlist:
 
 1. **Search (`/find`):** users narrow schools by hard rail filters (under a "Non-negotiables" heading), optionally set a starting point (ZIP or subway station) to filter and sort by distance, then use the ask box for plain-language criteria that re-rank results without silently removing schools. Rows link to `/school/[dbn]` detail pages and list each school's programs with their admission method, and each program can be saved to the shortlist.
-2. **RAG ask box:** users ask in natural language; the system extracts exact signals, hard-filters the candidate pool, semantic-ranks within it, and retrieves a 60-school pool, and has Claude pick up to 20 (at least 10 when that many fit) with one short reason each, returned as structured JSON, via `/api/find/ask`.
+2. **RAG ask box:** users ask in natural language; the system extracts exact signals, hard-filters the candidate pool, semantic-ranks within it to build a 60-school pool, and has Claude pick up to 20 (at least 10 when that many fit) with one short reason each, returned as structured JSON, via `/api/find/ask`.
 3. **Shortlist (`/shortlist`):** a signed-in family's saved programs, ranked within SHSAT and Main List sections, with expandable rows and a print view. Programs are stored in Postgres (`list_programs`) via `/api/saved-programs`.
 
 The older standalone `/chat` product surface is decommissioned.
