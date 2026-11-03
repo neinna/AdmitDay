@@ -13,11 +13,9 @@ on:
         default: ''
   schedule:
     - cron: '30 13 * * *'   # daily 13:30 UTC, after the Mon/Thu 12:00-12:30 data refresh
-    - cron: '45 13 * * 1'   # Mondays: also Claude's picks, batched
   pull_request:
     paths:
       - 'lib/rag.ts'
-      - 'lib/ask.ts'
       - 'lib/query-filters.ts'
       - 'scripts/embed-schools.ts'
       - 'data/school-embeddings.json'
@@ -64,7 +62,7 @@ jobs:
           fi
           npm run eval:retrieval | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Run ask eval (Claude's picks)
-        if: github.event_name == 'workflow_dispatch' || steps.changed.outputs.ask == 'true' || github.event.schedule == '45 13 * * 1'
+        if: github.event_name == 'workflow_dispatch'
         shell: bash
         env:
           EVAL_TRIGGER: ${{ github.event_name == 'schedule' && 'weekly' || 'sync' }}
