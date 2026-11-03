@@ -3,7 +3,7 @@
 AI-powered NYC public high school admissions navigator. AdmitDay helps families turn a scattered admissions process into a grounded, personalized school list.
 
 - Live app: https://www.admitday.com
-- Find schools: https://www.admitday.com/find
+- Search schools: https://www.admitday.com/find
 - School details: `/school/[dbn]`
 
 ## Why This Exists
@@ -22,25 +22,25 @@ AdmitDay is built around a simple product bet: parents do not need more raw info
 
 ## Product Shape
 
-AdmitDay's live surfaces are `/find` discovery, school detail pages, and a signed-in shortlist:
+AdmitDay's live surfaces are `/find` search, school detail pages, and a signed-in shortlist:
 
-1. **Unified `/find`:** users narrow schools by hard rail filters (under a "Non-Negotiables" heading), optionally set a starting point (ZIP or subway station) to filter and sort by distance, then use the ask box for plain-language criteria that re-rank results without silently removing schools. Rows link to `/school/[dbn]` detail pages and can be saved to the shortlist.
-2. **RAG ask box:** users ask in natural language; the system extracts exact signals, hard-filters the candidate pool, semantic-ranks within it, and returns one short reason per school (retrieving 20 schools) via `/api/find/ask`.
-3. **Shortlist (`/shortlist`):** a signed-in family's saved schools, split into SHSAT and Main list sections, with expandable rows and a print view. Saved lists are stored in Postgres via `/api/saved-schools`.
+1. **Search (`/find`):** users narrow schools by hard rail filters (under a "Non-negotiables" heading), optionally set a starting point (ZIP or subway station) to filter and sort by distance, then use the ask box for plain-language criteria that re-rank results without silently removing schools. Rows link to `/school/[dbn]` detail pages and list each school's programs with their admission method, and each program can be saved to the shortlist.
+2. **RAG ask box:** users ask in natural language; the system extracts exact signals, hard-filters the candidate pool, semantic-ranks within it to build a 60-school pool, and has Claude pick up to 20 (at least 10 when that many fit) with one short reason each, returned as structured JSON, via `/api/find/ask`.
+3. **Shortlist (`/shortlist`):** a signed-in family's saved programs, ranked within SHSAT and Main List sections, with expandable rows and a print view. Programs are stored in Postgres (`list_programs`) via `/api/saved-programs`.
 
 The older standalone `/chat` product surface is decommissioned.
 
 ## Architecture
 
-- **Frontend:** Next.js 14 App Router and Tailwind CSS.
+- **Frontend:** Next.js 16 App Router and Tailwind CSS.
 - **Design system:** token layer plus reusable UI primitives in `components/ui/`.
-- **Data:** 426 NYC public high schools in Vercel Postgres, keyed by `dbn`.
+- **Data:** 426 NYC public high schools in Postgres (Neon, via `@neondatabase/serverless`), keyed by `dbn`.
 - **Retrieval:** OpenAI `text-embedding-3-small`, semantic chunking by identity, current MySchools programs, academics, and activities, plus deterministic filtering.
-- **Generation:** Claude Sonnet 5 through grounded prompts.
-- **Cost protection:** per-IP rate limiting on LLM routes (per minute, plus 20 LLM calls per IP per day) plus a global daily LLM ceiling, both stored durably in Vercel Postgres (`rate_limits` table), with an in-memory fallback if the store errors.
-- **Observability:** Sentry for errors (initialized on Vercel only, tagged with the deployment environment), PostHog for analytics, Langfuse (`lib/trace.ts`) for per-request LLM cost/latency/token/retrieval tracing on `/api/find/ask` and `/api/rationale` — logging only, never on the response path, and never carries question/answer/prompt/chunk text. `/api/find/ask` returns that request's trace id to the client; rating an answer (`FeedbackRow`, via `/api/find/feedback`) writes a Langfuse score against it, joining user feedback to the trace it belongs to.
-- **Auth:** Clerk for sign up, log in, log out, and password reset (email/password and Google). Saving a school and the shortlist require an account; browsing `/find` and school pages does not. Signed-in users can delete their account (`/api/account`).
-- **Deployment:** Vercel from `main`; GitHub Actions runs Jest on pushes and PRs, the ask eval (`eval-ask.yml`), a Playwright smoke test of the signed-out parent flow on production (`smoke.yml`), and a weekly README freshness check (`readme-freshness.yml`).
+- **Generation:** Claude Sonnet 5 (overridable with `ASK_MODEL`) through grounded prompts.
+- **Cost protection:** per-IP rate limiting on LLM routes (per minute, plus 20 LLM calls per IP per day) plus a global daily LLM ceiling, both stored durably in Postgres (`rate_limits` table), with an in-memory fallback if the store errors.
+- **Observability:** Sentry for errors (initialized on Vercel only, tagged with the deployment environment), PostHog for analytics, Langfuse (`lib/trace.ts`) for per-request LLM cost/latency/token/retrieval tracing on `/api/find/ask` and `/api/rationale` — logging only, never on the response path, and never carries question/answer/prompt/chunk text. Provider error messages are scrubbed of credential-like text before logging or sending to Sentry. `/api/find/ask` returns that request's trace id to the client; rating an answer (`FeedbackRow`, via `/api/find/feedback`) writes a Langfuse score against it, joining user feedback to the trace it belongs to.
+- **Auth:** Clerk for sign up, log in, log out, and password reset (email/password and Google). Saving a program and the shortlist require an account; browsing `/find` and school pages does not. Signed-in users can delete their account (`/api/account`).
+- **Deployment:** Vercel from `main`; GitHub Actions runs Jest on pushes and PRs, the ask eval (`eval-ask.yml`), the retrieval eval (`eval-retrieval.yml`), a Playwright smoke test of the signed-out parent flow on production (`smoke.yml`), and a weekly README freshness check (`readme-freshness.yml`).
 
 ## Data Quality
 
@@ -78,7 +78,8 @@ AdmitDay uses product rules and tests to keep the AI parts bounded:
 - Admissions-odds language is banned.
 - Golden evals check factual accuracy, decision quality, output format, and completeness.
 - Smoke tests check the deployed site, not just local code.
-- `npm run eval:ask` is the live eval harness for the ask box (`evals/run-ask-eval.ts`). It runs weekly through the Anthropic Batch API and on ask-path PRs (not forks), records Langfuse dataset runs, and gates merges; `admitday_eval.py` is historical.
+- `npm run eval:ask` is the live eval harness for the ask box (`evals/run-ask-eval.ts`). It runs weekly through the Anthropic Batch API, by hand, and on PRs that change `lib/ask.ts` (not forks), scores both the reasons and which schools Claude picks, and records Langfuse dataset runs; `admitday_eval.py` is historical.
+- `npm run eval:retrieval` scores similarity search against 15 approved asks (`eval:retrieval:ask` adds Claude's picks); it runs nightly and on PRs that touch search.
 - Missing DOE data is shown as a grey `n/a` (not reported) or `none` (not offered) mark, never a sentence.
 - A short Disclaimers page (`/disclaimers`) is linked from the footer.
 
