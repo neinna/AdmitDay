@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-02T12:05:06.981594+00:00",
+  "generated_at": "2026-11-05T12:19:38.388937+00:00",
   "school_count": 426,
   "school_fields": [
     {
@@ -13,8 +13,8 @@
     {
       "name": "applicants_per_seat",
       "type": "number|null",
-      "present": 415,
-      "example": 0.7
+      "present": 416,
+      "example": 0.5072463768115942
     },
     {
       "name": "borough",
@@ -79,7 +79,7 @@
     {
       "name": "hours",
       "type": "object",
-      "present": 422,
+      "present": 423,
       "example": {
         "start": "8:25am",
         "end": "2:45pm"
@@ -121,17 +121,18 @@
           "grade_span": "9 to 12",
           "seats": {
             "general_education": {
-              "seats": 70,
-              "applicants": 49,
+              "seats": 69,
+              "applicants": 35,
               "applications_per_seat": 1
             },
             "students_with_disabilities": {
-              "seats": 20,
-              "applicants": 26,
+              "seats": 21,
+              "applicants": 27,
               "applications_per_seat": 1
             },
             "tenth_grade": {
-              "number": 0
+              "available": true,
+              "number": 10
             }
           },
           "seats_filled_last_year": {
@@ -141,27 +142,30 @@
           "eligibility": {
             "priority_groups": [
               {
-                "id": 567119,
+                "id": 700282,
                 "order": 1,
                 "name": "Manhattan students or residents",
-                "ge_priority_group_description": "There were about 40 applicants in this group and all received offers last year.",
-                "swd_priority_group_description": "There were about 20 applicants in this group and all received offers last year."
+                "ge_priority_group_description": "There were about 30 applicants in this group and all received offers last year.",
+                "swd_priority_group_description": "There were about 30 applicants in this group and about 30 received offers last year."
               },
               {
-                "id": 567120,
+                "id": 700283,
                 "order": 2,
                 "name": "New York City residents",
                 "ge_priority_group_description": "There were fewer than 10 applicants in this group and all received offers last year.",
-                "swd_priority_group_description": "There were fewer than 10 applicants in this group and fewer than 10 received offers last year."
+                "swd_priority_group_description": "There were no applicants in this group."
               }
+            ],
+            "school_eligibility": [
+              "10th Grade Seats Available"
             ]
           },
           "description": "Our rigorous academic curriculum and robust arts program prepares students to succeed in college and beyond. With our diverse course offerings, including five Advanced Placement Courses, we empower ou\u2026",
           "provenance": {
             "source": "MySchools",
             "url": "https://www.myschools.nyc/en/api/v2/schools/process/1/01M292/",
-            "fetched_at": "2026-09-18T19:59:59.944769+00:00",
-            "admissions_cycle": "2025-26 School Year"
+            "fetched_at": "2026-11-05T12:02:42.306104+00:00",
+            "admissions_cycle": "2026-27 School Year"
           },
           "program": "Orchard Collegiate Academy",
           "admissions_type": "Educational Option",
@@ -367,13 +371,13 @@
     {
       "name": "end",
       "type": "string",
-      "present": 422,
+      "present": 423,
       "example": "2:45pm"
     },
     {
       "name": "start",
       "type": "string",
-      "present": 422,
+      "present": 423,
       "example": "8:25am"
     }
   ],
@@ -381,105 +385,108 @@
     {
       "name": "admissions_method",
       "type": "string",
-      "present": 923,
+      "present": 944,
       "example": "Ed. Opt."
     },
     {
       "name": "admissions_method_description",
       "type": "string",
-      "present": 814,
+      "present": 833,
       "example": "Ed. Opt. programs admit students across all academic levels. Students are grouped into Low, Middle, and High categories based on a composite of their academic data. One-third of offers are made to stu\u2026"
     },
     {
       "name": "admissions_type",
       "type": "string",
-      "present": 923,
+      "present": 944,
       "example": "Educational Option"
     },
     {
       "name": "dbn",
       "type": "string",
-      "present": 923,
+      "present": 944,
       "example": "01M292"
     },
     {
       "name": "description",
       "type": "string",
-      "present": 725,
+      "present": 748,
       "example": "Our rigorous academic curriculum and robust arts program prepares students to succeed in college and beyond. With our diverse course offerings, including five Advanced Placement Courses, we empower ou\u2026"
     },
     {
       "name": "eligibility",
       "type": "object",
-      "present": 923,
+      "present": 944,
       "example": {
         "priority_groups": [
           {
-            "id": 567119,
+            "id": 700282,
             "order": 1,
             "name": "Manhattan students or residents",
-            "ge_priority_group_description": "There were about 40 applicants in this group and all received offers last year.",
-            "swd_priority_group_description": "There were about 20 applicants in this group and all received offers last year."
+            "ge_priority_group_description": "There were about 30 applicants in this group and all received offers last year.",
+            "swd_priority_group_description": "There were about 30 applicants in this group and about 30 received offers last year."
           },
           {
-            "id": 567120,
+            "id": 700283,
             "order": 2,
             "name": "New York City residents",
             "ge_priority_group_description": "There were fewer than 10 applicants in this group and all received offers last year.",
-            "swd_priority_group_description": "There were fewer than 10 applicants in this group and fewer than 10 received offers last year."
+            "swd_priority_group_description": "There were no applicants in this group."
           }
+        ],
+        "school_eligibility": [
+          "10th Grade Seats Available"
         ]
       }
     },
     {
       "name": "grade_span",
       "type": "string",
-      "present": 923,
+      "present": 944,
       "example": "9 to 12"
     },
     {
       "name": "program",
       "type": "string",
-      "present": 923,
+      "present": 944,
       "example": "Orchard Collegiate Academy"
     },
     {
       "name": "program_code",
       "type": "string",
-      "present": 923,
+      "present": 944,
       "example": "M46X"
     },
     {
       "name": "program_name",
       "type": "string",
-      "present": 923,
+      "present": 944,
       "example": "Orchard Collegiate Academy"
     },
     {
       "name": "provenance",
       "type": "object",
-      "present": 923,
+      "present": 944,
       "example": {
         "source": "MySchools",
         "url": "https://www.myschools.nyc/en/api/v2/schools/process/1/01M292/",
-        "fetched_at": "2026-09-18T19:59:59.944769+00:00",
-        "admissions_cycle": "2025-26 School Year"
+        "fetched_at": "2026-11-05T12:02:42.306104+00:00",
+        "admissions_cycle": "2026-27 School Year"
       }
     },
     {
       "name": "raw_method",
       "type": "string",
-      "present": 923,
+      "present": 944,
       "example": "Ed. Opt."
     },
     {
       "name": "requirements",
       "type": "object",
-      "present": 27,
+      "present": 231,
       "example": {
         "selection_criteria": [
           {
-            "name": "Essay - 100%",
+            "name": "Average Course Grades - 100%",
             "order": 1
           }
         ]
@@ -488,40 +495,41 @@
     {
       "name": "school_name",
       "type": "string",
-      "present": 923,
+      "present": 944,
       "example": "Orchard Collegiate Academy (01M292)"
     },
     {
       "name": "seats",
       "type": "object",
-      "present": 923,
+      "present": 940,
       "example": {
         "general_education": {
-          "seats": 70,
-          "applicants": 49,
+          "seats": 69,
+          "applicants": 35,
           "applications_per_seat": 1
         },
         "students_with_disabilities": {
-          "seats": 20,
-          "applicants": 26,
+          "seats": 21,
+          "applicants": 27,
           "applications_per_seat": 1
         },
         "tenth_grade": {
-          "number": 0
+          "available": true,
+          "number": 10
         }
       }
     },
     {
       "name": "seats_filled_last_year",
       "type": "object",
-      "present": 914,
+      "present": 917,
       "example": {
         "general_education": false,
         "students_with_disabilities": true
       }
     }
   ],
-  "program_count": 923,
+  "program_count": 944,
   "programs_per_school": {
     "min": 1,
     "median": 1,
@@ -530,31 +538,31 @@
   "admissions_methods": [
     {
       "value": "Ed. Opt.",
-      "count": 413
+      "count": 429
     },
     {
       "value": "Screened",
-      "count": 133
+      "count": 135
+    },
+    {
+      "value": "Open",
+      "count": 76
     },
     {
       "value": "Audition",
       "count": 75
     },
     {
-      "value": "Open",
-      "count": 74
-    },
-    {
       "value": "D75 Special Education Inclusive Services",
-      "count": 62
-    },
-    {
-      "value": "Language Criteria",
-      "count": 51
+      "count": 61
     },
     {
       "value": "ASD/ACES Program",
-      "count": 47
+      "count": 50
+    },
+    {
+      "value": "Language Criteria",
+      "count": 50
     },
     {
       "value": "Screened With Assessment",
@@ -583,7 +591,7 @@
     "borough": "Manhattan",
     "size": "small",
     "total_students": 296,
-    "applicants_per_seat": 0.7,
+    "applicants_per_seat": 0.5072463768115942,
     "admissions_types": [
       "Educational Option"
     ],
@@ -598,17 +606,18 @@
         "grade_span": "9 to 12",
         "seats": {
           "general_education": {
-            "seats": 70,
-            "applicants": 49,
+            "seats": 69,
+            "applicants": 35,
             "applications_per_seat": 1
           },
           "students_with_disabilities": {
-            "seats": 20,
-            "applicants": 26,
+            "seats": 21,
+            "applicants": 27,
             "applications_per_seat": 1
           },
           "tenth_grade": {
-            "number": 0
+            "available": true,
+            "number": 10
           }
         },
         "seats_filled_last_year": {
@@ -618,27 +627,30 @@
         "eligibility": {
           "priority_groups": [
             {
-              "id": 567119,
+              "id": 700282,
               "order": 1,
               "name": "Manhattan students or residents",
-              "ge_priority_group_description": "There were about 40 applicants in this group and all received offers last year.",
-              "swd_priority_group_description": "There were about 20 applicants in this group and all received offers last year."
+              "ge_priority_group_description": "There were about 30 applicants in this group and all received offers last year.",
+              "swd_priority_group_description": "There were about 30 applicants in this group and about 30 received offers last year."
             },
             {
-              "id": 567120,
+              "id": 700283,
               "order": 2,
               "name": "New York City residents",
               "ge_priority_group_description": "There were fewer than 10 applicants in this group and all received offers last year.",
-              "swd_priority_group_description": "There were fewer than 10 applicants in this group and fewer than 10 received offers last year."
+              "swd_priority_group_description": "There were no applicants in this group."
             }
+          ],
+          "school_eligibility": [
+            "10th Grade Seats Available"
           ]
         },
         "description": "Our rigorous academic curriculum and robust arts program prepares students to succeed in college and beyond. With our diverse course offerings, including five Advanced Placement Courses, we empower ou\u2026",
         "provenance": {
           "source": "MySchools",
           "url": "https://www.myschools.nyc/en/api/v2/schools/process/1/01M292/",
-          "fetched_at": "2026-09-18T19:59:59.944769+00:00",
-          "admissions_cycle": "2025-26 School Year"
+          "fetched_at": "2026-11-05T12:02:42.306104+00:00",
+          "admissions_cycle": "2026-27 School Year"
         },
         "program": "Orchard Collegiate Academy",
         "admissions_type": "Educational Option",
