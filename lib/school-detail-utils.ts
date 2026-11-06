@@ -508,6 +508,51 @@ export interface ProgramRow {
   /** Present only when general_education.all_seats_filled is false last cycle (issue #304). */
   seatsLeftLastYear?: { cycle?: string }
   seats?: { ge?: SeatCount; swd?: SeatCount }
+  /** Admissions priority groups in order (issue #745). Absent when not reported. */
+  priorities?: PriorityGroup[]
+  dia?: DiaSetAside
+}
+
+export interface PriorityGroup {
+  name: string
+  lastYear?: string
+}
+
+export interface DiaSetAside {
+  label: string
+  text: string
+}
+
+/** Priority groups (sorted by order) and the DIA set-aside from a program's MySchools eligibility. */
+export function programPriorities(eligibility: unknown): { groups: PriorityGroup[]; dia?: DiaSetAside } {
+  const e = eligibility as { priority_groups?: unknown; diversity_in_admission?: unknown } | null | undefined
+  const groups: PriorityGroup[] = []
+  if (e && typeof e === 'object' && Array.isArray(e.priority_groups)) {
+    const entries = e.priority_groups
+      .filter((g): g is Record<string, unknown> => !!g && typeof g === 'object' && typeof (g as { name?: unknown }).name === 'string' && !!(g as { name: string }).name)
+      .map((g, i) => ({ g, i, order: typeof g.order === 'number' ? g.order : Infinity }))
+      .sort((a, b) => (a.order === b.order ? a.i - b.i : a.order - b.order))
+    for (const { g } of entries) {
+      const lastYear = [g.ge_priority_group_description, g.swd_priority_group_description].find(
+        (d): d is string => typeof d === 'string' && d !== ''
+      )
+      groups.push(lastYear ? { name: g.name as string, lastYear } : { name: g.name as string })
+    }
+  }
+  const dia = e && typeof e === 'object' ? e.diversity_in_admission : undefined
+  if (Array.isArray(dia) && dia.length > 0 && dia.every((s) => typeof s === 'string')) {
+    const strings = dia as string[]
+    let label = 'DIA'
+    for (const s of strings) {
+      const m = /(\d+)% of seats/.exec(s)
+      if (m) {
+        label = `DIA ${m[1]}%`
+        break
+      }
+    }
+    return { groups, dia: { label, text: strings.join(' ') } }
+  }
+  return { groups }
 }
 
 export interface SeatCount {
@@ -569,6 +614,9 @@ export function dedupePrograms(programs: School['programs']): ProgramRow[] {
       if (ge) row.seats.ge = ge
       if (swd) row.seats.swd = swd
     }
+    const { groups, dia } = programPriorities((p as { eligibility?: unknown }).eligibility)
+    if (groups.length) row.priorities = groups
+    if (dia) row.dia = dia
     rows.push(row)
   }
   return rows
