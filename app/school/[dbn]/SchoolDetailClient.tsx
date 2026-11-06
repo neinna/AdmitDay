@@ -367,6 +367,29 @@ export default function SchoolDetailClient({
                         {formatProgramSeats(p)}
                       </span>
                     )}
+                    {(p.priorities || p.dia) && (
+                      <span className="col-span-1 min-[900px]:col-span-3 text-[12.5px] text-faint">
+                        {p.priorities && (
+                          <>
+                            {'Priority: '}
+                            {p.priorities.map((g, gi) => (
+                              <span key={gi}>
+                                {gi > 0 && ' → '}
+                                <span title={g.lastYear}>{g.name}</span>
+                              </span>
+                            ))}
+                          </>
+                        )}
+                        {p.dia && (
+                          <>
+                            {p.priorities && ' · '}
+                            <span title={p.dia.text} aria-label={p.dia.text}>
+                              {p.dia.label}
+                            </span>
+                          </>
+                        )}
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>
