@@ -1890,6 +1890,7 @@ Tests and build verified green by the coordinator. The independent reviewer ${ES
         log "Issue #${ISSUE_NUMBER}: PR opened at ${PR_URL}, escalated (${ESCALATION_REASON}), auto-merge NOT enabled"
         telegram "PR ready for issue #${ISSUE_NUMBER} but ESCALATED for human review: ${ISSUE_TITLE} — ${PR_URL}"
       else
+        github_label "$PR_NUMBER" "ai-approved"
         local PR_NODE_ID
         PR_NODE_ID=$(github_get_pr_node_id "$PR_NUMBER")
         if [ -n "$PR_NODE_ID" ] && github_enable_automerge "$PR_NODE_ID"; then
