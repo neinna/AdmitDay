@@ -414,6 +414,25 @@ export default function ShortlistClient({ index, initialOrder, programs, details
                         <p className="text-[14px] text-ink-2 mt-[2px]">
                           <span className="text-faint">Program:</span> {program.name}
                         </p>
+                        {(program.priorities?.length || program.dia) && (
+                          <p className="text-[12.5px] text-muted mt-[2px]">
+                            {program.priorities?.length ? 'Priority: ' : null}
+                            {program.priorities?.map((g, gi) => (
+                              <Fragment key={gi}>
+                                {gi > 0 && ' → '}
+                                <span title={g.lastYear}>{g.name}</span>
+                              </Fragment>
+                            ))}
+                            {program.dia && (
+                              <>
+                                {program.priorities?.length ? ' · ' : null}
+                                <span title={program.dia.text} aria-label={program.dia.text}>
+                                  {program.dia.label}
+                                </span>
+                              </>
+                            )}
+                          </p>
+                        )}
                         <p className="text-[12.5px] text-muted mt-[2px]">
                           {[school.neighborhood, school.borough].filter(Boolean).join(', ')}
                           <span className="font-mono ml-2 text-faint">{school.dbn}</span>

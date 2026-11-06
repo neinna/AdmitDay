@@ -1,4 +1,5 @@
 import type { DoeData, School } from '@/types'
+import type { DiaSetAside, PriorityGroup } from '@/lib/school-detail-utils'
 
 /**
  * The subset of a school this page needs. The saved list lives in localStorage,
@@ -17,6 +18,8 @@ export type ShortlistProgram = {
   dbn: string
   name: string
   term: string | null
+  priorities?: PriorityGroup[]
+  dia?: DiaSetAside
 }
 
 /**
