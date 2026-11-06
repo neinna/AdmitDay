@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import Footer from '@/components/Footer'
 import AuthControls from '@/components/AuthControls'
+import SiteNav from '@/components/SiteNav'
 import { Eyebrow, DefinitionRow } from '@/components/ui'
 
 export const metadata: Metadata = {
@@ -21,6 +22,11 @@ const COLLECTS: { label: string; value: string }[] = [
     label: 'Saved school list',
     value:
       "Saved to your account in AdmitDay's database, linked to your account ID rather than your name or email. Saving a school requires an account.",
+  },
+  {
+    label: 'Students',
+    value:
+      "Only if you add one: a label you choose (like \u201cKid 1\u201d, not a name), the borough and district they live in, the borough and district of their current school, and the first two characters of their lottery number, stored as a number from 0 to 255. Saved to your account in AdmitDay's database. The full lottery number is never sent to AdmitDay.",
   },
   {
     label: 'Search questions',
@@ -96,10 +102,7 @@ export default function PrivacyPage() {
           </div>
         </Link>
         <div className="flex items-center gap-7">
-          <nav className="flex items-center gap-7 text-[14.5px] text-muted">
-            <Link href="/find" className="hover:text-ink transition-colors duration-[120ms] ease-out">Search</Link>
-            <Link href="/shortlist" className="hover:text-ink transition-colors duration-[120ms] ease-out">Shortlist</Link>
-          </nav>
+          <SiteNav />
           <AuthControls />
         </div>
       </header>
@@ -111,7 +114,7 @@ export default function PrivacyPage() {
         <p className="text-[15.5px] text-muted mt-4 max-w-[620px]">
           What AdmitDay collects, why, who sees it, and how to have it deleted.
         </p>
-        <p className="text-[13px] text-faint mt-3">Last updated September 18, 2026.</p>
+        <p className="text-[13px] text-faint mt-3">Last updated November 6, 2026.</p>
       </section>
 
       <section className="px-5 min-[900px]:px-9 pt-[26px] pb-[30px] border-b border-rule">
@@ -132,11 +135,19 @@ export default function PrivacyPage() {
       <section className="px-5 min-[900px]:px-9 pt-[26px] pb-[30px] border-b border-rule">
         <Eyebrow>What we never collect</Eyebrow>
         <p className="text-[15px] font-semibold text-ink mt-3 max-w-[680px]">
-          Anything about your child
+          Who your child is
         </p>
         <p className="text-[14.5px] text-ink-2 leading-[1.55] mt-2 max-w-[680px]">
-          No name, no grade, no date of birth, no contact details, no documents. AdmitDay works from the borough,
-          preferences, and filters you set for a search — never from who your child is.
+          No name, no grade, no date of birth, no contact details, no documents, no school name, and never the full
+          lottery number. A student on AdmitDay is the label and the few facts listed above, which decide which
+          admissions priorities can apply.
+        </p>
+        <p className="text-[15px] font-semibold text-ink mt-4 max-w-[680px]">
+          A lottery number you decode
+        </p>
+        <p className="text-[14.5px] text-ink-2 leading-[1.55] mt-2 max-w-[680px]">
+          The lottery number page reads the number in your browser. It&rsquo;s never sent to AdmitDay&rsquo;s
+          servers or saved.
         </p>
         <p className="text-[15px] font-semibold text-ink mt-4 max-w-[680px]">
           Where you&rsquo;re commuting from
@@ -176,7 +187,7 @@ export default function PrivacyPage() {
             AdmitDay afterward. Neither Anthropic nor OpenAI trains its models on API traffic by default; each
             provider&rsquo;s own terms govern how long it retains a request on its side.
           </p>
-          <p>Your name, email, and saved lists are kept until you delete your account.</p>
+          <p>Your name, email, saved lists, and students are kept until you delete your account.</p>
           <p>
             IP addresses used for rate limiting are deleted automatically within 24 hours.
           </p>
@@ -187,11 +198,11 @@ export default function PrivacyPage() {
         <Eyebrow>Deleting your data</Eyebrow>
         <div className="mt-3 flex flex-col gap-[10px] text-[14.5px] text-ink-2 leading-[1.55] max-w-[680px]">
           <p>
-            Your saved school list is stored with your account and deleted with it.
+            Your saved school list and students are stored with your account and deleted with it.
           </p>
           <p>
-            Delete your account any time from the account menu. It removes your name, email, sign-in, and saved
-            schools right away. Questions:{' '}
+            Delete your account any time from the account menu. It removes your name, email, sign-in, saved
+            schools, and students right away. Questions:{' '}
             <a href="mailto:admitday@longtailstudio.com" className="underline hover:text-ink">
               admitday@longtailstudio.com
             </a>

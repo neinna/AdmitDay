@@ -52,6 +52,24 @@ export function ensureSchema(): Promise<void> {
           UNIQUE (list_id, program_code)
         )
       `
+      // Students (lib/students.ts): a parent-chosen label plus borough,
+      // district and the lottery number's first two characters as 0-255.
+      // One per parent for now (UNIQUE parent_id). Created here so account
+      // deletion, which only calls ensureSchema, can always delete from it.
+      await sql`
+        CREATE TABLE IF NOT EXISTS students (
+          id SERIAL PRIMARY KEY,
+          parent_id INTEGER NOT NULL UNIQUE REFERENCES parents(id),
+          label TEXT NOT NULL,
+          home_borough CHAR(1) NOT NULL,
+          home_district SMALLINT,
+          school_borough CHAR(1),
+          school_district SMALLINT,
+          lottery SMALLINT CHECK (lottery BETWEEN 0 AND 255),
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+      `
     })().catch((err) => {
       schemaReady = null
       throw err

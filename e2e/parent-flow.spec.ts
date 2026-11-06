@@ -37,8 +37,9 @@ test('signed-out parent flow', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Find your schools')
     await expect(page.getByRole('link', { name: 'AdmitDay home' })).toHaveAttribute('href', '/')
-    await expect(page.getByRole('link', { name: 'Search', exact: true })).toBeVisible()
-    await expect(page.getByRole('link', { name: 'Shortlist', exact: true })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Schools', exact: true })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'My list', exact: true })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Students', exact: true })).toBeVisible()
   })
 
   let citywideCount = 0
