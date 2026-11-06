@@ -1859,6 +1859,10 @@ This PR changes CI workflow files under \`.github/workflows/\`. It needs a human
 
     if [ -n "$PR_URL" ]; then
       local PR_NUMBER="${PR_URL##*/}"
+      local REVIEW_COMMENT="${REVIEW_TEXT:-The reviewer returned no output.}"
+      github_comment "$PR_NUMBER" "Independent review (${CLAUDE_REVIEW_MODEL}, result: ${REVIEWER_RESULT:-unknown}):
+
+${REVIEW_COMMENT:0:60000}"
       if echo "$REVIEW_TEXT" | grep -q "RISK: LIVE-VERIFY-NEEDED" || [ "$REVIEW_RC" -eq 2 ] || [ "$WORKFLOW_CHANGED" -eq 1 ]; then
         # Escalate instead of auto-merging when any of: the reviewer flagged
         # the diff as unverifiable in CI (no live database), the reviewer
