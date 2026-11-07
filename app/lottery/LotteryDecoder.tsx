@@ -69,13 +69,10 @@ export default function LotteryDecoder() {
           &ldquo;These numbers are sorted in both numeric and alphabetical order, as follows: 0, 1, 2, 3, 4, 5, 6, 7,
           8, 9, A, B, C, D, E, F.&rdquo;
         </blockquote>
-        <blockquote className="border-l-2 border-rule pl-3">
-          &ldquo;Random numbers, on their own, cannot determine your chances of getting into a specific
-          program.&rdquo;
-        </blockquote>
         <p>
           MySchools draws every number at random, so the first two characters show where yours falls among all of
-          them, to within about half a percent.
+          them, to within about half a percent. Offers also depend on who else applies and on each program&rsquo;s
+          priority groups.
         </p>
         <p>
           Source:{' '}

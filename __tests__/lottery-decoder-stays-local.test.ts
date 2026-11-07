@@ -19,9 +19,9 @@ describe('LotteryDecoder keeps the number in the browser', () => {
     expect(src).toContain('DOE_RANDOM_NUMBERS_URL')
   })
 
-  it("quotes the DOE's own statement that the number alone can't determine chances", () => {
-    expect(src.replace(/\s+/g, ' ')).toContain(
-      'Random numbers, on their own, cannot determine your chances of getting into a specific program.'
-    )
+  it('quotes the DOE on how the number is used and sorted', () => {
+    const flat = src.replace(/\s+/g, ' ')
+    expect(flat).toContain('Random numbers are used to sort students in cases where there are more applicants than seats within a priority group.')
+    expect(flat).toContain('0, 1, 2, 3, 4, 5, 6, 7, 8, 9, A, B, C, D, E, F.')
   })
 })
