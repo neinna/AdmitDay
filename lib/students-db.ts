@@ -15,8 +15,6 @@ interface StudentRow {
   school_borough: string | null
   school_district: number | null
   zoned_dbn: string | null
-  swd: boolean | null
-  frl: boolean | null
   lottery: number | null
 }
 
@@ -28,8 +26,6 @@ function toStudent(r: StudentRow): Student {
     school_borough: (r.school_borough as Borough | null) ?? null,
     school_district: r.school_district,
     zoned_dbn: r.zoned_dbn ?? null,
-    swd: r.swd ?? null,
-    frl: r.frl ?? null,
     lottery: r.lottery,
   }
 }
@@ -38,7 +34,7 @@ function toStudent(r: StudentRow): Student {
 export async function getStudent(parentId: number): Promise<Student | null> {
   await ensureSchema()
   const { rows } = await sql<StudentRow>`
-    SELECT label, home_borough, home_district, school_borough, school_district, zoned_dbn, swd, frl, lottery
+    SELECT label, home_borough, home_district, school_borough, school_district, zoned_dbn, lottery
     FROM students WHERE parent_id = ${parentId}
   `
   return rows[0] ? toStudent(rows[0]) : null
@@ -48,8 +44,8 @@ export async function getStudent(parentId: number): Promise<Student | null> {
 export async function saveStudent(parentId: number, s: Student): Promise<Student> {
   await ensureSchema()
   const { rows } = await sql<StudentRow>`
-    INSERT INTO students (parent_id, label, home_borough, home_district, school_borough, school_district, zoned_dbn, swd, frl, lottery)
-    VALUES (${parentId}, ${s.label}, ${s.home_borough}, ${s.home_district}, ${s.school_borough}, ${s.school_district}, ${s.zoned_dbn}, ${s.swd}, ${s.frl}, ${s.lottery})
+    INSERT INTO students (parent_id, label, home_borough, home_district, school_borough, school_district, zoned_dbn, lottery)
+    VALUES (${parentId}, ${s.label}, ${s.home_borough}, ${s.home_district}, ${s.school_borough}, ${s.school_district}, ${s.zoned_dbn}, ${s.lottery})
     ON CONFLICT (parent_id) DO UPDATE SET
       label = EXCLUDED.label,
       home_borough = EXCLUDED.home_borough,
@@ -57,11 +53,9 @@ export async function saveStudent(parentId: number, s: Student): Promise<Student
       school_borough = EXCLUDED.school_borough,
       school_district = EXCLUDED.school_district,
       zoned_dbn = EXCLUDED.zoned_dbn,
-      swd = EXCLUDED.swd,
-      frl = EXCLUDED.frl,
       lottery = EXCLUDED.lottery,
       updated_at = now()
-    RETURNING label, home_borough, home_district, school_borough, school_district, zoned_dbn, swd, frl, lottery
+    RETURNING label, home_borough, home_district, school_borough, school_district, zoned_dbn, lottery
   `
   return toStudent(rows[0])
 }

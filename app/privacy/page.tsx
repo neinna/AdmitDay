@@ -26,7 +26,7 @@ const COLLECTS: { label: string; value: string }[] = [
   {
     label: 'Students',
     value:
-      "Only if you add one: a label you choose (like \u201cKid 1\u201d, not a name), the borough and district they live in, the borough and district of their current school, their zoned high school, and the first two characters of their lottery number, stored as a number from 0 to 255. If you answer them: whether they apply for Students with Disabilities seats, and whether they're eligible for free or reduced price lunch. Saved to your account in AdmitDay's database, so it is linked to your account, and deleted with it. The full lottery number is never sent to AdmitDay.",
+      "Only if you add one: a label you choose (like \u201cKid 1\u201d, not a name), the borough and district they live in, the borough and district of their current school, their zoned high school, and the first two characters of their lottery number, stored as a number from 0 to 255. Saved to your account in AdmitDay's database, so it is linked to your account, and deleted with it. The full lottery number is never sent to AdmitDay.",
   },
   {
     label: 'Search questions',

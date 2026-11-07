@@ -12,8 +12,6 @@ const VALID = {
   school_borough: 'M',
   school_district: 2,
   zoned_dbn: '15K448',
-  swd: false,
-  frl: true,
   lottery: 63,
 }
 
@@ -27,10 +25,19 @@ describe('parseStudent', () => {
     expect(r).toEqual({ ok: true, student: VALID })
   })
 
+  it('never keeps disability seat or lunch eligibility, even when sent', () => {
+    const r = parseStudent({ ...VALID, swd: true, frl: true })
+    expect(r).toEqual({ ok: true, student: VALID })
+    if (r.ok) {
+      expect(r.student).not.toHaveProperty('swd')
+      expect(r.student).not.toHaveProperty('frl')
+    }
+  })
+
   it('accepts only label and home borough, the rest null', () => {
     expect(parseStudent({ label: 'Kid 1', home_borough: 'Q' })).toEqual({
       ok: true,
-      student: { label: 'Kid 1', home_borough: 'Q', home_district: null, school_borough: null, school_district: null, zoned_dbn: null, swd: null, frl: null, lottery: null },
+      student: { label: 'Kid 1', home_borough: 'Q', home_district: null, school_borough: null, school_district: null, zoned_dbn: null, lottery: null },
     })
   })
 
@@ -43,8 +50,6 @@ describe('parseStudent', () => {
     [{ ...VALID, lottery: 300 }, 'lottery must be 0-255'],
     [{ ...VALID, lottery: '3f2a9c0b7d114e2a9b3c0123456789ab' }, 'lottery must be 0-255'],
     [{ ...VALID, zoned_dbn: 'Brooklyn Tech' }, 'zoned_dbn is not a DBN'],
-    [{ ...VALID, swd: 'yes' }, 'swd must be true, false or null'],
-    [{ ...VALID, frl: 1 }, 'frl must be true, false or null'],
   ])('rejects %j', (body, error) => {
     expect(parseStudent(body)).toEqual({ ok: false, error })
   })

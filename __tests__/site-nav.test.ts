@@ -30,3 +30,30 @@ describe('SiteNav', () => {
     expect(html).toMatch(/My list<span>3<\/span><\/a>/)
   })
 })
+
+describe('SiteNav count on pages that do not pass a badge', () => {
+  const { fetchSavedCount } = jest.requireActual('@/components/SiteNav')
+  const reply = (ok: boolean, body: unknown) =>
+    jest.fn().mockResolvedValue({ ok, json: async () => body }) as unknown as typeof fetch
+
+  it('counts the saved programs', async () => {
+    const f = reply(true, { programs: [{ program_code: 'K12A' }, { program_code: 'M34B' }] })
+    await expect(fetchSavedCount(f)).resolves.toBe(2)
+    expect(f).toHaveBeenCalledWith('/api/saved-programs')
+  })
+
+  it('shows nothing when signed out (401)', async () => {
+    await expect(fetchSavedCount(reply(false, { error: 'Sign in required' }))).resolves.toBeNull()
+  })
+
+  it('shows nothing when the request fails or the body is malformed', async () => {
+    const throws = jest.fn().mockRejectedValue(new Error('offline')) as unknown as typeof fetch
+    await expect(fetchSavedCount(throws)).resolves.toBeNull()
+    await expect(fetchSavedCount(reply(true, { nope: 1 }))).resolves.toBeNull()
+  })
+
+  it('renders no badge before the count arrives (server render)', () => {
+    const html = render({ active: 'list' })
+    expect(html).toMatch(/My list<\/a>/)
+  })
+})

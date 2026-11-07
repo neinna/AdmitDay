@@ -4,11 +4,9 @@ import type { School } from '@/types'
 /**
  * A student is a label the parent picks ("Kid 1", not a name) plus the few
  * facts that decide admissions priority: where the child lives, where their
- * current school is, their zoned high school, their seat group (General
- * Education or Students with Disabilities), whether they're eligible for free
- * or reduced price lunch (DIA set-asides), and the first two characters of the
- * lottery number as 0-255. No name, school name, grade or date of birth, and
- * never the full 32-character lottery number.
+ * current school is, their zoned high school, and the first two characters of
+ * the lottery number as 0-255. No name, school name, grade or date of birth,
+ * no disability or lunch status, and never the full 32-character lottery number.
  *
  * Pure: no I/O, safe to import in the browser.
  */
@@ -42,10 +40,6 @@ export interface Student {
   school_district: number | null
   /** DBN of the high school the student is zoned for, if any. */
   zoned_dbn: string | null
-  /** Applies for Students with Disabilities seats (has an IEP). null = not answered. */
-  swd: boolean | null
-  /** Eligible for free or reduced price lunch. null = not answered. */
-  frl: boolean | null
   /** First two lottery characters read as 0-255. */
   lottery: number | null
 }
@@ -66,12 +60,6 @@ export function zonedSchools(schools: School[]): { dbn: string; name: string }[]
     )
     .map((s) => ({ dbn: s.dbn, name: s.name }))
     .sort((a, b) => a.name.localeCompare(b.name))
-}
-
-function yesNoOrNull(v: unknown, field: string): boolean | null | string {
-  if (v === null || v === undefined) return null
-  if (typeof v !== 'boolean') return `${field} must be true, false or null`
-  return v
 }
 
 export function boroughName(code: Borough): string {
@@ -123,14 +111,10 @@ export function parseStudent(body: unknown): { ok: true; student: Student } | { 
     if (typeof b.zoned_dbn !== 'string' || !DBN.test(b.zoned_dbn)) return { ok: false, error: 'zoned_dbn is not a DBN' }
     zoned_dbn = b.zoned_dbn
   }
-  const swd = yesNoOrNull(b.swd, 'swd')
-  if (typeof swd === 'string') return { ok: false, error: swd }
-  const frl = yesNoOrNull(b.frl, 'frl')
-  if (typeof frl === 'string') return { ok: false, error: frl }
 
   return {
     ok: true,
-    student: { label, home_borough, home_district, school_borough, school_district, zoned_dbn, swd, frl, lottery },
+    student: { label, home_borough, home_district, school_borough, school_district, zoned_dbn, lottery },
   }
 }
 
