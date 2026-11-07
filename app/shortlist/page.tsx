@@ -4,6 +4,7 @@ import Footer from '@/components/Footer'
 import { getAllSchools } from '@/lib/load-schools'
 import { findParentId, getSavedPrograms } from '@/lib/saved-lists-db'
 import { admissionMethodTerm } from '@/lib/school-list-utils'
+import { programPriorities } from '@/lib/school-detail-utils'
 import type { ListSchool, ListSchoolDetail, ShortlistProgram } from '@/lib/saved-list-utils'
 import ShortlistClient from './ShortlistClient'
 
@@ -62,11 +63,14 @@ export default async function ShortlistPage() {
     const school = schoolByDbn.get(item.dbn)
     const program = school?.programs.find((p) => p.program_code === item.program_code)
     if (!school || !program) continue
+    const { groups, dia } = programPriorities(program.eligibility)
     programs[item.program_code] = {
       program_code: item.program_code,
       dbn: item.dbn,
       name: program.program_name ?? program.program ?? item.program_code,
       term: program.admissions_type ? admissionMethodTerm(program.admissions_type) : null,
+      ...(groups.length > 0 && { priorities: groups }),
+      ...(dia && { dia }),
     }
     initialOrder.push(item.program_code)
   }
