@@ -72,6 +72,11 @@ export function ensureSchema(): Promise<void> {
           updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
         )
       `
+      // A table created before these columns existed (an early preview
+      // build) gets them here; a no-op otherwise.
+      await sql`ALTER TABLE students ADD COLUMN IF NOT EXISTS zoned_dbn TEXT`
+      await sql`ALTER TABLE students ADD COLUMN IF NOT EXISTS swd BOOLEAN`
+      await sql`ALTER TABLE students ADD COLUMN IF NOT EXISTS frl BOOLEAN`
     })().catch((err) => {
       schemaReady = null
       throw err
