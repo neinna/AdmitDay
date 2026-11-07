@@ -1896,10 +1896,10 @@ ${REVIEW_COMMENT:0:60000}"
               *) ESCALATION_REASON="was unavailable, so this diff was never independently reviewed" ;;
             esac
           elif [ "$WORKFLOW_CHANGED" -eq 1 ]; then
-            ESCALATION_REASON="changes CI workflow files under .github/workflows/"
+            ESCALATION_REASON="approved it, but the diff changes CI workflow files under .github/workflows/, which always need a person"
             echo "$REVIEW_TEXT" | grep -q "RISK: LIVE-VERIFY-NEEDED" && REVIEWER_RESULT="approved-live-verify-needed"
           elif [ "$CONTROL_CHANGED" -eq 1 ]; then
-            ESCALATION_REASON="changes pipeline control files: $(git diff --name-only origin/main...HEAD | grep -E "$CONTROL_FILES_PATTERN" | tr '\n' ' ')"
+            ESCALATION_REASON="approved it, but the diff changes pipeline control files, which always need a person: $(git diff --name-only origin/main...HEAD | grep -E "$CONTROL_FILES_PATTERN" | tr '\n' ' ')"
           else
             ESCALATION_REASON="flagged it as touching the database/connection layer, migrations, seeding, environment/secrets, or deploy/infra config (RISK: LIVE-VERIFY-NEEDED)"
             REVIEWER_RESULT="approved-live-verify-needed"
