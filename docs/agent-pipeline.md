@@ -100,6 +100,20 @@ Define success before looking at model output. A cheap model succeeded only if:
 
 If any of these fail, escalate the task to a stronger model or a human review path.
 
+## Merge Gates
+
+- Required checks on `main`: `test`, `typecheck`, `lint`, `build`, `merge-gate`.
+- `merge-gate` (`scripts/merge-gate.sh`, run by `.github/workflows/merge-gate.yml`):
+  - fails while a PR has `needs-you`;
+  - passes with `ai-approved`;
+  - passes a `data/weekly-refresh` PR that changes only `schools.json`, `data/schema-summary.json`, `data/school-embeddings.json`;
+  - otherwise fails.
+- The coordinator adds `ai-approved` only when the independent reviewer approved and nothing escalated, and posts the review as a PR comment.
+- Escalation by path: the `CONTROL_FILES_PATTERN` list in `agent-coordinator.sh` always sends a PR to a human.
+- Changes under `.github/workflows/` are never pushed by the agent; a human applies them.
+- The reviewer model defaults to `claude-opus-5-5`, different from the implementer.
+- To release an escalated PR: review it, remove `needs-you`, add `ai-approved`.
+
 ## Planned Observability
 
 The next instrumentation step is Langfuse Cloud, with keys stored on the VPS:
