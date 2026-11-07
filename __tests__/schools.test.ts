@@ -121,7 +121,7 @@ describe('agent-coordinator.sh PR flow', () => {
   it('escalates a RISK: LIVE-VERIFY-NEEDED review instead of auto-merging', () => {
     // Isolate the success branch that runs after a PR is opened
     const successBranch = coordinatorSource.match(
-      /if \[ -n "\$PR_URL" \]; then([\s\S]*?)\n    else\n/
+      /if \[ -n "\$PR_URL" \]; then([\s\S]*?)\n      else\n/
     )
     expect(successBranch).not.toBeNull()
     const body = successBranch![1]
@@ -139,7 +139,7 @@ describe('agent-coordinator.sh PR flow', () => {
     // unreviewed diff is the most extreme case of "can't truly verify" and
     // must never auto-merge unattended, even though REVIEW_TEXT is empty.
     const successBranch = coordinatorSource.match(
-      /if \[ -n "\$PR_URL" \]; then([\s\S]*?)\n    else\n/
+      /if \[ -n "\$PR_URL" \]; then([\s\S]*?)\n      else\n/
     )
     expect(successBranch).not.toBeNull()
     const body = successBranch![1]
