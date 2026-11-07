@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { usePostHog } from 'posthog-js/react'
 import { useAuth, useClerk } from '@clerk/nextjs'
 import AuthControls from '@/components/AuthControls'
+import SiteNav from '@/components/SiteNav'
 import { PENDING_SAVE_KEY } from '@/components/PendingSaveSync'
 import { School } from '@/types'
 import {
@@ -672,17 +673,16 @@ export default function FindClient({ schools, initialFilters }: Props) {
           </div>
         </Link>
         <div className="flex items-center gap-[28px]">
-          <nav className="flex items-baseline gap-[28px] text-[14.5px] text-muted">
-            <span className="text-ink font-medium border-b-2 border-accent pb-[3px]">Search</span>
-            <Link href="/shortlist" className="hover:text-ink transition-colors duration-[120ms] ease-out">
-              Shortlist
-              {hydrated && shortlistLoadFailed ? (
-                <span className="text-faint ml-1">Couldn&rsquo;t load your shortlist.</span>
+          <SiteNav
+            active="schools"
+            listBadge={
+              hydrated && shortlistLoadFailed ? (
+                <span className="text-faint ml-1">Couldn&rsquo;t load your list.</span>
               ) : (
                 addedCount > 0 && <span className="font-mono text-accent ml-1">{addedCount}</span>
-              )}
-            </Link>
-          </nav>
+              )
+            }
+          />
           <AuthControls />
         </div>
       </header>

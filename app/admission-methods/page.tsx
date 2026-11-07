@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import Footer from '@/components/Footer'
 import AuthControls from '@/components/AuthControls'
+import SiteNav from '@/components/SiteNav'
 import {
   ADMISSION_METHOD_COPY,
   admissionMethodMeaning,
@@ -25,10 +26,7 @@ export default function AdmissionMethodsPage() {
           </div>
         </Link>
         <div className="flex items-center gap-7">
-          <nav className="flex items-center gap-7 text-[14.5px] text-muted">
-            <Link href="/find" className="hover:text-ink transition-colors duration-[120ms] ease-out">Search</Link>
-            <Link href="/shortlist" className="hover:text-ink transition-colors duration-[120ms] ease-out">Shortlist</Link>
-          </nav>
+          <SiteNav />
           <AuthControls />
         </div>
       </header>

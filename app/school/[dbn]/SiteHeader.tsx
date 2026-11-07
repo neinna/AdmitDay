@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import AuthControls from '@/components/AuthControls'
+import SiteNav from '@/components/SiteNav'
 
 interface Props {
   addedCount: number
@@ -25,15 +26,10 @@ export default function SiteHeader({ addedCount }: Props) {
         </div>
       </Link>
       <div className="flex items-center gap-7">
-        <nav className="flex items-baseline gap-7 text-[14.5px] text-muted">
-          <Link href="/find" className="text-ink font-medium border-b-2 border-accent pb-[3px]">
-            Find
-          </Link>
-          <Link href="/shortlist" className="hover:text-ink transition-colors duration-[120ms] ease-out">
-            Shortlist
-            {addedCount > 0 && <span className="font-mono text-accent ml-1">{addedCount}</span>}
-          </Link>
-        </nav>
+        <SiteNav
+          active="schools"
+          listBadge={addedCount > 0 && <span className="font-mono text-accent ml-1">{addedCount}</span>}
+        />
         <AuthControls />
       </div>
     </header>
