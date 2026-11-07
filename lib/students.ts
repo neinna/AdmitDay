@@ -1,11 +1,14 @@
 import { isLotteryValue } from '@/lib/lottery'
+import type { School } from '@/types'
 
 /**
  * A student is a label the parent picks ("Kid 1", not a name) plus the few
  * facts that decide admissions priority: where the child lives, where their
- * current school is, and the first two characters of the lottery number as
- * 0-255. No name, school name, grade or date of birth, and never the full
- * 32-character lottery number.
+ * current school is, their zoned high school, their seat group (General
+ * Education or Students with Disabilities), whether they're eligible for free
+ * or reduced price lunch (DIA set-asides), and the first two characters of the
+ * lottery number as 0-255. No name, school name, grade or date of birth, and
+ * never the full 32-character lottery number.
  *
  * Pure: no I/O, safe to import in the browser.
  */
@@ -37,8 +40,38 @@ export interface Student {
   home_district: number | null
   school_borough: Borough | null
   school_district: number | null
+  /** DBN of the high school the student is zoned for, if any. */
+  zoned_dbn: string | null
+  /** Applies for Students with Disabilities seats (has an IEP). null = not answered. */
+  swd: boolean | null
+  /** Eligible for free or reduced price lunch. null = not answered. */
+  frl: boolean | null
   /** First two lottery characters read as 0-255. */
   lottery: number | null
+}
+
+/** MySchools' name for the zoned priority group. */
+export const ZONED_GROUP = 'Students who live in the zoned area'
+
+const DBN = /^\d{2}[MKXQR]\d{3}$/
+
+/** Schools with at least one program that gives zoned priority, by name. */
+export function zonedSchools(schools: School[]): { dbn: string; name: string }[] {
+  return schools
+    .filter((s) =>
+      (s.programs ?? []).some((p) => {
+        const groups = (p.eligibility as { priority_groups?: { name?: string }[] } | undefined)?.priority_groups
+        return Array.isArray(groups) && groups.some((g) => g?.name === ZONED_GROUP)
+      })
+    )
+    .map((s) => ({ dbn: s.dbn, name: s.name }))
+    .sort((a, b) => a.name.localeCompare(b.name))
+}
+
+function yesNoOrNull(v: unknown, field: string): boolean | null | string {
+  if (v === null || v === undefined) return null
+  if (typeof v !== 'boolean') return `${field} must be true, false or null`
+  return v
 }
 
 export function boroughName(code: Borough): string {
@@ -85,16 +118,34 @@ export function parseStudent(body: unknown): { ok: true; student: Student } | { 
     lottery = b.lottery
   }
 
-  return { ok: true, student: { label, home_borough, home_district, school_borough, school_district, lottery } }
+  let zoned_dbn: string | null = null
+  if (b.zoned_dbn !== null && b.zoned_dbn !== undefined && b.zoned_dbn !== '') {
+    if (typeof b.zoned_dbn !== 'string' || !DBN.test(b.zoned_dbn)) return { ok: false, error: 'zoned_dbn is not a DBN' }
+    zoned_dbn = b.zoned_dbn
+  }
+  const swd = yesNoOrNull(b.swd, 'swd')
+  if (typeof swd === 'string') return { ok: false, error: swd }
+  const frl = yesNoOrNull(b.frl, 'frl')
+  if (typeof frl === 'string') return { ok: false, error: frl }
+
+  return {
+    ok: true,
+    student: { label, home_borough, home_district, school_borough, school_district, zoned_dbn, swd, frl, lottery },
+  }
 }
 
 /**
  * The MySchools borough priority groups this student falls in, named exactly
  * as MySchools names them. A borough group counts students who attend school
- * there or live there, so home and school borough can each qualify.
+ * there or live there, so home and school borough can each qualify. A zoned
+ * school adds "Students who live in the zoned area" (that school only).
  */
-export function geoPriorityGroups(s: Pick<Student, 'home_borough' | 'school_borough'>): string[] {
+export function geoPriorityGroups(
+  s: Pick<Student, 'home_borough' | 'school_borough'> & Partial<Pick<Student, 'zoned_dbn'>>,
+  zonedName?: string
+): string[] {
   const boroughs = [s.home_borough, s.school_borough].filter((b): b is Borough => !!b)
   const names = [...new Set(boroughs)].map((b) => `${boroughName(b)} students or residents`)
-  return [...names, 'New York City residents']
+  const zoned = s.zoned_dbn ? [`${ZONED_GROUP} (${zonedName ?? s.zoned_dbn} only)`] : []
+  return [...zoned, ...names, 'New York City residents']
 }

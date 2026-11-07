@@ -2,7 +2,8 @@
  * lib/students.ts: what a student may hold, and which MySchools borough
  * priority groups apply.
  */
-import { parseStudent, geoPriorityGroups } from '@/lib/students'
+import { parseStudent, geoPriorityGroups, zonedSchools, ZONED_GROUP } from '@/lib/students'
+import type { School } from '@/types'
 
 const VALID = {
   label: 'Kid 1',
@@ -10,6 +11,9 @@ const VALID = {
   home_district: 15,
   school_borough: 'M',
   school_district: 2,
+  zoned_dbn: '15K448',
+  swd: false,
+  frl: true,
   lottery: 63,
 }
 
@@ -26,7 +30,7 @@ describe('parseStudent', () => {
   it('accepts only label and home borough, the rest null', () => {
     expect(parseStudent({ label: 'Kid 1', home_borough: 'Q' })).toEqual({
       ok: true,
-      student: { label: 'Kid 1', home_borough: 'Q', home_district: null, school_borough: null, school_district: null, lottery: null },
+      student: { label: 'Kid 1', home_borough: 'Q', home_district: null, school_borough: null, school_district: null, zoned_dbn: null, swd: null, frl: null, lottery: null },
     })
   })
 
@@ -38,6 +42,9 @@ describe('parseStudent', () => {
     [{ ...VALID, school_borough: null, school_district: 2 }, 'school_district needs a borough'],
     [{ ...VALID, lottery: 300 }, 'lottery must be 0-255'],
     [{ ...VALID, lottery: '3f2a9c0b7d114e2a9b3c0123456789ab' }, 'lottery must be 0-255'],
+    [{ ...VALID, zoned_dbn: 'Brooklyn Tech' }, 'zoned_dbn is not a DBN'],
+    [{ ...VALID, swd: 'yes' }, 'swd must be true, false or null'],
+    [{ ...VALID, frl: 1 }, 'frl must be true, false or null'],
   ])('rejects %j', (body, error) => {
     expect(parseStudent(body)).toEqual({ ok: false, error })
   })
@@ -67,6 +74,31 @@ describe('geoPriorityGroups', () => {
     expect(geoPriorityGroups({ home_borough: 'R', school_borough: null })).toEqual([
       'Staten Island students or residents',
       'New York City residents',
+    ])
+  })
+})
+
+describe('zoned school', () => {
+  it('adds the zoned group first, naming the school', () => {
+    expect(geoPriorityGroups({ home_borough: 'K', school_borough: null, zoned_dbn: '15K448' }, 'Sunset Park High School')).toEqual([
+      'Students who live in the zoned area (Sunset Park High School only)',
+      'Brooklyn students or residents',
+      'New York City residents',
+    ])
+  })
+
+  it('zonedSchools lists only schools with a zoned priority group, sorted by name', () => {
+    const school = (dbn: string, name: string, groups: string[]) =>
+      ({ dbn, name, programs: [{ eligibility: { priority_groups: groups.map((g) => ({ name: g })) } }] }) as unknown as School
+    const schools = [
+      school('02M001', 'Zeta HS', [ZONED_GROUP, 'New York City residents']),
+      school('02M002', 'Open HS', ['New York City residents']),
+      school('15K003', 'Alpha HS', [ZONED_GROUP]),
+      { dbn: '15K004', name: 'No programs' } as unknown as School,
+    ]
+    expect(zonedSchools(schools)).toEqual([
+      { dbn: '15K003', name: 'Alpha HS' },
+      { dbn: '02M001', name: 'Zeta HS' },
     ])
   })
 })

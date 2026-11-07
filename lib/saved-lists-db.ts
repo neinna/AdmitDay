@@ -53,7 +53,8 @@ export function ensureSchema(): Promise<void> {
         )
       `
       // Students (lib/students.ts): a parent-chosen label plus borough,
-      // district and the lottery number's first two characters as 0-255.
+      // district, zoned school, seat group, lunch eligibility and the lottery
+      // number's first two characters as 0-255.
       // One per parent for now (UNIQUE parent_id). Created here so account
       // deletion, which only calls ensureSchema, can always delete from it.
       await sql`
@@ -65,6 +66,9 @@ export function ensureSchema(): Promise<void> {
           home_district SMALLINT,
           school_borough CHAR(1),
           school_district SMALLINT,
+          zoned_dbn TEXT,
+          swd BOOLEAN,
+          frl BOOLEAN,
           lottery SMALLINT CHECK (lottery BETWEEN 0 AND 255),
           created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
           updated_at TIMESTAMPTZ NOT NULL DEFAULT now()

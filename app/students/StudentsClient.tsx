@@ -11,15 +11,20 @@ import {
   BOROUGHS,
   DISTRICTS,
   LABEL_MAX,
+  ZONED_GROUP,
   boroughName,
   geoPriorityGroups,
   type Borough,
   type Student,
 } from '@/lib/students'
 
+type ZonedOption = { dbn: string; name: string }
+
 interface Props {
   signedIn: boolean
   initialStudent: Student | null
+  /** Schools with a zoned priority group, from schools.json. */
+  zonedOptions?: ZonedOption[]
 }
 
 function Header() {
@@ -42,7 +47,7 @@ function Header() {
 
 const H1 = 'font-display font-bold text-[30px] min-[700px]:text-[40px] leading-[1.04] tracking-[-0.038em] text-ink'
 
-export default function StudentsClient({ signedIn, initialStudent }: Props) {
+export default function StudentsClient({ signedIn, initialStudent, zonedOptions = [] }: Props) {
   const [student, setStudent] = useState<Student | null>(initialStudent)
   const [editing, setEditing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -114,9 +119,9 @@ export default function StudentsClient({ signedIn, initialStudent }: Props) {
         <div className="flex flex-col gap-6">
           {error && <p className="text-[13.5px] text-ink-2">{error}</p>}
           {editing ? (
-            <StudentForm initial={student} onSave={save} onCancel={() => setEditing(false)} />
+            <StudentForm initial={student} zonedOptions={zonedOptions} onSave={save} onCancel={() => setEditing(false)} />
           ) : student ? (
-            <StudentCard student={student} onEdit={() => setEditing(true)} onDelete={remove} />
+            <StudentCard student={student} zonedOptions={zonedOptions} onEdit={() => setEditing(true)} onDelete={remove} />
           ) : (
             <p className="text-[15px] text-muted">
               Add a student to see which borough priorities apply and where their lottery number sits.
@@ -133,17 +138,26 @@ function placeLine(borough: Borough | null, district: number | null): string | n
   return district ? `${boroughName(borough)} · District ${district}` : boroughName(borough)
 }
 
+function yesNo(v: boolean | null, yes: string, no: string): string | null {
+  return v === null ? null : v ? yes : no
+}
+
 export function StudentCard({
   student,
+  zonedOptions = [],
   onEdit,
   onDelete,
 }: {
   student: Student
+  zonedOptions?: ZonedOption[]
   onEdit: () => void
   onDelete: () => void
 }) {
   const home = placeLine(student.home_borough, student.home_district)
   const school = placeLine(student.school_borough, student.school_district)
+  const zonedName = zonedOptions.find((z) => z.dbn === student.zoned_dbn)?.name
+  const seats = yesNo(student.swd, 'Students with Disabilities', 'General Education')
+  const lunch = yesNo(student.frl, 'Eligible', 'Not eligible')
   return (
     <div className="border border-rule p-6">
       <div className="flex items-start justify-between gap-4">
@@ -162,6 +176,26 @@ export function StudentCard({
             <dd className="text-ink-2">{school}</dd>
           </>
         )}
+        {student.zoned_dbn && (
+          <>
+            <dt className="text-faint">Zoned for</dt>
+            <dd className="text-ink-2">{zonedName ?? student.zoned_dbn}</dd>
+          </>
+        )}
+        {seats && (
+          <>
+            <dt className="text-faint">Seat group</dt>
+            <dd className="text-ink-2">{seats}</dd>
+          </>
+        )}
+        {lunch && (
+          <>
+            <dt className="text-faint">Free or reduced price lunch</dt>
+            <dd className="text-ink-2" title="Diversity in Admissions (DIA) set-asides use this">
+              {lunch}
+            </dd>
+          </>
+        )}
         {student.lottery !== null && (
           <>
             <dt className="text-faint">Lottery</dt>
@@ -178,7 +212,7 @@ export function StudentCard({
       <div className="mt-5 border-t border-rule-light pt-4">
         <Eyebrow>Priority groups that can apply</Eyebrow>
         <ul className="mt-2 text-[14px] text-ink-2">
-          {geoPriorityGroups(student).map((g) => (
+          {geoPriorityGroups(student, zonedName).map((g) => (
             <li key={g}>{g}</li>
           ))}
         </ul>
@@ -192,13 +226,18 @@ const LABEL = 'block text-[13px] text-faint mb-1'
 
 function StudentForm({
   initial,
+  zonedOptions,
   onSave,
   onCancel,
 }: {
   initial: Student | null
+  zonedOptions: ZonedOption[]
   onSave: (s: Student) => void
   onCancel: () => void
 }) {
+  const [zonedDbn, setZonedDbn] = useState(initial?.zoned_dbn ?? '')
+  const [swd, setSwd] = useState<boolean | null>(initial?.swd ?? null)
+  const [frl, setFrl] = useState<boolean | null>(initial?.frl ?? null)
   const [label, setLabel] = useState(initial?.label ?? '')
   const [homeBorough, setHomeBorough] = useState<Borough | ''>(initial?.home_borough ?? '')
   const [homeDistrict, setHomeDistrict] = useState(initial?.home_district ? String(initial.home_district) : '')
@@ -227,6 +266,9 @@ function StudentForm({
       home_district: homeDistrict ? Number(homeDistrict) : null,
       school_borough: schoolBorough || null,
       school_district: schoolBorough && schoolDistrict ? Number(schoolDistrict) : null,
+      zoned_dbn: zonedDbn || null,
+      swd,
+      frl,
       lottery,
     })
   }
@@ -263,6 +305,31 @@ function StudentForm({
         optional
       />
       <div>
+        <label htmlFor="student-zoned" className={LABEL}>Zoned high school (optional)</label>
+        <select id="student-zoned" value={zonedDbn} onChange={(e) => setZonedDbn(e.target.value)} className={FIELD}>
+          <option value="">None, or not sure</option>
+          {zonedOptions.map((z) => (
+            <option key={z.dbn} value={z.dbn}>{z.name}</option>
+          ))}
+        </select>
+        <p className="text-[12.5px] text-faint mt-1">
+          Only schools with a &ldquo;{ZONED_GROUP}&rdquo; priority are listed. The DOE&rsquo;s zone lookup tells you
+          yours by address.
+        </p>
+      </div>
+      <YesNo
+        name="swd"
+        legend="Applies for Students with Disabilities seats (has an IEP)"
+        value={swd}
+        onChange={setSwd}
+      />
+      <YesNo
+        name="frl"
+        legend="Eligible for free or reduced price lunch"
+        value={frl}
+        onChange={setFrl}
+      />
+      <div>
         <label htmlFor="student-lottery" className={LABEL}>Lottery number, first 2 characters</label>
         <input
           id="student-lottery"
@@ -284,6 +351,37 @@ function StudentForm({
         <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>
       </div>
     </form>
+  )
+}
+
+function YesNo({
+  name,
+  legend,
+  value,
+  onChange,
+}: {
+  name: string
+  legend: string
+  value: boolean | null
+  onChange: (v: boolean | null) => void
+}) {
+  const options: { label: string; v: boolean | null }[] = [
+    { label: 'Yes', v: true },
+    { label: 'No', v: false },
+    { label: 'Skip', v: null },
+  ]
+  return (
+    <fieldset>
+      <legend className={LABEL}>{legend}</legend>
+      <div className="flex gap-5 text-[14px] text-ink-2">
+        {options.map((o) => (
+          <label key={o.label} className="flex items-center gap-2">
+            <input type="radio" name={name} checked={value === o.v} onChange={() => onChange(o.v)} />
+            {o.label}
+          </label>
+        ))}
+      </div>
+    </fieldset>
   )
 }
 

@@ -36,6 +36,9 @@ const STUDENT = {
   home_district: 15,
   school_borough: null,
   school_district: null,
+  zoned_dbn: null,
+  swd: true,
+  frl: false,
   lottery: 63,
 }
 
