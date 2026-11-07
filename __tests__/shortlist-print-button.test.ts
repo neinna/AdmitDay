@@ -9,6 +9,8 @@ import { renderToStaticMarkup } from 'react-dom/server'
  * happens. Renamed to "Print". Uses the same renderToStaticMarkup technique as
  * my-schools-signed-out.test.ts to render ShortlistClient directly.
  */
+jest.mock('next/navigation', () => ({ useRouter: () => ({ refresh: jest.fn() }) }))
+
 jest.mock('@clerk/nextjs', () => ({
   ClerkLoaded: ({ children }: { children: React.ReactNode }) => children,
   SignedIn: () => null,

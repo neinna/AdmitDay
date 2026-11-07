@@ -9,6 +9,8 @@ import { renderToStaticMarkup } from 'react-dom/server'
  * DOE data doesn't publish rather than showing a blank or a zero. Uses the
  * same renderToStaticMarkup technique as shortlist-print-button.test.ts.
  */
+jest.mock('next/navigation', () => ({ useRouter: () => ({ refresh: jest.fn() }) }))
+
 jest.mock('@clerk/nextjs', () => ({
   ClerkLoaded: ({ children }: { children: React.ReactNode }) => children,
   SignedIn: () => null,

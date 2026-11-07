@@ -5,6 +5,8 @@ import { renderToStaticMarkup } from 'react-dom/server'
  * Issue #623 — the Shortlist empty state links to /find with the label
  * "Search" (the page name since #585), not "Find schools".
  */
+jest.mock('next/navigation', () => ({ useRouter: () => ({ refresh: jest.fn() }) }))
+
 jest.mock('@clerk/nextjs', () => ({
   ClerkLoaded: ({ children }: { children: React.ReactNode }) => children,
   SignedIn: () => null,
