@@ -75,8 +75,11 @@ export function ensureSchema(): Promise<void> {
       // A table created before these columns existed (an early preview
       // build) gets them here; a no-op otherwise.
       await sql`ALTER TABLE students ADD COLUMN IF NOT EXISTS zoned_dbn TEXT`
-      await sql`ALTER TABLE students ADD COLUMN IF NOT EXISTS swd BOOLEAN`
-      await sql`ALTER TABLE students ADD COLUMN IF NOT EXISTS frl BOOLEAN`
+      // Disability seat and lunch eligibility are not stored (decided
+      // 2026-11-06). A preview build may have created these columns; remove
+      // them, and anything in them, wherever they exist.
+      await sql`ALTER TABLE students DROP COLUMN IF EXISTS swd`
+      await sql`ALTER TABLE students DROP COLUMN IF EXISTS frl`
     })().catch((err) => {
       schemaReady = null
       throw err
