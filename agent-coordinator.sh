@@ -37,14 +37,14 @@ OFFSET_FILE="/home/agent/.tg_offset"
 TRIGGER_LABEL="agent-ok"
 CLAUDE_TIMEOUT=1800
 CLAUDE_IMPLEMENT_MODEL="${CLAUDE_IMPLEMENT_MODEL:-sonnet}"
-CLAUDE_REVIEW_MODEL="${CLAUDE_REVIEW_MODEL:-sonnet}"
+CLAUDE_REVIEW_MODEL="${CLAUDE_REVIEW_MODEL:-claude-opus-5-5}"
 CLAUDE_PLANNER_MODEL="${CLAUDE_PLANNER_MODEL:-sonnet}"
 CLAUDE_TRIAGE_MODEL="${CLAUDE_TRIAGE_MODEL:-claude-sonnet-5-5}"
 # `-` not `:-` on both fallbacks: an operator who sets these to EMPTY means
 # "no fallback, stall instead", and `:-` would silently ignore that and use
 # haiku anyway. Unset still defaults to haiku.
 CLAUDE_IMPLEMENT_FALLBACK_MODEL="${CLAUDE_IMPLEMENT_FALLBACK_MODEL-haiku}"
-# Must differ from CLAUDE_REVIEW_MODEL (also "sonnet" by default): a fallback
+# Must differ from CLAUDE_REVIEW_MODEL (claude-opus-5-5 by default): a fallback
 # equal to the primary gives no protection against a model-specific outage,
 # since the same model would be unavailable both times (issue #430 review).
 CLAUDE_REVIEW_FALLBACK_MODEL="${CLAUDE_REVIEW_FALLBACK_MODEL-haiku}"

@@ -190,7 +190,7 @@ describe('agent-coordinator.sh PR flow', () => {
   it('keeps Claude API but caps cost and chooses models per coordinator phase', () => {
     for (const setting of [
       'CLAUDE_IMPLEMENT_MODEL="${CLAUDE_IMPLEMENT_MODEL:-sonnet}"',
-      'CLAUDE_REVIEW_MODEL="${CLAUDE_REVIEW_MODEL:-sonnet}"',
+      'CLAUDE_REVIEW_MODEL="${CLAUDE_REVIEW_MODEL:-claude-opus-5-5}"',
       'CLAUDE_PLANNER_MODEL="${CLAUDE_PLANNER_MODEL:-sonnet}"',
       'CLAUDE_IMPLEMENT_MAX_USD="${CLAUDE_IMPLEMENT_MAX_USD:-5.00}"',
       'CLAUDE_REVIEW_MAX_USD="${CLAUDE_REVIEW_MAX_USD:-0.75}"',
