@@ -5,6 +5,8 @@ import { renderToStaticMarkup } from 'react-dom/server'
  * Issue #627 — Shortlist rows label School and Program, the expand/print detail
  * shows one Location field, and the website is a link that opens in a new tab.
  */
+jest.mock('next/navigation', () => ({ useRouter: () => ({ refresh: jest.fn() }) }))
+
 jest.mock('@clerk/nextjs', () => ({
   ClerkLoaded: ({ children }: { children: React.ReactNode }) => children,
   SignedIn: () => null,

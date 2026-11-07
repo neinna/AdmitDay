@@ -2,6 +2,7 @@
 
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { SignInButton } from '@clerk/nextjs'
 import { usePostHog } from 'posthog-js/react'
 import { citywidePercentile, trackLabel } from '@/lib/school-list-utils'
@@ -186,8 +187,36 @@ function Header() {
 }
 
 export default function ShortlistClient({ index, initialOrder, programs, details = {}, signedIn }: Props) {
+  const router = useRouter()
   const posthog = usePostHog()
   const [order, setOrder] = useState<string[]>(initialOrder)
+
+  // Since #568 the browser may reuse this page for 30 s, so a program saved
+  // or removed elsewhere in that window is missing from initialOrder. Compare
+  // with the live list once and re-fetch the page if they differ.
+  useEffect(() => {
+    if (!signedIn) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch('/api/saved-programs')
+        if (!res.ok) return
+        const data = await res.json()
+        const live: string[] = Array.isArray(data.programs)
+          ? data.programs.map((p: { program_code: string }) => p.program_code)
+          : []
+        if (cancelled) return
+        const rendered = new Set(initialOrder)
+        const differs = live.length !== rendered.size || live.some((code) => !rendered.has(code))
+        if (differs) router.refresh()
+      } catch {
+        // Keep showing the rendered list: a failed check must never blank it.
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const [notice, setNotice] = useState<string | null>(null)
   // Issue #408: which rows have their detail panel open. Component state
   // only — not persisted, and toggling it never touches `order`.

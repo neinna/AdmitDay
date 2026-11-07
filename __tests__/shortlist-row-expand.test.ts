@@ -20,6 +20,8 @@ import { renderToStaticMarkup } from 'react-dom/server'
  * analytics" requirement is covered by asserting the toggle wiring never
  * references posthog.
  */
+jest.mock('next/navigation', () => ({ useRouter: () => ({ refresh: jest.fn() }) }))
+
 jest.mock('@clerk/nextjs', () => ({
   ClerkLoaded: ({ children }: { children: React.ReactNode }) => children,
   SignedIn: () => null,

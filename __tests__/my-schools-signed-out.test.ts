@@ -11,6 +11,8 @@ import { renderToStaticMarkup } from 'react-dom/server'
  * privacy-terms-pages.test.ts uses for a page whose header pulls in Clerk's
  * SignedIn/SignedOut via AuthControls.
  */
+jest.mock('next/navigation', () => ({ useRouter: () => ({ refresh: jest.fn() }) }))
+
 jest.mock('@clerk/nextjs', () => ({
   ClerkLoaded: ({ children }: { children: React.ReactNode }) => children,
   SignedIn: () => null,
