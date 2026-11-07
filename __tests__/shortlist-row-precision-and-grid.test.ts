@@ -10,6 +10,8 @@ import { renderToStaticMarkup } from 'react-dom/server'
  * school column absorb all slack so the numeric columns collided with the
  * row's +/up/down/remove controls.
  */
+jest.mock('next/navigation', () => ({ useRouter: () => ({ refresh: jest.fn() }) }))
+
 jest.mock('@clerk/nextjs', () => ({
   ClerkLoaded: ({ children }: { children: React.ReactNode }) => children,
   SignedIn: () => null,

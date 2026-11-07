@@ -11,6 +11,8 @@ import { renderToStaticMarkup } from 'react-dom/server'
  * composition rail, see saved-list-utils.ts's `bucketForSchool`), never by
  * position, and rank numbering restarts at 01 within each section.
  */
+jest.mock('next/navigation', () => ({ useRouter: () => ({ refresh: jest.fn() }) }))
+
 jest.mock('@clerk/nextjs', () => ({
   ClerkLoaded: ({ children }: { children: React.ReactNode }) => children,
   SignedIn: () => null,

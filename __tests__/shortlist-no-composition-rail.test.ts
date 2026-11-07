@@ -7,6 +7,8 @@ import { renderToStaticMarkup } from 'react-dom/server'
  * Issue #483 — the unlabelled composition rail below the ranking list was
  * removed. This asserts the markup no longer contains an <aside>.
  */
+jest.mock('next/navigation', () => ({ useRouter: () => ({ refresh: jest.fn() }) }))
+
 jest.mock('@clerk/nextjs', () => ({
   ClerkLoaded: ({ children }: { children: React.ReactNode }) => children,
   SignedIn: () => null,
