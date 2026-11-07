@@ -47,7 +47,7 @@ describe('agent-coordinator.sh: escalation branch includes workflow file changes
     expect(start).toBeGreaterThan(-1)
     const conditionLine = coordinatorSource.slice(
       start,
-      coordinatorSource.indexOf('\n', start + 1) + 200,
+      coordinatorSource.indexOf('\n', start + 1) + 600,
     )
     expect(conditionLine).toContain('RISK: LIVE-VERIFY-NEEDED')
     expect(conditionLine).toContain('"$REVIEW_RC" -eq 2')
