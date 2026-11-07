@@ -58,6 +58,8 @@ CLAUDE_REVIEW_MAX_USD="${CLAUDE_REVIEW_MAX_USD:-0.75}"
 CLAUDE_PLANNER_MAX_USD="${CLAUDE_PLANNER_MAX_USD:-0.50}"
 CLAUDE_TRIAGE_MAX_USD="${CLAUDE_TRIAGE_MAX_USD:-0.50}"
 REVIEW_DIFF_MAX_BYTES="${REVIEW_DIFF_MAX_BYTES:-60000}"
+# Changes to these paths always go to a human, whatever the reviewer says.
+CONTROL_FILES_PATTERN='^(agent-coordinator\.sh|AGENTS\.md|\.github/|vercel\.json|next\.config\.js|proxy\.ts|jest\.config\.js|eslint\.config\.mjs|tsconfig\.json|package\.json|package-lock\.json|scripts/merge-gate\.sh|scripts/vps-|__tests__/coordinator-|lib/db)'
 LF_TRACE_SCRIPT="${APP_DIR}/scripts/langfuse_trace.py"
 LF_TRACE_PYTHON="${LF_TRACE_PYTHON:-/home/agent/.venvs/agent-observability/bin/python}"
 RUN_METADATA_DIR="/home/agent/agent-run-metadata"
@@ -1488,6 +1490,10 @@ workflow_files_changed() {
   git diff --name-only origin/main...HEAD | grep -q '^\.github/workflows/'
 }
 
+control_files_changed() {
+  git diff --name-only origin/main...HEAD | grep -qE "$CONTROL_FILES_PATTERN"
+}
+
 run_agent() {
   local ISSUE_NUMBER=$1
   local RUN_START
@@ -1839,6 +1845,8 @@ Instructions:
 
     local WORKFLOW_CHANGED=0
     workflow_files_changed && WORKFLOW_CHANGED=1
+    local CONTROL_CHANGED=0
+    control_files_changed && CONTROL_CHANGED=1
 
     local T0 T1
     T0=$(lf_now_ns)
@@ -1863,7 +1871,7 @@ This PR changes CI workflow files under \`.github/workflows/\`. It needs a human
       github_comment "$PR_NUMBER" "Independent review (${CLAUDE_REVIEW_MODEL}, result: ${REVIEWER_RESULT:-unknown}):
 
 ${REVIEW_COMMENT:0:60000}"
-      if echo "$REVIEW_TEXT" | grep -q "RISK: LIVE-VERIFY-NEEDED" || [ "$REVIEW_RC" -eq 2 ] || [ "$WORKFLOW_CHANGED" -eq 1 ]; then
+      if echo "$REVIEW_TEXT" | grep -q "RISK: LIVE-VERIFY-NEEDED" || [ "$REVIEW_RC" -eq 2 ] || [ "$WORKFLOW_CHANGED" -eq 1 ] || [ "$CONTROL_CHANGED" -eq 1 ]; then
         # Escalate instead of auto-merging when any of: the reviewer flagged
         # the diff as unverifiable in CI (no live database), the reviewer
         # itself was unavailable, or the diff touches .github/workflows/ (the
@@ -1880,6 +1888,8 @@ ${REVIEW_COMMENT:0:60000}"
         elif [ "$WORKFLOW_CHANGED" -eq 1 ]; then
           ESCALATION_REASON="changes CI workflow files under .github/workflows/"
           echo "$REVIEW_TEXT" | grep -q "RISK: LIVE-VERIFY-NEEDED" && REVIEWER_RESULT="approved-live-verify-needed"
+        elif [ "$CONTROL_CHANGED" -eq 1 ]; then
+          ESCALATION_REASON="changes pipeline control files: $(git diff --name-only origin/main...HEAD | grep -E "$CONTROL_FILES_PATTERN" | tr '\n' ' ')"
         else
           ESCALATION_REASON="flagged it as touching the database/connection layer, migrations, seeding, environment/secrets, or deploy/infra config (RISK: LIVE-VERIFY-NEEDED)"
           REVIEWER_RESULT="approved-live-verify-needed"
