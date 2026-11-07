@@ -55,3 +55,15 @@ describe('percentLower', () => {
     expect(isLotteryValue('3f')).toBe(false)
   })
 })
+
+describe("the DOE's example number (Random Numbers in Admissions page)", () => {
+  it('reads B51920AF-F1C6-40EC-8E9A-3E1E50CB13BB as b5 = 181', () => {
+    expect(parseLottery('B51920AF-F1C6-40EC-8E9A-3E1E50CB13BB')).toEqual({ ok: true, value: 181, prefix: 'b5' })
+  })
+
+  it('sorts 5B… ahead of B5…, as the DOE example does', () => {
+    const a = parseLottery('5B1920AF-F1C6-40EC-8E9A-3E1E50CB13BB')
+    const b = parseLottery('B51920AF-F1C6-40EC-8E9A-3E1E50CB13BB')
+    expect(a.ok && b.ok && a.value < b.value).toBe(true)
+  })
+})

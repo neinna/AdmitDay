@@ -18,4 +18,10 @@ describe('LotteryDecoder keeps the number in the browser', () => {
   it('cites the DOE page', () => {
     expect(src).toContain('DOE_RANDOM_NUMBERS_URL')
   })
+
+  it("quotes the DOE's own statement that the number alone can't determine chances", () => {
+    expect(src.replace(/\s+/g, ' ')).toContain(
+      'Random numbers, on their own, cannot determine your chances of getting into a specific program.'
+    )
+  })
 })

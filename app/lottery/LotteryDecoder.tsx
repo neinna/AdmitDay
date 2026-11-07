@@ -24,7 +24,7 @@ export default function LotteryDecoder() {
         onChange={(e) => setInput(e.target.value)}
         autoComplete="off"
         spellCheck={false}
-        placeholder="3f2a9c… (32 characters, or just the first 2)"
+        placeholder="B51920AF-F1C6-… or just the first 2 characters"
         className="w-full font-mono text-[15px] text-ink border border-rule px-3 py-[10px] focus:outline-none focus:border-ink"
       />
       <p className="text-[12.5px] text-faint mt-2">Stays in your browser. Never sent or saved.</p>
@@ -60,13 +60,22 @@ export default function LotteryDecoder() {
       )}
 
       <div className="mt-8 flex flex-col gap-[10px] text-[14px] text-ink-2 leading-[1.55]">
+        <p className="text-[13px] text-faint">From the DOE:</p>
+        <blockquote className="border-l-2 border-rule pl-3">
+          &ldquo;Random numbers are used to sort students in cases where there are more applicants than seats within
+          a priority group.&rdquo;
+        </blockquote>
+        <blockquote className="border-l-2 border-rule pl-3">
+          &ldquo;These numbers are sorted in both numeric and alphabetical order, as follows: 0, 1, 2, 3, 4, 5, 6, 7,
+          8, 9, A, B, C, D, E, F.&rdquo;
+        </blockquote>
+        <blockquote className="border-l-2 border-rule pl-3">
+          &ldquo;Random numbers, on their own, cannot determine your chances of getting into a specific
+          program.&rdquo;
+        </blockquote>
         <p>
-          The DOE gives each applicant a random number for each admissions process. Lower numbers go first. Your
-          first two characters place you among all applicants to within about half a percent.
-        </p>
-        <p>
-          This shows where your number sits. It doesn&rsquo;t predict an offer: each program&rsquo;s method,
-          priority groups and seats decide that.
+          MySchools draws every number at random, so the first two characters show where yours falls among all of
+          them, to within about half a percent.
         </p>
         <p>
           Source:{' '}

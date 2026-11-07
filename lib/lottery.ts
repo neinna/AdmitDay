@@ -2,13 +2,16 @@
  * Lottery number decoding (P1.2). Pure functions, no I/O: the decoder page
  * runs this in the browser and never sends the number anywhere.
  *
- * The DOE gives each applicant a random number written as 32 hexadecimal
- * characters (0-9, a-f), sometimes shown with dashes. Lower is better. The
- * first two characters alone place the number among all applicants to within
- * 1/256 (about 0.4%): read them as one number from 0 (00) to 255 (ff).
+ * Checked 2026-11-07 against the DOE page (DOE_RANDOM_NUMBERS_URL): MySchools
+ * generates the number as a Python uuid4, shown like
+ * B51920AF-F1C6-40EC-8E9A-3E1E50CB13BB, and sorts it 0-9 then A-F, so lower
+ * goes first. A uuid4's first 8 bits are random, so the first two characters
+ * are spread evenly from 00 to FF: read as 0-255 they place the number among
+ * all numbers to within 1/256 (about 0.4%).
  *
- * This explains where the number sits. It does not predict an offer: that
- * depends on each program's method, priority groups and seats.
+ * This explains where the number sits. It does not predict an offer; the DOE
+ * says so itself: "Random numbers, on their own, cannot determine your chances
+ * of getting into a specific program."
  */
 
 export const LOTTERY_MAX = 255
