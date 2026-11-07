@@ -63,14 +63,14 @@ describe('agent-coordinator.sh: escalation branch includes workflow file changes
   })
 
   it('does not enable auto-merge in the escalation branch', () => {
-    const escalateAt = coordinatorSource.indexOf('"$WORKFLOW_CHANGED" -eq 1 ]; then')
+    const escalateAt = coordinatorSource.indexOf('"$WORKFLOW_CHANGED" -eq 1 ]; then', coordinatorSource.indexOf('if [ -n "$PR_URL" ]; then'))
     const nextElseAt = coordinatorSource.indexOf('local PR_NODE_ID', escalateAt)
     const escalationBlock = coordinatorSource.slice(escalateAt, nextElseAt)
     expect(escalationBlock).not.toContain('github_enable_automerge')
   })
 
   it('labels both the issue and the PR needs-you in the escalation branch', () => {
-    const escalateAt = coordinatorSource.indexOf('"$WORKFLOW_CHANGED" -eq 1 ]; then')
+    const escalateAt = coordinatorSource.indexOf('"$WORKFLOW_CHANGED" -eq 1 ]; then', coordinatorSource.indexOf('if [ -n "$PR_URL" ]; then'))
     const nextElseAt = coordinatorSource.indexOf('local PR_NODE_ID', escalateAt)
     const escalationBlock = coordinatorSource.slice(escalateAt, nextElseAt)
     expect(escalationBlock).toContain('github_label "$ISSUE_NUMBER" "needs-you"')
@@ -78,7 +78,7 @@ describe('agent-coordinator.sh: escalation branch includes workflow file changes
   })
 
   it('says in the PR body that the PR changes CI and needs a human to merge it', () => {
-    const bodyAt = coordinatorSource.indexOf('if [ "$WORKFLOW_CHANGED" -eq 1 ]; then')
+    const bodyAt = coordinatorSource.indexOf('if [ "$WORKFLOW_CHANGED" -eq 1 ]; then', coordinatorSource.indexOf('git push origin "$BRANCH"'))
     const prUrlAt = coordinatorSource.indexOf('PR_URL=$(github_open_pr', bodyAt)
     const block = coordinatorSource.slice(bodyAt, prUrlAt)
     expect(block).toContain('PR_BODY=')

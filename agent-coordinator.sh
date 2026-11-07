@@ -1848,93 +1848,104 @@ Instructions:
     local CONTROL_CHANGED=0
     control_files_changed && CONTROL_CHANGED=1
 
-    local T0 T1
-    T0=$(lf_now_ns)
-    git push origin "$BRANCH" >> "$LOG_FILE" 2>&1
-    local PR_BODY="${SUMMARY}
+    if [ "$WORKFLOW_CHANGED" -eq 1 ]; then
+      local WF_FILES
+      WF_FILES=$(git diff --name-only origin/main...HEAD | grep '^\.github/workflows/' | tr '\n' ' ')
+      github_comment "$ISSUE_NUMBER" "This change edits CI workflow files (${WF_FILES}). The agent does not push workflow changes; a human applies them. The work is kept on the local branch \`${BRANCH}\` on the agent server."
+      github_label "$ISSUE_NUMBER" "needs-you"
+      github_remove_label "$ISSUE_NUMBER" "in-progress"
+      OUTCOME="needs-review"; GH_LABEL="needs-you"; PR_OUTCOME="not-pushed-workflow"
+      log "Issue #${ISSUE_NUMBER}: change touches .github/workflows/ (${WF_FILES}), not pushed, labeled needs-you"
+      telegram "Issue #${ISSUE_NUMBER}: change touches CI workflow files, not pushed — needs a human: ${ISSUE_TITLE}"
+    else
+      local T0 T1
+      T0=$(lf_now_ns)
+      git push origin "$BRANCH" >> "$LOG_FILE" 2>&1
+      local PR_BODY="${SUMMARY}
 
 Closes #${ISSUE_NUMBER}"
-    if [ "$WORKFLOW_CHANGED" -eq 1 ]; then
-      PR_BODY="${PR_BODY}
+      if [ "$WORKFLOW_CHANGED" -eq 1 ]; then
+        PR_BODY="${PR_BODY}
 
 This PR changes CI workflow files under \`.github/workflows/\`. It needs a human to review and merge — auto-merge was not enabled."
-    fi
-    local PR_URL
-    PR_URL=$(github_open_pr "$BRANCH" "$COMMIT_TITLE" "$PR_BODY")
-    T1=$(lf_now_ns)
-    PR_OUTCOME="$([ -n "$PR_URL" ] && echo opened || echo creation-failed)"
-    lf_record "pr" "$T0" "$T1" "$([ -n "$PR_URL" ] && echo 1 || echo 0)" "" "" "$PR_OUTCOME"
+      fi
+      local PR_URL
+      PR_URL=$(github_open_pr "$BRANCH" "$COMMIT_TITLE" "$PR_BODY")
+      T1=$(lf_now_ns)
+      PR_OUTCOME="$([ -n "$PR_URL" ] && echo opened || echo creation-failed)"
+      lf_record "pr" "$T0" "$T1" "$([ -n "$PR_URL" ] && echo 1 || echo 0)" "" "" "$PR_OUTCOME"
 
-    if [ -n "$PR_URL" ]; then
-      local PR_NUMBER="${PR_URL##*/}"
-      local REVIEW_COMMENT="${REVIEW_TEXT:-The reviewer returned no output.}"
-      github_comment "$PR_NUMBER" "Independent review (${CLAUDE_REVIEW_MODEL}, result: ${REVIEWER_RESULT:-unknown}):
+      if [ -n "$PR_URL" ]; then
+        local PR_NUMBER="${PR_URL##*/}"
+        local REVIEW_COMMENT="${REVIEW_TEXT:-The reviewer returned no output.}"
+        github_comment "$PR_NUMBER" "Independent review (${CLAUDE_REVIEW_MODEL}, result: ${REVIEWER_RESULT:-unknown}):
 
 ${REVIEW_COMMENT:0:60000}"
-      if echo "$REVIEW_TEXT" | grep -q "RISK: LIVE-VERIFY-NEEDED" || [ "$REVIEW_RC" -eq 2 ] || [ "$WORKFLOW_CHANGED" -eq 1 ] || [ "$CONTROL_CHANGED" -eq 1 ]; then
-        # Escalate instead of auto-merging when any of: the reviewer flagged
-        # the diff as unverifiable in CI (no live database), the reviewer
-        # itself was unavailable, or the diff touches .github/workflows/ (the
-        # agent's token has the `workflow` scope and the repo is public with
-        # secrets living in Actions, so a self-merged CI change is the one
-        # path where a mistake could print a key into a public log).
-        local ESCALATION_REASON
-        if [ "$REVIEW_RC" -eq 2 ]; then
-          case "$REVIEWER_RESULT" in
-            approved-diff-truncated) ESCALATION_REASON="approved it, but the diff (${REVIEW_DIFF_BYTES} bytes) was over the ${REVIEW_DIFF_MAX_BYTES}-byte limit, so it was not shown the whole diff" ;;
-            malformed) ESCALATION_REASON="did not return one clear verdict, so its review cannot be trusted either way" ;;
-            *) ESCALATION_REASON="was unavailable, so this diff was never independently reviewed" ;;
-          esac
-        elif [ "$WORKFLOW_CHANGED" -eq 1 ]; then
-          ESCALATION_REASON="changes CI workflow files under .github/workflows/"
-          echo "$REVIEW_TEXT" | grep -q "RISK: LIVE-VERIFY-NEEDED" && REVIEWER_RESULT="approved-live-verify-needed"
-        elif [ "$CONTROL_CHANGED" -eq 1 ]; then
-          ESCALATION_REASON="changes pipeline control files: $(git diff --name-only origin/main...HEAD | grep -E "$CONTROL_FILES_PATTERN" | tr '\n' ' ')"
-        else
-          ESCALATION_REASON="flagged it as touching the database/connection layer, migrations, seeding, environment/secrets, or deploy/infra config (RISK: LIVE-VERIFY-NEEDED)"
-          REVIEWER_RESULT="approved-live-verify-needed"
-        fi
-        github_comment "$ISSUE_NUMBER" "Agent opened a pull request for this issue: ${PR_URL}
+        if echo "$REVIEW_TEXT" | grep -q "RISK: LIVE-VERIFY-NEEDED" || [ "$REVIEW_RC" -eq 2 ] || [ "$WORKFLOW_CHANGED" -eq 1 ] || [ "$CONTROL_CHANGED" -eq 1 ]; then
+          # Escalate instead of auto-merging when any of: the reviewer flagged
+          # the diff as unverifiable in CI (no live database), the reviewer
+          # itself was unavailable, or the diff touches .github/workflows/ (the
+          # agent's token has the `workflow` scope and the repo is public with
+          # secrets living in Actions, so a self-merged CI change is the one
+          # path where a mistake could print a key into a public log).
+          local ESCALATION_REASON
+          if [ "$REVIEW_RC" -eq 2 ]; then
+            case "$REVIEWER_RESULT" in
+              approved-diff-truncated) ESCALATION_REASON="approved it, but the diff (${REVIEW_DIFF_BYTES} bytes) was over the ${REVIEW_DIFF_MAX_BYTES}-byte limit, so it was not shown the whole diff" ;;
+              malformed) ESCALATION_REASON="did not return one clear verdict, so its review cannot be trusted either way" ;;
+              *) ESCALATION_REASON="was unavailable, so this diff was never independently reviewed" ;;
+            esac
+          elif [ "$WORKFLOW_CHANGED" -eq 1 ]; then
+            ESCALATION_REASON="changes CI workflow files under .github/workflows/"
+            echo "$REVIEW_TEXT" | grep -q "RISK: LIVE-VERIFY-NEEDED" && REVIEWER_RESULT="approved-live-verify-needed"
+          elif [ "$CONTROL_CHANGED" -eq 1 ]; then
+            ESCALATION_REASON="changes pipeline control files: $(git diff --name-only origin/main...HEAD | grep -E "$CONTROL_FILES_PATTERN" | tr '\n' ' ')"
+          else
+            ESCALATION_REASON="flagged it as touching the database/connection layer, migrations, seeding, environment/secrets, or deploy/infra config (RISK: LIVE-VERIFY-NEEDED)"
+            REVIEWER_RESULT="approved-live-verify-needed"
+          fi
+          github_comment "$ISSUE_NUMBER" "Agent opened a pull request for this issue: ${PR_URL}
 
 Tests and build verified green by the coordinator. The independent reviewer ${ESCALATION_REASON}. Auto-merge was NOT enabled — please verify before merging."
-        github_label "$ISSUE_NUMBER" "needs-you"
-        github_label "$PR_NUMBER" "needs-you"
-        github_remove_label "$ISSUE_NUMBER" "in-progress"
-        OUTCOME="needs-review"; GH_LABEL="needs-you"; PR_OUTCOME="opened-escalated"
-        log "Issue #${ISSUE_NUMBER}: PR opened at ${PR_URL}, escalated (${ESCALATION_REASON}), auto-merge NOT enabled"
-        telegram "PR ready for issue #${ISSUE_NUMBER} but ESCALATED for human review: ${ISSUE_TITLE} — ${PR_URL}"
-      else
-        github_label "$PR_NUMBER" "ai-approved"
-        local PR_NODE_ID
-        PR_NODE_ID=$(github_get_pr_node_id "$PR_NUMBER")
-        if [ -n "$PR_NODE_ID" ] && github_enable_automerge "$PR_NODE_ID"; then
-          PR_OUTCOME="opened-auto-merge-enabled"
-          log "Issue #${ISSUE_NUMBER}: auto-merge enabled on PR ${PR_URL}"
-          github_comment "$ISSUE_NUMBER" "Agent opened a pull request for this issue: ${PR_URL}
+          github_label "$ISSUE_NUMBER" "needs-you"
+          github_label "$PR_NUMBER" "needs-you"
+          github_remove_label "$ISSUE_NUMBER" "in-progress"
+          OUTCOME="needs-review"; GH_LABEL="needs-you"; PR_OUTCOME="opened-escalated"
+          log "Issue #${ISSUE_NUMBER}: PR opened at ${PR_URL}, escalated (${ESCALATION_REASON}), auto-merge NOT enabled"
+          telegram "PR ready for issue #${ISSUE_NUMBER} but ESCALATED for human review: ${ISSUE_TITLE} — ${PR_URL}"
+        else
+          github_label "$PR_NUMBER" "ai-approved"
+          local PR_NODE_ID
+          PR_NODE_ID=$(github_get_pr_node_id "$PR_NUMBER")
+          if [ -n "$PR_NODE_ID" ] && github_enable_automerge "$PR_NODE_ID"; then
+            PR_OUTCOME="opened-auto-merge-enabled"
+            log "Issue #${ISSUE_NUMBER}: auto-merge enabled on PR ${PR_URL}"
+            github_comment "$ISSUE_NUMBER" "Agent opened a pull request for this issue: ${PR_URL}
 
 Tests and build verified green by the coordinator, and an independent reviewer approved the diff. Auto-merge has been enabled — GitHub will merge it once the required checks pass."
-        else
-          PR_OUTCOME="opened-auto-merge-failed"
-          log "Issue #${ISSUE_NUMBER}: failed to enable auto-merge on PR ${PR_URL}"
-          github_comment "$ISSUE_NUMBER" "Agent opened a pull request for this issue: ${PR_URL}
+          else
+            PR_OUTCOME="opened-auto-merge-failed"
+            log "Issue #${ISSUE_NUMBER}: failed to enable auto-merge on PR ${PR_URL}"
+            github_comment "$ISSUE_NUMBER" "Agent opened a pull request for this issue: ${PR_URL}
 
 Tests and build verified green by the coordinator, and an independent reviewer approved the diff. Auto-merge could not be enabled automatically — please review and merge."
+          fi
+          github_label "$ISSUE_NUMBER" "pr-open"
+          github_remove_label "$ISSUE_NUMBER" "in-progress"
+          OUTCOME="success"; GH_LABEL="pr-open"
+          log "Issue #${ISSUE_NUMBER}: PR opened at ${PR_URL}"
+          telegram "PR ready for issue #${ISSUE_NUMBER}: ${ISSUE_TITLE} — ${PR_URL}"
         fi
-        github_label "$ISSUE_NUMBER" "pr-open"
+      else
+        OUTCOME="needs-review"; GH_LABEL="agent-stuck"
+        PR_OUTCOME="creation-failed"
+        github_label "$ISSUE_NUMBER" "agent-stuck"
+        run_triage "Branch ${BRANCH} was pushed and verification/review passed, but opening the pull request via the GitHub API failed." \
+          "" "$ATTEMPTS_USED"
         github_remove_label "$ISSUE_NUMBER" "in-progress"
-        OUTCOME="success"; GH_LABEL="pr-open"
-        log "Issue #${ISSUE_NUMBER}: PR opened at ${PR_URL}"
-        telegram "PR ready for issue #${ISSUE_NUMBER}: ${ISSUE_TITLE} — ${PR_URL}"
+        log "Issue #${ISSUE_NUMBER}: branch pushed but PR creation failed"
+        telegram "Issue #${ISSUE_NUMBER}: branch ${BRANCH} pushed but PR creation FAILED — needs manual attention"
       fi
-    else
-      OUTCOME="needs-review"; GH_LABEL="agent-stuck"
-      PR_OUTCOME="creation-failed"
-      github_label "$ISSUE_NUMBER" "agent-stuck"
-      run_triage "Branch ${BRANCH} was pushed and verification/review passed, but opening the pull request via the GitHub API failed." \
-        "" "$ATTEMPTS_USED"
-      github_remove_label "$ISSUE_NUMBER" "in-progress"
-      log "Issue #${ISSUE_NUMBER}: branch pushed but PR creation failed"
-      telegram "Issue #${ISSUE_NUMBER}: branch ${BRANCH} pushed but PR creation FAILED — needs manual attention"
     fi
     git checkout main >> "$LOG_FILE" 2>&1
   else
