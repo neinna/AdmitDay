@@ -18,8 +18,11 @@
  * the exit code.
  */
 
-import { randomBytes, randomUUID } from "crypto";
+import { randomBytes } from "crypto";
 import { LangfuseClient } from "@langfuse/client";
+import { BasicTracerProvider } from "@opentelemetry/sdk-trace-base";
+import { LangfuseSpanProcessor } from "@langfuse/otel";
+import { propagateAttributes, setLangfuseTracerProvider, startObservation } from "@langfuse/tracing";
 import type { EvalTrigger, RunSummary } from "./gate";
 import { pickLatestWeeklyBaseline } from "./gate";
 
@@ -59,9 +62,26 @@ function getClient(): LangfuseClient {
   });
 }
 
+let evalSpanProcessor: LangfuseSpanProcessor | undefined;
+
+/** One OTel span processor for eval traces, on the eval's own keys (not the app's LANGFUSE_APP_*). */
+function getSpanProcessor(): LangfuseSpanProcessor {
+  if (!evalSpanProcessor) {
+    evalSpanProcessor = new LangfuseSpanProcessor({
+      publicKey: process.env.EVAL_LANGFUSE_PUBLIC_KEY,
+      secretKey: process.env.EVAL_LANGFUSE_SECRET_KEY,
+      baseUrl: process.env.EVAL_LANGFUSE_HOST || undefined,
+      exportMode: "immediate",
+    });
+    setLangfuseTracerProvider(new BasicTracerProvider({ spanProcessors: [evalSpanProcessor] }));
+  }
+  return evalSpanProcessor;
+}
+
 /** Records one dataset run: upserts the dataset and its items, then one trace+score+run-item per case. */
 export async function recordDatasetRun(params: RecordRunParams): Promise<void> {
   const client = getClient();
+  const processor = getSpanProcessor();
 
   try {
     await client.api.datasets.create({ name: DATASET_NAME });
@@ -84,20 +104,12 @@ export async function recordDatasetRun(params: RecordRunParams): Promise<void> {
 
     const traceId = randomBytes(16).toString("hex");
 
-    await client.api.ingestion.batch({
-      batch: [
-        {
-          type: "trace-create",
-          id: randomUUID(),
-          timestamp: new Date().toISOString(),
-          body: {
-            id: traceId,
-            name: `ask-eval:${result.id}`,
-            tags: ["eval"],
-            metadata: { kind: result.kind, guardrail: result.guardrail, error: result.error },
-          },
-        },
-      ],
+    propagateAttributes({ traceName: `ask-eval:${result.id}`, tags: ["eval"] }, () => {
+      startObservation(
+        `ask-eval:${result.id}`,
+        { metadata: { kind: result.kind, guardrail: result.guardrail, error: result.error } },
+        { parentSpanContext: { traceId, spanId: randomBytes(8).toString("hex"), traceFlags: 1 } }
+      ).end();
     });
 
     for (const [scorerName, score] of Object.entries(result.scores)) {
@@ -113,6 +125,7 @@ export async function recordDatasetRun(params: RecordRunParams): Promise<void> {
     });
   }
 
+  await processor.forceFlush();
   await client.flush();
 }
 
