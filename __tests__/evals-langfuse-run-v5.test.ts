@@ -23,6 +23,23 @@ jest.mock('@langfuse/client', () => ({
   })),
 }))
 
+const startObservation = jest.fn()
+const processorForceFlush = jest.fn()
+
+jest.mock('@langfuse/tracing', () => ({
+  startObservation: (...args: unknown[]) => startObservation(...args),
+  propagateAttributes: (_attrs: unknown, fn: () => void) => fn(),
+  setLangfuseTracerProvider: jest.fn(),
+}))
+jest.mock('@langfuse/otel', () => ({
+  LangfuseSpanProcessor: class {
+    forceFlush = (...args: unknown[]) => processorForceFlush(...args)
+  },
+}))
+jest.mock('@opentelemetry/sdk-trace-base', () => ({
+  BasicTracerProvider: class {},
+}))
+
 import { recordEvalRunSafely, LANGFUSE_FAILURE_WARNING } from '../evals/langfuse-run'
 import type { LangfuseCaseResult } from '../evals/langfuse-run'
 
@@ -51,6 +68,8 @@ describe('recordDatasetRun via @langfuse/client', () => {
       f.mockResolvedValue(undefined)
     }
     getDatasetRuns.mockResolvedValue({ data: [] })
+    processorForceFlush.mockResolvedValue(undefined)
+    startObservation.mockReturnValue({ end: jest.fn() })
     jest.spyOn(console, 'log').mockImplementation(() => {})
   })
   afterEach(() => {
@@ -65,7 +84,9 @@ describe('recordDatasetRun via @langfuse/client', () => {
     expect(createDatasetItem).toHaveBeenCalledTimes(2)
     expect(scoreCreate).toHaveBeenCalledTimes(4)
     expect(createDatasetRunItem).toHaveBeenCalledTimes(2)
-    expect(ingestionBatch).toHaveBeenCalledTimes(2)
+    expect(startObservation).toHaveBeenCalledTimes(2)
+    expect(ingestionBatch).not.toHaveBeenCalled()
+    expect(processorForceFlush).toHaveBeenCalledTimes(1)
     expect(flush).toHaveBeenCalledTimes(1)
 
     createDatasetRunItem.mock.calls.forEach(([arg], i) => {
@@ -74,10 +95,8 @@ describe('recordDatasetRun via @langfuse/client', () => {
         .map(([s]) => s)
         .filter((s) => s.traceId === arg.traceId)
       expect(scoreTraceIds).toHaveLength(2)
-      const event = ingestionBatch.mock.calls[i][0].batch[0]
-      expect(event.type).toBe('trace-create')
-      expect(event.body.id).toBe(arg.traceId)
-      expect(event.body.name).toBe(`ask-eval:ask-${i}`)
+      expect(startObservation.mock.calls[i][0]).toBe(`ask-eval:ask-${i}`)
+      expect(startObservation.mock.calls[i][2].parentSpanContext.traceId).toBe(arg.traceId)
     })
   })
 
