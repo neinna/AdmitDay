@@ -10,6 +10,8 @@ import { renderToStaticMarkup } from 'react-dom/server'
  * "Data gap" paragraph to a compact `n/a` marker carrying the explanation in
  * `title`/`aria-label`, keeping it distinct from "Not offered" (#116).
  */
+jest.mock('next/navigation', () => ({ useRouter: () => ({ refresh: jest.fn() }) }))
+
 jest.mock('@clerk/nextjs', () => ({
   ClerkLoaded: ({ children }: { children: React.ReactNode }) => children,
   SignedIn: () => null,

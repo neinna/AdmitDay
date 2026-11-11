@@ -97,7 +97,7 @@ export default async function ShortlistPage() {
 
   return (
     <main className="min-h-screen bg-white flex flex-col">
-      <ShortlistClient index={index} initialOrder={initialOrder} programs={programs} details={details} signedIn={true} />
+      <ShortlistClient key={initialOrder.join(',')} index={index} initialOrder={initialOrder} programs={programs} details={details} signedIn={true} />
       <Footer />
     </main>
   )

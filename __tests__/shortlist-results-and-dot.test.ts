@@ -10,6 +10,8 @@ import { renderToStaticMarkup } from 'react-dom/server'
  * percentile bands and reusing `applicantsPerSeatDotColor` from #403
  * (green under the 34th percentile, amber 34-66, red over 66).
  */
+jest.mock('next/navigation', () => ({ useRouter: () => ({ refresh: jest.fn() }) }))
+
 jest.mock('@clerk/nextjs', () => ({
   ClerkLoaded: ({ children }: { children: React.ReactNode }) => children,
   SignedIn: () => null,
