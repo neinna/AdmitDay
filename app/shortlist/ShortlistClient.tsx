@@ -166,7 +166,7 @@ function SchoolDetailFields({ school, detail }: { school: ListSchool; detail?: L
 // Issue #199: /shortlist had no header at all before this — the sign-in /
 // sign-up buttons are required on every page, so this adds the same header
 // pattern already duplicated across page.tsx, FindClient.tsx, and SiteHeader.tsx.
-function Header() {
+function Header({ count = 0 }: { count?: number }) {
   return (
     <header className="print-hide flex items-center justify-between px-5 min-[900px]:px-9 py-[18px] border-b border-rule">
       <Link href="/" aria-label="AdmitDay home" className="flex items-center gap-[9px]">
@@ -177,7 +177,7 @@ function Header() {
         </div>
       </Link>
       <div className="flex items-center gap-7">
-        <SiteNav active="list" />
+        <SiteNav active="list" listBadge={count > 0 && <span className="font-mono text-accent ml-1">{count}</span>} />
         <AuthControls />
       </div>
     </header>
@@ -350,7 +350,7 @@ export default function ShortlistClient({ index, initialOrder, programs, details
 
   return (
     <div>
-      <Header />
+      <Header count={saved.length} />
       <div className="print-hide flex items-end justify-between gap-5 px-5 min-[900px]:px-9 pt-[30px] pb-6 border-b border-rule">
         <h1 className="font-display font-bold text-[30px] min-[700px]:text-[40px] leading-[1.04] tracking-[-0.038em] text-ink">
           My list
