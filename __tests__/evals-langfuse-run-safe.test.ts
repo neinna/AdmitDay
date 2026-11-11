@@ -33,6 +33,20 @@ jest.mock('@langfuse/client', () => ({
   })),
 }))
 
+jest.mock('@langfuse/tracing', () => ({
+  startObservation: jest.fn(() => ({ end: jest.fn() })),
+  propagateAttributes: jest.fn((_attrs: unknown, fn: () => void) => fn()),
+  setLangfuseTracerProvider: jest.fn(),
+}))
+jest.mock('@langfuse/otel', () => ({
+  LangfuseSpanProcessor: class {
+    forceFlush = jest.fn().mockResolvedValue(undefined)
+  },
+}))
+jest.mock('@opentelemetry/sdk-trace-base', () => ({
+  BasicTracerProvider: class {},
+}))
+
 import { recordEvalRunSafely, LANGFUSE_FAILURE_WARNING } from '../evals/langfuse-run'
 import type { LangfuseCaseResult } from '../evals/langfuse-run'
 
