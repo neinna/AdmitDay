@@ -26,12 +26,14 @@ describe('/ keeps the bare "AdmitDay" title', () => {
 })
 
 const STATIC_TITLE_ROUTES: [string, string][] = [
-  ['app/find/page.tsx', 'AdmitDay: Search'],
-  ['app/shortlist/page.tsx', 'AdmitDay: Shortlist'],
+  ['app/find/page.tsx', 'AdmitDay: Schools'],
+  ['app/shortlist/page.tsx', 'AdmitDay: My list'],
   ['app/admission-methods/page.tsx', 'AdmitDay: Admission methods'],
   ['app/privacy/page.tsx', 'AdmitDay: Privacy'],
   ['app/disclaimers/page.tsx', 'AdmitDay: Disclaimers'],
   ['app/terms/page.tsx', 'AdmitDay: Terms'],
+  ['app/students/page.tsx', 'AdmitDay: Students'],
+  ['app/lottery/page.tsx', 'AdmitDay: Lottery number'],
 ]
 
 describe('every other route exports a title other than the bare "AdmitDay" (issue #287)', () => {

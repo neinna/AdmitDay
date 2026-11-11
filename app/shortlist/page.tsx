@@ -9,7 +9,7 @@ import type { ListSchool, ListSchoolDetail, ShortlistProgram } from '@/lib/saved
 import ShortlistClient from './ShortlistClient'
 
 export const metadata: Metadata = {
-  title: 'AdmitDay: Shortlist',
+  title: 'AdmitDay: My list',
 }
 
 /**

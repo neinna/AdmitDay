@@ -29,7 +29,8 @@ export async function DELETE() {
     WITH p AS (SELECT id FROM parents WHERE clerk_user_id = ${userId}),
          l AS (SELECT id FROM school_lists WHERE parent_id IN (SELECT id FROM p)),
          lp AS (DELETE FROM list_programs WHERE list_id IN (SELECT id FROM l)),
-         sl AS (DELETE FROM school_lists WHERE id IN (SELECT id FROM l))
+         sl AS (DELETE FROM school_lists WHERE id IN (SELECT id FROM l)),
+         st AS (DELETE FROM students WHERE parent_id IN (SELECT id FROM p))
     DELETE FROM parents WHERE id IN (SELECT id FROM p)
   `
 

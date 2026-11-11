@@ -52,6 +52,34 @@ export function ensureSchema(): Promise<void> {
           UNIQUE (list_id, program_code)
         )
       `
+      // Students (lib/students.ts): a parent-chosen label plus borough,
+      // district, zoned school and the lottery
+      // number's first two characters as 0-255.
+      // One per parent for now (UNIQUE parent_id). Created here so account
+      // deletion, which only calls ensureSchema, can always delete from it.
+      await sql`
+        CREATE TABLE IF NOT EXISTS students (
+          id SERIAL PRIMARY KEY,
+          parent_id INTEGER NOT NULL UNIQUE REFERENCES parents(id),
+          label TEXT NOT NULL,
+          home_borough CHAR(1) NOT NULL,
+          home_district SMALLINT,
+          school_borough CHAR(1),
+          school_district SMALLINT,
+          zoned_dbn TEXT,
+          lottery SMALLINT CHECK (lottery BETWEEN 0 AND 255),
+          created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+          updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+      `
+      // A table created before these columns existed (an early preview
+      // build) gets them here; a no-op otherwise.
+      await sql`ALTER TABLE students ADD COLUMN IF NOT EXISTS zoned_dbn TEXT`
+      // Disability seat and lunch eligibility are not stored (decided
+      // 2026-11-06). A preview build may have created these columns; remove
+      // them, and anything in them, wherever they exist.
+      await sql`ALTER TABLE students DROP COLUMN IF EXISTS swd`
+      await sql`ALTER TABLE students DROP COLUMN IF EXISTS frl`
     })().catch((err) => {
       schemaReady = null
       throw err
