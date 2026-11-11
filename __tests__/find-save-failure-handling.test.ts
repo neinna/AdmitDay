@@ -66,6 +66,6 @@ describe('the initial saved-schools load distinguishes failure from an empty lis
 
   it('renders a distinct message in the nav instead of presenting an empty shortlist as normal', () => {
     expect(src).toContain('shortlistLoadFailed')
-    expect(src).toContain('Couldn&rsquo;t load your shortlist.')
+    expect(src).toContain('Couldn&rsquo;t load your list.')
   })
 })

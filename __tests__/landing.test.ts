@@ -76,7 +76,9 @@ describe('the landing page keeps the product’s promises', () => {
 
   it('has exactly one destination, used twice', () => {
     const links = Array.from(pageSrc.matchAll(/href="\/(find|shortlist)"/g)).map((m) => m[1])
-    expect(links.filter((l) => l === 'find').length).toBeGreaterThanOrEqual(2)
+    // The header's /find link now comes from the shared <SiteNav>.
+    const navFind = pageSrc.includes('<SiteNav') ? 1 : 0
+    expect(links.filter((l) => l === 'find').length + navFind).toBeGreaterThanOrEqual(2)
     expect(pageSrc).not.toMatch(/href="\/(pricing|about|faq|signup|login)"/)
   })
 
