@@ -36,7 +36,7 @@ function createFakePostgres() {
   const impl = jest.fn((strings: readonly string[], ...values: unknown[]) => {
     const text = strings.join('|')
 
-    if (text.includes('CREATE TABLE') || text.includes('DROP TABLE')) return Promise.resolve({ rows: [] })
+    if (text.includes('CREATE TABLE') || text.includes('DROP TABLE') || text.includes('ALTER TABLE')) return Promise.resolve({ rows: [] })
 
     if (text.includes('INSERT INTO parents')) {
       const [clerkUserId, email, firstName, lastName] = values as [
