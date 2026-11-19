@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-16T12:18:11.411012+00:00",
+  "generated_at": "2026-11-19T12:20:30.464024+00:00",
   "school_count": 426,
   "school_fields": [
     {
@@ -164,7 +164,7 @@
           "provenance": {
             "source": "MySchools",
             "url": "https://www.myschools.nyc/en/api/v2/schools/process/1/01M292/",
-            "fetched_at": "2026-11-16T12:01:08.090388+00:00",
+            "fetched_at": "2026-11-19T12:02:54.830394+00:00",
             "admissions_cycle": "2026-27 School Year"
           },
           "program": "Orchard Collegiate Academy",
@@ -469,7 +469,7 @@
       "example": {
         "source": "MySchools",
         "url": "https://www.myschools.nyc/en/api/v2/schools/process/1/01M292/",
-        "fetched_at": "2026-11-16T12:01:08.090388+00:00",
+        "fetched_at": "2026-11-19T12:02:54.830394+00:00",
         "admissions_cycle": "2026-27 School Year"
       }
     },
@@ -649,7 +649,7 @@
         "provenance": {
           "source": "MySchools",
           "url": "https://www.myschools.nyc/en/api/v2/schools/process/1/01M292/",
-          "fetched_at": "2026-11-16T12:01:08.090388+00:00",
+          "fetched_at": "2026-11-19T12:02:54.830394+00:00",
           "admissions_cycle": "2026-27 School Year"
         },
         "program": "Orchard Collegiate Academy",
